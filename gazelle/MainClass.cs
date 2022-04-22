@@ -1,16 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace gazelle
+using Gazelle.AtSpi;
+
+namespace Gazelle
 {
     public class MainClass
     {
-        public static int Main()
+#if LINUX
+        const bool linuxBuild = true;
+#else
+        const bool linuxBuild = false;
+#endif
+        static async Task<int> Main()
         {
-            return 0;
+            if (linuxBuild || ((Environment.GetEnvironmentVariable("GAZELLE_USE_ATSPI") ?? "0") != "0"))
+            {
+                var connection = await AtSpiConnection.Connect();
+                return 0;
+            }
+
+            return 1;
         }
     }
 }
