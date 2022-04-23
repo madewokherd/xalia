@@ -15,9 +15,10 @@ namespace Gazelle.AtSpi
 
         internal override string DebugId => "AtSpiConnection";
 
-        internal AtSpiConnection(Connection connection)
+        internal AtSpiConnection(Connection connection) : base(true)
         {
             this.connection = connection;
+            AddChild(0, new AtSpiObject(this, "org.a11y.atspi.Registry", "/org/a11y/atspi/accessible/root"));
         }
 
         internal static async Task<string> GetAtSpiBusAddress()
@@ -47,6 +48,7 @@ namespace Gazelle.AtSpi
             var options = new ClientConnectionOptions(bus);
             options.SynchronizationContext = SynchronizationContext.Current;
             var connection = new Connection(options);
+            await connection.ConnectAsync();
             return new AtSpiConnection(connection);
         }
     }

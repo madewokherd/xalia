@@ -83,6 +83,7 @@
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.Launcher.cs" />
     <Compile Include="MainClass.cs" />
     <Compile Include="UiDom\UiDomObject.cs" />
+    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
