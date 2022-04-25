@@ -29,5 +29,11 @@ namespace Gazelle
         {
             SynchronizationContext.Current.Send(RunTaskCallback, t);
         }
+
+        internal static void OnError(Exception obj)
+        {
+            Console.WriteLine("Unhandled exception:");
+            Console.WriteLine(obj);
+        }
     }
 }

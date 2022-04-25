@@ -15,10 +15,11 @@ namespace Gazelle.AtSpi
 
         internal override string DebugId => "AtSpiConnection";
 
-        internal AtSpiConnection(Connection connection) : base(true)
+        IRegistry registry;
+
+        private AtSpiConnection(Connection connection) : base(true)
         {
             this.connection = connection;
-            AddChild(0, new AtSpiObject(this, "org.a11y.atspi.Registry", "/org/a11y/atspi/accessible/root"));
         }
 
         internal static async Task<string> GetAtSpiBusAddress()
@@ -49,7 +50,21 @@ namespace Gazelle.AtSpi
             options.SynchronizationContext = SynchronizationContext.Current;
             var connection = new Connection(options);
             await connection.ConnectAsync();
-            return new AtSpiConnection(connection);
+            var result = new AtSpiConnection(connection);
+
+            // Resolve the service name to an actual client. Signals will come from the client name, so
+            // we need this to distinguish between signals from the AT-SPI root and signals from an
+            // application's root, both of which use the object path "/org/a11y/atspi/accessible/root"
+            string registryClient = await connection.ResolveServiceOwnerAsync("org.a11y.atspi.Registry");
+
+            result.registry = connection.CreateProxy<IRegistry>(registryClient, "/org/a11y/atspi/registry");
+
+            // Register all the events we're interested in at the start, fine-grained management isn't worth it
+            await result.registry.RegisterEventAsync("object:children-changed");
+
+            result.AddChild(0, new AtSpiObject(result, registryClient, "/org/a11y/atspi/accessible/root"));
+
+            return result;
         }
     }
 }
