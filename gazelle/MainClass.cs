@@ -1,9 +1,12 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Gazelle.AtSpi;
+using Gazelle.Gudl;
 
 namespace Gazelle
 {
@@ -34,6 +37,13 @@ namespace Gazelle
         public static int Main()
         {
             new Control(); // Set up WindowsFormsSynchronizationContext
+
+            if (!GudlParser.TryParse(
+                Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "main.gudl"),
+                out var value, out var error))
+            {
+                Console.WriteLine(error);
+            }
 
             Utils.RunTask(Init());
 
