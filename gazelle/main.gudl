@@ -17,7 +17,7 @@ if (spi_state.active) {
 }
 
 // Rules that apply to controls in the active window
-if ancestor(spi_state.active) {
+if (ancestor(spi_state.active)) {
     menu (spi_state.enabled and spi_state.showing and parent(spi_role.combo_box))
     {
         // Combo box menus aren't normally "showing" or "visible" but we still want to know the child items
@@ -98,11 +98,11 @@ if ancestor(spi_state.active) {
     }
 
     // Tab bar navigation
-    page_tab previous_sibling(child(spi_state.showing)) {
+    page_tab (previous_sibling(child(spi_state.showing))) {
         action_RB: spi_selectable.select_in_parent;
         action_name_RB: spi_text.text;
     }
-    page_tab next_sibling(child(spi_state.showing)) {
+    page_tab (next_sibling(child(spi_state.showing))) {
         action_LB: spi_selectable.select_in_parent;
         action_name_LB: spi_text.text;
     }
