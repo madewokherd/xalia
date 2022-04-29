@@ -87,7 +87,17 @@
     <Compile Include="AtSpi\AtSpiObject.cs" />
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.cs" />
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.Launcher.cs" />
+    <Compile Include="Gudl\BinaryExpression.cs" />
+    <Compile Include="Gudl\GudlDeclaration.cs" />
+    <Compile Include="Gudl\GudlExpression.cs" />
     <Compile Include="Gudl\GudlParser.cs" />
+    <Compile Include="Gudl\GudlSelector.cs" />
+    <Compile Include="Gudl\GudlStatement.cs" />
+    <Compile Include="Gudl\GudlToken.cs" />
+    <Compile Include="Gudl\GudlTokenizer.cs" />
+    <Compile Include="Gudl\IdentifierExpression.cs" />
+    <Compile Include="Gudl\StringExpression.cs" />
+    <Compile Include="Gudl\UnaryExpression.cs" />
     <Compile Include="MainClass.cs" />
     <Compile Include="UiDom\UiDomObject.cs" />
     <Compile Include="Utils.cs" />
