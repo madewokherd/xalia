@@ -125,16 +125,11 @@ namespace Gazelle.Gudl
             from end in Token.EqualTo(GudlToken.RBrace)
             select statements).Named("block");
 
-        public static TokenListParser<GudlToken, GudlSelector> ElseBlock =
-            Token.EqualTo(GudlToken.Else).IgnoreThen(Parse.Ref(() => SelectorStatement).
-                Or(DeclarationBlock.Select(block => new GudlSelector(new IdentifierExpression("else"), null, block, null))));
-
         public static TokenListParser<GudlToken, GudlSelector> SelectorStatement =
             from kind in NameExpression
             from condition in ParenExpression.OptionalOrDefault()
             from block in DeclarationBlock
-            from elseblock in ElseBlock.OptionalOrDefault()
-            select new GudlSelector(kind, condition, block, elseblock);
+            select new GudlSelector(kind, condition, block);
 
         public static TokenListParser<GudlToken, GudlStatement> Statement =
             DeclarationStatement.Select(decl => (GudlStatement)decl).Try()

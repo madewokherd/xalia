@@ -69,7 +69,6 @@ namespace Gazelle.Gudl
                 .Match(Span.EqualTo("not"), GudlToken.Not, requireDelimiters: true)
                 .Match(Span.EqualTo("and"), GudlToken.And, requireDelimiters: true)
                 .Match(Span.EqualTo("or"), GudlToken.Or, requireDelimiters: true)
-                .Match(Span.EqualTo("else"), GudlToken.Else, requireDelimiters: true)
                 .Match(Identifier.CStyle, GudlToken.Identifier, requireDelimiters: true)
                 .Match(GudlString, GudlToken.String, requireDelimiters: true)
                 .Build();

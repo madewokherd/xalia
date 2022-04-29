@@ -41,9 +41,6 @@ namespace Gazelle.Gudl
         [Token(Example = "or")]
         Or,
 
-        [Token(Example = "else")]
-        Else,
-
         Identifier,
 
         String,

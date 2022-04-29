@@ -17,8 +17,10 @@ namespace Gazelle
 #else
         const bool linuxBuild = false;
 #endif
-        static async Task Init()
+        static async Task Init(GudlStatement[] config)
         {
+            var rules = GudlSelector.Flatten(config);
+
             AtSpiConnection connection = null;
             try
             {
@@ -38,14 +40,16 @@ namespace Gazelle
         {
             new Control(); // Set up WindowsFormsSynchronizationContext
 
+            GudlStatement[] config;
+
             if (!GudlParser.TryParse(
                 Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "main.gudl"),
-                out var value, out var error))
+                out config, out var error))
             {
                 Console.WriteLine(error);
             }
 
-            Utils.RunTask(Init());
+            Utils.RunTask(Init(config));
 
             Application.Run();
 
