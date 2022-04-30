@@ -5,19 +5,20 @@ using System.Threading.Tasks;
 using Tmds.DBus;
 
 using Gazelle.AtSpi.DBus;
+using Gazelle.Gudl;
 using Gazelle.UiDom;
 
 namespace Gazelle.AtSpi
 {
-    internal class AtSpiConnection : UiDomObject
+    internal class AtSpiConnection : UiDomRoot
     {
         internal Connection connection;
 
-        internal override string DebugId => "AtSpiConnection";
+        public override string DebugId => "AtSpiConnection";
 
         IRegistry registry;
 
-        private AtSpiConnection(Connection connection) : base(true)
+        private AtSpiConnection(Connection connection, GudlStatement[] rules) : base(rules)
         {
             this.connection = connection;
         }
@@ -37,7 +38,7 @@ namespace Gazelle.AtSpi
             return result;
         }
 
-        internal static async Task<AtSpiConnection> Connect()
+        internal static async Task<AtSpiConnection> Connect(GudlStatement[] config)
         {
             string bus = await GetAtSpiBusAddress();
             if (string.IsNullOrWhiteSpace(bus))
@@ -50,7 +51,7 @@ namespace Gazelle.AtSpi
             options.SynchronizationContext = SynchronizationContext.Current;
             var connection = new Connection(options);
             await connection.ConnectAsync();
-            var result = new AtSpiConnection(connection);
+            var result = new AtSpiConnection(connection, config);
 
             // Resolve the service name to an actual client. Signals will come from the client name, so
             // we need this to distinguish between signals from the AT-SPI root and signals from an

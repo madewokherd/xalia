@@ -1,5 +1,10 @@
 ﻿/* Default UI description, language subject to change as it develops */
 
+if (spi_service) // Test rule to see if evaluation works
+{
+    path: spi_path;
+}
+
 if (spi_attributes.gazelle_ignore)
 {
     recurse: false;

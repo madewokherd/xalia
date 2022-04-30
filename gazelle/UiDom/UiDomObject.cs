@@ -4,38 +4,45 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Gazelle.Gudl;
+
 namespace Gazelle.UiDom
 {
-    internal abstract class UiDomObject
+    public abstract class UiDomObject : UiDomValue
     {
-        internal abstract string DebugId { get; }
+        public abstract string DebugId { get; }
 
-        internal List<UiDomObject> Children { get; } = new List<UiDomObject> ();
+        public List<UiDomObject> Children { get; } = new List<UiDomObject> ();
 
-        internal UiDomObject Parent { get; private set; }
+        public UiDomObject Parent { get; private set; }
 
-        internal readonly bool IsRoot;
+        public bool IsAlive { get; private set; }
 
-        internal bool IsAlive { get; private set; }
+        public UiDomRoot Root { get; }
 
         protected virtual void SetAlive(bool value)
         {
-            IsAlive = value;
-            // TODO: begin rule processing
-        }
-
-        internal UiDomObject(bool is_root)
-        {
-            IsRoot = is_root;
-            if (IsRoot)
+            if (IsAlive != value)
             {
-                SetAlive(true);
+                IsAlive = value;
+                if (value)
+                    Utils.RunIdle(EvaluateRules); // This could infinitely recurse for badly-coded rules if we did it immediately
             }
         }
 
-        internal UiDomObject() : this(false)
+        public UiDomObject(UiDomRoot root)
         {
+            Root = root;
+        }
 
+        internal UiDomObject()
+        {
+            if (this is UiDomRoot root)
+            {
+                Root = root;
+            }
+            else
+                throw new InvalidOperationException("UiDomObject constructor with no arguments can only be used by UiDomRoot");
         }
 
         protected void AddChild(int index, UiDomObject child)
@@ -59,6 +66,72 @@ namespace Gazelle.UiDom
             Children.RemoveAt(index);
             child.Parent = null;
             child.SetAlive(false);
+        }
+
+        public override string ToString()
+        {
+            return DebugId;
+        }
+
+        public UiDomValue Evaluate(GudlExpression expr, HashSet<(UiDomObject, GudlExpression)> depends_on)
+        {
+            return Evaluate(expr, Root, depends_on);
+        }
+
+        private void EvaluateRules()
+        {
+            var activeDeclarations = new Dictionary<string, UiDomValue>();
+            bool stop = false;
+            var depends_on = new HashSet<(UiDomObject, GudlExpression)>();
+#if DEBUG
+            Console.WriteLine($"rule evaluation for {this}");
+#endif
+            foreach ((GudlExpression expr, GudlDeclaration[] declaraions) in Root.Rules)
+            {
+                if (!(expr is null))
+                {
+                    UiDomValue condition = Evaluate(expr, Root, depends_on);
+
+                    if (!condition.ToBool())
+                        continue;
+#if DEBUG
+                    Console.WriteLine($"  matched condition {expr}");
+#endif
+                }
+#if DEBUG
+                else
+                {
+                    Console.WriteLine("  applying unconditional declarations");
+                }
+#endif
+
+                foreach (var decl in declaraions)
+                {
+                    if (activeDeclarations.ContainsKey(decl.Property) && decl.Property != "stop")
+                    {
+                        continue;
+                    }
+
+                    UiDomValue value = Evaluate(decl.Value, depends_on);
+
+#if DEBUG
+                    Console.WriteLine($"  {decl.Property}: {value}");
+#endif
+
+                    if (decl.Property == "stop" && value.ToBool())
+                        stop = true;
+
+                    activeDeclarations[decl.Property] = value;
+                }
+
+                if (stop)
+                    break;
+            }
+
+            foreach(var dep in depends_on)
+            {
+                Console.WriteLine($"  depends on: {dep}");
+            }
         }
     }
 }

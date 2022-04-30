@@ -85,7 +85,7 @@ namespace Gazelle.Gudl
         public static TokenListParser<GudlToken, GudlExpression> DotExpression =
             BinaryExpression(UnitExpression, GudlToken.Dot);
 
-        public static TokenListParser<GudlToken, GudlExpression> CallExpression =
+        public static TokenListParser<GudlToken, GudlExpression> ApplyExpression =
             DotExpression.Then(dot =>
                 ParenExpression.Many().Select(exprs =>
                 {
@@ -100,7 +100,7 @@ namespace Gazelle.Gudl
                 }));
 
         public static TokenListParser<GudlToken, GudlExpression> InequalityExpression =
-            BinaryExpression(CallExpression, GudlToken.Equal, GudlToken.NotEqual);
+            BinaryExpression(ApplyExpression, GudlToken.Equal, GudlToken.NotEqual);
 
         public static TokenListParser<GudlToken, GudlExpression> NotExpression =
             UnaryExpression(InequalityExpression, GudlToken.Not);

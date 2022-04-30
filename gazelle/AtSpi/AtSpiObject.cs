@@ -6,6 +6,9 @@ using Tmds.DBus;
 
 using Gazelle.UiDom;
 using Gazelle.AtSpi.DBus;
+using Gazelle.Gudl;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace Gazelle.AtSpi
 {
@@ -14,7 +17,7 @@ namespace Gazelle.AtSpi
         internal readonly AtSpiConnection Connection;
         internal readonly string Service;
         internal readonly string Path;
-        internal override string DebugId => string.Format("{0}:{1}", Service, Path);
+        public override string DebugId => string.Format("{0}:{1}", Service, Path);
 
         private bool watching_children;
         private bool children_known;
@@ -24,7 +27,7 @@ namespace Gazelle.AtSpi
 
         internal IObject object_events;
 
-        internal AtSpiObject(AtSpiConnection connection, string service, string path)
+        internal AtSpiObject(AtSpiConnection connection, string service, string path) : base(connection)
         {
             Path = path;
             Service = service;
@@ -146,6 +149,21 @@ namespace Gazelle.AtSpi
                 else
                     UnwatchChildren();
             }
+        }
+
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        {
+            switch (id)
+            {
+                case "spi_service":
+                    depends_on.Add((this, new IdentifierExpression(id)));
+                    return new UiDomString(Service);
+                case "spi_path":
+                    depends_on.Add((this, new IdentifierExpression(id)));
+                    return new UiDomString(Path);
+            }
+
+            return base.EvaluateIdentifierCore(id, root, depends_on);
         }
     }
 }

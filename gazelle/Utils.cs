@@ -35,5 +35,28 @@ namespace Gazelle
             Console.WriteLine("Unhandled exception:");
             Console.WriteLine(obj);
         }
+
+        static void RunActionCallback(object o)
+        {
+            try
+            {
+                ((Action)o).Invoke();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Unhandled exception:");
+                Console.WriteLine(e);
+            }
+        }
+
+        internal static void RunIdle(Action action)
+        {
+            SynchronizationContext.Current.Post(RunActionCallback, action);
+        }
+
+        internal static void RunIdle(Task t)
+        {
+            SynchronizationContext.Current.Post(RunTaskCallback, t);
+        }
     }
 }

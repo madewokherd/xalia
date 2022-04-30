@@ -19,14 +19,12 @@ namespace Gazelle
 #endif
         static async Task Init(GudlStatement[] config)
         {
-            var rules = GudlSelector.Flatten(config);
-
             AtSpiConnection connection = null;
             try
             {
                 if (linuxBuild || ((Environment.GetEnvironmentVariable("GAZELLE_USE_ATSPI") ?? "0") != "0"))
                 {
-                    connection = await AtSpiConnection.Connect();
+                    connection = await AtSpiConnection.Connect(config);
                 }
             }
             catch (Exception e)

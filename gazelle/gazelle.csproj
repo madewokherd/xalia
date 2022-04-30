@@ -99,7 +99,12 @@
     <Compile Include="Gudl\StringExpression.cs" />
     <Compile Include="Gudl\UnaryExpression.cs" />
     <Compile Include="MainClass.cs" />
+    <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomObject.cs" />
+    <Compile Include="UiDom\UiDomRoot.cs" />
+    <Compile Include="UiDom\UiDomString.cs" />
+    <Compile Include="UiDom\UiDomUndefined.cs" />
+    <Compile Include="UiDom\UiDomValue.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup />
