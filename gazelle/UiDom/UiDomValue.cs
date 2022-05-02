@@ -121,13 +121,13 @@ namespace Gazelle.UiDom
                     case GudlToken.Equal:
                         {
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
-                            UiDomValue right = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
                             return UiDomBoolean.FromBool(left.Equals(right));
                         }
                     case GudlToken.NotEqual:
                         {
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
-                            UiDomValue right = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
                             return UiDomBoolean.FromBool(!left.Equals(right));
                         }
                     case GudlToken.And:

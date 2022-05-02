@@ -65,11 +65,11 @@ namespace Gazelle.AtSpi
 
         internal void WatchChildren()
         {
+            if (watching_children)
+                return;
 #if DEBUG
             Console.WriteLine("WatchChildren for {0}", DebugId);
 #endif
-            if (watching_children)
-                return;
             watching_children = true;
             children_known = false;
             Utils.RunTask(WatchChildrenTask());
@@ -77,11 +77,11 @@ namespace Gazelle.AtSpi
 
         internal void UnwatchChildren()
         {
+            if (!watching_children)
+                return;
 #if DEBUG
             Console.WriteLine("UnwatchChildren for {0}", DebugId);
 #endif
-            if (!watching_children)
-                return;
             watching_children = false;
             if (children_changed_event != null)
             {
@@ -137,18 +137,14 @@ namespace Gazelle.AtSpi
             }
         }
 
-        protected override void SetAlive(bool value)
+        protected override void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations, HashSet<(UiDomObject, GudlExpression)> dependencies)
         {
-            base.SetAlive(value);
+            if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.ToBool())
+                WatchChildren();
+            else
+                UnwatchChildren();
 
-            // FIXME: Use UI description language for this
-            if (Path == "/org/a11y/atspi/accessible/root")
-            {
-                if (value)
-                    WatchChildren();
-                else
-                    UnwatchChildren();
-            }
+            base.DeclarationsChanged(all_declarations, dependencies);
         }
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)

@@ -40,6 +40,7 @@ namespace Gazelle.UiDom
             if (this is UiDomRoot root)
             {
                 Root = root;
+                SetAlive(true);
             }
             else
                 throw new InvalidOperationException("UiDomObject constructor with no arguments can only be used by UiDomRoot");
@@ -132,6 +133,23 @@ namespace Gazelle.UiDom
             {
                 Console.WriteLine($"  depends on: {dep}");
             }
+
+            DeclarationsChanged(activeDeclarations, depends_on);
+        }
+
+        protected virtual void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations,
+            HashSet<(UiDomObject, GudlExpression)> dependencies)
+        {
+            // TODO: Store declarations
+
+            // TODO: Call PropertiesChanged for anything that changed
+
+            // TODO: Add "notifier" for dependencies that queues EvaluateRules
+        }
+
+        protected virtual void PropertiesChanged(HashSet<GudlExpression> changed_properties)
+        {
+            // TODO: Call any notifiers that care about the changed properties
         }
     }
 }
