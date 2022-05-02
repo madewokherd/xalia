@@ -152,10 +152,10 @@ namespace Gazelle.AtSpi
             switch (id)
             {
                 case "spi_service":
-                    depends_on.Add((this, new IdentifierExpression(id)));
+                    // depends_on.Add((this, new IdentifierExpression(id))); // not needed because this property is known and can't change
                     return new UiDomString(Service);
                 case "spi_path":
-                    depends_on.Add((this, new IdentifierExpression(id)));
+                    // depends_on.Add((this, new IdentifierExpression(id))); // not needed because this property is known and can't change
                     return new UiDomString(Path);
             }
 
