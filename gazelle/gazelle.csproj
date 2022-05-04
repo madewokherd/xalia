@@ -85,6 +85,7 @@
   <ItemGroup>
     <Compile Include="AtSpi\AtSpiConnection.cs" />
     <Compile Include="AtSpi\AtSpiObject.cs" />
+    <Compile Include="AtSpi\AtSpiState.cs" />
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.cs" />
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.Launcher.cs" />
     <Compile Include="Gudl\BinaryExpression.cs" />
@@ -100,6 +101,7 @@
     <Compile Include="Gudl\UnaryExpression.cs" />
     <Compile Include="MainClass.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
+    <Compile Include="UiDom\UiDomEnum.cs" />
     <Compile Include="UiDom\UiDomObject.cs" />
     <Compile Include="UiDom\UiDomRoot.cs" />
     <Compile Include="UiDom\UiDomString.cs" />

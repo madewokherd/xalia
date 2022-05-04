@@ -293,6 +293,18 @@ namespace Gazelle.UiDom
 
         }
 
+        protected void PropertyChanged(string identifier)
+        {
+            PropertyChanged(new IdentifierExpression(identifier));
+        }
+
+        protected void PropertyChanged(GudlExpression property)
+        {
+            HashSet<GudlExpression> properties = new HashSet<GudlExpression>();
+            properties.Add(property);
+            PropertiesChanged(properties);
+        }
+
         protected virtual void PropertiesChanged(HashSet<GudlExpression> changed_properties)
         {
             foreach (var prop in changed_properties)

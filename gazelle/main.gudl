@@ -1,16 +1,5 @@
 ﻿/* Default UI description, language subject to change as it develops */
 
-if (recurse) // For testing change notifications
-{
-    testproperty: "testvalue";
-}
-
-if (spi_path == "/org/a11y/atspi/accessible/root")
-{
-    // Should use spi_role for this but it's not implemented yet
-    recurse: true;
-}
-
 if (spi_attributes.gazelle_ignore)
 {
     recurse: false;
