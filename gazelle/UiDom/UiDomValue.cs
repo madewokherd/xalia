@@ -50,7 +50,7 @@ namespace Gazelle.UiDom
             {
                 return EvaluateIdentifier(st.Value, root, depends_on);
             }
-            return right;
+            return UiDomUndefined.Instance;
         }
 
         public UiDomValue Evaluate(GudlExpression expr, UiDomRoot root,

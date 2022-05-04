@@ -23,6 +23,10 @@ namespace Gazelle.AtSpi
         private bool children_known;
         private IDisposable children_changed_event;
         private IDisposable property_change_event;
+        private IDisposable state_changed_event;
+
+        private bool watching_states;
+        private AtSpiState state;
 
         internal IAccessible acc;
 
@@ -160,6 +164,7 @@ namespace Gazelle.AtSpi
             "mark",
             "suggestion",
         };
+
         private static readonly Dictionary<string, int> name_to_role;
         private static readonly UiDomEnum[] role_to_enum;
 
@@ -192,6 +197,7 @@ namespace Gazelle.AtSpi
             Path = path;
             Service = service;
             Connection = connection;
+            state = new AtSpiState(this);
             acc = connection.connection.CreateProxy<IAccessible>(service, path);
             object_events = connection.connection.CreateProxy<IObject>(service, path);
         }
@@ -249,6 +255,12 @@ namespace Gazelle.AtSpi
                 }
                 RoleKnown = false;
                 fetching_role = false;
+                if (state_changed_event != null)
+                {
+                    state_changed_event.Dispose();
+                    state_changed_event = null;
+                }
+                watching_states = false;
             }
             base.SetAlive(value);
         }
@@ -360,6 +372,22 @@ namespace Gazelle.AtSpi
             base.DeclarationsChanged(all_declarations, dependencies);
         }
 
+        internal void StatesChanged(HashSet<string> changed_states)
+        {
+            if (changed_states.Count == 0)
+                return;
+            var changed_properties = new HashSet<GudlExpression>();
+            foreach (string state in changed_states)
+            {
+                changed_properties.Add(new BinaryExpression(
+                    new IdentifierExpression("spi_state"),
+                    new IdentifierExpression(state),
+                    GudlToken.Dot
+                ));
+            }
+            base.PropertiesChanged(changed_properties);
+        }
+
         private async Task FetchRole()
         {
             int role = (int)await acc.GetRoleAsync();
@@ -390,7 +418,61 @@ namespace Gazelle.AtSpi
                 }
             }
 
+            if (expression is BinaryExpression bin &&
+                bin.Kind == GudlToken.Dot &&
+                bin.Left is IdentifierExpression prop &&
+                prop.Name == "spi_state")
+            {
+                if (!watching_states)
+                {
+                    watching_states = true;
+                    Utils.RunTask(WatchStates());
+                }
+            }
+
             base.WatchProperty(expression);
+        }
+
+        private async Task WatchStates()
+        {
+            IDisposable state_changed_event = await object_events.WatchStateChangedAsync(OnStateChanged, Utils.OnError);
+            if (this.state_changed_event != null)
+                this.state_changed_event.Dispose();
+            this.state_changed_event = state_changed_event;
+            uint[] states = await acc.GetStateAsync();
+            state.SetStates(states);
+#if DEBUG
+            Console.WriteLine($"{this}.spi_state: {state}");
+#endif
+        }
+
+        private void OnStateChanged((string, uint, uint, object) obj)
+        {
+            string name = obj.Item1;
+            bool value = obj.Item2 != 0;
+            if (!AtSpiState.name_mapping.TryGetValue(name, out var actual_name) || actual_name != name)
+            {
+#if DEBUG
+                Console.WriteLine($"unrecognized state {name} changed to {value} on {this}");
+#endif
+                return;
+            }
+            if (value)
+            {
+                if (!state.states.Add(name))
+                    return;
+            }
+            else
+            {
+                if (!state.states.Remove(name))
+                    return;
+            }
+            Console.WriteLine($"{this}.spi_state.{name}: {value}");
+            PropertyChanged(new BinaryExpression(
+                new IdentifierExpression("spi_state"),
+                new IdentifierExpression(name),
+                GudlToken.Dot
+            ));
         }
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
@@ -412,12 +494,19 @@ namespace Gazelle.AtSpi
                         return role_to_enum[Role];
                     // TODO: return unknown values as numbers?
                     return UiDomUndefined.Instance;
+                case "spi_state":
+                    return state;
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))
             {
                 depends_on.Add((this, new IdentifierExpression("spi_role")));
                 return UiDomBoolean.FromBool(Role == expected_role);
+            }
+
+            if (state.TryEvaluateIdentifier(id, depends_on, out var result))
+            {
+                return result;
             }
 
             return base.EvaluateIdentifierCore(id, root, depends_on);

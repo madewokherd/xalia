@@ -1,4 +1,6 @@
-﻿namespace Gazelle.Gudl
+﻿using System;
+
+namespace Gazelle.Gudl
 {
     public class BinaryExpression : GudlExpression
     {
@@ -17,7 +19,7 @@
             if (ReferenceEquals(this, obj))
                 return true;
             if (obj is BinaryExpression bin)
-                return Kind == bin.Kind && Left == bin.Left && Right == bin.Right;
+                return Kind == bin.Kind && Left.Equals(bin.Left) && Right.Equals(bin.Right);
             return false;
         }
 

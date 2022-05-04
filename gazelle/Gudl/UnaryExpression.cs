@@ -1,4 +1,6 @@
-﻿namespace Gazelle.Gudl
+﻿using System;
+
+namespace Gazelle.Gudl
 {
     public class UnaryExpression : GudlExpression
     {
@@ -15,7 +17,7 @@
             if (ReferenceEquals(this, obj))
                 return true;
             if (obj is UnaryExpression u)
-                return Kind == u.Kind && Inner == u.Inner;
+                return Kind == u.Kind && Inner.Equals(u.Inner);
             return false;
         }
 
