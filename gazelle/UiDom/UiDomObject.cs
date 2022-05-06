@@ -29,6 +29,8 @@ namespace Gazelle.UiDom
 
         bool _updatingRules;
 
+        private Dictionary<GudlExpression, UiDomRelationshipWatcher> _relationshipWatchers = new Dictionary<GudlExpression, UiDomRelationshipWatcher>();
+
         protected virtual void SetAlive(bool value)
         {
             if (IsAlive != value)
@@ -38,6 +40,24 @@ namespace Gazelle.UiDom
                 {
                     _updatingRules = true;
                     Utils.RunIdle(EvaluateRules); // This could infinitely recurse for badly-coded rules if we did it immediately
+                }
+                else
+                {
+                    foreach (var watcher in _relationshipWatchers.Values)
+                    {
+                        watcher.Dispose();
+                    }
+                    _relationshipWatchers.Clear();
+                    foreach (var depNotifier in _dependencyPropertyChangeNotifiers.Values)
+                    {
+                        depNotifier.Dispose();
+                    }
+                    _dependencyPropertyChangeNotifiers.Clear();
+                    _updatingRules = false;
+                    while (Children.Count != 0)
+                    {
+                        RemoveChild(Children.Count - 1);
+                    }
                 }
             }
         }
@@ -70,6 +90,25 @@ namespace Gazelle.UiDom
             child.SetAlive(true);
         }
 
+        internal void RelationshipValueChanged(UiDomRelationshipWatcher watcher)
+        {
+            PropertyChanged(watcher.AsProperty);
+        }
+
+        internal UiDomValue EvaluateRelationship(UiDomRelationshipKind kind, GudlExpression expr)
+        {
+            if (_relationshipWatchers.TryGetValue(
+                new BinaryExpression(
+                    new IdentifierExpression(UiDomRelationship.NameFromKind(kind)),
+                    expr,
+                    GudlToken.LParen),
+                out var watcher))
+            {
+                return watcher.Value;
+            }
+            return UiDomUndefined.Instance;
+        }
+
         protected void RemoveChild(int index)
         {
             var child = Children[index];
@@ -100,6 +139,15 @@ namespace Gazelle.UiDom
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
         {
+            switch (id)
+            {
+                case "ancestor_matches":
+                    if (Parent is null)
+                        return UiDomUndefined.Instance;
+                    return Parent.EvaluateIdentifier("this_or_ancestor_matches", root, depends_on);
+                case "this_or_ancestor_matches":
+                    return new UiDomRelationship(this, UiDomRelationshipKind.ThisOrAncestor);
+            }
             depends_on.Add((this, new IdentifierExpression(id)));
             if (_activeDeclarations.TryGetValue(id, out var result))
                 return result;
@@ -109,6 +157,8 @@ namespace Gazelle.UiDom
         private void EvaluateRules()
         {
             _updatingRules = false;
+            if (!IsAlive)
+                return;
             var activeDeclarations = new Dictionary<string, UiDomValue>();
             bool stop = false;
             var depends_on = new HashSet<(UiDomObject, GudlExpression)>();
@@ -157,10 +207,14 @@ namespace Gazelle.UiDom
                     break;
             }
 
-            foreach(var dep in depends_on)
+#if DEBUG
+            HashSet<(UiDomObject, GudlExpression)> dummy = new HashSet<(UiDomObject, GudlExpression)>();
+            foreach (var dep in depends_on)
             {
-                Console.WriteLine($"  depends on: {dep.Item1}.{dep.Item2}");
+                UiDomValue val = dep.Item1.Evaluate(dep.Item2, dummy);
+                Console.WriteLine($"  depends on: {dep.Item1}.{dep.Item2} [{val}]");
             }
+#endif
 
             DeclarationsChanged(activeDeclarations, depends_on);
         }
@@ -285,12 +339,27 @@ namespace Gazelle.UiDom
 
         protected virtual void WatchProperty(GudlExpression expression)
         {
-
+            if (expression is BinaryExpression bin)
+            {
+                if (bin.Kind == GudlToken.LParen &&
+                    bin.Left is IdentifierExpression prop)
+                {
+                    if (UiDomRelationship.Names.TryGetValue(prop.Name, out var kind))
+                    {
+                        _relationshipWatchers.Add(expression,
+                            new UiDomRelationshipWatcher(this, kind, bin.Right));
+                    }
+                }
+            }
         }
 
         protected virtual void UnwatchProperty(GudlExpression expression)
         {
-
+            if (_relationshipWatchers.TryGetValue(expression, out var watcher))
+            {
+                watcher.Dispose();
+                _relationshipWatchers.Remove(expression);
+            }
         }
 
         protected void PropertyChanged(string identifier)
@@ -307,6 +376,8 @@ namespace Gazelle.UiDom
 
         protected virtual void PropertiesChanged(HashSet<GudlExpression> changed_properties)
         {
+            if (!IsAlive)
+                return;
             foreach (var prop in changed_properties)
             {
                 if (_propertyChangeNotifiers.TryGetValue(prop, out var notifiers))
