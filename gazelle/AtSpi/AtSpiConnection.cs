@@ -62,6 +62,7 @@ namespace Gazelle.AtSpi
 
             // Register all the events we're interested in at the start, fine-grained management isn't worth it
             await result.registry.RegisterEventAsync("object:children-changed");
+            await result.registry.RegisterEventAsync("object:state-changed");
             await result.registry.RegisterEventAsync("object:property-change:accessible-role");
 
             result.AddChild(0, new AtSpiObject(result, registryClient, "/org/a11y/atspi/accessible/root"));
