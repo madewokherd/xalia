@@ -36,6 +36,12 @@ namespace Gazelle.AtSpi
         public int Width { get; private set; }
         public int Height { get; private set; }
 
+        private bool watching_abs_position;
+        private CancellationTokenSource abs_position_refresh_token;
+        public bool AbsPositionKnown;
+        public int AbsX { get; private set; }
+        public int AbsY { get; private set; }
+
         internal IAccessible acc;
         internal IComponent component;
 
@@ -277,6 +283,12 @@ namespace Gazelle.AtSpi
                     bounds_changed_event = null;
                 }
                 watching_bounds = false;
+                if (abs_position_refresh_token != null)
+                {
+                    abs_position_refresh_token.Cancel();
+                    abs_position_refresh_token = null;
+                }
+                watching_abs_position = false;
             }
             base.SetAlive(value);
         }
@@ -469,6 +481,13 @@ namespace Gazelle.AtSpi
                             Utils.RunTask(WatchBounds());
                         }
                         break;
+                    case "spi_abs_pos":
+                        if (!watching_abs_position)
+                        {
+                            watching_abs_position = true;
+                            Utils.RunTask(RefreshAbsPos());
+                        }
+                        break;
                 }
             }
 
@@ -485,6 +504,66 @@ namespace Gazelle.AtSpi
             }
 
             base.WatchProperty(expression);
+        }
+
+        protected override void UnwatchProperty(GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "spi_abs_pos":
+                        if (watching_abs_position)
+                        {
+                            watching_abs_position = false;
+                            if (abs_position_refresh_token != null)
+                                abs_position_refresh_token.Cancel();
+                        }
+                        break;
+                }
+            }
+
+            base.UnwatchProperty(expression);
+        }
+
+        private async Task RefreshAbsPos()
+        {
+            if (!watching_abs_position)
+                return;
+
+            (var x, var y) = await component.GetPositionAsync(0); // ATSPI_COORD_TYPE_SCREEN
+
+            if (!watching_abs_position)
+                return;
+
+            if (!AbsPositionKnown || x != AbsX || y != AbsY)
+            {
+                AbsPositionKnown = true;
+                AbsX = x;
+                AbsY = y;
+#if DEBUG
+                Console.WriteLine($"{this}.spi_abs_pos: ({x},{y})");
+#endif
+                PropertyChanged("spi_abs_pos");
+            }
+
+            if (!watching_abs_position)
+                return;
+
+            abs_position_refresh_token = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Delay(500, abs_position_refresh_token.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                abs_position_refresh_token = null;
+                return;
+            }
+
+            abs_position_refresh_token = null;
+            Utils.RunIdle(RefreshAbsPos()); // Unsure if RunTask would accumulate stack frames forever
         }
 
         private async Task WatchStates()
@@ -580,6 +659,21 @@ namespace Gazelle.AtSpi
                     return UiDomUndefined.Instance;
                 case "spi_state":
                     return state;
+                case "spi_abs_x":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPositionKnown)
+                        return new UiDomInt(AbsX);
+                    return UiDomUndefined.Instance;
+                case "spi_abs_y":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPositionKnown)
+                        return new UiDomInt(AbsY);
+                    return UiDomUndefined.Instance;
+                case "spi_abs_pos":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPositionKnown)
+                        return new UiDomString($"({AbsX}, {AbsY})");
+                    return UiDomUndefined.Instance;
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))

@@ -14,13 +14,14 @@ if (spi_role.(desktop_frame or application)) {
 // List children of active window
 if (spi_state.active) {
     recurse: true;
+
+    test_x: spi_abs_x;
+    test_y: spi_abs_y;
 }
 
 // Rules for setting borders of targetable objects
 if (targetable) {
     // "special" rules would go here
-
-    test: parent.spi_role;
 
     // Absolute screen coordinates
     target_x: x_in_window;
