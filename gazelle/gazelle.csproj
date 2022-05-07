@@ -102,6 +102,7 @@
     <Compile Include="MainClass.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
+    <Compile Include="UiDom\UiDomInt.cs" />
     <Compile Include="UiDom\UiDomObject.cs" />
     <Compile Include="UiDom\UiDomRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />

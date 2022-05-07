@@ -24,11 +24,20 @@ namespace Gazelle.AtSpi
         private IDisposable children_changed_event;
         private IDisposable property_change_event;
         private IDisposable state_changed_event;
+        private IDisposable bounds_changed_event;
 
         private bool watching_states;
         private AtSpiState state;
 
+        private bool watching_bounds;
+        public bool BoundsKnown { get; private set; }
+        public int X { get; private set; }
+        public int Y { get; private set; }
+        public int Width { get; private set; }
+        public int Height { get; private set; }
+
         internal IAccessible acc;
+        internal IComponent component;
 
         internal IObject object_events;
 
@@ -199,6 +208,7 @@ namespace Gazelle.AtSpi
             Connection = connection;
             state = new AtSpiState(this);
             acc = connection.connection.CreateProxy<IAccessible>(service, path);
+            component = connection.connection.CreateProxy<IComponent>(service, path);
             object_events = connection.connection.CreateProxy<IObject>(service, path);
         }
 
@@ -261,6 +271,12 @@ namespace Gazelle.AtSpi
                     state_changed_event = null;
                 }
                 watching_states = false;
+                if (bounds_changed_event != null)
+                {
+                    bounds_changed_event.Dispose();
+                    bounds_changed_event = null;
+                }
+                watching_bounds = false;
             }
             base.SetAlive(value);
         }
@@ -402,6 +418,37 @@ namespace Gazelle.AtSpi
             PropertyChanged("spi_role");
         }
 
+        private async Task WatchBounds()
+        {
+            IDisposable bounds_changed_event = await object_events.WatchBoundsChangedAsync(OnBoundsChanged, Utils.OnError);
+            if (this.bounds_changed_event != null)
+                this.bounds_changed_event.Dispose();
+            this.bounds_changed_event = bounds_changed_event;
+            (X, Y, Width, Height) = await component.GetExtentsAsync(1); // 1 = ATSPI_COORD_TYPE_WINDOW
+            BoundsKnown = true;
+#if DEBUG
+            Console.WriteLine($"{this}.spi_bounds: {X},{Y}: {Width}x{Height}");
+#endif
+            PropertyChanged("spi_bounds");
+       }
+
+        private void OnBoundsChanged((string, uint, uint, object) obj)
+        {
+            var bounds = (ValueTuple<int, int, int, int>)obj.Item4;
+            (var x, var y, var width, var height) = bounds;
+            if (x == X && y == Y && width == Width && height == Height)
+                return;
+            X = x;
+            Y = y;
+            Width = width;
+            Height = height;
+            BoundsKnown = true;
+#if DEBUG
+            Console.WriteLine($"{this}.spi_bounds: {X},{Y}: {Width}x{Height}");
+#endif
+            PropertyChanged("spi_bounds");
+        }
+
         protected override void WatchProperty(GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
@@ -413,6 +460,13 @@ namespace Gazelle.AtSpi
                         {
                             fetching_role = true;
                             Utils.RunTask(FetchRole());
+                        }
+                        break;
+                    case "spi_bounds":
+                        if (!BoundsKnown && !watching_bounds)
+                        {
+                            watching_bounds = true;
+                            Utils.RunTask(WatchBounds());
                         }
                         break;
                 }
@@ -493,6 +547,36 @@ namespace Gazelle.AtSpi
                     if (Role > 0 && Role < role_to_enum.Length)
                         return role_to_enum[Role];
                     // TODO: return unknown values as numbers?
+                    return UiDomUndefined.Instance;
+                case "x_in_window":
+                case "spi_x":
+                    depends_on.Add((this, new IdentifierExpression("spi_bounds")));
+                    if (BoundsKnown)
+                        return new UiDomInt(X);
+                    return UiDomUndefined.Instance;
+                case "y_in_window":
+                case "spi_y":
+                    depends_on.Add((this, new IdentifierExpression("spi_bounds")));
+                    if (BoundsKnown)
+                        return new UiDomInt(Y);
+                    return UiDomUndefined.Instance;
+                case "width":
+                case "spi_width":
+                    depends_on.Add((this, new IdentifierExpression("spi_bounds")));
+                    if (BoundsKnown)
+                        return new UiDomInt(Width);
+                    return UiDomUndefined.Instance;
+                case "height":
+                case "spi_height":
+                    depends_on.Add((this, new IdentifierExpression("spi_bounds")));
+                    if (BoundsKnown)
+                        return new UiDomInt(Height);
+                    return UiDomUndefined.Instance;
+                case "bounds":
+                case "spi_bounds":
+                    depends_on.Add((this, new IdentifierExpression("spi_bounds")));
+                    if (BoundsKnown)
+                        return new UiDomString($"({X},{Y}: {Width}x{Height})");
                     return UiDomUndefined.Instance;
                 case "spi_state":
                     return state;

@@ -16,6 +16,23 @@ if (spi_state.active) {
     recurse: true;
 }
 
+// Rules for setting borders of targetable objects
+if (targetable) {
+    // "special" rules would go here
+
+    // Absolute screen coordinates
+    target_x: x_in_window;
+    target_y: y_in_window;
+/*
+    //we actually need to do this because we don't get a notification when the absolute position of a control changes:
+    target_x: ancestor_matches(spi_layer.window).spi_window_x + x_in_window;
+    target_y: ancestor_matches(spi_layer.window).spi_window_y + y_in_window;
+    // should probably treat "x" and "y" as those expressions in AtSpiObject
+*/
+    target_width: width;
+    target_height: height;
+}
+
 // Rules that apply to controls in the active window
 if (ancestor_matches(spi_state.active)) {
     menu (spi_state.enabled and spi_state.showing and parent_matches(spi_role.combo_box))
