@@ -20,13 +20,15 @@ if (spi_state.active) {
 if (targetable) {
     // "special" rules would go here
 
+    test: parent.spi_role;
+
     // Absolute screen coordinates
     target_x: x_in_window;
     target_y: y_in_window;
 /*
     //we actually need to do this because we don't get a notification when the absolute position of a control changes:
-    target_x: ancestor_matches(spi_layer.window).spi_window_x + x_in_window;
-    target_y: ancestor_matches(spi_layer.window).spi_window_y + y_in_window;
+    target_x: this_or_ancestor_matches(parent.spi_role.application).spi_abs_x + x_in_window;
+    target_y: this_or_ancestor_matches(parent.spi_role.application).spi_abs_x + y_in_window;
     // should probably treat "x" and "y" as those expressions in AtSpiObject
 */
     target_width: width;

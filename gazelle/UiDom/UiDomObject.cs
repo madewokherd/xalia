@@ -147,6 +147,9 @@ namespace Gazelle.UiDom
                     return Parent.EvaluateIdentifier("this_or_ancestor_matches", root, depends_on);
                 case "this_or_ancestor_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.ThisOrAncestor);
+                case "parent":
+                    // We assume for now that this cannot change during an object's lifetime
+                    return (UiDomValue)Parent ?? UiDomUndefined.Instance;
             }
             depends_on.Add((this, new IdentifierExpression(id)));
             if (_activeDeclarations.TryGetValue(id, out var result))
