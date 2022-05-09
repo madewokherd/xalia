@@ -14,17 +14,6 @@ if (spi_role.(desktop_frame or application)) {
 // List children of active window
 if (spi_state.active) {
     recurse: true;
-
-    test_cmp: 2 <= 5;
-    test_cmp2: 5 <= 2;
-    test_cmp3: 3 <= 3;
-    test_cmp4: "2" <= "5";
-    test_cmp5: "5" <= "2";
-    test_cmp6: "3" <= "3";
-    test_cmp7: "3" <= 3;
-
-    test_x: spi_abs_x;
-    test_y: spi_abs_y;
 }
 
 // Rules for setting borders of targetable objects
@@ -32,14 +21,8 @@ if (targetable) {
     // "special" rules would go here
 
     // Absolute screen coordinates
-    target_x: x_in_window;
-    target_y: y_in_window;
-/*
-    //we actually need to do this because we don't get a notification when the absolute position of a control changes:
     target_x: this_or_ancestor_matches(parent.spi_role.application).spi_abs_x + x_in_window;
-    target_y: this_or_ancestor_matches(parent.spi_role.application).spi_abs_x + y_in_window;
-    // should probably treat "x" and "y" as those expressions in AtSpiObject
-*/
+    target_y: this_or_ancestor_matches(parent.spi_role.application).spi_abs_y + y_in_window;
     target_width: width;
     target_height: height;
 }

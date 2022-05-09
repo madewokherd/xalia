@@ -88,18 +88,24 @@ namespace Gazelle.Gudl
             }));
         }
 
-        public static TokenListParser<GudlToken, GudlExpression> DotExpression =
-            BinaryExpression(UnitExpression, GudlToken.Dot);
+        public static TokenListParser<GudlToken, (GudlToken, GudlExpression)> DotOperation =
+            from _token in Token.EqualTo(GudlToken.Dot)
+            from expr in UnitExpression
+            select (GudlToken.Dot, expr);
+
+        public static TokenListParser<GudlToken, (GudlToken, GudlExpression)> ApplyOperation =
+            from expr in ParenExpression
+            select (GudlToken.LParen, expr);
 
         public static TokenListParser<GudlToken, GudlExpression> ApplyExpression =
-            DotExpression.Then(dot =>
-                ParenExpression.Many().Select(exprs =>
+            UnitExpression.Then(dot =>
+                DotOperation.Or(ApplyOperation).Many().Select(exprs =>
                 {
                     GudlExpression result = dot;
 
-                    foreach (var expr in exprs)
+                    foreach ((var token, var expr) in exprs)
                     {
-                        result = new BinaryExpression(result, expr, GudlToken.LParen);
+                        result = new BinaryExpression(result, expr, token);
                     }
 
                     return result;
