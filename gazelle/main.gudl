@@ -15,6 +15,8 @@ if (spi_role.(desktop_frame or application)) {
 if (spi_state.active) {
     recurse: true;
 
+    test_int: 2 + -2 - 4;
+
     test_x: spi_abs_x;
     test_y: spi_abs_y;
 }

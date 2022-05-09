@@ -63,6 +63,8 @@ namespace Gazelle.Gudl
                 .Match(Character.EqualTo('}'), GudlToken.RBrace)
                 .Match(Character.EqualTo(':'), GudlToken.Colon)
                 .Match(Character.EqualTo(';'), GudlToken.Semicolon)
+                .Match(Character.EqualTo('+'), GudlToken.Plus)
+                .Match(Character.EqualTo('-'), GudlToken.Minus)
                 .Match(Span.EqualTo("=="), GudlToken.Equal)
                 .Match(Character.EqualTo('='), GudlToken.Equal)
                 .Match(Span.EqualTo("!="), GudlToken.NotEqual)
@@ -71,6 +73,7 @@ namespace Gazelle.Gudl
                 .Match(Span.EqualTo("or"), GudlToken.Or, requireDelimiters: true)
                 .Match(Identifier.CStyle, GudlToken.Identifier, requireDelimiters: true)
                 .Match(GudlString, GudlToken.String, requireDelimiters: true)
+                .Match(Numerics.IntegerInt32, GudlToken.Integer, requireDelimiters: true)
                 .Build();
     }
 }

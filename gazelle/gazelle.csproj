@@ -97,6 +97,7 @@
     <Compile Include="Gudl\GudlToken.cs" />
     <Compile Include="Gudl\GudlTokenizer.cs" />
     <Compile Include="Gudl\IdentifierExpression.cs" />
+    <Compile Include="Gudl\IntegerExpression.cs" />
     <Compile Include="Gudl\StringExpression.cs" />
     <Compile Include="Gudl\UnaryExpression.cs" />
     <Compile Include="MainClass.cs" />

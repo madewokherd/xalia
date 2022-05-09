@@ -26,10 +26,16 @@ namespace Gazelle.Gudl
             from s in Token.EqualTo(GudlToken.String)
             select (GudlExpression)new StringExpression(GudlTokenizer.GudlString.Parse(s.ToStringValue()));
 
+        public static TokenListParser<GudlToken, GudlExpression> IntegerExpression =
+            from s in Token.EqualTo(GudlToken.Integer)
+            select (GudlExpression)new IntegerExpression(int.Parse(s.ToStringValue()));
+
         public static TokenListParser<GudlToken, GudlExpression> UnitExpression =
             ParenExpression
             .Or(IdentifierExpression)
             .Or(StringExpression)
+            .Or(IntegerExpression)
+            .Or(Parse.Ref(() => SignExpression))
             .Or(Parse.Ref(() => NotExpression))
             .Named("expression");
 
@@ -99,8 +105,14 @@ namespace Gazelle.Gudl
                     return result;
                 }));
 
+        public static TokenListParser<GudlToken, GudlExpression> SignExpression =
+            UnaryExpression(ApplyExpression, GudlToken.Plus, GudlToken.Minus);
+
+        public static TokenListParser<GudlToken, GudlExpression> SumExpression =
+            BinaryExpression(ApplyExpression, GudlToken.Plus, GudlToken.Minus);
+
         public static TokenListParser<GudlToken, GudlExpression> InequalityExpression =
-            BinaryExpression(ApplyExpression, GudlToken.Equal, GudlToken.NotEqual);
+            BinaryExpression(SumExpression, GudlToken.Equal, GudlToken.NotEqual);
 
         public static TokenListParser<GudlToken, GudlExpression> NotExpression =
             UnaryExpression(InequalityExpression, GudlToken.Not);

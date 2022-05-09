@@ -41,8 +41,16 @@ namespace Gazelle.Gudl
         [Token(Example = "or")]
         Or,
 
+        [Token(Example = "+")]
+        Plus,
+
+        [Token(Example = "-")]
+        Minus,
+
         Identifier,
 
         String,
+
+        Integer,
     }
 }

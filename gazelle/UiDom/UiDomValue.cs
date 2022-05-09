@@ -59,6 +59,9 @@ namespace Gazelle.UiDom
             if (expr is StringExpression st)
                 return new UiDomString(st.Value);
 
+            if (expr is IntegerExpression i)
+                return new UiDomInt(i.Value);
+
             if (expr is IdentifierExpression id)
             {
                 switch (id.Name)
@@ -82,6 +85,20 @@ namespace Gazelle.UiDom
                         {
                             UiDomValue inner = Evaluate(un.Inner, root, depends_on);
                             return UiDomBoolean.FromBool(!inner.ToBool());
+                        }
+                    case GudlToken.Plus:
+                        {
+                            UiDomValue inner = Evaluate(un.Inner, root, depends_on);
+                            if (inner is UiDomInt)
+                                return inner;
+                            return UiDomUndefined.Instance;
+                        }
+                    case GudlToken.Minus:
+                        {
+                            UiDomValue inner = Evaluate(un.Inner, root, depends_on);
+                            if (inner is UiDomInt integer)
+                                return new UiDomInt(-integer.Value);
+                            return UiDomUndefined.Instance;
                         }
                 }
             }
@@ -149,6 +166,24 @@ namespace Gazelle.UiDom
                             }
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
                             return right;
+                        }
+                    case GudlToken.Plus:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left is UiDomInt lint && right is UiDomInt rint)
+                                return new UiDomInt(lint.Value + rint.Value);
+                            return UiDomUndefined.Instance;
+                        }
+                    case GudlToken.Minus:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left is UiDomInt lint && right is UiDomInt rint)
+                                return new UiDomInt(lint.Value - rint.Value);
+                            return UiDomUndefined.Instance;
                         }
                 }
             }
