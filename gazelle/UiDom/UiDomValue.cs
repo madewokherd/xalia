@@ -185,6 +185,59 @@ namespace Gazelle.UiDom
                                 return new UiDomInt(lint.Value - rint.Value);
                             return UiDomUndefined.Instance;
                         }
+                    case GudlToken.Mult:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left is UiDomInt lint && right is UiDomInt rint)
+                                return new UiDomInt(lint.Value * rint.Value);
+                            return UiDomUndefined.Instance;
+                        }
+                    case GudlToken.IDiv:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left is UiDomInt lint && right is UiDomInt rint)
+                            {
+                                if (rint.Value == 0)
+                                    return UiDomUndefined.Instance;
+
+                                int mod = lint.Value % rint.Value;
+                                int quotient = lint.Value / rint.Value;
+
+
+                                if (mod != 0 && ((mod > 0) != (rint.Value > 0)))
+                                {
+                                    quotient -= 1;
+                                }
+
+                                return new UiDomInt(quotient);
+                            }
+                            return UiDomUndefined.Instance;
+                        }
+                    case GudlToken.Modulo:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left is UiDomInt lint && right is UiDomInt rint)
+                            {
+                                if (rint.Value == 0)
+                                    return UiDomUndefined.Instance;
+
+                                int mod = lint.Value % rint.Value;
+
+                                if (mod != 0 && ((mod > 0) != (rint.Value > 0)))
+                                {
+                                    mod = mod + rint.Value;
+                                }
+
+                                return new UiDomInt(mod);
+                            }
+                            return UiDomUndefined.Instance;
+                        }
                 }
             }
 

@@ -47,6 +47,15 @@ namespace Gazelle.Gudl
         [Token(Example = "-")]
         Minus,
 
+        [Token(Example = "*")]
+        Mult,
+
+        [Token(Example = "~/")]
+        IDiv,
+
+        [Token(Example = "%")]
+        Modulo,
+
         Identifier,
 
         String,
