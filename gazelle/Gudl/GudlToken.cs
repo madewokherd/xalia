@@ -56,6 +56,18 @@ namespace Gazelle.Gudl
         [Token(Example = "%")]
         Modulo,
 
+        [Token(Example = "<")]
+        Lt,
+
+        [Token(Example = ">")]
+        Gt,
+
+        [Token(Example = "<=")]
+        Lte,
+
+        [Token(Example = ">=")]
+        Gte,
+
         Identifier,
 
         String,

@@ -238,6 +238,50 @@ namespace Gazelle.UiDom
                             }
                             return UiDomUndefined.Instance;
                         }
+                    case GudlToken.Gt:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left.Compare(right, out int sign))
+                            {
+                                return UiDomBoolean.FromBool(sign > 0);
+                            }
+                            return UiDomUndefined.Instance;
+                        }
+                    case GudlToken.Lt:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left.Compare(right, out int sign))
+                            {
+                                return UiDomBoolean.FromBool(sign < 0);
+                            }
+                            return UiDomUndefined.Instance;
+                        }
+                    case GudlToken.Gte:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left.Compare(right, out int sign))
+                            {
+                                return UiDomBoolean.FromBool(sign >= 0);
+                            }
+                            return UiDomUndefined.Instance;
+                        }
+                    case GudlToken.Lte:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left.Compare(right, out int sign))
+                            {
+                                return UiDomBoolean.FromBool(sign <= 0);
+                            }
+                            return UiDomUndefined.Instance;
+                        }
                 }
             }
 
@@ -248,6 +292,12 @@ namespace Gazelle.UiDom
         public virtual bool ToBool()
         {
             return true;
+        }
+
+        public virtual bool Compare(UiDomValue other, out int sign)
+        {
+            sign = 0;
+            return false;
         }
     }
 }

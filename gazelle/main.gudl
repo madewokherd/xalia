@@ -15,7 +15,13 @@ if (spi_role.(desktop_frame or application)) {
 if (spi_state.active) {
     recurse: true;
 
-    test_int: (2 * -2 ~/ 3) % 5;
+    test_cmp: 2 <= 5;
+    test_cmp2: 5 <= 2;
+    test_cmp3: 3 <= 3;
+    test_cmp4: "2" <= "5";
+    test_cmp5: "5" <= "2";
+    test_cmp6: "3" <= "3";
+    test_cmp7: "3" <= 3;
 
     test_x: spi_abs_x;
     test_y: spi_abs_y;

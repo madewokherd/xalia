@@ -115,7 +115,8 @@ namespace Gazelle.Gudl
             BinaryExpression(ProductExpression, GudlToken.Plus, GudlToken.Minus);
 
         public static TokenListParser<GudlToken, GudlExpression> InequalityExpression =
-            BinaryExpression(SumExpression, GudlToken.Equal, GudlToken.NotEqual);
+            BinaryExpression(SumExpression, GudlToken.Equal, GudlToken.NotEqual,
+                GudlToken.Lt, GudlToken.Gt, GudlToken.Lte, GudlToken.Gte);
 
         public static TokenListParser<GudlToken, GudlExpression> NotExpression =
             UnaryExpression(InequalityExpression, GudlToken.Not);

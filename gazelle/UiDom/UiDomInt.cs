@@ -38,5 +38,20 @@ namespace Gazelle.UiDom
         {
             return Value.ToString();
         }
+
+        public override bool Compare(UiDomValue other, out int sign)
+        {
+            if (other is UiDomInt i)
+            {
+                if (Value == i.Value)
+                    sign = 0;
+                else if (Value < i.Value)
+                    sign = -1;
+                else
+                    sign = 1;
+                return true;
+            }
+            return base.Compare(other, out sign);
+        }
     }
 }

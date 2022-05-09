@@ -38,5 +38,15 @@ namespace Gazelle.UiDom
         {
             return Value.GetHashCode() ^ typeof(UiDomString).GetHashCode();
         }
+
+        public override bool Compare(UiDomValue other, out int sign)
+        {
+            if (other is UiDomString s)
+            {
+                sign = string.CompareOrdinal(Value, s.Value);
+                return true;
+            }
+            return base.Compare(other, out sign);
+        }
     }
 }
