@@ -42,6 +42,9 @@ namespace Gazelle.AtSpi
         public int AbsX { get; private set; }
         public int AbsY { get; private set; }
 
+        private static GudlExpression abs_x_expr = GudlParser.ParseExpression("this_or_ancestor_matches(parent.spi_role.application).spi_abs_x + x_in_window");
+        private static GudlExpression abs_y_expr = GudlParser.ParseExpression("this_or_ancestor_matches(parent.spi_role.application).spi_abs_y + y_in_window");
+
         internal IAccessible acc;
         internal IComponent component;
 
@@ -674,6 +677,12 @@ namespace Gazelle.AtSpi
                     if (AbsPositionKnown)
                         return new UiDomString($"({AbsX}, {AbsY})");
                     return UiDomUndefined.Instance;
+                case "x":
+                case "abs_x":
+                    return Evaluate(abs_x_expr, depends_on);
+                case "y":
+                case "abs_y":
+                    return Evaluate(abs_y_expr, depends_on);
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))

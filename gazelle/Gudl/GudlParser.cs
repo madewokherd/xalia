@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -211,6 +212,19 @@ namespace Gazelle.Gudl
                 contents = reader.ReadToEnd();
             }
             return TryParse(contents, filename, out value, out error);
+        }
+
+        public static GudlExpression ParseExpression(string expr)
+        {
+            var tokens = GudlTokenizer.Instance.TryTokenize(expr);
+            if (!tokens.HasValue)
+                throw new ArgumentException();
+
+            var parsed = Expression.AtEnd().TryParse(tokens.Value);
+            if (!parsed.HasValue)
+                throw new ArgumentException();
+
+            return parsed.Value;
         }
     }
 }
