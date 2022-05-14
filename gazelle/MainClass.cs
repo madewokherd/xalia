@@ -7,6 +7,7 @@ using System.Windows.Forms;
 
 using Gazelle.AtSpi;
 using Gazelle.Gudl;
+using Gazelle.Ui;
 
 namespace Gazelle
 {
@@ -19,13 +20,16 @@ namespace Gazelle
 #endif
         static async Task Init(GudlStatement[] config)
         {
-            AtSpiConnection connection = null;
             try
             {
+                AtSpiConnection connection = null;
+
                 if (linuxBuild || ((Environment.GetEnvironmentVariable("GAZELLE_USE_ATSPI") ?? "0") != "0"))
                 {
                     connection = await AtSpiConnection.Connect(config);
                 }
+
+                new UiMain(connection);
             }
             catch (Exception e)
             {

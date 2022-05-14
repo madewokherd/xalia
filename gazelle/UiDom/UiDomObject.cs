@@ -58,6 +58,7 @@ namespace Gazelle.UiDom
                     {
                         RemoveChild(Children.Count - 1);
                     }
+                    Root?.RaiseElementDiedEvent(this);
                 }
             }
         }
@@ -220,6 +221,8 @@ namespace Gazelle.UiDom
 #endif
 
             DeclarationsChanged(activeDeclarations, depends_on);
+
+            Root?.RaiseElementDeclarationsChangedEvent(this);
         }
 
         protected virtual void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations,
