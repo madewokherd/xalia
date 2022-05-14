@@ -39,6 +39,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-Linux|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -102,6 +103,7 @@
     <Compile Include="Gudl\StringExpression.cs" />
     <Compile Include="Gudl\UnaryExpression.cs" />
     <Compile Include="MainClass.cs" />
+    <Compile Include="Sdl\SdlSynchronizationContext.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
     <Compile Include="UiDom\UiDomInt.cs" />
@@ -116,6 +118,7 @@
     <Compile Include="Utils.cs" />
     <Compile Include="Winforms\OverlayBox.cs" />
     <Compile Include="Winforms\WindowingSystem.cs" />
+    <Compile Include="external\SDL2-CS\src\SDL2.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,0 +1,3 @@
+[submodule "gazelle/external/SDL2-CS"]
+	path = gazelle/external/SDL2-CS
+	url = https://github.com/flibitijibibo/SDL2-CS.git

@@ -3,11 +3,13 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 using Gazelle.AtSpi;
 using Gazelle.Gudl;
 using Gazelle.Ui;
+using Gazelle.Sdl;
+
+using SDL2;
 
 namespace Gazelle
 {
@@ -29,7 +31,7 @@ namespace Gazelle
                     connection = await AtSpiConnection.Connect(config);
                 }
 
-                new UiMain(connection);
+                //new UiMain(connection);
             }
             catch (Exception e)
             {
@@ -40,7 +42,7 @@ namespace Gazelle
 
         public static int Main()
         {
-            new Control(); // Set up WindowsFormsSynchronizationContext
+            SdlSynchronizationContext.Instance.Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_JOYSTICK);
 
             GudlStatement[] config;
 
@@ -53,7 +55,7 @@ namespace Gazelle
 
             Utils.RunTask(Init(config));
 
-            Application.Run();
+            SdlSynchronizationContext.Instance.MainLoop();
 
             return 0;
         }
