@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 using Gazelle.Gudl;
 using Gazelle.UiDom;
-using Gazelle.Winforms;
+using Gazelle.Sdl;
 
 namespace Gazelle.Ui
 {
@@ -77,7 +77,7 @@ namespace Gazelle.Ui
             {
                 box = Windowing.CreateOverlayBox();
                 targetable_boxes[obj] = box;
-                box.Color = Color.LightCyan;
+                box.SetColor(20, 200, 200, 255);
             }
 
             box.Y = y;

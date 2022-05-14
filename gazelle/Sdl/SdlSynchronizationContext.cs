@@ -54,10 +54,17 @@ namespace Gazelle.Sdl
             Init(SDL.SDL_INIT_EVERYTHING);
         }
 
-        public void Quit()
+        public void AssertMainThread()
         {
+            if (MainThread is null)
+                throw new InvalidOperationException("SdlSynchronizationContext.Init must be called before this method");
             if (Thread.CurrentThread != MainThread)
                 throw new InvalidOperationException("must be called from main SDL thread");
+        }
+
+        public void Quit()
+        {
+            AssertMainThread();
             _quitting = true;
             SDL.SDL_Quit();
         }
@@ -75,10 +82,11 @@ namespace Gazelle.Sdl
 
         public delegate void SdlEventHandler(object sender, SdlEventArgs e);
 
-        public SdlEventHandler SdlEvent;
+        public event SdlEventHandler SdlEvent;
 
         public void MainLoop()
         {
+            AssertMainThread();
             while (!_quitting)
             {
                 if (_sends.TryDequeue(out var send))

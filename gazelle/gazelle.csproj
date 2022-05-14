@@ -63,11 +63,9 @@
       <HintPath>..\packages\Superpower.3.0.0\lib\netstandard2.0\Superpower.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Security.Principal.Windows, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Security.Principal.Windows.4.7.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
     </Reference>
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="Tmds.DBus, Version=0.10.0.0, Culture=neutral, PublicKeyToken=9abd76e9812c1bca, processorArchitecture=MSIL">
       <HintPath>..\packages\Tmds.DBus.0.10.1\lib\netstandard2.0\Tmds.DBus.dll</HintPath>
     </Reference>
@@ -116,8 +114,8 @@
     <Compile Include="UiDom\UiDomValue.cs" />
     <Compile Include="Ui\UiMain.cs" />
     <Compile Include="Utils.cs" />
-    <Compile Include="Winforms\OverlayBox.cs" />
-    <Compile Include="Winforms\WindowingSystem.cs" />
+    <Compile Include="Sdl\OverlayBox.cs" />
+    <Compile Include="Sdl\WindowingSystem.cs" />
     <Compile Include="external\SDL2-CS\src\SDL2.cs" />
   </ItemGroup>
   <ItemGroup />

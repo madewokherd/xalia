@@ -31,7 +31,7 @@ namespace Gazelle
                     connection = await AtSpiConnection.Connect(config);
                 }
 
-                //new UiMain(connection);
+                new UiMain(connection);
             }
             catch (Exception e)
             {
