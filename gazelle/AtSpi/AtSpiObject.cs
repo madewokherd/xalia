@@ -603,7 +603,9 @@ namespace Gazelle.AtSpi
                 if (!state.states.Remove(name))
                     return;
             }
+#if DEBUG
             Console.WriteLine($"{this}.spi_state.{name}: {value}");
+#endif
             PropertyChanged(new BinaryExpression(
                 new IdentifierExpression("spi_state"),
                 new IdentifierExpression(name),
