@@ -6,14 +6,33 @@ if (spi_attributes.gazelle_ignore)
     stop: true;
 }
 
-// List windows for all applications
-if (spi_role.(desktop_frame or application)) {
+// Combo boxes contain subcontrols we don't want to directly navigate to
+if (parent.spi_role.combo_box)
+{
+    interactable: false;
+}
+
+// List children of applications and containery things
+if (spi_role.(desktop_frame or application or frame or dialog or
+              filler or internal_frame or panel or html_container or
+              layered_pane or option_pane or root_pane or scroll_pane or
+              split_pane or table or table_cell or toolbar or
+              viewport or window or embedded or document_frame or
+              section or page or form or table_row or document_web or grouping
+              or info_bar or page_tab or page_tab_list)) {
     recurse: true;
 }
 
-// List children of active window
+// We normally should only consider the active window when searching for controls to interact with
 if (spi_state.active) {
-    recurse: true;
+    interactable: true;
+}
+
+// We'd need an unbroken chain of enabled/visible controls from the active window to interact with
+// a control through the mouse and keyboard, so normally we should only consider those. AT-SPI may
+// let us do things with other controls, but it might be confusing or break applications.
+if (spi_state.enabled and spi_state.showing and spi_state.sensitive and spi_state.visible and parent.interactable) {
+    interactable: true;
 }
 
 // Rules for setting borders of targetable objects
@@ -28,31 +47,7 @@ if (targetable) {
 }
 
 // Rules that apply to controls in the active window
-if (ancestor_matches(spi_state.active)) {
-    menu (spi_state.enabled and spi_state.showing and parent_matches(spi_role.combo_box))
-    {
-        // Combo box menus aren't normally "showing" or "visible" but we still want to know the child items
-        recurse: true;
-    }
-
-    // Select only things we could normally interact with
-    if (not (spi_state.enabled and spi_state.showing and spi_state.sensitive and spi_state.visible)) {
-        recurse: false;
-        targetable: false;
-        stop: true;
-    }
-
-    // Container types
-    if (spi_role.frame or spi_role.desktop_frame or spi_role.dialog or
-        spi_role.filler or spi_role.internal_frame or spi_role.panel or
-        spi_role.html_container or spi_role.layered_pane or spi_role.option_pane or
-        spi_role.root_pane or spi_role.option_pane or spi_role.scroll_pane or
-        spi_role.split_pane or spi_role.table or spi_role.table_cell or spi_role.toolbar or
-        spi_role.viewport or spi_role.window or spi_role.embedded or spi_role.document_frame or
-        spi_role.section or spi_role.page or spi_role.form or spi_role.table_row or
-        spi_role.document_web or spi_role.grouping or spi_role.info_bar or
-        spi_role.page_tab or spi_role.page_tab_list) { recurse: true; }
-
+if (interactable) {
     combo_box {
         targetable: true;
 
@@ -67,11 +62,8 @@ if (ancestor_matches(spi_state.active)) {
             }
         }
 
-        // Need to see children of combo boxes but don't want to use them except for combo box things
+        // Need to see children of combo boxes so we can choose from a list
         recurse: true;
-        descendent {
-            stop: true;
-        }
     }
 
     // Direct control interaction
