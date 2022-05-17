@@ -42,9 +42,6 @@ namespace Gazelle.AtSpi
         public int AbsX { get; private set; }
         public int AbsY { get; private set; }
 
-        private static GudlExpression abs_x_expr = GudlParser.ParseExpression("this_or_ancestor_matches(parent.spi_role.application).spi_abs_x + x_in_window");
-        private static GudlExpression abs_y_expr = GudlParser.ParseExpression("this_or_ancestor_matches(parent.spi_role.application).spi_abs_y + y_in_window");
-
         internal IAccessible acc;
         internal IComponent component;
 
@@ -632,14 +629,14 @@ namespace Gazelle.AtSpi
                         return role_to_enum[Role];
                     // TODO: return unknown values as numbers?
                     return UiDomUndefined.Instance;
-                case "x_in_window":
-                case "spi_x":
+                case "rel_x":
+                case "spi_rel_x":
                     depends_on.Add((this, new IdentifierExpression("spi_bounds")));
                     if (BoundsKnown)
                         return new UiDomInt(X);
                     return UiDomUndefined.Instance;
-                case "y_in_window":
-                case "spi_y":
+                case "rel_y":
+                case "spi_rel_y":
                     depends_on.Add((this, new IdentifierExpression("spi_bounds")));
                     if (BoundsKnown)
                         return new UiDomInt(Y);
@@ -664,11 +661,15 @@ namespace Gazelle.AtSpi
                     return UiDomUndefined.Instance;
                 case "spi_state":
                     return state;
+                case "x":
+                case "abs_x":
                 case "spi_abs_x":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
                         return new UiDomInt(AbsX);
                     return UiDomUndefined.Instance;
+                case "y":
+                case "abs_y":
                 case "spi_abs_y":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
@@ -679,12 +680,6 @@ namespace Gazelle.AtSpi
                     if (AbsPositionKnown)
                         return new UiDomString($"({AbsX}, {AbsY})");
                     return UiDomUndefined.Instance;
-                case "x":
-                case "abs_x":
-                    return Evaluate(abs_x_expr, depends_on);
-                case "y":
-                case "abs_y":
-                    return Evaluate(abs_y_expr, depends_on);
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))

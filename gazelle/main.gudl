@@ -12,12 +12,20 @@ if (parent.spi_role.combo_box)
     interactable: false;
 }
 
-// List children of applications and containery things
-if (spi_role.(desktop_frame or application or frame or dialog or
-              filler or internal_frame or panel or html_container or
+if (spi_role.(desktop_frame or application)) {
+    recurse: true;
+}
+
+if (spi_role.(window or frame or dialog))
+{
+    recurse: true;
+}
+
+// List children of containers things
+if (spi_role.(filler or internal_frame or panel or html_container or
               layered_pane or option_pane or root_pane or scroll_pane or
               split_pane or table or table_cell or toolbar or
-              viewport or window or embedded or document_frame or
+              viewport or embedded or document_frame or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list)) {
     recurse: true;
@@ -39,9 +47,16 @@ if (spi_state.enabled and spi_state.showing and spi_state.sensitive and spi_stat
 if (targetable) {
     // "special" rules would go here
 
+    // AT-SPI2 makes it practically impossible to monitor a control's position without polling. We get
+    // no notification of window movement. Calling GetExtents with ATSPI_COORD_TYPE_PARENT consistently
+    // gives screen coordinates. The BoundsChanged notification seems to give window-relative coordinates,
+    // but it doesn't do this consistently and doesn't always fire when window-relative coordinates change.
+
+    // If there are any specific cases where it's possible to do this better, we can add them here.
+
     // Absolute screen coordinates
-    target_x: x;
-    target_y: y;
+    target_x: abs_x;
+    target_y: abs_y;
     target_width: width;
     target_height: height;
 }
