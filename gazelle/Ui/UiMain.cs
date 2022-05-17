@@ -77,7 +77,7 @@ namespace Gazelle.Ui
             {
                 box = Windowing.CreateOverlayBox();
                 targetable_boxes[obj] = box;
-                box.SetColor(20, 200, 200, 255);
+                box.SetColor(224, 255, 255, 255);
             }
 
             box.Y = y;
