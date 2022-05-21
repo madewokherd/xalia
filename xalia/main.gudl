@@ -1,0 +1,139 @@
+﻿/* Default UI description, language subject to change as it develops */
+
+if (spi_attributes.xalia_ignore)
+{
+    recurse: false;
+    stop: true;
+}
+
+// Combo boxes contain subcontrols we don't want to directly navigate to
+if (parent.spi_role.combo_box)
+{
+    interactable: false;
+}
+
+if (spi_role.(desktop_frame or application)) {
+    recurse: true;
+}
+
+if (spi_role.(window or frame or dialog))
+{
+    recurse: true;
+}
+
+// List children of containers things
+if (spi_role.(filler or internal_frame or panel or html_container or
+              layered_pane or option_pane or root_pane or scroll_pane or
+              split_pane or table or table_cell or toolbar or
+              viewport or embedded or document_frame or
+              section or page or form or table_row or document_web or grouping
+              or info_bar or page_tab or page_tab_list)) {
+    recurse: true;
+}
+
+// We normally should only consider the active window when searching for controls to interact with
+if (spi_state.active) {
+    interactable: true;
+}
+
+// We'd need an unbroken chain of enabled/visible controls from the active window to interact with
+// a control through the mouse and keyboard, so normally we should only consider those. AT-SPI may
+// let us do things with other controls, but it might be confusing or break applications.
+if (spi_state.enabled and spi_state.showing and spi_state.sensitive and spi_state.visible and parent.interactable) {
+    interactable: true;
+}
+
+// Rules for setting borders of targetable objects
+if (targetable) {
+    // "special" rules would go here
+
+    // AT-SPI2 makes it practically impossible to monitor a control's position without polling. We get
+    // no notification of window movement. Calling GetExtents with ATSPI_COORD_TYPE_PARENT consistently
+    // gives screen coordinates. The BoundsChanged notification seems to give window-relative coordinates,
+    // but it doesn't do this consistently and doesn't always fire when window-relative coordinates change.
+
+    // If there are any specific cases where it's possible to do this better, we can add them here.
+
+    // Absolute screen coordinates
+    target_x: abs_x;
+    target_y: abs_y;
+    target_width: width;
+    target_height: height;
+}
+
+// Rules that apply to controls in the active window
+if (interactable) {
+    combo_box {
+        targetable: true;
+
+        if (targeted) {
+            child (spi_role.menu) {
+                action_A: spi_action.choose_child_and_click;
+                action_name_A: Choose;
+            }
+            child (spi_role.text) {
+                action_Y: spi_text.show_keyboard;
+                action_name_Y: "Show Keyboard";
+            }
+        }
+
+        // Need to see children of combo boxes so we can choose from a list
+        recurse: true;
+    }
+
+    // Direct control interaction
+    page_tab {
+        targetable: true;
+        if (targeted)
+        {
+            action_A: spi_selectable.select_in_parent;
+            action_name_A: "Change Tab";
+        }
+    }
+    if (spi_role.button or spi_role.radio_button) {
+        targetable: true;
+        if (targeted)
+        {
+            action_A: spi_action.click;
+            action_name_A: "Click";
+        }
+    }
+    check_box {
+        targetable: true;
+        if (targeted)
+        {
+            action_A: spi_action.click;
+            action_name_A: "Toggle";
+        }
+    }
+    text {
+        targetable: true;
+        if (targeted)
+        {
+            action_A: spi_text.show_keyboard;
+            action_name_A: "Show Keyboard";
+        }
+    }
+
+    // Tab bar navigation
+    page_tab (previous_sibling_matches(child(spi_state.showing))) {
+        action_RB: spi_selectable.select_in_parent;
+        action_name_RB: spi_text.text;
+    }
+    page_tab (next_sibling_matches(child(spi_state.showing))) {
+        action_LB: spi_selectable.select_in_parent;
+        action_name_LB: spi_text.text;
+    }
+
+    button (spi_text.text == "OK" or spi_text.text == "Run" or spi_text.text == "Play" or spi_text.text == "PLAY" or spi_text.text == "Yes")
+    {
+        action_Start: spi_action.click;
+        action_name_Start: spi_text.text;
+    }
+
+    button (spi_text.text == "Cancel" or spi_text.text == "Close" or spi_text.text == "No")
+    {
+        action_B: spi_action.click;
+        action_name_B: spi_text.text;
+    }
+}
