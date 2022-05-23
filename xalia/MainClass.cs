@@ -31,6 +31,8 @@ namespace Xalia
                     connection = await AtSpiConnection.Connect(config);
                 }
 
+                GameControllerInput.Init();
+
                 new UiMain(connection);
             }
             catch (Exception e)
@@ -42,7 +44,9 @@ namespace Xalia
 
         public static int Main()
         {
-            SdlSynchronizationContext.Instance.Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_JOYSTICK);
+            SDL.SDL_SetHint(SDL.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+
+            SdlSynchronizationContext.Instance.Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_JOYSTICK | SDL.SDL_INIT_GAMECONTROLLER);
 
             GudlStatement[] config;
 

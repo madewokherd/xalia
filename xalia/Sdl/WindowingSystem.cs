@@ -21,7 +21,7 @@ namespace Xalia.Sdl
         {
             switch (e.SdlEvent.type)
             {
-                case SDL2.SDL.SDL_EventType.SDL_WINDOWEVENT:
+                case SDL.SDL_EventType.SDL_WINDOWEVENT:
                     if (_windows.TryGetValue(e.SdlEvent.window.windowID, out var obj))
                     {
                         if (obj is OverlayBox box)

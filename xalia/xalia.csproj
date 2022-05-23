@@ -101,7 +101,11 @@
     <Compile Include="Gudl\IntegerExpression.cs" />
     <Compile Include="Gudl\StringExpression.cs" />
     <Compile Include="Gudl\UnaryExpression.cs" />
+    <Compile Include="Input\InputBackend.cs" />
+    <Compile Include="Input\InputMapping.cs" />
+    <Compile Include="Input\InputSystem.cs" />
     <Compile Include="MainClass.cs" />
+    <Compile Include="Sdl\GameControllerInput.cs" />
     <Compile Include="Sdl\SdlSynchronizationContext.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
