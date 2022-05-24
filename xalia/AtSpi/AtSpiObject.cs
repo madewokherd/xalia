@@ -25,6 +25,7 @@ namespace Xalia.AtSpi
         private IDisposable property_change_event;
         private IDisposable state_changed_event;
         private IDisposable bounds_changed_event;
+        private IDisposable text_changed_event;
 
         private bool watching_states;
         private AtSpiState state;
@@ -36,6 +37,10 @@ namespace Xalia.AtSpi
         public int Width { get; private set; }
         public int Height { get; private set; }
 
+        private bool watching_text;
+        public bool TextKnown { get; private set; }
+        public string Text { get; private set; }
+
         private bool watching_abs_position;
         private CancellationTokenSource abs_position_refresh_token;
         public bool AbsPositionKnown;
@@ -44,6 +49,7 @@ namespace Xalia.AtSpi
 
         internal IAccessible acc;
         internal IComponent component;
+        internal IText text_iface;
 
         internal IObject object_events;
 
@@ -197,6 +203,8 @@ namespace Xalia.AtSpi
                 string[] names;
                 if (name == "push_button")
                     names = new[] { "push_button", "pushbutton", "button" };
+                else if (name == "text")
+                    names = new[] { "text", "text_box", "textbox" };
                 else if (name.Contains("_"))
                     names = new[] { name, name.Replace("_", "") };
                 else
@@ -215,6 +223,7 @@ namespace Xalia.AtSpi
             state = new AtSpiState(this);
             acc = connection.connection.CreateProxy<IAccessible>(service, path);
             component = connection.connection.CreateProxy<IComponent>(service, path);
+            text_iface = connection.connection.CreateProxy<IText>(service, path);
             object_events = connection.connection.CreateProxy<IObject>(service, path);
         }
 
@@ -283,6 +292,12 @@ namespace Xalia.AtSpi
                     bounds_changed_event = null;
                 }
                 watching_bounds = false;
+                if (text_changed_event != null)
+                {
+                    text_changed_event.Dispose();
+                    text_changed_event = null;
+                }
+                watching_text = false;
                 if (abs_position_refresh_token != null)
                 {
                     abs_position_refresh_token.Cancel();
@@ -461,6 +476,65 @@ namespace Xalia.AtSpi
             PropertyChanged("spi_bounds");
         }
 
+        private async Task WatchText()
+        {
+            IDisposable text_changed_event = await object_events.WatchTextChangedAsync(OnTextChanged, Utils.OnError);
+            if (this.text_changed_event != null)
+                this.text_changed_event.Dispose();
+            this.text_changed_event = text_changed_event;
+            Text = await text_iface.GetTextAsync(0, -1);
+            TextKnown = true;
+#if DEBUG
+            Console.WriteLine($"{this}.spi_text: {Text}");
+#endif
+            PropertyChanged("spi_text");
+        }
+
+        private void OnTextChanged((string, uint, uint, object) obj)
+        {
+            if (!TextKnown)
+            {
+                return;
+            }
+            var detail = obj.Item1;
+            var start_ofs = (int)obj.Item2;
+            var length = (int)obj.Item3;
+            var data = (string)obj.Item4;
+            if (detail == "insert")
+            {
+#if DEBUG
+                if (data.Length != length)
+                {
+                    Console.WriteLine($"WARNING: Got object:text-changed:insert event with mismatched length - length={length}, data={data}");
+                }
+#endif
+                Text = string.Format("{0}{1}{2}",
+                    Text.Substring(0, start_ofs),
+                    data,
+                    Text.Substring(start_ofs));
+#if DEBUG
+                Console.WriteLine($"{this}.spi_text: {Text}");
+#endif
+                PropertyChanged("spi_text");
+            }
+            else if (detail == "delete")
+            {
+#if DEBUG
+                if (Text.Substring(start_ofs, length) != data)
+                {
+                    Console.WriteLine("WARNING: Got object:text-changed:delete event with wrong data");
+                    Console.WriteLine($"  expected {Text.Substring(start_ofs, length)}");
+                    Console.WriteLine($"  got {data}");
+                }
+#endif
+                Text = Text.Substring(0, start_ofs) + Text.Substring(start_ofs + length);
+#if DEBUG
+                Console.WriteLine($"{this}.spi_text: {Text}");
+#endif
+                PropertyChanged("spi_text");
+            }
+        }
+
         protected override void WatchProperty(GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
@@ -479,6 +553,13 @@ namespace Xalia.AtSpi
                         {
                             watching_bounds = true;
                             Utils.RunTask(WatchBounds());
+                        }
+                        break;
+                    case "spi_text":
+                        if (!TextKnown && !watching_text)
+                        {
+                            watching_text = true;
+                            Utils.RunTask(WatchText());
                         }
                         break;
                     case "spi_abs_pos":
@@ -512,12 +593,25 @@ namespace Xalia.AtSpi
             {
                 switch (id.Name)
                 {
+                    case "spi_text":
+                        if (watching_text)
+                        {
+                            watching_text = false;
+                            if (text_changed_event != null)
+                            {
+                                text_changed_event.Dispose();
+                                text_changed_event = null;
+                            }
+                            TextKnown = false;
+                        }
+                        break;
                     case "spi_abs_pos":
                         if (watching_abs_position)
                         {
                             watching_abs_position = false;
                             if (abs_position_refresh_token != null)
                                 abs_position_refresh_token.Cancel();
+                            AbsPositionKnown = false;
                         }
                         break;
                 }
@@ -658,6 +752,13 @@ namespace Xalia.AtSpi
                     depends_on.Add((this, new IdentifierExpression("spi_bounds")));
                     if (BoundsKnown)
                         return new UiDomString($"({X},{Y}: {Width}x{Height})");
+                    return UiDomUndefined.Instance;
+                case "text_contents":
+                case "spi_text":
+                case "spi_text_contents":
+                    depends_on.Add((this, new IdentifierExpression("spi_text")));
+                    if (TextKnown)
+                        return new UiDomString(Text);
                     return UiDomUndefined.Instance;
                 case "spi_state":
                     return state;

@@ -72,7 +72,7 @@ if (interactable) {
                 action_name_A: Choose;
             }
             child (spi_role.text) {
-                action_Y: spi_text.show_keyboard;
+                action_Y: set_focus+show_keyboard;
                 action_name_Y: "Show Keyboard";
             }
         }
@@ -110,7 +110,7 @@ if (interactable) {
         targetable: true;
         if (targeted)
         {
-            action_A: spi_text.show_keyboard;
+            action_A: set_focus+show_keyboard;
             action_name_A: "Show Keyboard";
         }
     }
@@ -118,22 +118,22 @@ if (interactable) {
     // Tab bar navigation
     page_tab (previous_sibling_matches(child(spi_state.showing))) {
         action_RB: spi_selectable.select_in_parent;
-        action_name_RB: spi_text.text;
+        action_name_RB: spi_text;
     }
     page_tab (next_sibling_matches(child(spi_state.showing))) {
         action_LB: spi_selectable.select_in_parent;
-        action_name_LB: spi_text.text;
+        action_name_LB: spi_text;
     }
 
-    button (spi_text.text == "OK" or spi_text.text == "Run" or spi_text.text == "Play" or spi_text.text == "PLAY" or spi_text.text == "Yes")
+    button (spi_text == "OK" or spi_text == "Run" or spi_text == "Play" or spi_text == "PLAY" or spi_text == "Yes")
     {
         action_Start: spi_action.click;
-        action_name_Start: spi_text.text;
+        action_name_Start: spi_text;
     }
 
-    button (spi_text.text == "Cancel" or spi_text.text == "Close" or spi_text.text == "No")
+    button (spi_text == "Cancel" or spi_text == "Close" or spi_text == "No")
     {
         action_B: spi_action.click;
-        action_name_B: spi_text.text;
+        action_name_B: spi_text;
     }
 }
