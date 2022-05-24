@@ -193,6 +193,10 @@ namespace Xalia.AtSpi
         public bool RoleKnown { get; private set; }
         private bool fetching_role;
 
+        public string Name { get; private set; }
+        public bool NameKnown { get; private set; }
+        private bool fetching_name;
+
         static AtSpiObject()
         {
             name_to_role = new Dictionary<string, int>();
@@ -254,6 +258,15 @@ namespace Xalia.AtSpi
                     else
                         Console.WriteLine($"{this}.spi_role: {Role}");
 #endif
+                    PropertyChanged("spi_role");
+                    break;
+                case "accessible-name":
+                    Name = (string)value;
+                    NameKnown = true;
+#if DEBUG
+                    Console.WriteLine($"{this}.spi_name: {Name}");
+#endif
+                    PropertyChanged("spi_name");
                     break;
             }
         }
@@ -280,6 +293,8 @@ namespace Xalia.AtSpi
                 }
                 RoleKnown = false;
                 fetching_role = false;
+                NameKnown = false;
+                fetching_name = false;
                 if (state_changed_event != null)
                 {
                     state_changed_event.Dispose();
@@ -445,6 +460,17 @@ namespace Xalia.AtSpi
             PropertyChanged("spi_role");
         }
 
+        private async Task FetchName()
+        {
+            string name = await acc.GetNameAsync(); ;
+            Name = name;
+            NameKnown = true;
+#if DEBUG
+            Console.WriteLine($"{this}.spi_name: {Name}");
+#endif
+            PropertyChanged("spi_name");
+        }
+
         private async Task WatchBounds()
         {
             IDisposable bounds_changed_event = await object_events.WatchBoundsChangedAsync(OnBoundsChanged, Utils.OnError);
@@ -546,6 +572,13 @@ namespace Xalia.AtSpi
                         {
                             fetching_role = true;
                             Utils.RunTask(FetchRole());
+                        }
+                        break;
+                    case "spi_name":
+                        if (!NameKnown && !fetching_name)
+                        {
+                            fetching_name = true;
+                            Utils.RunTask(FetchName());
                         }
                         break;
                     case "spi_bounds":
@@ -714,7 +747,7 @@ namespace Xalia.AtSpi
                 case "spi_path":
                     // depends_on.Add((this, new IdentifierExpression(id))); // not needed because this property is known and can't change
                     return new UiDomString(Path);
-                case "role:":
+                case "role":
                 case "control_type:":
                 case "controltype:":
                 case "spi_role":
@@ -722,6 +755,12 @@ namespace Xalia.AtSpi
                     if (Role > 0 && Role < role_to_enum.Length)
                         return role_to_enum[Role];
                     // TODO: return unknown values as numbers?
+                    return UiDomUndefined.Instance;
+                case "name":
+                case "spi_name":
+                    depends_on.Add((this, new IdentifierExpression("spi_name")));
+                    if (NameKnown)
+                        return new UiDomString(Name);
                     return UiDomUndefined.Instance;
                 case "rel_x":
                 case "spi_rel_x":

@@ -65,6 +65,7 @@ namespace Xalia.AtSpi
             await result.registry.RegisterEventAsync("object:state-changed");
             await result.registry.RegisterEventAsync("object:bounds-changed");
             await result.registry.RegisterEventAsync("object:text-changed");
+            await result.registry.RegisterEventAsync("object:property-change:accessible-name");
             await result.registry.RegisterEventAsync("object:property-change:accessible-role");
 
             result.AddChild(0, new AtSpiObject(result, registryClient, "/org/a11y/atspi/accessible/root"));
