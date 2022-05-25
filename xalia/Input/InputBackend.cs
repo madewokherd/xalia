@@ -10,20 +10,18 @@ namespace Xalia.Input
     {
         protected InputBackend()
         {
-            // TODO: Add to InputSystem.
+            InputSystem.Instance.RegisterBackend(this);
         }
 
-        protected abstract bool WatchAction(string name);
-        protected abstract bool UnwatchAction(string name);
+        protected internal abstract bool WatchAction(string name);
+        protected internal abstract bool UnwatchAction(string name);
 
         protected void ActionMappingUpdated(string name, InputMapping[] mappings)
         {
-            throw new NotImplementedException();
         }
 
         protected void ActionStateUpdated(string name)
         {
-            throw new NotImplementedException();
         }
 
         protected virtual bool ActivateMode(string name)

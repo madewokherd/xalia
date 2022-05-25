@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Xalia.Gudl;
+using Xalia.Input;
 using Xalia.UiDom;
 using Xalia.Sdl;
 
@@ -16,6 +17,9 @@ namespace Xalia.Ui
 
         private Dictionary<UiDomObject, OverlayBox> targetable_boxes = new Dictionary<UiDomObject, OverlayBox>();
 
+        private Dictionary<string, List<UiDomObject>> objects_defining_action = new Dictionary<string, List<UiDomObject>>();
+        private Dictionary<UiDomObject, List<string>> object_actions = new Dictionary<UiDomObject, List<string>>();
+
         public UiMain(UiDomRoot root)
         {
             Root = root;
@@ -23,26 +27,28 @@ namespace Xalia.Ui
 
             root.ElementDeclarationsChangedEvent += OnElementDeclarationsChanged;
             root.ElementDiedEvent += OnElementDied;
-            SearchForTargetableElements(root);
+            ScanElements(root);
         }
 
         private void OnElementDied(object sender, UiDomObject e)
         {
             DiscardTargetableElement(e);
+            DiscardActions(e);
         }
 
         private void OnElementDeclarationsChanged(object sender, UiDomObject e)
         {
             UpdateTargetableElement(e);
+            UpdateActions(e);
         }
 
-        private void SearchForTargetableElements(UiDomObject obj)
+        private void ScanElements(UiDomObject obj)
         {
-            UpdateTargetableElement(obj);
+            OnElementDeclarationsChanged(null, obj);
 
             foreach (var child in obj.Children)
             {
-                SearchForTargetableElements(child);
+                ScanElements(child);
             }
         }
 
@@ -93,6 +99,98 @@ namespace Xalia.Ui
             {
                 box.Dispose();
                 targetable_boxes.Remove(obj);
+            }
+        }
+
+        private void UpdateActions(UiDomObject obj)
+        {
+            var new_actions = new List<string>();
+
+            foreach (var declaration in obj.Declarations)
+            {
+                string action = null;
+                if (declaration.StartsWith("action"))
+                {
+                    if (obj.GetDeclaration(declaration) == UiDomUndefined.Instance)
+                        continue;
+                    if (declaration.StartsWith("action_on_"))
+                    {
+                        action = declaration.Substring(10);
+                    }
+                    else if (declaration.StartsWith("action_name_"))
+                    {
+                        action = declaration.Substring(12);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(action) && !new_actions.Contains(action))
+                {
+                    new_actions.Add(action);
+                }
+            }
+
+            List<string> old_actions;
+            if (!object_actions.TryGetValue(obj, out old_actions))
+            {
+                if (new_actions.Count == 0)
+                    return;
+                old_actions = new List<string>();
+            }
+
+            foreach (var action in new_actions)
+            {
+                if (old_actions.Contains(action))
+                {
+                    old_actions.Remove(action);
+                    continue;
+                }
+                List<UiDomObject> objects;
+                if (!objects_defining_action.TryGetValue(action, out objects))
+                {
+                    objects = new List<UiDomObject>();
+                    objects_defining_action[action] = objects;
+                }
+#if DEBUG
+                Console.WriteLine($"action {action} defined on {obj}");
+#endif
+                objects.Add(obj);
+
+                if (objects.Count == 1)
+                {
+                    InputSystem.Instance.WatchAction(action);
+                }
+            }
+            object_actions[obj] = new_actions;
+
+            foreach (var action in old_actions)
+            {
+#if DEBUG
+                Console.WriteLine($"action {action} removed on {obj}");
+#endif
+                objects_defining_action[action].Remove(obj);
+                if (objects_defining_action[action].Count == 0)
+                {
+                    InputSystem.Instance.UnwatchAction(action);
+                }
+            }
+        }
+
+        private void DiscardActions(UiDomObject obj)
+        {
+            if (object_actions.TryGetValue(obj, out var actions))
+            {
+                object_actions.Remove(obj);
+                foreach (var action in actions)
+                {
+#if DEBUG
+                    Console.WriteLine($"action {action} removed on {obj}");
+#endif
+                    objects_defining_action[action].Remove(obj);
+                    if (objects_defining_action[action].Count == 0)
+                    {
+                        InputSystem.Instance.UnwatchAction(action);
+                    }
+                }
             }
         }
     }

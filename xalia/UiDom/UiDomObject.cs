@@ -21,6 +21,8 @@ namespace Xalia.UiDom
 
         public UiDomRoot Root { get; }
 
+        public IReadOnlyCollection<string> Declarations => _activeDeclarations.Keys;
+
         private Dictionary<string, UiDomValue> _activeDeclarations = new Dictionary<string, UiDomValue>();
 
         private Dictionary<GudlExpression, LinkedList<PropertyChangeNotifier>> _propertyChangeNotifiers = new Dictionary<GudlExpression, LinkedList<PropertyChangeNotifier>>();

@@ -68,11 +68,11 @@ if (interactable) {
 
         if (targeted) {
             child (spi_role.menu) {
-                action_A: spi_action.choose_child_and_click;
+                action_on_A: spi_action.choose_child_and_click;
                 action_name_A: Choose;
             }
             child (spi_role.text) {
-                action_Y: set_focus+show_keyboard;
+                action_on_Y: set_focus+show_keyboard;
                 action_name_Y: "Show Keyboard";
             }
         }
@@ -86,7 +86,7 @@ if (interactable) {
         targetable: true;
         if (targeted)
         {
-            action_A: spi_selectable.select_in_parent;
+            action_on_A: spi_selectable.select_in_parent;
             action_name_A: "Change Tab";
         }
     }
@@ -94,7 +94,7 @@ if (interactable) {
         targetable: true;
         if (targeted)
         {
-            action_A: spi_action.click;
+            action_on_A: spi_action.click;
             action_name_A: "Click";
         }
     }
@@ -102,7 +102,7 @@ if (interactable) {
         targetable: true;
         if (targeted)
         {
-            action_A: spi_action.click;
+            action_on_A: spi_action.click;
             action_name_A: "Toggle";
         }
     }
@@ -110,30 +110,30 @@ if (interactable) {
         targetable: true;
         if (targeted)
         {
-            action_A: set_focus+show_keyboard;
+            action_on_A: set_focus+show_keyboard;
             action_name_A: "Show Keyboard";
         }
     }
 
     // Tab bar navigation
     page_tab (previous_sibling_matches(child(spi_state.showing))) {
-        action_RB: spi_selectable.select_in_parent;
+        action_on_RB: spi_selectable.select_in_parent;
         action_name_RB: spi_name;
     }
     page_tab (next_sibling_matches(child(spi_state.showing))) {
-        action_LB: spi_selectable.select_in_parent;
+        action_on_LB: spi_selectable.select_in_parent;
         action_name_LB: spi_name;
     }
 
     button (spi_name == "OK" or spi_name == "Run" or spi_name == "Play" or spi_name == "PLAY" or spi_name == "Yes")
     {
-        action_Start: spi_action.click;
+        action_on_Start: spi_action.click;
         action_name_Start: spi_name;
     }
 
     button (spi_name == "Cancel" or spi_name == "Close" or spi_name == "No")
     {
-        action_B: spi_action.click;
+        action_on_B: spi_action.click;
         action_name_B: spi_name;
     }
 }
