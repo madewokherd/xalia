@@ -22,7 +22,10 @@ namespace Xalia.Input
 
         protected void ActionStateUpdated(string name)
         {
+            InputSystem.Instance.UpdateActionState(name);
         }
+
+        protected internal abstract InputState GetActionState(string action);
 
         protected virtual bool ActivateMode(string name)
         {

@@ -9,7 +9,7 @@ namespace Xalia.Input
     public class InputSystem
     {
         List<InputBackend> backends = new List<InputBackend>();
-        HashSet<string> watching_actions = new HashSet<string>();
+        Dictionary<string, InputState> watching_actions = new Dictionary<string, InputState>();
 
         private InputSystem()
         {
@@ -18,21 +18,81 @@ namespace Xalia.Input
 
         public static InputSystem Instance { get; } = new InputSystem();
 
+        public class ActionStateChangeEventArgs : EventArgs
+        {
+            public ActionStateChangeEventArgs(string action, InputState state, InputState previousState)
+            {
+                Action = action;
+                State = state;
+                PreviousState = previousState;
+            }
+            public string Action { get; }
+            public InputState State { get; }
+            public InputState PreviousState { get; }
+        }
+
+        public delegate void ActionStateChangeEventHandler(object sender, ActionStateChangeEventArgs e);
+
+        public event ActionStateChangeEventHandler ActionStateChangeEvent;
+
+        public InputState PollAction(string action)
+        {
+            InputState result = default;
+
+            foreach (var backend in backends)
+            {
+                result = InputState.Combine(result, backend.GetActionState(action));
+            }
+
+            return result;
+        }
+
+        public void UpdateActionState(string action)
+        {
+            if (watching_actions.TryGetValue(action, out var old_state))
+            {
+                InputState new_state = PollAction(action);
+                if (!old_state.Equals(new_state))
+                {
+                    watching_actions[action] = new_state;
+                    var handler = ActionStateChangeEvent;
+                    if (handler != null)
+                    {
+                        var args = new ActionStateChangeEventArgs(action, new_state, old_state);
+                        handler(this, args);
+                    }
+                }
+            }
+        }
+
         public void WatchAction(string action)
         {
-            watching_actions.Add(action);
+            watching_actions[action] = default;
             foreach (var backend in backends)
             {
                 backend.WatchAction(action);
             }
+            UpdateActionState(action);
         }
 
         public void UnwatchAction(string action)
         {
+            var old_state = watching_actions[action];
             watching_actions.Remove(action);
             foreach (var backend in backends)
             {
                 backend.UnwatchAction(action);
+            }
+            if (old_state.Kind != InputStateKind.Disconnected)
+            {
+                var handler = ActionStateChangeEvent;
+                if (handler != null)
+                {
+                    InputState new_state = default;
+                    new_state.Kind = InputStateKind.Disconnected;
+                    var args = new ActionStateChangeEventArgs(action, old_state, new_state);
+                    handler(this, args);
+                }
             }
         }
 
@@ -40,9 +100,10 @@ namespace Xalia.Input
         {
             Utils.RunIdle(() => { // Delay this because the backend may not be fully constructed yet.
                 backends.Add(backend);
-                foreach (var action in watching_actions)
+                foreach (var action in watching_actions.Keys)
                 {
-                    backend.WatchAction(action);
+                    if (backend.WatchAction(action))
+                        UpdateActionState(action);
                 }
             });
         }

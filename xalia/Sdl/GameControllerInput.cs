@@ -19,7 +19,6 @@ namespace Xalia.Sdl
 
         string[] button_names =
         {
-            null, // invalid
             "A",
             "B",
             "X",
@@ -48,12 +47,14 @@ namespace Xalia.Sdl
         List<int>[] controllers_providing_button;
 
         InputMapping[][] button_mappings;
+        InputMapping[] empty_mapping = new InputMapping[] { };
+
+        Dictionary<int, bool[]> button_states;
 
         private GameControllerInput(SdlSynchronizationContext sdl)
         {
             buttons_by_name = new Dictionary<string, byte>();
             button_mappings = new InputMapping[button_names.Length][];
-            button_mappings[0] = new InputMapping[] { };
             for (byte i = 1; i < button_names.Length; i++)
             {
                 var name = button_names[i];
@@ -63,6 +64,7 @@ namespace Xalia.Sdl
             }
 
             controllers_providing_button = new List<int>[button_names.Length];
+            button_states = new Dictionary<int, bool[]>();
 
             sdl.SdlEvent += OnSdlEvent;
 
@@ -85,13 +87,27 @@ namespace Xalia.Sdl
                 case SDL.SDL_EventType.SDL_CONTROLLERBUTTONDOWN:
                     {
                         var button = e.SdlEvent.cbutton;
-                        Console.WriteLine($"button {(SDL.SDL_GameControllerButton)button.button} pressed");
+#if DEBUG
+                        Console.WriteLine($"button {(SDL.SDL_GameControllerButton)button.button} pressed on controller {button.which}");
+#endif
+                        if (button_states.TryGetValue(button.which, out var states))
+                        {
+                            states[button.button] = true;
+                        }
+                        ActionStateUpdated(button_names[button.button]);
                         break;
                     }
                 case SDL.SDL_EventType.SDL_CONTROLLERBUTTONUP:
                     {
                         var button = e.SdlEvent.cbutton;
-                        Console.WriteLine($"button {(SDL.SDL_GameControllerButton)button.button} released");
+#if DEBUG
+                        Console.WriteLine($"button {(SDL.SDL_GameControllerButton)button.button} released on controller {button.which}");
+#endif
+                        if (button_states.TryGetValue(button.which, out var states))
+                        {
+                            states[button.button] = false;
+                        }
+                        ActionStateUpdated(button_names[button.button]);
                         break;
                     }
                 case SDL.SDL_EventType.SDL_CONTROLLERDEVICEADDED:
@@ -138,6 +154,7 @@ namespace Xalia.Sdl
                     if (controllers_providing_button[button].Count == 1)
                     {
                         ActionMappingUpdated(button_names[button], button_mappings[button]);
+                        ActionStateUpdated(button_names[button]);
                     }
                 }
                 else
@@ -145,20 +162,23 @@ namespace Xalia.Sdl
                     controllers_providing_button[button].Remove(index);
                     if (controllers_providing_button[button].Count == 0)
                     {
-                        ActionMappingUpdated(button_names[button], button_mappings[0]);
+                        ActionMappingUpdated(button_names[button], empty_mapping);
+                        ActionStateUpdated(button_names[button]);
                     }
                 }
             }
         }
 
-        private void OpenJoystick(int index)
+        private void OpenJoystick(int device_index)
         {
-            if (game_controllers.ContainsKey(index))
-                return;
+            var game_controller = SDL.SDL_GameControllerOpen(device_index);
+            var joystick = SDL.SDL_GameControllerGetJoystick(game_controller);
+            var index = SDL.SDL_JoystickInstanceID(joystick);
 #if DEBUG
             Console.WriteLine($"Game controller connected: {index}");
 #endif
-            game_controllers[index] = SDL.SDL_GameControllerOpen(index);
+            game_controllers[index] = game_controller;
+            button_states[index] = new bool[button_names.Length];
             UpdateMappings(index);
         }
 
@@ -172,6 +192,7 @@ namespace Xalia.Sdl
                 UpdateMappings(index, disconnected: true);
                 SDL.SDL_GameControllerClose(controller);
                 game_controllers.Remove(index);
+                button_states.Remove(index);
             }
         }
 
@@ -213,6 +234,31 @@ namespace Xalia.Sdl
         {
             // We don't need to do anything to watch the button, so always just return whether there's a binding
             return WatchAction(name);
+        }
+
+        protected internal override InputState GetActionState(string action)
+        {
+            InputState result = default;
+            if (buttons_by_name.TryGetValue(action, out var button))
+            {
+                var controllers = controllers_providing_button[button];
+                if ((controllers?.Count ?? 0) != 0)
+                {
+                    foreach (var controller in controllers)
+                    {
+                        var states = button_states[controller];
+                        if (states[button])
+                        {
+                            result.Kind = InputStateKind.Pressed;
+                            return result;
+                        }
+                    }
+                    result.Kind = InputStateKind.Released;
+                    return result;
+                }
+            }
+            result.Kind = InputStateKind.Disconnected;
+            return result;
         }
     }
 }

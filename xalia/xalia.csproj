@@ -103,6 +103,7 @@
     <Compile Include="Gudl\UnaryExpression.cs" />
     <Compile Include="Input\InputBackend.cs" />
     <Compile Include="Input\InputMapping.cs" />
+    <Compile Include="Input\InputState.cs" />
     <Compile Include="Input\InputSystem.cs" />
     <Compile Include="MainClass.cs" />
     <Compile Include="Sdl\GameControllerInput.cs" />

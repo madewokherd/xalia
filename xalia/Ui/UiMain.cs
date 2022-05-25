@@ -25,9 +25,22 @@ namespace Xalia.Ui
             Root = root;
             Windowing = new WindowingSystem();
 
+            InputSystem.Instance.ActionStateChangeEvent += OnActionStateChangeEvent;
+
             root.ElementDeclarationsChangedEvent += OnElementDeclarationsChanged;
             root.ElementDiedEvent += OnElementDied;
             ScanElements(root);
+        }
+
+        private void OnActionStateChangeEvent(object sender, InputSystem.ActionStateChangeEventArgs e)
+        {
+            if (objects_defining_action.TryGetValue(e.Action, out var objects) &&
+                objects.Count != 0)
+            {
+                var obj = objects[objects.Count - 1]; // most recently added object for this action
+
+                Console.WriteLine($"TODO: emit {e.Action} {e.PreviousState} => {e.State} on {obj}");
+            }
         }
 
         private void OnElementDied(object sender, UiDomObject e)
