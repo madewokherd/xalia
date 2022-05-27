@@ -19,6 +19,7 @@ namespace Xalia.Ui
 
         private Dictionary<string, List<UiDomObject>> objects_defining_action = new Dictionary<string, List<UiDomObject>>();
         private Dictionary<UiDomObject, List<string>> object_actions = new Dictionary<UiDomObject, List<string>>();
+        private Dictionary<string, UiDomRoutine> locked_inputs = new Dictionary<string, UiDomRoutine>();
 
         public UiMain(UiDomRoot root)
         {
@@ -34,12 +35,49 @@ namespace Xalia.Ui
 
         private void OnActionStateChangeEvent(object sender, InputSystem.ActionStateChangeEventArgs e)
         {
-            if (objects_defining_action.TryGetValue(e.Action, out var objects) &&
+            UiDomRoutine routine;
+#if DEBUG
+            Console.WriteLine($"Got input: {e.Action} {e.PreviousState} => {e.State}");
+#endif
+            if (locked_inputs.TryGetValue(e.Action, out routine))
+            {
+#if DEBUG
+                Console.WriteLine($"Passing locked input to routine: {routine}");
+#endif
+                routine.OnInput(e);
+
+                if (!e.LockInput)
+                {
+                    locked_inputs.Remove(e.Action);
+                    if (objects_defining_action[e.Action].Count == 0)
+                        InputSystem.Instance.UnwatchAction(e.Action);
+                }
+            }
+            else if (objects_defining_action.TryGetValue(e.Action, out var objects) &&
                 objects.Count != 0)
             {
+                if (e.State.Kind == InputStateKind.Disconnected ||
+                    e.State.Kind == InputStateKind.Released)
+                {
+                    return;
+                }
+
                 var obj = objects[objects.Count - 1]; // most recently added object for this action
 
-                Console.WriteLine($"TODO: emit {e.Action} {e.PreviousState} => {e.State} on {obj}");
+                routine = obj.GetDeclaration("action_on_" + e.Action) as UiDomRoutine;
+
+                if (!(routine is null))
+                {
+#if DEBUG
+                    Console.WriteLine($"Calling routine: {routine}");
+#endif
+                    routine.OnInput(e);
+
+                    if (e.LockInput)
+                    {
+                        locked_inputs.Add(e.Action, routine);
+                    }
+                }
             }
         }
 
@@ -181,7 +219,7 @@ namespace Xalia.Ui
                 Console.WriteLine($"action {action} removed on {obj}");
 #endif
                 objects_defining_action[action].Remove(obj);
-                if (objects_defining_action[action].Count == 0)
+                if (objects_defining_action[action].Count == 0 && !locked_inputs.ContainsKey(action))
                 {
                     InputSystem.Instance.UnwatchAction(action);
                 }

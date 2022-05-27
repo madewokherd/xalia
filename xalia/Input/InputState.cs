@@ -34,5 +34,21 @@ namespace Xalia.Input
         {
             return $"InputState kind={Kind}";
         }
+
+        public bool Pressed
+        {
+            get
+            {
+                switch (Kind)
+                {
+                    case InputStateKind.Pressed:
+                        return true;
+                    case InputStateKind.Disconnected:
+                    case InputStateKind.Released:
+                        return false;
+                }
+                throw new NotImplementedException(); // Hopefully the compiler will warn about missed enum values?
+            }
+        }
     }
 }

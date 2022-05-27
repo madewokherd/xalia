@@ -84,6 +84,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AtSpi\AtSpiActionList.cs" />
     <Compile Include="AtSpi\AtSpiConnection.cs" />
     <Compile Include="AtSpi\AtSpiObject.cs" />
     <Compile Include="AtSpi\AtSpiState.cs" />
@@ -115,6 +116,8 @@
     <Compile Include="UiDom\UiDomRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />
     <Compile Include="UiDom\UiDomRoot.cs" />
+    <Compile Include="UiDom\UiDomRoutine.cs" />
+    <Compile Include="UiDom\UiDomRoutineAsync.cs" />
     <Compile Include="UiDom\UiDomString.cs" />
     <Compile Include="UiDom\UiDomUndefined.cs" />
     <Compile Include="UiDom\UiDomValue.cs" />

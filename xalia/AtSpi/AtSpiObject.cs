@@ -47,7 +47,11 @@ namespace Xalia.AtSpi
         public int AbsX { get; private set; }
         public int AbsY { get; private set; }
 
+        private bool fetching_actions;
+        public string[] Actions { get; private set; }
+
         internal IAccessible acc;
+        internal IAction action;
         internal IComponent component;
         internal IText text_iface;
 
@@ -226,6 +230,7 @@ namespace Xalia.AtSpi
             Connection = connection;
             state = new AtSpiState(this);
             acc = connection.connection.CreateProxy<IAccessible>(service, path);
+            action = connection.connection.CreateProxy<IAction>(service, path);
             component = connection.connection.CreateProxy<IComponent>(service, path);
             text_iface = connection.connection.CreateProxy<IText>(service, path);
             object_events = connection.connection.CreateProxy<IObject>(service, path);
@@ -602,6 +607,13 @@ namespace Xalia.AtSpi
                             Utils.RunTask(RefreshAbsPos());
                         }
                         break;
+                    case "spi_action":
+                        if (!fetching_actions)
+                        {
+                            fetching_actions = true;
+                            Utils.RunTask(FetchActions());
+                        }
+                        break;
                 }
             }
 
@@ -651,6 +663,22 @@ namespace Xalia.AtSpi
             }
 
             base.UnwatchProperty(expression);
+        }
+
+        private async Task FetchActions()
+        {
+            // FIXME: For some reason calling GetActions through Tmds.DBus crashes the target process
+            int count = await action.GetNActionsAsync();
+            var result = new string[count];
+            for (int i=0; i < count; i++)
+            {
+                result[i] = await action.GetNameAsync(i);
+            }
+            Actions = result;
+#if DEBUG
+            Console.WriteLine($"{this}.spi_action: ({string.Join(",", Actions)})");
+#endif
+            PropertyChanged("spi_action");
         }
 
         private async Task RefreshAbsPos()
@@ -819,6 +847,20 @@ namespace Xalia.AtSpi
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
                         return new UiDomString($"({AbsX}, {AbsY})");
+                    return UiDomUndefined.Instance;
+                case "spi_action":
+                    depends_on.Add((this, new IdentifierExpression("spi_action")));
+                    if (Actions != null)
+                    {
+                        return new AtSpiActionList(this);
+                    }
+                    return UiDomUndefined.Instance;
+                case "click":
+                    depends_on.Add((this, new IdentifierExpression("spi_action")));
+                    if (Actions != null)
+                    {
+                        return new AtSpiActionList(this).EvaluateIdentifier("click", root, depends_on);
+                    }
                     return UiDomUndefined.Instance;
             }
 

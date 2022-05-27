@@ -90,7 +90,7 @@ if (interactable) {
             action_name_A: "Change Tab";
         }
     }
-    if (spi_role.button or spi_role.radio_button) {
+    if ((spi_role.button or spi_role.radio_button) and spi_action.click) {
         targetable: true;
         if (targeted)
         {
@@ -98,7 +98,7 @@ if (interactable) {
             action_name_A: "Click";
         }
     }
-    check_box {
+    check_box (spi_action.click) {
         targetable: true;
         if (targeted)
         {
@@ -125,13 +125,13 @@ if (interactable) {
         action_name_LB: spi_name;
     }
 
-    button (spi_name == "OK" or spi_name == "Run" or spi_name == "Play" or spi_name == "PLAY" or spi_name == "Yes")
+    button ((spi_name == "OK" or spi_name == "Run" or spi_name == "Play" or spi_name == "PLAY" or spi_name == "Yes") and spi_action.click)
     {
         action_on_Start: spi_action.click;
         action_name_Start: spi_name;
     }
 
-    button (spi_name == "Cancel" or spi_name == "Close" or spi_name == "No")
+    button ((spi_name == "Cancel" or spi_name == "Close" or spi_name == "No") and spi_action.click)
     {
         action_on_B: spi_action.click;
         action_name_B: spi_name;

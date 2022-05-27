@@ -29,6 +29,13 @@ namespace Xalia.Input
             public string Action { get; }
             public InputState State { get; }
             public InputState PreviousState { get; }
+            public bool JustPressed => State.Pressed && !PreviousState.Pressed;
+            public bool JustReleased => !State.Pressed && PreviousState.Pressed;
+
+            // Set LockInput to true to receive further events.
+            // This only applies to events from UiDomRoutine.
+            // Events from InputSystem are controlled by WatchAction/UnwatchAction.
+            public bool LockInput { get; set; }
         }
 
         public delegate void ActionStateChangeEventHandler(object sender, ActionStateChangeEventArgs e);
