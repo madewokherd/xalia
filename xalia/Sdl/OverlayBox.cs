@@ -31,6 +31,8 @@ namespace Xalia.Sdl
                 Redraw();
         }
 
+        public bool Shown { get; private set; }
+
         public int X
         {
             get => _x;
@@ -113,14 +115,23 @@ namespace Xalia.Sdl
             SdlSynchronizationContext.Instance.AssertMainThread();
             bool update_position = x != _x || y != _y;
             bool update_region = width != _width || height != _height;
+            bool was_shown = Shown;
             _x = x;
             _y = y;
             _width = width;
             _height = height;
+            // FIXME: For some reason the window flickers black when the size/region is updated,
+            // but it doesn't flicker when initially shown. Ideally we should have two
+            // windows that we flip between, to prevent flickering on and off as well.
+            // That's likely to be required when we start animating the target box.
+            if (was_shown && update_region)
+                Hide();
             if (update_position)
                 UpdatePosition();
             if (update_region)
                 UpdateRegion();
+            if (was_shown && update_region)
+                Show();
         }
 
         private int _thickness = 5;
@@ -203,11 +214,13 @@ namespace Xalia.Sdl
 
         public void Show()
         {
+            Shown = true;
             SDL.SDL_ShowWindow(_window);
         }
 
         public void Hide()
         {
+            Shown = false;
             SDL.SDL_HideWindow(_window);
         }
 
