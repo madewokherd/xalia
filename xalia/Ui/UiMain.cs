@@ -408,6 +408,12 @@ namespace Xalia.Ui
                     dy = current_bounds.Item2 - candidate_bounds.Item2 + candidate_bounds.Item4;
                 else
                     dy = 0;
+                if (dy != 0)
+                {
+                    // Use the far edge/corner rather than the near in this case
+                    dx += candidate_bounds.Item3;
+                    dy += candidate_bounds.Item4;
+                }
                 var candidate_edge_distance = (dx * dx) + (dy * dy);
 
                 // Calculate centerpoint distance
