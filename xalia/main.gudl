@@ -25,7 +25,7 @@ if (spi_role.(desktop_frame or application)) {
     recurse: true;
 }
 
-if (spi_role.(window or frame or dialog))
+if (spi_role.(window or frame or dialog or color_chooser or file_chooser or font_chooser))
 {
     recurse: true;
 }
@@ -136,8 +136,8 @@ if (interactable) {
 
     button ((spi_name == "OK" or spi_name == "Run" or spi_name == "Play" or spi_name == "PLAY" or spi_name == "Yes") and spi_action.click)
     {
-        action_on_Start: spi_action.click;
-        action_name_Start: spi_name;
+        action_on_start: spi_action.click;
+        action_name_start: spi_name;
     }
 
     button ((spi_name == "Cancel" or spi_name == "Close" or spi_name == "No") and spi_action.click)
