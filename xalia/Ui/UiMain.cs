@@ -102,6 +102,20 @@ namespace Xalia.Ui
             UpdateActions(e);
         }
 
+        private bool TryGetTargetBoundsDeclarations(UiDomObject obj, out (int, int, int, int) bounds)
+        {
+            if (obj.GetDeclaration("target_x") is UiDomInt xint &&
+                obj.GetDeclaration("target_y") is UiDomInt yint &&
+                obj.GetDeclaration("target_width") is UiDomInt wint &&
+                obj.GetDeclaration("target_height") is UiDomInt hint)
+            {
+                bounds = (xint.Value, yint.Value, wint.Value, hint.Value);
+                return true;
+            }
+            bounds = default;
+            return false;
+        }
+
         private void UpdateTargetableElement(UiDomObject obj)
         {
             if (!obj.GetDeclaration("targetable").ToBool())
@@ -112,15 +126,12 @@ namespace Xalia.Ui
 
             int x, y, width, height;
 
-            if (obj.GetDeclaration("target_x") is UiDomInt xint &&
-                obj.GetDeclaration("target_y") is UiDomInt yint &&
-                obj.GetDeclaration("target_width") is UiDomInt wint &&
-                obj.GetDeclaration("target_height") is UiDomInt hint)
+            if (TryGetTargetBoundsDeclarations(obj, out var target_bounds))
             {
-                x = xint.Value;
-                y = yint.Value;
-                width = wint.Value;
-                height = hint.Value;
+                x = target_bounds.Item1;
+                y = target_bounds.Item2;
+                width = target_bounds.Item3;
+                height = target_bounds.Item4;
             }
             else
             {
@@ -321,6 +332,14 @@ namespace Xalia.Ui
             return null;
         }
 
+        private bool TryGetElementTargetBounds(UiDomObject element, out (int, int, int, int) bounds)
+        {
+            if (targetable_objects.TryGetValue(element, out bounds))
+                return true;
+
+            return TryGetTargetBoundsDeclarations(element, out bounds);
+        }
+
         private enum Direction
         {
             Up,
@@ -329,9 +348,87 @@ namespace Xalia.Ui
             Right
         }
 
+        private (int,int,int,int) TranslateBox((int,int,int,int) box, Direction direction)
+        {
+            // Translate to a coordinate space where box.Item1 increases with direction
+            switch (direction)
+            {
+                case Direction.Up:
+                    return (-(box.Item2 + box.Item4), box.Item1, box.Item4, box.Item3);
+                case Direction.Down:
+                    return (box.Item2, box.Item1, box.Item4, box.Item3);
+                case Direction.Left:
+                    return (-(box.Item3 + box.Item1), box.Item2, box.Item3, box.Item4);
+                case Direction.Right:
+                    return box;
+            }
+            throw new ArgumentException("invalid Direction value");
+        }
+
         private void TargetMove(Direction direction)
         {
-            // TODO
+            if (Root.TargetedElement is null)
+                return;
+
+            (int, int, int, int) current_bounds;
+            if (!TryGetElementTargetBounds(Root.TargetedElement, out current_bounds))
+            {
+                return;
+            }
+
+            current_bounds = TranslateBox(current_bounds, direction);
+
+            UiDomObject best_element = null;
+            // These are actually distance squared so we can skip sqrt.
+            long best_edge_distance = 0;
+            long best_center_distance = 0;
+            
+            foreach (var kvp in targetable_objects)
+            {
+                var candidate_element = kvp.Key;
+                var candidate_bounds = kvp.Value;
+                
+                if (candidate_element == Root.TargetedElement)
+                    continue;
+
+                candidate_bounds = TranslateBox(candidate_bounds, direction);
+
+                if (candidate_bounds.Item1 < current_bounds.Item1 + current_bounds.Item3)
+                {
+                    // candidate's left edge must be to the right of current target
+                    continue;
+                }
+
+                // Calculate edge distance
+                int dx = candidate_bounds.Item1 - (current_bounds.Item1 + current_bounds.Item3);
+                int dy;
+                if (current_bounds.Item2 + current_bounds.Item4 < candidate_bounds.Item2)
+                    dy = candidate_bounds.Item2 - (current_bounds.Item2 + current_bounds.Item4);
+                else if (candidate_bounds.Item2 + candidate_bounds.Item4 < current_bounds.Item2)
+                    dy = current_bounds.Item2 - candidate_bounds.Item2 + candidate_bounds.Item4;
+                else
+                    dy = 0;
+                var candidate_edge_distance = (dx * dx) + (dy * dy);
+
+                // Calculate centerpoint distance
+                dy = (current_bounds.Item2 + current_bounds.Item4 / 2) - (candidate_bounds.Item2 + candidate_bounds.Item4 / 2);
+                var candidate_center_distance = (dx * dx) + (dy * dy);
+
+                if (best_element is null ||
+                    candidate_edge_distance < best_edge_distance ||
+                    candidate_center_distance < best_center_distance)
+                {
+                    best_element = candidate_element;
+                    best_edge_distance = candidate_edge_distance;
+                    best_center_distance = candidate_center_distance;
+                    continue;
+                }
+            }
+
+            if (best_element is null)
+                return;
+
+            Root.TargetedElement = best_element;
         }
 
         private void TargetMoveUp(UiDomRoutineSync obj)
@@ -367,12 +464,11 @@ namespace Xalia.Ui
             }
 
             (int, int, int, int) bounds;
-            if (!targetable_objects.TryGetValue(Root.TargetedElement, out bounds))
+            if (!TryGetElementTargetBounds(Root.TargetedElement, out bounds))
             {
-                Console.WriteLine($"WARNING: {Root.TargetedElement} is targeted but it does not have targetable:true");
+                Console.WriteLine($"WARNING: {Root.TargetedElement} is targeted but it does not have target bounds");
                 target_box.Hide();
-                // FIXME: Look for target_x etc and show box anyway - we may need this for navigating into and
-                // out of scrollable elements with interactable descendents
+                return;
             }
 
             // TODO: Animate this if previous_target is not null

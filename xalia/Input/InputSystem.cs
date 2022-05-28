@@ -29,7 +29,16 @@ namespace Xalia.Input
             public string Action { get; }
             public InputState State { get; }
             public InputState PreviousState { get; }
-            public bool JustPressed => State.Pressed && !PreviousState.Pressed;
+            public bool JustPressed
+            {
+                get
+                {
+                    if (PreviousState.Kind == InputStateKind.Disconnected)
+                        // If a button was *already pressed* when first connected, it wasn't "just pressed".
+                        return false;
+                    return State.Pressed && !PreviousState.Pressed;
+                }
+            }
             public bool JustReleased => !State.Pressed && PreviousState.Pressed;
 
             // Set LockInput to true to receive further events.

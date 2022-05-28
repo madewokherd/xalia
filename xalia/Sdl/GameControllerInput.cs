@@ -55,7 +55,7 @@ namespace Xalia.Sdl
         {
             buttons_by_name = new Dictionary<string, byte>();
             button_mappings = new InputMapping[button_names.Length][];
-            for (byte i = 1; i < button_names.Length; i++)
+            for (byte i = 0; i < button_names.Length; i++)
             {
                 var name = button_names[i];
                 buttons_by_name[name] = i;
@@ -134,7 +134,7 @@ namespace Xalia.Sdl
         private void UpdateMappings(int index, bool disconnected = false)
         {
             IntPtr game_controller = game_controllers[index];
-            for (int button=1; button < button_names.Length; button++)
+            for (int button=0; button < button_names.Length; button++)
             {
                 var bind = SDL.SDL_GameControllerGetBindForButton(game_controller, (SDL.SDL_GameControllerButton)button);
 
