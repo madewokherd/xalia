@@ -15,25 +15,32 @@ namespace Xalia
 {
     public class MainClass
     {
-#if LINUX
-        const bool linuxBuild = true;
-#else
-        const bool linuxBuild = false;
-#endif
+        static bool IsUnix()
+        {
+            int p = (int)Environment.OSVersion.Platform;
+            // Intentionally excluding macOS from this check as AT-SPI is not standard there
+            return p == 4 || p == 128;
+        }
+
         static async Task Init(GudlStatement[] config)
         {
             try
             {
+                var application = new UiMain();
+
                 AtSpiConnection connection = null;
 
-                if (linuxBuild || ((Environment.GetEnvironmentVariable("XALIA_USE_ATSPI") ?? "0") != "0"))
+                if (((Environment.GetEnvironmentVariable("XALIA_USE_ATSPI") ?? (IsUnix() ? "1" : "0")) != "0"))
                 {
-                    connection = await AtSpiConnection.Connect(config);
+                    connection = await AtSpiConnection.Connect(config, application);
                 }
 
-                GameControllerInput.Init();
+                if (connection == null)
+                {
+                    Console.WriteLine("No Accessibility API available");
+                }    
 
-                new UiMain(connection);
+                GameControllerInput.Init();
             }
             catch (Exception e)
             {

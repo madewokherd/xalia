@@ -108,6 +108,21 @@ namespace Xalia.Sdl
             Color = color;
         }
 
+        public void SetBounds(int x, int y, int width, int height)
+        {
+            SdlSynchronizationContext.Instance.AssertMainThread();
+            bool update_position = x != _x || y != _y;
+            bool update_region = width != _width || height != _height;
+            _x = x;
+            _y = y;
+            _width = width;
+            _height = height;
+            if (update_position)
+                UpdatePosition();
+            if (update_region)
+                UpdateRegion();
+        }
+
         private int _thickness = 5;
         public int Thickness
         {

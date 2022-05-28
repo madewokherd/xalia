@@ -57,6 +57,21 @@ namespace Xalia.Gudl
                             GudlToken.LParen),
                         condition);
                 }
+                else if (Kind == "root")
+                {
+                    condition = And(
+                        new IdentifierExpression("is_root"),
+                        condition);
+                    if (parent_condition != null)
+                    {
+                        condition = And(
+                            condition,
+                            new BinaryExpression(
+                                new IdentifierExpression("this_or_descendent_matches"),
+                                parent_condition,
+                                GudlToken.LParen));
+                    }
+                }
                 else
                 {
                     condition = And(

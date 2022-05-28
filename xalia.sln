@@ -7,14 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xalia", "xalia\xalia.csproj
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug-Linux|Any CPU = Debug-Linux|Any CPU
-		Release-Linux|Any CPU = Release-Linux|Any CPU
+		Debug-NetStandard|Any CPU = Debug-NetStandard|Any CPU
+		Release-NetStandard|Any CPU = Release-NetStandard|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{35CC3931-620A-4DF1-9EAE-F9B6E1E72AC1}.Debug-Linux|Any CPU.ActiveCfg = Debug-Linux|Any CPU
-		{35CC3931-620A-4DF1-9EAE-F9B6E1E72AC1}.Debug-Linux|Any CPU.Build.0 = Debug-Linux|Any CPU
-		{35CC3931-620A-4DF1-9EAE-F9B6E1E72AC1}.Release-Linux|Any CPU.ActiveCfg = Release-Linux|Any CPU
-		{35CC3931-620A-4DF1-9EAE-F9B6E1E72AC1}.Release-Linux|Any CPU.Build.0 = Release-Linux|Any CPU
+		{35CC3931-620A-4DF1-9EAE-F9B6E1E72AC1}.Debug-NetStandard|Any CPU.ActiveCfg = Release-NetStandard|Any CPU
+		{35CC3931-620A-4DF1-9EAE-F9B6E1E72AC1}.Debug-NetStandard|Any CPU.Build.0 = Release-NetStandard|Any CPU
+		{35CC3931-620A-4DF1-9EAE-F9B6E1E72AC1}.Release-NetStandard|Any CPU.ActiveCfg = Debug-NetStandard|Any CPU
+		{35CC3931-620A-4DF1-9EAE-F9B6E1E72AC1}.Release-NetStandard|Any CPU.Build.0 = Debug-NetStandard|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

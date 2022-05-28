@@ -6,6 +6,15 @@ if (spi_attributes.xalia_ignore)
     stop: true;
 }
 
+// Controls for targeting elements
+root
+{
+    action_on_dpad_up: target_move_up;
+    action_on_dpad_down: target_move_down;
+    action_on_dpad_left: target_move_left;
+    action_on_dpad_right: target_move_right;
+}
+
 // Combo boxes contain subcontrols we don't want to directly navigate to
 if (parent.spi_role.combo_box)
 {

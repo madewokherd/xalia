@@ -18,7 +18,7 @@ namespace Xalia.AtSpi
 
         IRegistry registry;
 
-        private AtSpiConnection(Connection connection, GudlStatement[] rules) : base(rules)
+        private AtSpiConnection(Connection connection, GudlStatement[] rules, IUiDomApplication application) : base(rules, application)
         {
             this.connection = connection;
         }
@@ -38,7 +38,7 @@ namespace Xalia.AtSpi
             return result;
         }
 
-        internal static async Task<AtSpiConnection> Connect(GudlStatement[] config)
+        internal static async Task<AtSpiConnection> Connect(GudlStatement[] config, IUiDomApplication application)
         {
             string bus = await GetAtSpiBusAddress();
             if (string.IsNullOrWhiteSpace(bus))
@@ -51,7 +51,7 @@ namespace Xalia.AtSpi
             options.SynchronizationContext = SynchronizationContext.Current;
             var connection = new Connection(options);
             await connection.ConnectAsync();
-            var result = new AtSpiConnection(connection, config);
+            var result = new AtSpiConnection(connection, config, application);
 
             // Resolve the service name to an actual client. Signals will come from the client name, so
             // we need this to distinguish between signals from the AT-SPI root and signals from an
