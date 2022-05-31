@@ -10,6 +10,7 @@ namespace Xalia.Input
     {
         List<InputBackend> backends = new List<InputBackend>();
         Dictionary<string, InputState> watching_actions = new Dictionary<string, InputState>();
+        Dictionary<string, Queue<InputState>> injected_inputs = new Dictionary<string, Queue<InputState>>();
 
         private InputSystem()
         {
@@ -36,6 +37,8 @@ namespace Xalia.Input
                     if (PreviousState.Kind == InputStateKind.Disconnected)
                         // If a button was *already pressed* when first connected, it wasn't "just pressed".
                         return false;
+                    if (State.Kind == InputStateKind.Repeat)
+                        return true;
                     return State.Pressed && !PreviousState.Pressed;
                 }
             }
@@ -55,6 +58,11 @@ namespace Xalia.Input
         {
             InputState result = default;
 
+            if (injected_inputs.TryGetValue(action, out var queue) && queue.Count != 0)
+            {
+                return queue.Dequeue();
+            }
+
             foreach (var backend in backends)
             {
                 result = InputState.Combine(result, backend.GetActionState(action));
@@ -65,20 +73,42 @@ namespace Xalia.Input
 
         public void UpdateActionState(string action)
         {
-            if (watching_actions.TryGetValue(action, out var old_state))
+            bool injected;
+            do
             {
-                InputState new_state = PollAction(action);
-                if (!old_state.Equals(new_state))
+                injected = false;
+                if (injected_inputs.TryGetValue(action, out var queue))
                 {
-                    watching_actions[action] = new_state;
-                    var handler = ActionStateChangeEvent;
-                    if (handler != null)
-                    {
-                        var args = new ActionStateChangeEventArgs(action, new_state, old_state);
-                        handler(this, args);
-                    }
+                    injected = queue.Count != 0;
                 }
-            }
+                InputState old_state = new InputState();
+                old_state.Kind = InputStateKind.Disconnected;
+                if (watching_actions.TryGetValue(action, out old_state) || injected)
+                {
+                    InputState new_state = PollAction(action);
+                    if (!old_state.Equals(new_state))
+                    {
+                        if (watching_actions.ContainsKey(action))
+                            watching_actions[action] = new_state;
+                        var handler = ActionStateChangeEvent;
+                        if (handler != null)
+                        {
+                            var args = new ActionStateChangeEventArgs(action, new_state, old_state);
+                            handler(this, args);
+                        }
+                    }
+                    if (injected && new_state.Kind != InputStateKind.Disconnected && !watching_actions.ContainsKey(action))
+                    {
+                        InputState disconnected_state = default;
+                        var handler = ActionStateChangeEvent;
+                        if (handler != null)
+                        {
+                            var args = new ActionStateChangeEventArgs(action, disconnected_state, new_state);
+                            handler(this, args);
+                        }
+                    }                     
+                }
+            } while (injected);
         }
 
         public void WatchAction(string action)
@@ -122,6 +152,19 @@ namespace Xalia.Input
                         UpdateActionState(action);
                 }
             });
+        }
+
+        public void InjectInput(string action, InputState state)
+        {
+            if (!injected_inputs.TryGetValue(action, out var queue))
+            {
+                queue = new Queue<InputState>();
+                injected_inputs[action] = queue;
+            }
+
+            queue.Enqueue(state);
+
+            UpdateActionState(action);
         }
     }
 }

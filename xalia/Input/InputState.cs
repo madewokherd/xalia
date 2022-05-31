@@ -10,7 +10,8 @@ namespace Xalia.Input
     {
         Disconnected,
         Released,
-        Pressed
+        Pressed,
+        Repeat
     }
 
     public struct InputState
@@ -19,6 +20,10 @@ namespace Xalia.Input
 
         public static InputState Combine(InputState a, InputState b)
         {
+            if (a.Kind == InputStateKind.Repeat)
+                return a;
+            if (b.Kind == InputStateKind.Repeat)
+                return b;
             if (a.Kind == InputStateKind.Pressed)
                 return a;
             if (b.Kind == InputStateKind.Pressed)
@@ -42,6 +47,7 @@ namespace Xalia.Input
                 switch (Kind)
                 {
                     case InputStateKind.Pressed:
+                    case InputStateKind.Repeat:
                         return true;
                     case InputStateKind.Disconnected:
                     case InputStateKind.Released:

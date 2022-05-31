@@ -13,6 +13,14 @@ root
     action_on_dpad_down: target_move_down;
     action_on_dpad_left: target_move_left;
     action_on_dpad_right: target_move_right;
+    action_repeat_delay_dpad_up: 500;
+    action_repeat_delay_dpad_down: 500;
+    action_repeat_delay_dpad_left: 500;
+    action_repeat_delay_dpad_right: 500;
+    action_repeat_interval_dpad_up: 100;
+    action_repeat_interval_dpad_down: 100;
+    action_repeat_interval_dpad_left: 100;
+    action_repeat_interval_dpad_right: 100;
 }
 
 // Combo boxes contain subcontrols we don't want to directly navigate to

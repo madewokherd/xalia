@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Xalia.Gudl;
@@ -19,9 +20,46 @@ namespace Xalia.Ui
         private OverlayBox target_box;
         private Dictionary<UiDomObject, (int, int, int, int)> targetable_objects = new Dictionary<UiDomObject, (int, int, int, int)>();
 
+        class ActionInfo
+        {
+            public UiDomObject element;
+            public string action;
+            public UiDomRoutine routine;
+            public string name;
+            public int repeat_delay;
+            public int repeat_interval;
+
+            public ActionInfo(UiDomObject element, string action)
+            {
+                this.element = element;
+                this.action = action;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj is ActionInfo ai)
+                {
+                    return element.Equals(ai.element) &&
+                        action == ai.action &&
+                        routine == ai.routine &&
+                        name == ai.name &&
+                        repeat_delay == ai.repeat_delay &&
+                        repeat_interval == ai.repeat_interval;
+                }
+                return false;
+            }
+
+            public override int GetHashCode()
+            {
+                return (element, action, routine, name, repeat_delay, repeat_interval).GetHashCode();
+            }
+        }
+
         private Dictionary<string, List<UiDomObject>> objects_defining_action = new Dictionary<string, List<UiDomObject>>();
-        private Dictionary<UiDomObject, List<string>> object_actions = new Dictionary<UiDomObject, List<string>>();
+        private Dictionary<UiDomObject, List<ActionInfo>> object_actions = new Dictionary<UiDomObject, List<ActionInfo>>();
         private Dictionary<string, UiDomRoutine> locked_inputs = new Dictionary<string, UiDomRoutine>();
+
+        private Dictionary<string, CancellationTokenSource> repeat_timers = new Dictionary<string, CancellationTokenSource>();
 
         public UiMain()
         {
@@ -42,12 +80,30 @@ namespace Xalia.Ui
             Root = root;
         }
 
+        private bool GetActionInfo(string action, out ActionInfo info)
+        {
+            if (objects_defining_action.TryGetValue(action, out var objects) &&
+                objects.Count != 0)
+            {
+                var obj = objects[objects.Count - 1]; // most recently added object for this action
+                info = object_actions[obj].Find((ActionInfo ai) => action == ai.action);
+                return true;
+            }
+            info = default;
+            return false;
+        }
+
         private void OnActionStateChangeEvent(object sender, InputSystem.ActionStateChangeEventArgs e)
         {
             UiDomRoutine routine;
 #if DEBUG
             Console.WriteLine($"Got input: {e.Action} {e.PreviousState} => {e.State}");
 #endif
+            if (repeat_timers.ContainsKey(e.Action) && !e.State.Pressed)
+            {
+                repeat_timers[e.Action].Cancel();
+                repeat_timers.Remove(e.Action);
+            }
             if (locked_inputs.TryGetValue(e.Action, out routine))
             {
 #if DEBUG
@@ -71,23 +127,59 @@ namespace Xalia.Ui
                     return;
                 }
 
-                var obj = objects[objects.Count - 1]; // most recently added object for this action
-
-                routine = obj.GetDeclaration("action_on_" + e.Action) as UiDomRoutine;
-
-                if (!(routine is null))
+                if (GetActionInfo(e.Action, out var info))
                 {
-#if DEBUG
-                    Console.WriteLine($"Calling routine: {routine}");
-#endif
-                    routine.OnInput(e);
 
-                    if (e.LockInput)
+                    var obj = info.element;
+
+                    routine = info.routine;
+
+                    if (!(routine is null))
                     {
-                        locked_inputs.Add(e.Action, routine);
+#if DEBUG
+                        Console.WriteLine($"Calling routine: {routine}");
+#endif
+                        routine.OnInput(e);
+
+                        if (e.LockInput)
+                        {
+                            locked_inputs.Add(e.Action, routine);
+                        }
+                    }
+
+                    if (info.repeat_interval != 0 && e.JustPressed && !repeat_timers.ContainsKey(e.Action))
+                    {
+                        Utils.RunTask(DoRepeatTimer(e.Action,
+                            info.repeat_delay != 0 ? info.repeat_delay : info.repeat_interval));
                     }
                 }
             }
+        }
+
+        private async Task DoRepeatTimer(string action, int initial_delay)
+        {
+            var source = new CancellationTokenSource();
+            repeat_timers.Add(action, source);
+            var token = source.Token;
+
+            InputState repeat_state = default;
+            repeat_state.Kind = InputStateKind.Repeat;
+
+            try
+            {
+                await Task.Delay(initial_delay, token);
+
+                while (GetActionInfo(action, out var info))
+                {
+                    InputSystem.Instance.InjectInput(action, repeat_state);
+
+                    if (info.repeat_interval == 0)
+                        return;
+
+                    await Task.Delay(info.repeat_interval, token);
+                }
+            }
+            catch (TaskCanceledException) { }
         }
 
         public void ElementDied(UiDomObject e)
@@ -250,7 +342,8 @@ namespace Xalia.Ui
 
         private void UpdateActions(UiDomObject obj)
         {
-            var new_actions = new List<string>();
+            var new_actions = new List<ActionInfo>();
+            var new_action_ids = new List<string>();
 
             foreach (var declaration in obj.Declarations)
             {
@@ -269,41 +362,63 @@ namespace Xalia.Ui
                     }
                 }
 
-                if (!string.IsNullOrEmpty(action) && !new_actions.Contains(action))
+                if (!string.IsNullOrEmpty(action) && !new_action_ids.Contains(action))
                 {
-                    new_actions.Add(action);
+                    new_action_ids.Add(action);
                 }
             }
 
-            List<string> old_actions;
+            foreach (var action in new_action_ids)
+            {
+                ActionInfo info = new ActionInfo(obj, action);
+                if (obj.GetDeclaration("action_on_"+action) is UiDomRoutine routine)
+                {
+                    info.routine = routine;
+                }
+                if (obj.GetDeclaration("action_name_" + action) is UiDomString name)
+                {
+                    info.name = name.Value;
+                }
+                if (obj.GetDeclaration("action_repeat_delay_" + action) is UiDomInt rd)
+                {
+                    info.repeat_delay = rd.Value;
+                }
+                if (obj.GetDeclaration("action_repeat_interval_" + action) is UiDomInt ri)
+                {
+                    info.repeat_interval = ri.Value;
+                }
+                new_actions.Add(info);
+            }
+
+            List<ActionInfo> old_actions;
             if (!object_actions.TryGetValue(obj, out old_actions))
             {
                 if (new_actions.Count == 0)
                     return;
-                old_actions = new List<string>();
+                old_actions = new List<ActionInfo>();
             }
 
             foreach (var action in new_actions)
             {
-                if (old_actions.Contains(action))
+                if (old_actions.Find((ActionInfo ai) => ai.action == action.action) is ActionInfo old_info)
                 {
-                    old_actions.Remove(action);
+                    old_actions.Remove(old_info);
                     continue;
                 }
                 List<UiDomObject> objects;
-                if (!objects_defining_action.TryGetValue(action, out objects))
+                if (!objects_defining_action.TryGetValue(action.action, out objects))
                 {
                     objects = new List<UiDomObject>();
-                    objects_defining_action[action] = objects;
+                    objects_defining_action[action.action] = objects;
                 }
 #if DEBUG
-                Console.WriteLine($"action {action} defined on {obj}");
+                Console.WriteLine($"action {action.action} defined on {obj}");
 #endif
                 objects.Add(obj);
 
                 if (objects.Count == 1)
                 {
-                    InputSystem.Instance.WatchAction(action);
+                    InputSystem.Instance.WatchAction(action.action);
                 }
             }
             object_actions[obj] = new_actions;
@@ -311,12 +426,12 @@ namespace Xalia.Ui
             foreach (var action in old_actions)
             {
 #if DEBUG
-                Console.WriteLine($"action {action} removed on {obj}");
+                Console.WriteLine($"action {action.action} removed on {obj}");
 #endif
-                objects_defining_action[action].Remove(obj);
-                if (objects_defining_action[action].Count == 0 && !locked_inputs.ContainsKey(action))
+                objects_defining_action[action.action].Remove(obj);
+                if (objects_defining_action[action.action].Count == 0 && !locked_inputs.ContainsKey(action.action))
                 {
-                    InputSystem.Instance.UnwatchAction(action);
+                    InputSystem.Instance.UnwatchAction(action.action);
                 }
             }
         }
@@ -329,12 +444,12 @@ namespace Xalia.Ui
                 foreach (var action in actions)
                 {
 #if DEBUG
-                    Console.WriteLine($"action {action} removed on {obj}");
+                    Console.WriteLine($"action {action.action} removed on {obj}");
 #endif
-                    objects_defining_action[action].Remove(obj);
-                    if (objects_defining_action[action].Count == 0)
+                    objects_defining_action[action.action].Remove(obj);
+                    if (objects_defining_action[action.action].Count == 0)
                     {
-                        InputSystem.Instance.UnwatchAction(action);
+                        InputSystem.Instance.UnwatchAction(action.action);
                     }
                 }
             }
