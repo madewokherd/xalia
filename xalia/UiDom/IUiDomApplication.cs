@@ -15,8 +15,6 @@ namespace Xalia.UiDom
 
         void ElementDied(UiDomObject element);
 
-        void TargetChanged(UiDomObject previous_target);
-
         UiDomValue EvaluateIdentifierHook(UiDomObject element, string id, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on);
     }
 }

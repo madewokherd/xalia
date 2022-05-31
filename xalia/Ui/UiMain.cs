@@ -102,6 +102,30 @@ namespace Xalia.Ui
             UpdateActions(e);
         }
 
+        private UiDomObject _targetedElement;
+        public UiDomObject TargetedElement
+        {
+            get
+            {
+                return _targetedElement;
+            }
+            set
+            {
+                if (_targetedElement != value)
+                {
+                    var previous = TargetedElement;
+                    _targetedElement = value;
+
+                    Root.PropertyChanged("targeted_element");
+                    if (!(_targetedElement is null))
+                        _targetedElement.PropertyChanged("targeted");
+                    if (!(previous is null))
+                        previous.PropertyChanged("targeted");
+                    TargetChanged(previous);
+                }
+            }
+        }
+
         private bool TryGetTargetBoundsDeclarations(UiDomObject obj, out (int, int, int, int) bounds)
         {
             if (obj.GetDeclaration("target_x") is UiDomInt xint &&
@@ -146,7 +170,7 @@ namespace Xalia.Ui
                 Utils.RunIdle(SelectAnyTarget());
             }
 
-            if (obj == Root.TargetedElement)
+            if (obj == TargetedElement)
             {
                 target_box.SetBounds(x, y, width, height);
                 // TODO: stop any ongoing animation
@@ -156,8 +180,8 @@ namespace Xalia.Ui
         private void DiscardTargetableElement(UiDomObject obj)
         {
             targetable_objects.Remove(obj);
-            if (obj == Root.TargetedElement)
-                Root.TargetedElement = null;
+            if (obj == TargetedElement)
+                TargetedElement = null;
         }
 
         private Stack<UiDomObject> GetAncestors(UiDomObject obj)
@@ -178,7 +202,7 @@ namespace Xalia.Ui
             // Give it some time to discover other elements so we can choose the best one.
             await Task.Delay(200);
 
-            if (targetable_objects.Count == 0 || !(Root.TargetedElement is null))
+            if (targetable_objects.Count == 0 || !(TargetedElement is null))
                 return;
 
             UiDomObject best_element = null;
@@ -221,7 +245,7 @@ namespace Xalia.Ui
                 }
             }
 
-            Root.TargetedElement = best_element;
+            TargetedElement = best_element;
         }
 
         private void UpdateActions(UiDomObject obj)
@@ -328,6 +352,14 @@ namespace Xalia.Ui
                     return new UiDomRoutineSync(null, "target_move_left", TargetMoveLeft);
                 case "target_move_right":
                     return new UiDomRoutineSync(null, "target_move_right", TargetMoveRight);
+                case "targeted_element":
+                    depends_on.Add((Root, new IdentifierExpression("targeted_element")));
+                    if (TargetedElement is null)
+                        return UiDomUndefined.Instance;
+                    return TargetedElement;
+                case "targeted":
+                    depends_on.Add((element, new IdentifierExpression("targeted")));
+                    return UiDomBoolean.FromBool(TargetedElement == element);
             }
             return null;
         }
@@ -367,11 +399,11 @@ namespace Xalia.Ui
 
         private void TargetMove(Direction direction)
         {
-            if (Root.TargetedElement is null)
+            if (TargetedElement is null)
                 return;
 
             (int, int, int, int) current_bounds;
-            if (!TryGetElementTargetBounds(Root.TargetedElement, out current_bounds))
+            if (!TryGetElementTargetBounds(TargetedElement, out current_bounds))
             {
                 return;
             }
@@ -388,7 +420,7 @@ namespace Xalia.Ui
                 var candidate_element = kvp.Key;
                 var candidate_bounds = kvp.Value;
                 
-                if (candidate_element == Root.TargetedElement)
+                if (candidate_element == TargetedElement)
                     continue;
 
                 candidate_bounds = TranslateBox(candidate_bounds, direction);
@@ -400,8 +432,8 @@ namespace Xalia.Ui
                 }
 
                 // Calculate edge distance
-                int dx = candidate_bounds.Item1 - (current_bounds.Item1 + current_bounds.Item3);
-                int dy;
+                long dx = candidate_bounds.Item1 - (current_bounds.Item1 + current_bounds.Item3);
+                long dy;
                 if (current_bounds.Item2 + current_bounds.Item4 < candidate_bounds.Item2)
                     dy = candidate_bounds.Item2 - (current_bounds.Item2 + current_bounds.Item4);
                 else if (candidate_bounds.Item2 + candidate_bounds.Item4 < current_bounds.Item2)
@@ -434,7 +466,7 @@ namespace Xalia.Ui
             if (best_element is null)
                 return;
 
-            Root.TargetedElement = best_element;
+            TargetedElement = best_element;
         }
 
         private void TargetMoveUp(UiDomRoutineSync obj)
@@ -459,7 +491,7 @@ namespace Xalia.Ui
 
         public void TargetChanged(UiDomObject previous_target)
         {
-            if (Root.TargetedElement is null)
+            if (TargetedElement is null)
             {
                 target_box.Hide();
 
@@ -470,9 +502,9 @@ namespace Xalia.Ui
             }
 
             (int, int, int, int) bounds;
-            if (!TryGetElementTargetBounds(Root.TargetedElement, out bounds))
+            if (!TryGetElementTargetBounds(TargetedElement, out bounds))
             {
-                Console.WriteLine($"WARNING: {Root.TargetedElement} is targeted but it does not have target bounds");
+                Console.WriteLine($"WARNING: {TargetedElement} is targeted but it does not have target bounds");
                 target_box.Hide();
                 return;
             }

@@ -153,11 +153,6 @@ namespace Xalia.UiDom
                 case "parent":
                     // We assume for now that this cannot change during an object's lifetime
                     return (UiDomValue)Parent ?? UiDomUndefined.Instance;
-                case "targeted":
-                    depends_on.Add((this, new IdentifierExpression("targeted")));
-                    return UiDomBoolean.FromBool(root.TargetedElement == this);
-                case "targeted_element":
-                    return root.EvaluateIdentifier(id, root, depends_on);
                 case "is_root":
                     return UiDomBoolean.FromBool(this is UiDomRoot);
                 case "root":
