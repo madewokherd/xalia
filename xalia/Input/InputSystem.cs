@@ -146,7 +146,8 @@ namespace Xalia.Input
         {
             Utils.RunIdle(() => { // Delay this because the backend may not be fully constructed yet.
                 backends.Add(backend);
-                foreach (var action in watching_actions.Keys)
+                // The loop may modify values in watching_actions, which invalidates Keys while enumerating
+                foreach (var action in watching_actions.Keys.ToArray())
                 {
                     if (backend.WatchAction(action))
                         UpdateActionState(action);
