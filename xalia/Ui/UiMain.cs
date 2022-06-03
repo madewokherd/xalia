@@ -467,6 +467,8 @@ namespace Xalia.Ui
                     return new UiDomRoutineSync(null, "target_move_left", TargetMoveLeft);
                 case "target_move_right":
                     return new UiDomRoutineSync(null, "target_move_right", TargetMoveRight);
+                case "target_move":
+                    return new TargetMoveRoutine(this);
                 case "targeted_element":
                     depends_on.Add((Root, new IdentifierExpression("targeted_element")));
                     if (TargetedElement is null)
@@ -487,7 +489,7 @@ namespace Xalia.Ui
             return TryGetTargetBoundsDeclarations(element, out bounds);
         }
 
-        private enum Direction
+        internal enum Direction
         {
             Up,
             Down,
@@ -512,7 +514,7 @@ namespace Xalia.Ui
             throw new ArgumentException("invalid Direction value");
         }
 
-        private void TargetMove(Direction direction)
+        internal void TargetMove(Direction direction, double bias=0)
         {
             if (TargetedElement is null)
                 return;
@@ -549,10 +551,20 @@ namespace Xalia.Ui
                 // Calculate edge distance
                 long dx = candidate_bounds.Item1 - (current_bounds.Item1 + current_bounds.Item3);
                 long dy;
-                if (current_bounds.Item2 + current_bounds.Item4 < candidate_bounds.Item2)
-                    dy = candidate_bounds.Item2 - (current_bounds.Item2 + current_bounds.Item4);
-                else if (candidate_bounds.Item2 + candidate_bounds.Item4 < current_bounds.Item2)
-                    dy = current_bounds.Item2 - candidate_bounds.Item2 + candidate_bounds.Item4;
+
+                int y_diff_start = candidate_bounds.Item2 - current_bounds.Item2;
+
+                if (bias != 0)
+                {
+                    y_diff_start -= (int)(Math.Round(bias * dx));
+                }
+
+                int y_diff_end = y_diff_start + candidate_bounds.Item4;
+
+                if (y_diff_end < 0)
+                    dy = -y_diff_end;
+                else if (y_diff_start > current_bounds.Item4)
+                    dy = y_diff_start;
                 else
                     dy = 0;
                 if (dy != 0)
@@ -564,12 +576,13 @@ namespace Xalia.Ui
                 var candidate_edge_distance = (dx * dx) + (dy * dy);
 
                 // Calculate centerpoint distance
-                dy = (current_bounds.Item2 + current_bounds.Item4 / 2) - (candidate_bounds.Item2 + candidate_bounds.Item4 / 2);
+                dy = y_diff_start - (int)Math.Round(candidate_bounds.Item4 * (bias + 1) / 2); // use center point of candidate neutral, bottom point if bias is fully upwards
+                dy -= (int)Math.Round(current_bounds.Item4 * (bias + 1) / 2); // use center point of current if neutral, top point if bias is fully upwards
                 var candidate_center_distance = (dx * dx) + (dy * dy);
 
                 if (best_element is null ||
                     candidate_edge_distance < best_edge_distance ||
-                    candidate_center_distance < best_center_distance)
+                    (candidate_edge_distance == best_edge_distance && candidate_center_distance < best_center_distance))
                 {
                     best_element = candidate_element;
                     best_edge_distance = candidate_edge_distance;

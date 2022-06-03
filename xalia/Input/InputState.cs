@@ -11,12 +11,16 @@ namespace Xalia.Input
         Disconnected,
         Released,
         Pressed,
-        Repeat
+        Repeat,
+        AnalogJoystick, // XAxis and YAxis range from -32768 to 32767
+        AnalogButton // XAxis ranges from 0 to 32767
     }
 
     public struct InputState
     {
         public InputStateKind Kind;
+        public short XAxis;
+        public short YAxis;
 
         public static InputState Combine(InputState a, InputState b)
         {
@@ -28,6 +32,14 @@ namespace Xalia.Input
                 return a;
             if (b.Kind == InputStateKind.Pressed)
                 return b;
+            if (a.Kind == InputStateKind.AnalogJoystick && (b.Kind != InputStateKind.AnalogJoystick || b.Intensity < a.Intensity))
+                return a;
+            if (b.Kind == InputStateKind.AnalogJoystick)
+                return b;
+            if (a.Kind == InputStateKind.AnalogButton && (b.Kind != InputStateKind.AnalogButton || b.Intensity < a.Intensity))
+                return a;
+            if (b.Kind == InputStateKind.AnalogButton)
+                return b;
             if (a.Kind == InputStateKind.Released)
                 return a;
             if (b.Kind == InputStateKind.Released)
@@ -38,6 +50,27 @@ namespace Xalia.Input
         public override string ToString()
         {
             return $"InputState kind={Kind}";
+        }
+
+        public ushort Intensity
+        {
+            get
+            {
+                switch (Kind)
+                {
+                    case InputStateKind.Pressed:
+                    case InputStateKind.Repeat:
+                        return 32767;
+                    case InputStateKind.Disconnected:
+                    case InputStateKind.Released:
+                        return 0;
+                    case InputStateKind.AnalogJoystick:
+                        return (ushort)Math.Min(Math.Sqrt((int)XAxis * XAxis + (int)YAxis * YAxis), 32767);
+                    case InputStateKind.AnalogButton:
+                        return (ushort)XAxis;
+                }
+                throw new NotImplementedException(); // Hopefully the compiler will warn about missed enum values?
+            }
         }
 
         public bool Pressed
@@ -52,6 +85,10 @@ namespace Xalia.Input
                     case InputStateKind.Disconnected:
                     case InputStateKind.Released:
                         return false;
+                    case InputStateKind.AnalogButton:
+                        return XAxis == 32767;
+                    case InputStateKind.AnalogJoystick:
+                        return Intensity >= 10000; // arbitrary cutoff
                 }
                 throw new NotImplementedException(); // Hopefully the compiler will warn about missed enum values?
             }
