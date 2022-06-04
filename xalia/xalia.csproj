@@ -109,6 +109,7 @@
     <Compile Include="MainClass.cs" />
     <Compile Include="Sdl\GameControllerInput.cs" />
     <Compile Include="Sdl\SdlSynchronizationContext.cs" />
+    <Compile Include="Sdl\X11WindowingSystem.cs" />
     <Compile Include="UiDom\IUiDomApplication.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />

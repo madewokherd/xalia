@@ -42,6 +42,8 @@ namespace Xalia.Sdl
                 if (_x != value)
                 {
                     _x = value;
+                    if (UpdateEffectiveThickness())
+                        UpdateRegion();
                     UpdatePosition();
                 }
             }
@@ -55,6 +57,8 @@ namespace Xalia.Sdl
                 if (_y != value)
                 {
                     _y = value;
+                    if (UpdateEffectiveThickness())
+                        UpdateRegion();
                     UpdatePosition();
                 }
             }
@@ -68,6 +72,8 @@ namespace Xalia.Sdl
                 {
                     SdlSynchronizationContext.Instance.AssertMainThread();
                     _width = value;
+                    if (UpdateEffectiveThickness())
+                        UpdatePosition();
                     UpdateRegion();
                 }
             }
@@ -81,6 +87,8 @@ namespace Xalia.Sdl
                 {
                     SdlSynchronizationContext.Instance.AssertMainThread();
                     _height = value;
+                    if (UpdateEffectiveThickness())
+                        UpdatePosition();
                     UpdateRegion();
                 }
             }
@@ -124,14 +132,31 @@ namespace Xalia.Sdl
             // but it doesn't flicker when initially shown. Ideally we should have two
             // windows that we flip between, to prevent flickering on and off as well.
             // That's likely to be required when we start animating the target box.
-            if (was_shown && update_region)
+            bool updated_thickness = UpdateEffectiveThickness();
+            if (was_shown && (update_region || updated_thickness))
                 Hide();
-            if (update_position)
+            if (update_position || updated_thickness)
                 UpdatePosition();
-            if (update_region)
+            if (update_region || updated_thickness)
                 UpdateRegion();
-            if (was_shown && update_region)
+            if (was_shown && (update_region || updated_thickness))
                 Show();
+        }
+
+        private int _effective_thickness = 5;
+
+        private bool UpdateEffectiveThickness()
+        {
+            float dpi_ul = windowingSystem.GetDpi(_x, _y);
+            float dpi_br = windowingSystem.GetDpi(_x + _width, _y + _height);
+            int new_thickness = (int)Math.Round(Math.Max(dpi_ul, dpi_br) * _thickness / 96.0);
+
+            if (_effective_thickness != new_thickness)
+            {
+                _effective_thickness = new_thickness;
+                return true;
+            }
+            return false;
         }
 
         private int _thickness = 5;
@@ -143,8 +168,11 @@ namespace Xalia.Sdl
                 if (_thickness != value)
                 {
                     _thickness = value;
-                    UpdatePosition();
-                    UpdateRegion();
+                    if (UpdateEffectiveThickness())
+                    {
+                        UpdatePosition();
+                        UpdateRegion();
+                    }
                 }
             }
         }
@@ -154,13 +182,13 @@ namespace Xalia.Sdl
 
         private void UpdatePosition()
         {
-            SDL.SDL_SetWindowPosition(_window, _x - _thickness, _y - _thickness);
+            SDL.SDL_SetWindowPosition(_window, _x - _effective_thickness, _y - _effective_thickness);
         }
 
         private void UpdateRegion()
         {
-            var window_width = _width + _thickness * 2;
-            var window_height = _height + _thickness * 2;
+            var window_width = _width + _effective_thickness * 2;
+            var window_height = _height + _effective_thickness * 2;
             SDL.SDL_SetWindowSize(_window, window_width, window_height);
 
             var surface = SDL.SDL_CreateRGBSurfaceWithFormat(0, window_width, window_height, 16,
@@ -188,8 +216,8 @@ namespace Xalia.Sdl
 
                     SDL.SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
 
-                    rect.x = _thickness;
-                    rect.y = _thickness;
+                    rect.x = _effective_thickness;
+                    rect.y = _effective_thickness;
                     rect.w = _width;
                     rect.h = _height;
 
