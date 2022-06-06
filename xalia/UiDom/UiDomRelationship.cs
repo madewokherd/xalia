@@ -10,7 +10,9 @@ namespace Xalia.UiDom
 {
     public enum UiDomRelationshipKind
     {
-        ThisOrAncestor
+        ThisOrAncestor,
+        ThisOrDescendent,
+        Child
     }
 
     public class UiDomRelationship : UiDomValue
@@ -22,6 +24,8 @@ namespace Xalia.UiDom
         {
             Names = new Dictionary<string, UiDomRelationshipKind>();
             Names["this_or_ancestor_matches"] = UiDomRelationshipKind.ThisOrAncestor;
+            Names["this_or_descendent_matches"] = UiDomRelationshipKind.ThisOrDescendent;
+            Names["child_matches"] = UiDomRelationshipKind.Child;
         }
 
         public UiDomRelationship(UiDomObject owner, UiDomRelationshipKind kind)
@@ -52,6 +56,10 @@ namespace Xalia.UiDom
             {
                 case UiDomRelationshipKind.ThisOrAncestor:
                     return "this_or_ancestor_matches";
+                case UiDomRelationshipKind.ThisOrDescendent:
+                    return "this_or_descendent_matches";
+                case UiDomRelationshipKind.Child:
+                    return "child_matches";
                 default:
                     return "unknown";
             }

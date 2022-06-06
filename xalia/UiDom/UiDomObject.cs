@@ -91,6 +91,7 @@ namespace Xalia.UiDom
             child.Parent = this;
             Children.Insert(index, child);
             child.SetAlive(true);
+            PropertyChanged("children");
         }
 
         internal void RelationshipValueChanged(UiDomRelationshipWatcher watcher)
@@ -121,6 +122,8 @@ namespace Xalia.UiDom
             Children.RemoveAt(index);
             child.Parent = null;
             child.SetAlive(false);
+            if (IsAlive)
+                PropertyChanged("children");
         }
 
         public override string ToString()
@@ -150,6 +153,10 @@ namespace Xalia.UiDom
                     return Parent.EvaluateIdentifier("this_or_ancestor_matches", root, depends_on);
                 case "this_or_ancestor_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.ThisOrAncestor);
+                case "this_or_descendent_matches":
+                    return new UiDomRelationship(this, UiDomRelationshipKind.ThisOrDescendent);
+                case "child_matches":
+                    return new UiDomRelationship(this, UiDomRelationshipKind.Child);
                 case "parent":
                     // We assume for now that this cannot change during an object's lifetime
                     return (UiDomValue)Parent ?? UiDomUndefined.Instance;

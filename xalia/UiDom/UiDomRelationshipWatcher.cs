@@ -54,6 +54,43 @@ namespace Xalia.UiDom
                         }
                         return UiDomUndefined.Instance;
                     }
+                case UiDomRelationshipKind.ThisOrDescendent:
+                    {
+                        UiDomValue this_result = Owner.Evaluate(Expression, depends_on);
+                        if (this_result.ToBool())
+                            return Owner;
+                        depends_on.Add((Owner, new IdentifierExpression("children")));
+                        UiDomValue match = null;
+                        foreach (var child in Owner.Children)
+                        {
+                            var value = child.Evaluate(AsProperty, depends_on);
+                            if (match == null && !(value is UiDomUndefined))
+                            {
+                                match = value;
+                            }
+                            // Continue evaluating other children to add dependencies
+                        }
+                        if (match != null)
+                            return match;
+                        return UiDomUndefined.Instance;
+                    }
+                case UiDomRelationshipKind.Child:
+                    {
+                        depends_on.Add((Owner, new IdentifierExpression("children")));
+                        UiDomValue match = null;
+                        foreach (var child in Owner.Children)
+                        {
+                            var value = child.Evaluate(Expression, depends_on);
+                            if (match == null && !(value is UiDomUndefined))
+                            {
+                                match = child;
+                            }
+                            // Continue evaluating other children to add dependencies
+                        }
+                        if (match != null)
+                            return match;
+                        return UiDomUndefined.Instance;
+                    }
                 default:
                     return UiDomUndefined.Instance;
             }
@@ -88,8 +125,17 @@ namespace Xalia.UiDom
                 {
                     new_dependencies[dependency] = dependency.Item1.NotifyPropertyChanged(
                         dependency.Item2, DependencyChanged);
+#if DEBUG
+                    Console.WriteLine($"{Owner}.{AsProperty} depends on: {dependency.Item1}.{dependency.Item2}");
+#endif
                 }
             }
+#if DEBUG
+            foreach (var old_dep in dependencies.Keys)
+            {
+                Console.WriteLine($"{Owner}.{AsProperty} no longer depends on: {old_dep.Item1}.{old_dep.Item2}");
+            }
+#endif
             foreach (var old_notifier in dependencies.Values)
             {
                 old_notifier.Dispose();
@@ -101,6 +147,9 @@ namespace Xalia.UiDom
         {
             if (!updating)
             {
+#if DEBUG
+                Console.WriteLine($"queued evaluation of {Owner}.{AsProperty} because {obj}.{property} changed");
+#endif
                 updating = true;
                 Utils.RunIdle(Update);
             }
