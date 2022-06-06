@@ -54,6 +54,7 @@ namespace Xalia.AtSpi
         internal IAction action;
         internal IComponent component;
         internal IText text_iface;
+        internal ISelection selection;
 
         internal IObject object_events;
 
@@ -233,6 +234,7 @@ namespace Xalia.AtSpi
             action = connection.connection.CreateProxy<IAction>(service, path);
             component = connection.connection.CreateProxy<IComponent>(service, path);
             text_iface = connection.connection.CreateProxy<IText>(service, path);
+            selection = connection.connection.CreateProxy<ISelection>(service, path);
             object_events = connection.connection.CreateProxy<IObject>(service, path);
         }
 
@@ -765,6 +767,22 @@ namespace Xalia.AtSpi
             ));
         }
 
+        private async Task Select(UiDomRoutineAsync routine)
+        {
+            if (Parent is AtSpiObject p)
+            {
+                await p.selection.SelectChildAsync(p.Children.IndexOf(this));
+            }
+        }
+
+        private async Task Deselect(UiDomRoutineAsync routine)
+        {
+            if (Parent is AtSpiObject p)
+            {
+                await p.selection.DeselectChildAsync(p.Children.IndexOf(this));
+            }
+        }
+
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
         {
             switch (id)
@@ -862,6 +880,14 @@ namespace Xalia.AtSpi
                         return new AtSpiActionList(this).EvaluateIdentifier("click", root, depends_on);
                     }
                     return UiDomUndefined.Instance;
+                case "spi_select":
+                case "select":
+                    // FIXME: check whether parent supports ISelection?
+                    return new UiDomRoutineAsync(this, "spi_select", Select);
+                case "spi_deselect":
+                case "deselect":
+                    // FIXME: check whether parent supports ISelection?
+                    return new UiDomRoutineAsync(this, "spi_deselect", Deselect);
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))
