@@ -64,7 +64,7 @@ namespace Xalia.UiDom
                         foreach (var child in Owner.Children)
                         {
                             var value = child.Evaluate(AsProperty, depends_on);
-                            if (match == null && !(value is UiDomUndefined))
+                            if (match == null && value.ToBool())
                             {
                                 match = value;
                             }
@@ -81,7 +81,7 @@ namespace Xalia.UiDom
                         foreach (var child in Owner.Children)
                         {
                             var value = child.Evaluate(Expression, depends_on);
-                            if (match == null && !(value is UiDomUndefined))
+                            if (match == null && value.ToBool())
                             {
                                 match = child;
                             }
