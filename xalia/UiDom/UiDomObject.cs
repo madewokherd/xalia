@@ -157,6 +157,26 @@ namespace Xalia.UiDom
                     return new UiDomRelationship(this, UiDomRelationshipKind.ThisOrDescendent);
                 case "child_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.Child);
+                case "next_sibling":
+                    {
+                        if (Parent is null)
+                            return UiDomUndefined.Instance;
+                        depends_on.Add((Parent, new IdentifierExpression("children")));
+                        int idx = Parent.Children.IndexOf(this) + 1;
+                        if (idx + 1 < Parent.Children.Count)
+                            return Parent.Children[idx];
+                        return UiDomUndefined.Instance;
+                    }
+                case "previous_sibling":
+                    {
+                        if (Parent is null)
+                            return UiDomUndefined.Instance;
+                        depends_on.Add((Parent, new IdentifierExpression("children")));
+                        int idx = Parent.Children.IndexOf(this) - 1;
+                        if (idx >= 0)
+                            return Parent.Children[idx];
+                        return UiDomUndefined.Instance;
+                    }
                 case "parent":
                     // We assume for now that this cannot change during an object's lifetime
                     return (UiDomValue)Parent ?? UiDomUndefined.Instance;
