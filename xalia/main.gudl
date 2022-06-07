@@ -20,11 +20,11 @@ menu (spi_state.selected and child_matches(spi_state.showing))
     {
         // Use keyboard interaction for this if possible, it's probably less janky than going through AT-SPI
         action_on_dpad_up: send_key.up or
-            child_matches(spi_state.selected).previous_sibling.spi_select or
-            last_child.spi_select;
+            child_matches(spi_state.selected).previous_sibling_matches(spi_state.(selectable and sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
+            last_child_matches(spi_state.(selectable and sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
         action_on_dpad_down: send_key.down or
-            child_matches(spi_state.selected).next_sibling.spi_select or
-            first_child.spi_select;
+            child_matches(spi_state.selected).next_sibling_matches(spi_state.(selectable and sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
+            first_child_matches(spi_state.(selectable and sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
 
         // Open a menu if possible, otherwise go to the "next" menu
         action_on_dpad_right: send_key.right or

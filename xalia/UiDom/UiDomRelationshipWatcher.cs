@@ -91,6 +91,47 @@ namespace Xalia.UiDom
                             return match;
                         return UiDomUndefined.Instance;
                     }
+                case UiDomRelationshipKind.LastChild:
+                    {
+                        depends_on.Add((Owner, new IdentifierExpression("children")));
+                        UiDomValue match = null;
+                        foreach (var child in Owner.Children)
+                        {
+                            if (child.Evaluate(Expression, depends_on).ToBool())
+                                match = child;
+                        }
+                        if (match != null)
+                            return match;
+                        return UiDomUndefined.Instance;
+                    }
+                case UiDomRelationshipKind.NextSibling:
+                    {
+                        if (Owner.Parent is null)
+                            return UiDomUndefined.Instance;
+                        depends_on.Add((Owner.Parent, new IdentifierExpression("children")));
+                        int idx = Owner.Parent.Children.IndexOf(Owner);
+                        for (idx = idx + 1; idx < Owner.Parent.Children.Count; idx++)
+                        {
+                            var child = Owner.Parent.Children[idx];
+                            if (child.Evaluate(Expression, depends_on).ToBool())
+                                return child;
+                        }    
+                        return UiDomUndefined.Instance;
+                    }
+                case UiDomRelationshipKind.PreviousSibling:
+                    {
+                        if (Owner.Parent is null)
+                            return UiDomUndefined.Instance;
+                        depends_on.Add((Owner.Parent, new IdentifierExpression("children")));
+                        int idx = Owner.Parent.Children.IndexOf(Owner);
+                        for (idx = idx - 1; idx >= 0; idx--)
+                        {
+                            var child = Owner.Parent.Children[idx];
+                            if (child.Evaluate(Expression, depends_on).ToBool())
+                                return child;
+                        }
+                        return UiDomUndefined.Instance;
+                    }
                 default:
                     return UiDomUndefined.Instance;
             }

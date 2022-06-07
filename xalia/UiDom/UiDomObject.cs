@@ -156,7 +156,63 @@ namespace Xalia.UiDom
                 case "this_or_descendent_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.ThisOrDescendent);
                 case "child_matches":
+                case "first_child_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.Child);
+                case "last_child_matches":
+                    return new UiDomRelationship(this, UiDomRelationshipKind.LastChild);
+                case "sibling_matches":
+                case "first_sibling_matches":
+                    {
+                        if (Parent is null)
+                            return UiDomUndefined.Instance;
+                        return new UiDomRelationship(Parent, UiDomRelationshipKind.Child);
+                    }
+                case "last_sibling_matches":
+                    {
+                        if (Parent is null)
+                            return UiDomUndefined.Instance;
+                        return new UiDomRelationship(Parent, UiDomRelationshipKind.LastChild);
+                    }
+                case "next_sibling_matches":
+                    {
+                        if (Parent is null)
+                            return UiDomUndefined.Instance;
+                        return new UiDomRelationship(this, UiDomRelationshipKind.NextSibling);
+                    }
+                case "previous_sibling_matches":
+                    {
+                        if (Parent is null)
+                            return UiDomUndefined.Instance;
+                        return new UiDomRelationship(this, UiDomRelationshipKind.PreviousSibling);
+                    }
+                case "first_child":
+                    {
+                        if (Children.Count == 0)
+                            return UiDomUndefined.Instance;
+                        depends_on.Add((this, new IdentifierExpression("children")));
+                        return Children[0];
+                    }
+                case "last_child":
+                    {
+                        if (Children.Count == 0)
+                            return UiDomUndefined.Instance;
+                        depends_on.Add((this, new IdentifierExpression("children")));
+                        return Children[Children.Count - 1];
+                    }
+                case "first_sibling":
+                    {
+                        if (Parent is null)
+                            return UiDomUndefined.Instance;
+                        depends_on.Add((Parent, new IdentifierExpression("children")));
+                        return Parent.Children[0];
+                    }
+                case "last_sibling":
+                    {
+                        if (Parent is null)
+                            return UiDomUndefined.Instance;
+                        depends_on.Add((Parent, new IdentifierExpression("children")));
+                        return Parent.Children[Parent.Children.Count - 1];
+                    }
                 case "next_sibling":
                     {
                         if (Parent is null)

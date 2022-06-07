@@ -12,7 +12,10 @@ namespace Xalia.UiDom
     {
         ThisOrAncestor,
         ThisOrDescendent,
-        Child
+        Child,
+        LastChild,
+        NextSibling,
+        PreviousSibling
     }
 
     public class UiDomRelationship : UiDomValue
@@ -26,6 +29,9 @@ namespace Xalia.UiDom
             Names["this_or_ancestor_matches"] = UiDomRelationshipKind.ThisOrAncestor;
             Names["this_or_descendent_matches"] = UiDomRelationshipKind.ThisOrDescendent;
             Names["child_matches"] = UiDomRelationshipKind.Child;
+            Names["last_child_matches"] = UiDomRelationshipKind.LastChild;
+            Names["next_sibling_matches"] = UiDomRelationshipKind.NextSibling;
+            Names["previous_sibling_matches"] = UiDomRelationshipKind.PreviousSibling;
         }
 
         public UiDomRelationship(UiDomObject owner, UiDomRelationshipKind kind)
@@ -60,6 +66,12 @@ namespace Xalia.UiDom
                     return "this_or_descendent_matches";
                 case UiDomRelationshipKind.Child:
                     return "child_matches";
+                case UiDomRelationshipKind.LastChild:
+                    return "last_child_matches";
+                case UiDomRelationshipKind.NextSibling:
+                    return "next_sibling_matches";
+                case UiDomRelationshipKind.PreviousSibling:
+                    return "previous_sibling_matches";
                 default:
                     return "unknown";
             }
