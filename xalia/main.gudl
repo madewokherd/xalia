@@ -28,13 +28,19 @@ menu (spi_state.selected and child_matches(spi_state.showing) and (not parent.sp
 
         // Open a menu if possible, otherwise go to the "next" menu
         action_on_dpad_right: send_key.right or
-            child_matches(spi_state.selected and spi_role.menu).first_child.spi_select or
-            ancestor_matches(spi_role.menu_bar).child_matches(spi_state.showing).(next_sibling or first_sibling).spi_click;
+            child_matches(spi_state.selected and spi_role.menu).child_matches(selectable and sensitive and visible and showing).spi_action.click or
+            ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
+                next_sibling_matches(selectable and sensitive and visible and showing) or
+                first_sibling_matches(selectable and sensitive and visible and showing)
+            ).spi_action.click;
         // We can't really hide a menu, but we can deselect its child which (based on the
         // logic above) will mean we no longer treat it as open, and will hide its children.
         action_on_dpad_left: send_key.left or
-            (parent_matches(spi_role.menu) and child_matches(spi_state.selected).deselect) or
-            ancestor_matches(spi_role.menu_bar).child_matches(spi_state.showing).(previous_sibling or last_sibling).spi_click;
+            (parent_matches(spi_role.menu) and child_matches(spi_state.selected).spi_deselect) or
+            ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
+                previous_sibling_matches(selectable and sensitive and visible and showing) or
+                last_sibling_matches(selectable and sensitive and visible and showing)
+            ).spi_action.click;
         action_on_left_stick: simulate_dpad;
         action_on_A: send_key.enter or child_matches(spi_state.selected).click;
         action_name_A: "Select";
