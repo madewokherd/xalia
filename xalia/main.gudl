@@ -7,7 +7,7 @@ if (spi_attributes.xalia_ignore)
 }
 
 // If a menu is open, we shouldn't try to interact with anything else.
-menu (spi_state.selected and child_matches(spi_state.showing))
+menu (spi_state.selected and child_matches(spi_state.showing) and (not parent.spi_role.menu or child_matches(spi_state.selected)))
 {
     root
     {
