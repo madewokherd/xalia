@@ -94,10 +94,17 @@ namespace Xalia.Sdl
                     send.callback(send.state);
                     send.completed_event.Set();
                     continue;
-                }    
+                }
                 if (SDL.SDL_PollEvent(out var poll_e) != 0)
                 {
-                    HandleEvent(poll_e);
+                    try
+                    {
+                        HandleEvent(poll_e);
+                    }
+                    catch (Exception e)
+                    {
+                        Utils.OnError(e);
+                    }
                     continue;
                 }
                 if (_posts.TryDequeue(out var post))
