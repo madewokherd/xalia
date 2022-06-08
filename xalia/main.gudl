@@ -28,7 +28,7 @@ menu (spi_state.selected and child_matches(spi_state.showing) and (not parent.sp
 
         // Open a menu if possible, otherwise go to the "next" menu
         action_on_dpad_right: send_key.right or
-            child_matches(spi_state.selected and spi_role.menu).child_matches(selectable and sensitive and visible and showing).spi_action.click or
+            child_matches(spi_state.selected and spi_role.menu).spi_action.click or
             ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
                 next_sibling_matches(selectable and sensitive and visible and showing) or
                 first_sibling_matches(selectable and sensitive and visible and showing)
@@ -36,7 +36,7 @@ menu (spi_state.selected and child_matches(spi_state.showing) and (not parent.sp
         // We can't really hide a menu, but we can deselect its child which (based on the
         // logic above) will mean we no longer treat it as open, and will hide its children.
         action_on_dpad_left: send_key.left or
-            (parent_matches(spi_role.menu) and child_matches(spi_state.selected).spi_deselect) or
+            (parent.spi_role.menu and spi_clear_selection) or
             ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
                 previous_sibling_matches(selectable and sensitive and visible and showing) or
                 last_sibling_matches(selectable and sensitive and visible and showing)
@@ -46,18 +46,16 @@ menu (spi_state.selected and child_matches(spi_state.showing) and (not parent.sp
         action_name_A: "Select";
         if (parent.spi_role.menu)
         {
-            action_on_B: send_key.left or child_matches(spi_state.selected).spi_deselect;
+            action_on_B: send_key.left or spi_clear_selection;
         }
         action_on_B: send_key.escape or
-            ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).spi_deselect or
-            ancestor_matches(spi_role.menu and parent.spi_role.window).spi_deselect or // popup menu
-            ancestor_matches(spi_role.combo_box).spi_action.press;
+            ancestor_matches(spi_role.combo_box).spi_action.press or
+            spi_deselect;
         action_name_B: "Back";
         if (not ancestor_matches(spi_role.combo_box))
         {
             action_on_start: send_key.escape or
-                ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).spi_deselect or
-                ancestor_matches(spi_role.menu and parent.spi_role.window).spi_deselect;
+                ancestor_matches(not parent.spi_role.menu).spi_deselect;
             action_name_Start: "Close Menu";
         }
     }

@@ -783,6 +783,11 @@ namespace Xalia.AtSpi
             }
         }
 
+        private async Task ClearSelection(UiDomRoutineAsync routine)
+        {
+            await selection.ClearSelectionAsync();
+        }
+
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
         {
             switch (id)
@@ -888,6 +893,10 @@ namespace Xalia.AtSpi
                 case "deselect":
                     // FIXME: check whether parent supports ISelection?
                     return new UiDomRoutineAsync(this, "spi_deselect", Deselect);
+                case "spi_clear_selection":
+                case "clear_selection":
+                    // FIXME: check whether this supports ISelection?
+                    return new UiDomRoutineAsync(this, "spi_clear_selection", ClearSelection);
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))
