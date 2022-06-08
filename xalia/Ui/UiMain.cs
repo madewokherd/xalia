@@ -61,6 +61,9 @@ namespace Xalia.Ui
 
         private Dictionary<string, CancellationTokenSource> repeat_timers = new Dictionary<string, CancellationTokenSource>();
 
+        private uint target_sequence_counter;
+        private Dictionary<UiDomObject, uint> object_target_sequence = new Dictionary<UiDomObject, uint>();
+
         public UiMain()
         {
             Windowing = WindowingSystem.Create();
@@ -186,6 +189,7 @@ namespace Xalia.Ui
         {
             DiscardTargetableElement(e);
             DiscardActions(e);
+            object_target_sequence.Remove(e);
         }
 
         public void ElementDeclarationsChanged(UiDomObject e)
@@ -207,6 +211,12 @@ namespace Xalia.Ui
                 {
                     var previous = TargetedElement;
                     _targetedElement = value;
+
+                    if (!(value is null))
+                    {
+                        object_target_sequence[value] = target_sequence_counter;
+                        target_sequence_counter++;
+                    }
 
                     Root.PropertyChanged("targeted_element");
                     if (!(_targetedElement is null))
@@ -305,6 +315,27 @@ namespace Xalia.Ui
                     best_element = candidate_element;
                     continue;
                 }
+
+                // Choose the most recently-targeted element
+                if (object_target_sequence.TryGetValue(candidate_element, out var candidate_seq))
+                {
+                    if (object_target_sequence.TryGetValue(best_element, out var best_seq))
+                    {
+                        if (candidate_seq > best_seq)
+                        {
+                            best_element = candidate_element;
+                        }
+                        continue;
+                    }
+                    else
+                    {
+                        best_element = candidate_element;
+                        continue;
+                    }
+                }
+                else if (object_target_sequence.ContainsKey(best_element))
+                    continue;
+
                 // FIXME: look for default or focused elements?
 
                 // Choose the first element in the tree, prefer children to ancestors
