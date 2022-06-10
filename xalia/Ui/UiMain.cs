@@ -471,7 +471,6 @@ namespace Xalia.Ui
         {
             if (object_actions.TryGetValue(obj, out var actions))
             {
-                object_actions.Remove(obj);
                 foreach (var action in actions)
                 {
 #if DEBUG
@@ -483,6 +482,7 @@ namespace Xalia.Ui
                         InputSystem.Instance.UnwatchAction(action.action);
                     }
                 }
+                object_actions.Remove(obj);
             }
         }
 
