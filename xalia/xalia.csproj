@@ -106,11 +106,14 @@
     <Compile Include="Input\InputMapping.cs" />
     <Compile Include="Input\InputState.cs" />
     <Compile Include="Input\InputSystem.cs" />
+    <Compile Include="Input\VirtualInputBackend.cs" />
+    <Compile Include="Input\VirtualInputSink.cs" />
     <Compile Include="MainClass.cs" />
     <Compile Include="Sdl\GameControllerInput.cs" />
     <Compile Include="Sdl\SdlSynchronizationContext.cs" />
     <Compile Include="Sdl\X11WindowingSystem.cs" />
     <Compile Include="UiDom\IUiDomApplication.cs" />
+    <Compile Include="UiDom\SimulateDpad.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
     <Compile Include="UiDom\UiDomInt.cs" />

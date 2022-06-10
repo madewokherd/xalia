@@ -12,9 +12,22 @@ namespace Xalia.Input
         Dictionary<string, InputState> watching_actions = new Dictionary<string, InputState>();
         Dictionary<string, Queue<InputState>> injected_inputs = new Dictionary<string, Queue<InputState>>();
 
+        VirtualInputBackend _virtualInputBackend;
+
+        internal VirtualInputBackend VirtualInputBackend
+        {
+            get
+            {
+                if (_virtualInputBackend is null)
+                {
+                    _virtualInputBackend = new VirtualInputBackend();
+                }
+                return _virtualInputBackend;
+            }
+        }
+
         private InputSystem()
         {
-
         }
 
         public static InputSystem Instance { get; } = new InputSystem();
@@ -166,6 +179,11 @@ namespace Xalia.Input
             queue.Enqueue(state);
 
             UpdateActionState(action);
+        }
+
+        public VirtualInputSink CreateVirtualInput(string action)
+        {
+            return VirtualInputBackend.AddInputSink(action);
         }
     }
 }

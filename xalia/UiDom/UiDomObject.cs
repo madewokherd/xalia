@@ -240,6 +240,8 @@ namespace Xalia.UiDom
                     return UiDomBoolean.FromBool(this is UiDomRoot);
                 case "root":
                     return root;
+                case "simulate_dpad":
+                    return new SimulateDpad();
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))
