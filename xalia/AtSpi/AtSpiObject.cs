@@ -788,6 +788,11 @@ namespace Xalia.AtSpi
             await selection.ClearSelectionAsync();
         }
 
+        private async Task SetFocus(UiDomRoutineAsync routine)
+        {
+            await component.GrabFocusAsync();
+        }
+
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
         {
             switch (id)
@@ -897,6 +902,10 @@ namespace Xalia.AtSpi
                 case "clear_selection":
                     // FIXME: check whether this supports ISelection?
                     return new UiDomRoutineAsync(this, "spi_clear_selection", ClearSelection);
+                case "set_focus":
+                case "spi_set_focus":
+                case "spi_grab_focus":
+                    return new UiDomRoutineAsync(this, "spi_grab_focus", SetFocus);
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))
