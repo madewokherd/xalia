@@ -158,6 +158,8 @@ namespace Xalia.UiDom
                 case "child_matches":
                 case "first_child_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.Child);
+                case "parent_matches":
+                    return new UiDomRelationship(this, UiDomRelationshipKind.Parent);
                 case "last_child_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.LastChild);
                 case "sibling_matches":

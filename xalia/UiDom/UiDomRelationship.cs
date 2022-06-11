@@ -13,6 +13,7 @@ namespace Xalia.UiDom
         ThisOrAncestor,
         ThisOrDescendent,
         Child,
+        Parent,
         LastChild,
         NextSibling,
         PreviousSibling
@@ -29,6 +30,7 @@ namespace Xalia.UiDom
             Names["this_or_ancestor_matches"] = UiDomRelationshipKind.ThisOrAncestor;
             Names["this_or_descendent_matches"] = UiDomRelationshipKind.ThisOrDescendent;
             Names["child_matches"] = UiDomRelationshipKind.Child;
+            Names["parent_matches"] = UiDomRelationshipKind.Parent;
             Names["last_child_matches"] = UiDomRelationshipKind.LastChild;
             Names["next_sibling_matches"] = UiDomRelationshipKind.NextSibling;
             Names["previous_sibling_matches"] = UiDomRelationshipKind.PreviousSibling;
@@ -66,6 +68,8 @@ namespace Xalia.UiDom
                     return "this_or_descendent_matches";
                 case UiDomRelationshipKind.Child:
                     return "child_matches";
+                case UiDomRelationshipKind.Parent:
+                    return "parent_matches";
                 case UiDomRelationshipKind.LastChild:
                     return "last_child_matches";
                 case UiDomRelationshipKind.NextSibling:

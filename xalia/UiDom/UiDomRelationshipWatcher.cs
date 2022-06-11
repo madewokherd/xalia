@@ -132,6 +132,14 @@ namespace Xalia.UiDom
                         }
                         return UiDomUndefined.Instance;
                     }
+                case UiDomRelationshipKind.Parent:
+                    {
+                        if (Owner.Parent is null)
+                            return UiDomUndefined.Instance;
+                        if (Owner.Parent.Evaluate(Expression, depends_on).ToBool())
+                            return Owner.Parent;
+                        return UiDomUndefined.Instance;
+                    }
                 default:
                     return UiDomUndefined.Instance;
             }
