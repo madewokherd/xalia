@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-
+using System.Threading.Tasks;
 using SDL2;
 
 namespace Xalia.Sdl
@@ -20,6 +20,8 @@ namespace Xalia.Sdl
             {
                 case "x11":
                     return new X11WindowingSystem();
+                case "wayland":
+                    return new XdgWindowingSystem();
                 default:
                     return new WindowingSystem();
             }
@@ -103,6 +105,16 @@ namespace Xalia.Sdl
             SDL.SDL_GetDisplayDPI(closest_display, out ddpi, out hdpi, out vdpi);
 
             return hdpi;
+        }
+
+        public virtual bool CanShowKeyboard()
+        {
+            return false;
+        }
+
+        public virtual Task ShowKeyboardAsync()
+        {
+            return Task.CompletedTask;
         }
     }
 }

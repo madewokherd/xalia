@@ -12,6 +12,7 @@ namespace Xalia.Input
         Released,
         Pressed,
         Repeat,
+        Pulse, // Indicates input source that can only send an "activate" event, not track state
         AnalogJoystick, // XAxis and YAxis range from -32768 to 32767
         AnalogButton // XAxis ranges from 0 to 32767
     }
@@ -22,8 +23,19 @@ namespace Xalia.Input
         public short XAxis;
         public short YAxis;
 
+        public InputState(InputStateKind kind)
+        {
+            Kind = kind;
+            XAxis = 0;
+            YAxis = 0;
+        }
+
         public static InputState Combine(InputState a, InputState b)
         {
+            if (a.Kind == InputStateKind.Pulse)
+                return a;
+            if (b.Kind == InputStateKind.Pulse)
+                return b;
             if (a.Kind == InputStateKind.Repeat)
                 return a;
             if (b.Kind == InputStateKind.Repeat)
@@ -60,7 +72,9 @@ namespace Xalia.Input
                 {
                     case InputStateKind.Pressed:
                     case InputStateKind.Repeat:
+                    case InputStateKind.Pulse:
                         return 32767;
+
                     case InputStateKind.Disconnected:
                     case InputStateKind.Released:
                         return 0;
@@ -81,6 +95,7 @@ namespace Xalia.Input
                 {
                     case InputStateKind.Pressed:
                     case InputStateKind.Repeat:
+                    case InputStateKind.Pulse:
                         return true;
                     case InputStateKind.Disconnected:
                     case InputStateKind.Released:

@@ -47,6 +47,8 @@ namespace Xalia.Input
             {
                 get
                 {
+                    if (State.Kind == InputStateKind.Pulse)
+                        return true;
                     if (PreviousState.Kind == InputStateKind.Disconnected)
                         // If a button was *already pressed* when first connected, it wasn't "just pressed".
                         return false;

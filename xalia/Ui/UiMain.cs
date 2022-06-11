@@ -507,8 +507,19 @@ namespace Xalia.Ui
                 case "targeted":
                     depends_on.Add((element, new IdentifierExpression("targeted")));
                     return UiDomBoolean.FromBool(TargetedElement == element);
+                case "show_keyboard":
+                    if (Windowing.CanShowKeyboard())
+                    {
+                        return new UiDomRoutineAsync(null, "show_keyboard", ShowKeyboard);
+                    }
+                    break;
             }
             return null;
+        }
+
+        private async Task ShowKeyboard(UiDomRoutineAsync obj)
+        {
+            await Windowing.ShowKeyboardAsync();
         }
 
         private bool TryGetElementTargetBounds(UiDomObject element, out (int, int, int, int) bounds)

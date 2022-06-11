@@ -174,6 +174,8 @@ namespace Xalia.UiDom
 
                             if (left is UiDomInt lint && right is UiDomInt rint)
                                 return new UiDomInt(lint.Value + rint.Value);
+                            if (left is UiDomRoutine lrou && right is UiDomRoutine rrou)
+                                return new UiDomRoutineSequence(lrou, rrou);
                             return UiDomUndefined.Instance;
                         }
                     case GudlToken.Minus:

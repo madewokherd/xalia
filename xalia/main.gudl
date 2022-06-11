@@ -194,7 +194,7 @@ if (interactable) {
         targetable: true;
         if (targeted)
         {
-            action_on_A: set_focus;
+            action_on_A: set_focus+show_keyboard;
             action_name_A: "Show Keyboard";
         }
     }

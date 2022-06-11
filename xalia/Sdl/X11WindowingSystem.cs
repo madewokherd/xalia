@@ -10,7 +10,7 @@ using SDL2;
 
 namespace Xalia.Sdl
 {
-    internal class X11WindowingSystem : WindowingSystem
+    internal class X11WindowingSystem : XdgWindowingSystem
     {
         internal IntPtr display;
         private IntPtr root_window;

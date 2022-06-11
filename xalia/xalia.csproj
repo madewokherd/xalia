@@ -112,6 +112,7 @@
     <Compile Include="Sdl\GameControllerInput.cs" />
     <Compile Include="Sdl\SdlSynchronizationContext.cs" />
     <Compile Include="Sdl\X11WindowingSystem.cs" />
+    <Compile Include="Sdl\XdgWindowingSystem.cs" />
     <Compile Include="UiDom\IUiDomApplication.cs" />
     <Compile Include="UiDom\SimulateDpad.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
@@ -122,6 +123,7 @@
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />
     <Compile Include="UiDom\UiDomRoot.cs" />
     <Compile Include="UiDom\UiDomRoutine.cs" />
+    <Compile Include="UiDom\UiDomRoutineSequence.cs" />
     <Compile Include="UiDom\UiDomRoutineSync.cs" />
     <Compile Include="UiDom\UiDomRoutineAsync.cs" />
     <Compile Include="UiDom\UiDomString.cs" />
