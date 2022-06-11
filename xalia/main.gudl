@@ -200,11 +200,11 @@ if (interactable) {
     }
 
     // Tab bar navigation
-    page_tab (previous_sibling_matches(child(spi_state.showing))) {
+    page_tab (previous_sibling_matches(interactable).spi_state.selected) {
         action_on_RB: spi_select;
         action_name_RB: spi_name;
     }
-    page_tab (next_sibling_matches(child(spi_state.showing))) {
+    page_tab (next_sibling_matches(interactable).spi_state.selected) {
         action_on_LB: spi_select;
         action_name_LB: spi_name;
     }
