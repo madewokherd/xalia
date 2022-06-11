@@ -92,7 +92,7 @@ namespace Xalia.Ui
                 info = object_actions[obj].Find((ActionInfo ai) => action == ai.action);
                 return true;
             }
-            info = default;
+            info = null;
             return false;
         }
 
@@ -428,6 +428,8 @@ namespace Xalia.Ui
                 old_actions = new List<ActionInfo>();
             }
 
+            var actions_to_watch = new List<string>();
+
             foreach (var action in new_actions)
             {
                 if (old_actions.Find((ActionInfo ai) => ai.action == action.action) is ActionInfo old_info)
@@ -448,7 +450,7 @@ namespace Xalia.Ui
 
                 if (objects.Count == 1)
                 {
-                    InputSystem.Instance.WatchAction(action.action);
+                    actions_to_watch.Add(action.action);
                 }
             }
             object_actions[obj] = new_actions;
@@ -464,6 +466,8 @@ namespace Xalia.Ui
                     InputSystem.Instance.UnwatchAction(action.action);
                 }
             }
+            foreach (var action_name in actions_to_watch)
+                InputSystem.Instance.WatchAction(action_name);
         }
 
         private void DiscardActions(UiDomObject obj)
