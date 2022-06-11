@@ -145,7 +145,7 @@ namespace Xalia.UiDom
             var new_depends_on = new HashSet<(UiDomObject, GudlExpression)>();
             var new_value = CalculateValue(new_depends_on);
 
-            if (new_value != Value)
+            if (!new_value.Equals(Value))
             {
 #if DEBUG
                 Console.WriteLine($"{Owner}.{AsProperty}: {new_value}");

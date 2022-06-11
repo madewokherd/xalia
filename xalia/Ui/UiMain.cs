@@ -132,7 +132,6 @@ namespace Xalia.Ui
 
                 if (GetActionInfo(e.Action, out var info))
                 {
-
                     var obj = info.element;
 
                     routine = info.routine;
