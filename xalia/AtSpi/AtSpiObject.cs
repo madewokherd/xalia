@@ -257,23 +257,29 @@ namespace Xalia.AtSpi
             switch (propname)
             {
                 case "accessible-role":
-                    Role = (int)value;
-                    RoleKnown = true;
+                    if (value is int role)
+                    {
+                        Role = role;
+                        RoleKnown = true;
 #if DEBUG
-                    if (Role < role_to_enum.Length)
-                        Console.WriteLine($"{this}.spi_role: {role_to_enum[Role]}");
-                    else
-                        Console.WriteLine($"{this}.spi_role: {Role}");
+                        if (Role < role_to_enum.Length)
+                            Console.WriteLine($"{this}.spi_role: {role_to_enum[Role]}");
+                        else
+                            Console.WriteLine($"{this}.spi_role: {Role}");
 #endif
-                    PropertyChanged("spi_role");
+                        PropertyChanged("spi_role");
+                    }
                     break;
                 case "accessible-name":
-                    Name = (string)value;
-                    NameKnown = true;
+                    if (value is string name)
+                    {
+                        Name = name;
+                        NameKnown = true;
 #if DEBUG
-                    Console.WriteLine($"{this}.spi_name: {Name}");
+                        Console.WriteLine($"{this}.spi_name: {Name}");
 #endif
-                    PropertyChanged("spi_name");
+                        PropertyChanged("spi_name");
+                    }
                     break;
             }
         }
