@@ -75,7 +75,7 @@ if (interactable) {
 }
 ```
 
-The language works based on pattern-matching. In this example we are searching for an element with the combo_box role that is "interactable" (generally, in the active window while there isn't a menu open - the exact definition is defined within GUDL). All matching controls are marked as "targetable" which makes it possible to navigate to it. If the control is targeted, they also have actions defined on them. If a targeted combo box has a child with the "text" role then a secondary action is defined on that.
+The language works based on pattern-matching. In this example we are searching for an element with the combo_box role that is "interactable" (generally, in the active window while there isn't a menu open - the exact definition is defined within GUDL). All matching controls are marked as "targetable" which makes it possible to navigate to it. If the control is targeted, it also has actions defined on it. If a targeted combo box has a child with the "text" role then a secondary action to open an on-screen keyboard is defined on that.
 
 All of these conditions are monitored, and if any of them changes (for example, a menu opens, making the combo box no longer "interactable"), the declarations inside no longer apply.
 
