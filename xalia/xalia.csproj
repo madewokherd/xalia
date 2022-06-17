@@ -88,6 +88,7 @@
     <Compile Include="AtSpi\AtSpiConnection.cs" />
     <Compile Include="AtSpi\AtSpiObject.cs" />
     <Compile Include="AtSpi\AtSpiState.cs" />
+    <Compile Include="AtSpi\AtSpiSupported.cs" />
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.cs" />
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.Launcher.cs" />
     <Compile Include="Gudl\BinaryExpression.cs" />

@@ -202,6 +202,9 @@ namespace Xalia.AtSpi
         public bool NameKnown { get; private set; }
         private bool fetching_name;
 
+        public string[] SupportedInterfaces { get; private set; }
+        private bool fetching_supported;
+
         static AtSpiObject()
         {
             name_to_role = new Dictionary<string, int>();
@@ -622,6 +625,13 @@ namespace Xalia.AtSpi
                             Utils.RunTask(FetchActions());
                         }
                         break;
+                    case "spi_supported":
+                        if (!fetching_supported)
+                        {
+                            fetching_supported = true;
+                            Utils.RunTask(FetchSupported());
+                        }
+                        break;
                 }
             }
 
@@ -687,6 +697,15 @@ namespace Xalia.AtSpi
             Console.WriteLine($"{this}.spi_action: ({string.Join(",", Actions)})");
 #endif
             PropertyChanged("spi_action");
+        }
+
+        private async Task FetchSupported()
+        {
+            SupportedInterfaces = await acc.GetInterfacesAsync();
+#if DEBUG
+            Console.WriteLine($"{this}.spi_supported: ({string.Join(",", SupportedInterfaces)})");
+#endif
+            PropertyChanged("spi_supported");
         }
 
         private async Task RefreshAbsPos()
@@ -912,6 +931,13 @@ namespace Xalia.AtSpi
                 case "spi_set_focus":
                 case "spi_grab_focus":
                     return new UiDomRoutineAsync(this, "spi_grab_focus", SetFocus);
+                case "spi_supported":
+                    depends_on.Add((this, new IdentifierExpression("spi_supported")));
+                    if (!(SupportedInterfaces is null))
+                    {
+                        return new AtSpiSupported(this, SupportedInterfaces);
+                    }
+                    return UiDomUndefined.Instance;
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))

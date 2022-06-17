@@ -93,6 +93,10 @@ if (parent.spi_role.menu)
 
 if (spi_role.(desktop_frame or application)) {
     recurse: true;
+
+    if (not spi_supported.collection) {
+        poll_children: true;
+    }
 }
 
 if (spi_role.(window or frame or dialog or color_chooser or file_chooser or font_chooser))
