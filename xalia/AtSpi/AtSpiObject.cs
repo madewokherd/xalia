@@ -52,6 +52,7 @@ namespace Xalia.AtSpi
 
         internal IAccessible acc;
         internal IAction action;
+        internal IApplication app;
         internal IComponent component;
         internal IText text_iface;
         internal ISelection selection;
@@ -205,6 +206,9 @@ namespace Xalia.AtSpi
         public string[] SupportedInterfaces { get; private set; }
         private bool fetching_supported;
 
+        public string ToolkitName { get; private set; }
+        private bool fetching_toolkit_name;
+
         static AtSpiObject()
         {
             name_to_role = new Dictionary<string, int>();
@@ -235,6 +239,7 @@ namespace Xalia.AtSpi
             state = new AtSpiState(this);
             acc = connection.connection.CreateProxy<IAccessible>(service, path);
             action = connection.connection.CreateProxy<IAction>(service, path);
+            app = connection.connection.CreateProxy<IApplication>(service, path);
             component = connection.connection.CreateProxy<IComponent>(service, path);
             text_iface = connection.connection.CreateProxy<IText>(service, path);
             selection = connection.connection.CreateProxy<ISelection>(service, path);
@@ -632,6 +637,13 @@ namespace Xalia.AtSpi
                             Utils.RunTask(FetchSupported());
                         }
                         break;
+                    case "spi_toolkit_name":
+                        if (!fetching_toolkit_name)
+                        {
+                            fetching_toolkit_name = true;
+                            Utils.RunTask(FetchToolkitName());
+                        }
+                        break;
                 }
             }
 
@@ -708,6 +720,14 @@ namespace Xalia.AtSpi
             PropertyChanged("spi_supported");
         }
 
+        private async Task FetchToolkitName()
+        {
+            ToolkitName = await app.GetToolkitNameAsync();
+#if DEBUG
+            Console.WriteLine($"{this}.spi_toolkit_name: {ToolkitName}");
+#endif
+            PropertyChanged("spi_toolkit_name");
+        }
         private async Task RefreshAbsPos()
         {
             if (!watching_abs_position)
@@ -936,6 +956,15 @@ namespace Xalia.AtSpi
                     if (!(SupportedInterfaces is null))
                     {
                         return new AtSpiSupported(this, SupportedInterfaces);
+                    }
+                    return UiDomUndefined.Instance;
+                case "toolkit":
+                case "spi_toolkit":
+                case "spi_toolkit_name":
+                    depends_on.Add((this, new IdentifierExpression("spi_toolkit_name")));
+                    if (!(ToolkitName is null))
+                    {
+                        return new UiDomString(ToolkitName);
                     }
                     return UiDomUndefined.Instance;
             }

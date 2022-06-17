@@ -94,7 +94,8 @@ if (parent.spi_role.menu)
 if (spi_role.(desktop_frame or application)) {
     recurse: true;
 
-    if (not spi_supported.collection) {
+    if (spi_toolkit_name == "Qt") {
+        // Qt on AT-SPI2 does not notify when children of its application object are created or destroyed.
         poll_children: true;
     }
 }
