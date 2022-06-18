@@ -48,6 +48,8 @@ namespace Xalia.AtSpi
         public bool AbsPositionKnown;
         public int AbsX { get; private set; }
         public int AbsY { get; private set; }
+        public int AbsWidth { get; private set; }
+        public int AbsHeight { get; private set; }
 
         private bool fetching_actions;
         public string[] Actions { get; private set; }
@@ -822,18 +824,20 @@ namespace Xalia.AtSpi
             if (!watching_abs_position)
                 return;
 
-            (var x, var y) = await component.GetPositionAsync(0); // ATSPI_COORD_TYPE_SCREEN
+            (var x, var y, var width, var height) = await component.GetExtentsAsync(0); // ATSPI_COORD_TYPE_SCREEN
 
             if (!watching_abs_position)
                 return;
 
-            if (!AbsPositionKnown || x != AbsX || y != AbsY)
+            if (!AbsPositionKnown || x != AbsX || y != AbsY || width != AbsWidth || height != AbsHeight)
             {
                 AbsPositionKnown = true;
                 AbsX = x;
                 AbsY = y;
+                AbsWidth = width;
+                AbsHeight = height;
 #if DEBUG
-                Console.WriteLine($"{this}.spi_abs_pos: ({x},{y})");
+                Console.WriteLine($"{this}.spi_abs_pos: ({x},{y},{width},{height})");
 #endif
                 PropertyChanged("spi_abs_pos");
             }
@@ -964,13 +968,11 @@ namespace Xalia.AtSpi
                     if (BoundsKnown)
                         return new UiDomInt(Y);
                     return UiDomUndefined.Instance;
-                case "width":
                 case "spi_width":
                     depends_on.Add((this, new IdentifierExpression("spi_bounds")));
                     if (BoundsKnown)
                         return new UiDomInt(Width);
                     return UiDomUndefined.Instance;
-                case "height":
                 case "spi_height":
                     depends_on.Add((this, new IdentifierExpression("spi_bounds")));
                     if (BoundsKnown)
@@ -1005,10 +1007,22 @@ namespace Xalia.AtSpi
                     if (AbsPositionKnown)
                         return new UiDomInt(AbsY);
                     return UiDomUndefined.Instance;
+                case "width":
+                case "spi_abs_width":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPositionKnown)
+                        return new UiDomInt(AbsWidth);
+                    return UiDomUndefined.Instance;
+                case "height":
+                case "spi_abs_height":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPositionKnown)
+                        return new UiDomInt(AbsHeight);
+                    return UiDomUndefined.Instance;
                 case "spi_abs_pos":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
-                        return new UiDomString($"({AbsX}, {AbsY})");
+                        return new UiDomString($"({AbsX}, {AbsY}, {AbsWidth}, {AbsHeight})");
                     return UiDomUndefined.Instance;
                 case "spi_action":
                     depends_on.Add((this, new IdentifierExpression("spi_action")));

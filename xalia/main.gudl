@@ -141,8 +141,12 @@ if (targetable) {
     // Absolute screen coordinates
     target_x: abs_x;
     target_y: abs_y;
-    target_width: width;
-    target_height: height;
+
+    // For some reason, Qt often returns incorrect values when querying width or height in any
+    // coordinate space other than screen. Since we're already polling for absolute position,
+    // it doesn't make much sense to gate this behavior on toolkit.
+    target_width: spi_abs_width;
+    target_height: spi_abs_height;
 }
 
 // Rules that apply to controls in the active window
