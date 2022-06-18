@@ -152,7 +152,9 @@ if (spi_state.active and not root.disable_interactions) {
 // We'd need an unbroken chain of enabled/visible controls from the active window to interact with
 // a control through the mouse and keyboard, so normally we should only consider those. AT-SPI may
 // let us do things with other controls, but it might be confusing or break applications.
-if (spi_state.enabled and spi_state.showing and spi_state.sensitive and spi_state.visible and parent.interactable) {
+if (spi_state.enabled and spi_state.showing and spi_state.sensitive and
+    (spi_state.visible or spi_application.toolkit_name == "Qt") and // Qt doesn't reliably set visible for some reason
+    parent.interactable) {
 
     // Qt combo boxes have a structure like this: tool_bar(text, combo_box(list, text))
     // That is, the text is duplicated. We want to ignore the extra text box that is outside the combo_box in the tree.
