@@ -330,7 +330,7 @@ namespace Xalia.UiDom
 
             foreach (var kvp in _activeDeclarations)
             {
-                if (!all_declarations.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
+                if (!all_declarations.TryGetValue(kvp.Key, out var value) || !value.Equals(kvp.Value))
                     changed.Add(new IdentifierExpression(kvp.Key));
             }
 

@@ -55,5 +55,21 @@ namespace Xalia.UiDom
                 handler(this, e);
             }
         }
+
+        public override bool Equals(object obj)
+        {
+            // Assumes that any 2 routines on the same element with the same name are identical.
+            // We should maintain that constraint for debugging purposes anyway.
+            if (obj is UiDomRoutine rou)
+            {
+                return Element == rou.Element && Name == rou.Name;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return (Element, Name).GetHashCode() ^ typeof(UiDomRoutine).GetHashCode();
+        }
     }
 }
