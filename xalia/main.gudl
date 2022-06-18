@@ -59,14 +59,37 @@ menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_b
     }
 }
 
+// Qt combo boxes contain lists, not menus like in Gtk
+combo_box (child_matches(spi_role.list and spi_state.(showing and focused)))
+{
+    root
+    {
+        disable_interactions: true;
+    }
+
+    // We can't manipulate the menu through AT-SPI, we have to use the keyboard
+    action_on_dpad_up: send_key.up;
+    action_on_dpad_down: send_key.down;
+    action_on_left_stick: simulate_dpad;
+    action_on_A: send_key.enter;
+    action_name_A: "Select";
+    action_on_B: send_key.esc or spi_action.Press;
+    action_name_B: "Back";
+    action_on_Start: send_key.esc or spi_action.Press;
+    action_name_Start: "Close Menu";
+}
+
 // Controls for targeting elements
 root
 {
-    action_on_dpad_up: target_move_up;
-    action_on_dpad_down: target_move_down;
-    action_on_dpad_left: target_move_left;
-    action_on_dpad_right: target_move_right;
-    action_on_left_stick: target_move;
+    if (not disable_interactions)
+    {
+        action_on_dpad_up: target_move_up;
+        action_on_dpad_down: target_move_down;
+        action_on_dpad_left: target_move_left;
+        action_on_dpad_right: target_move_right;
+        action_on_left_stick: target_move;
+    }
     action_repeat_delay_dpad_up: 500;
     action_repeat_delay_dpad_down: 500;
     action_repeat_delay_dpad_left: 500;
