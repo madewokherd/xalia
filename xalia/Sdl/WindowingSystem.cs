@@ -116,5 +116,17 @@ namespace Xalia.Sdl
         {
             return Task.CompletedTask;
         }
+
+        public virtual bool CanSendKeys => false;
+
+        public virtual Task SendKey(int keysym)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task SendKey(string key)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -130,6 +130,7 @@
     <Compile Include="UiDom\UiDomString.cs" />
     <Compile Include="UiDom\UiDomUndefined.cs" />
     <Compile Include="UiDom\UiDomValue.cs" />
+    <Compile Include="Ui\SendKey.cs" />
     <Compile Include="Ui\TargetMoveRoutine.cs" />
     <Compile Include="Ui\UiMain.cs" />
     <Compile Include="Utils.cs" />

@@ -517,6 +517,12 @@ namespace Xalia.Ui
                         return new UiDomRoutineAsync(null, "show_keyboard", ShowKeyboard);
                     }
                     break;
+                case "send_key":
+                    if (Windowing.CanSendKeys)
+                    {
+                        return new SendKey(Windowing);
+                    }
+                    break;
             }
             return null;
         }

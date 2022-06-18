@@ -8,7 +8,7 @@ namespace Xalia
 {
     internal class XKeyCodes
     {
-        public static int GetKeyCode(string name)
+        public static int GetKeySym(string name)
         {
             switch (name)
             {

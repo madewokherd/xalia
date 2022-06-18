@@ -60,7 +60,7 @@ menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_b
 }
 
 // Qt combo boxes contain lists, not menus like in Gtk
-combo_box (child_matches(spi_role.list and spi_state.(showing and focused)))
+combo_box (child_matches(spi_role.list and (spi_state.focused or child_matches(spi_state.focused))))
 {
     root
     {
@@ -135,6 +135,12 @@ if (spi_role.(filler or internal_frame or panel or html_container or
               viewport or embedded or document_frame or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list or menu_bar or menu or combo_box)) {
+    recurse: true;
+}
+
+// Required to determine when a combo box is open in Qt
+list (parent.spi_role.combo_box and spi_application.toolkit_name == "Qt")
+{
     recurse: true;
 }
 
