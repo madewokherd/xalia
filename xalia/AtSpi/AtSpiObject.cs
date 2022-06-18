@@ -21,6 +21,8 @@ namespace Xalia.AtSpi
 
         private bool watching_children;
         private bool children_known;
+        private bool polling_children;
+        private CancellationTokenSource children_poll_token;
         private IDisposable children_changed_event;
         private IDisposable property_change_event;
         private IDisposable state_changed_event;
@@ -340,6 +342,12 @@ namespace Xalia.AtSpi
                     abs_position_refresh_token = null;
                 }
                 watching_abs_position = false;
+                if (children_poll_token != null)
+                {
+                    children_poll_token.Cancel();
+                    children_poll_token = null;
+                }
+                polling_children = false;
             }
             base.SetAlive(value);
         }
@@ -367,6 +375,66 @@ namespace Xalia.AtSpi
             children_known = true;
         }
 
+        private static bool ElementIdMatches(UiDomObject obj, (string, ObjectPath) id)
+        {
+            if (obj is AtSpiObject atspi)
+            {
+                return atspi.Service == id.Item1 && atspi.Path == id.Item2.ToString();
+            }
+            return false;
+        }
+
+        private async Task PollChildren()
+        {
+            if (!polling_children)
+                return;
+
+            var children = await acc.GetChildrenAsync(); // ATSPI_COORD_TYPE_SCREEN
+
+            if (!polling_children)
+                return;
+
+            // First remove any existing children that are missing or out of order
+            int i = 0;
+            foreach (var new_child in children)
+            {
+                if (!Children.Exists((UiDomObject obj) => ElementIdMatches(obj, new_child)))
+                    continue;
+                while (!ElementIdMatches(Children[i], new_child))
+                {
+                    RemoveChild(i);
+                }
+                i++;
+            }
+
+            // Add any new children
+            for (i = 0; i < children.Length; i++)
+            {
+                if (Children.Count <= i || !ElementIdMatches(Children[i], children[i]))
+                {
+                    string service = children[i].Item1;
+                    ObjectPath path = children[i].Item2;
+                    AddChild(i, new AtSpiObject(Connection, service, path));
+                }
+            }
+
+            children_known = true;
+
+            children_poll_token = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Delay(500, children_poll_token.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                children_poll_token = null;
+                return;
+            }
+
+            children_poll_token = null;
+            Utils.RunIdle(PollChildren()); // Unsure if RunTask would accumulate stack frames forever
+        }
         internal void WatchChildren()
         {
             if (watching_children)
@@ -447,6 +515,27 @@ namespace Xalia.AtSpi
                 WatchChildren();
             else
                 UnwatchChildren();
+
+            if (all_declarations.TryGetValue("poll_children", out var poll_children) && poll_children.ToBool())
+            {
+                if (!polling_children)
+                {
+                    polling_children = true;
+                    Utils.RunTask(PollChildren());
+                }
+            }
+            else
+            {
+                if (polling_children)
+                {
+                    polling_children = false;
+                    if (children_poll_token != null)
+                    {
+                        children_poll_token.Cancel();
+                        children_poll_token = null;
+                    }
+                }
+            }
 
             base.DeclarationsChanged(all_declarations, dependencies);
         }
