@@ -221,7 +221,7 @@ namespace Xalia.UiDom
                             return UiDomUndefined.Instance;
                         depends_on.Add((Parent, new IdentifierExpression("children")));
                         int idx = Parent.Children.IndexOf(this) + 1;
-                        if (idx + 1 < Parent.Children.Count)
+                        if (idx < Parent.Children.Count)
                             return Parent.Children[idx];
                         return UiDomUndefined.Instance;
                     }

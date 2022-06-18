@@ -1062,12 +1062,24 @@ namespace Xalia.AtSpi
                     }
                     return UiDomUndefined.Instance;
                 case "toolkit":
+                case "toolkit_name":
                 case "spi_toolkit":
                 case "spi_toolkit_name":
                     depends_on.Add((this, new IdentifierExpression("spi_toolkit_name")));
                     if (!(ToolkitName is null))
                     {
                         return new UiDomString(ToolkitName);
+                    }
+                    return UiDomUndefined.Instance;
+                case "spi_application":
+                    {
+                        foreach (var application in Connection.DesktopFrame.Children)
+                        {
+                            if (application is AtSpiObject atspi && atspi.Service == Service)
+                            {
+                                return application;
+                            }
+                        }
                     }
                     return UiDomUndefined.Instance;
             }
