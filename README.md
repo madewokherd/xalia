@@ -19,7 +19,9 @@ No button prompts are displayed yet. I think this would be good to have in the f
 
 # Setup
 
-**Binary builds are not yet available. Coming soon.**
+The latest release can be downloaded from https://github.com/madewokherd/xalia/releases
+
+On Linux, use the archive labeled "netstandard2.0". It contains an exe that can run with Mono.
 
 ## Linux
 
