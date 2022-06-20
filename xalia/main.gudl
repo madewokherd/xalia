@@ -79,6 +79,28 @@ combo_box (child_matches(spi_role.list and (spi_state.focused or child_matches(s
     action_name_Start: "Close Menu";
 }
 
+// Qt/AT-SPI2 menus
+popup_menu (spi_state.showing)
+{
+    root
+    {
+        disable_interactions: true;
+    }
+
+    // We can't manipulate the menu through AT-SPI, we have to use the keyboard
+    action_on_dpad_up: send_key.up;
+    action_on_dpad_down: send_key.down;
+    action_on_dpad_left: send_key.left;
+    action_on_dpad_right: send_key.right;
+    action_on_left_stick: simulate_dpad;
+    action_on_A: send_key.enter;
+    action_name_A: "Select";
+    action_on_B: send_key.esc or parent.spi_action.ShowMenu;
+    action_name_B: "Back";
+    action_on_Start: send_key.esc or parent.spi_action.ShowMenu;
+    action_name_Start: "Close Menu";
+}
+
 // Controls for targeting elements
 root
 {
@@ -134,7 +156,8 @@ if (spi_role.(filler or internal_frame or panel or html_container or
               split_pane or table or table_cell or toolbar or
               viewport or embedded or document_frame or
               section or page or form or table_row or document_web or grouping
-              or info_bar or page_tab or page_tab_list or menu_bar or menu or combo_box)) {
+              or info_bar or page_tab or page_tab_list or menu_bar or menu or
+              combo_box or menu_item)) {
     recurse: true;
 }
 
@@ -186,6 +209,11 @@ if (targetable) {
     // it doesn't make much sense to gate this behavior on toolkit.
     target_width: spi_abs_width;
     target_height: spi_abs_height;
+
+    if (targeted and action_on_PrimaryAction) {
+        action_on_A: action_on_PrimaryAction;
+        action_name_A: action_name_PrimaryAction;
+    }
 }
 
 // Rules that apply to controls in the active window
@@ -197,8 +225,6 @@ if (interactable) {
         action_name_PrimaryAction: "Select";
 
         if (targeted) {
-            action_on_A: action_on_PrimaryAction;
-            action_name_A: action_name_PrimaryAction;
             child (spi_role.text) {
                 action_on_Y: set_focus+show_keyboard;
                 action_name_Y: "Show Keyboard";
@@ -215,6 +241,16 @@ if (interactable) {
             action_name_A: "Click";
         }
     }
+
+    // Qt/AT-SPI2 does its menu bars this way
+    menu_item (parent.spi_role.menu_bar and spi_action.ShowMenu)
+    {
+        targetable: true;
+
+        action_on_PrimaryAction: spi_action.ShowMenu;
+        action_name_PrimaryAction: "Click";
+    }
+
     page_tab {
         targetable: true;
         if (targeted)
