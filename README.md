@@ -11,7 +11,7 @@ Only the Linux platform with AT-SPI2 is currently working.
 
 The GTK and wxWidgets toolkits work. Standard button, text box, combo box, check box, and tab controls are usable. Activating a textbox is currently hard-coded to run "onboard", unfortunately I could not find any on-screen keyboard for Linux that I could start which would allow for gamepad inputs.
 
-Qt does not work yet due to an issue with discovering Qt windows, and because standard Qt controls work differently from GTK controls. All of those issues appear to be solvable.
+Qt works but requires separate configuration and keyboard injection support (only implemented on X11).
 
 I have not tested on Wayland yet, but I'm not aware of anything that would prevent it from working right now.
 
@@ -29,6 +29,12 @@ Requirements:
  * AT-SPI2. This is probably included with your desktop environment, but you will need to enable it.
 
 You will need to enable AT-SPI2. On XFCE, this can be done by starting "Accessibility" in the applications menu and enabling the checkbox labeled "Enable assistive technologies". You will need to log in again for the change to take effect.
+
+For Qt applications, you will need to run this command:
+```
+gsettings set org.gnome.desktop.a11y.applications screen-reader-enabled true
+```
+or set the environment variable `QT_LINUX_ACCESSIBILITY_ALWAYS_ON=1`.
 
 Once all of the setup is complete, run `mono xalia.exe` in a terminal. To quit, press Ctrl+C in the terminal. There is no GUI available for configuration and starting/stopping the program yet, but hopefully that will change in the future.
 
@@ -50,7 +56,7 @@ Here are the default controls when using a gamepad:
  * **X (or top face button)**: Secondary action for the selected control, currently this opens a virtual keyboard when a combo box containing a text field is targeted.
  * **B (or right face button)**: Exit a submenu, or click the Close/Cancel/No button if one exists in the current window.
  * **Start**: Toggle the application menu, or click the OK/Yes button if one exists in the current window.
- * **LB (or front left shoulder button)** and **RB (or front right shoulder button)**: Switch to the previous or next tab respectively.
+ * **LB (or front left shoulder button)** and **RB (or front right shoulder button)**: Switch to the previous or next tab respectively. (Does not work in Qt applications because it is not possible to determine which tab is selected.)
 
 This is based on SDL2's GameController mapping, which should use the same layout for whatever controller you have, but the buttons may be labeled differently.
 
