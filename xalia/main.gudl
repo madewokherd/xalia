@@ -255,21 +255,15 @@ if (interactable) {
         action_name_PrimaryAction: "Select Tab";
     }
 
-    if ((spi_role.button or spi_role.radio_button) and spi_action.click) {
+    if ((spi_role.button or spi_role.radio_button) and spi_action.(click or Press or Toggle)) {
         targetable: true;
-        if (targeted)
-        {
-            action_on_A: spi_action.click;
-            action_name_A: "Click";
-        }
+        action_on_PrimaryAction: spi_action.(click or Press or Toggle);
+        action_name_PrimaryAction: "Click";
     }
-    check_box (spi_action.click) {
+    check_box (spi_action.(click or Toggle or Press)) {
         targetable: true;
-        if (targeted)
-        {
-            action_on_A: spi_action.click;
-            action_name_A: "Toggle";
-        }
+        action_on_PrimaryAction: spi_action.(click or Toggle or Press);
+        action_name_PrimaryAction: "Toggle";
     }
     text {
         targetable: true;
@@ -298,15 +292,15 @@ if (interactable) {
         action_name_start: "Open Menu";
     }
 
-    button ((spi_name == "OK" or spi_name == "Run" or spi_name == "Play" or spi_name == "PLAY" or spi_name == "Yes") and spi_action.click)
+    button ((spi_name == "OK" or spi_name == "Run" or spi_name == "Play" or spi_name == "PLAY" or spi_name == "Yes") and action_on_PrimaryAction)
     {
-        action_on_start: spi_action.click;
+        action_on_start: action_on_PrimaryAction;
         action_name_start: spi_name;
     }
 
-    button ((spi_name == "Cancel" or spi_name == "Close" or spi_name == "No") and spi_action.click)
+    button ((spi_name == "Cancel" or spi_name == "Close" or spi_name == "No") and action_on_PrimaryAction)
     {
-        action_on_B: spi_action.click;
+        action_on_B: action_on_PrimaryAction;
         action_name_B: spi_name;
     }
 }
