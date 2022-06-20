@@ -251,12 +251,10 @@ if (interactable) {
 
     page_tab {
         targetable: true;
-        if (targeted)
-        {
-            action_on_A: spi_select;
-            action_name_A: "Change Tab";
-        }
+        action_on_PrimaryAction: spi_action.Press or spi_select;
+        action_name_PrimaryAction: "Select Tab";
     }
+
     if ((spi_role.button or spi_role.radio_button) and spi_action.click) {
         targetable: true;
         if (targeted)
@@ -283,12 +281,14 @@ if (interactable) {
     }
 
     // Tab bar navigation
+
+    // Qt/AT-SPI2: It's not possible to determine which tab is active so this won't work.
     page_tab (previous_sibling_matches(interactable).(spi_state.selected or child_matches(spi_state.showing))) {
-        action_on_RB: spi_select;
+        action_on_RB: action_on_PrimaryAction;
         action_name_RB: spi_name;
     }
     page_tab (next_sibling_matches(interactable).(spi_state.selected or child_matches(spi_state.showing))) {
-        action_on_LB: spi_select;
+        action_on_LB: action_on_PrimaryAction;
         action_name_LB: spi_name;
     }
 
