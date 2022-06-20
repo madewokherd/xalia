@@ -75,8 +75,8 @@ combo_box (child_matches(spi_role.list and (spi_state.focused or child_matches(s
     action_name_A: "Select";
     action_on_B: send_key.esc or spi_action.Press;
     action_name_B: "Back";
-    action_on_Start: send_key.esc or spi_action.Press;
-    action_name_Start: "Close Menu";
+    action_on_start: send_key.esc or spi_action.Press;
+    action_name_start: "Close Menu";
 }
 
 // Qt/AT-SPI2 menus
@@ -97,8 +97,8 @@ popup_menu (spi_state.showing)
     action_name_A: "Select";
     action_on_B: send_key.esc or parent.spi_action.ShowMenu;
     action_name_B: "Back";
-    action_on_Start: send_key.esc or parent.spi_action.ShowMenu;
-    action_name_Start: "Close Menu";
+    action_on_start: send_key.esc or parent.spi_action.ShowMenu;
+    action_name_start: "Close Menu";
 }
 
 // Controls for targeting elements
@@ -235,11 +235,9 @@ if (interactable) {
     // Direct control interaction
     menu {
         targetable: true;
-        if (targeted)
-        {
-            action_on_A: spi_action.click;
-            action_name_A: "Click";
-        }
+
+        action_on_PrimaryAction: spi_action.click;
+        action_name_PrimaryAction: "Click";
     }
 
     // Qt/AT-SPI2 does its menu bars this way
@@ -294,9 +292,9 @@ if (interactable) {
         action_name_LB: spi_name;
     }
 
-    menu_bar
+    menu_bar (child_matches(action_on_PrimaryAction))
     {
-        action_on_start: first_child.spi_action.click;
+        action_on_start: child_matches(action_on_PrimaryAction).action_on_PrimaryAction;
         action_name_start: "Open Menu";
     }
 
