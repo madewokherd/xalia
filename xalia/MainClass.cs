@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Xalia.AtSpi;
 using Xalia.Gudl;
 using Xalia.Ui;
+using Xalia.UiDom;
+using Xalia.Uia;
 using Xalia.Sdl;
 
 using SDL2;
@@ -22,17 +24,28 @@ namespace Xalia
             return p == 4 || p == 128;
         }
 
+        static bool IsWindows()
+        {
+            return Environment.OSVersion.Platform == PlatformID.Win32NT;
+        }
+
         static async Task Init(GudlStatement[] config)
         {
             try
             {
                 var application = new UiMain();
 
-                AtSpiConnection connection = null;
+                UiDomRoot connection = null;
 
                 if (((Environment.GetEnvironmentVariable("XALIA_USE_ATSPI") ?? (IsUnix() ? "1" : "0")) != "0"))
                 {
                     connection = await AtSpiConnection.Connect(config, application);
+                }
+
+                if (connection == null &&
+                    (Environment.GetEnvironmentVariable("XALIA_USE_UIA3") ?? (IsWindows() ? "1" : "0")) != "0")
+                {
+                    connection = new UiaConnection(config, application);
                 }
 
                 if (connection == null)
