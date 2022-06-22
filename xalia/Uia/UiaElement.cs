@@ -183,6 +183,54 @@ namespace Xalia.Uia
             base.WatchProperty(expression);
         }
 
+        private void UnwatchProperty(PropertyId propid)
+        {
+            if (watching_property.TryGetValue(propid, out var watching) && watching)
+            {
+                watching_property[propid] = false;
+                property_known[propid] = false;
+                property_value[propid] = UiDomUndefined.Instance;
+
+                if (property_change_handlers.TryGetValue(propid, out var handler))
+                {
+                    property_change_handlers.Remove(propid);
+                    Utils.RunTask(Root.EventThread.UnregisterEventHandler(handler));
+                }
+            }
+        }
+
+        protected override void UnwatchProperty(GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "uia_control_type":
+                        {
+                            UnwatchProperty(Root.Automation.PropertyLibrary.Element.ControlType);
+                            break;
+                        }
+                }
+            }
+            base.UnwatchProperty(expression);
+        }
+
+        protected override void SetAlive(bool value)
+        {
+            if (!value)
+            {
+                property_known.Clear();
+                property_value.Clear();
+                watching_property.Clear();
+                foreach (var kvp in property_change_handlers)
+                {
+                    Utils.RunTask(Root.EventThread.UnregisterEventHandler(kvp.Value));
+                }
+                property_change_handlers.Clear();
+            }
+            base.SetAlive(value);
+        }
+
         private UiDomValue ConvertControlType(object arg)
         {
             if (arg is ControlType ct && (int)ct < control_type_to_enum.Length)

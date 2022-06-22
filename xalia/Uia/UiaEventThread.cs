@@ -18,6 +18,7 @@ namespace Xalia.Uia
         enum EventThreadRequestType
         {
             RegisterPropertyChangeEvent,
+            Dispose,
         }
 
         struct EventThreadRequest
@@ -28,6 +29,7 @@ namespace Xalia.Uia
             public PropertyId PropertyId;
             public SynchronizationContext HandlerContext;
             public object Handler;
+            public IDisposable Disposable;
         }
 
         Channel<EventThreadRequest> channel;
@@ -64,6 +66,19 @@ namespace Xalia.Uia
             return await source.Task;
         }
 
+        public async Task UnregisterEventHandler(EventHandlerBase handler)
+        {
+            var request = new EventThreadRequest();
+            request.RequestType = EventThreadRequestType.Dispose;
+            var source = new TaskCompletionSource<int>();
+            request.CompletionSource = source;
+            request.Disposable = handler;
+
+            await channel.Writer.WriteAsync(request);
+
+            await source.Task;
+        }
+        
         private void ThreadProc()
         {
             while (true)
@@ -89,6 +104,21 @@ namespace Xalia.Uia
                                 }, new PropertyId[] { request.PropertyId });
 
                                 completion_source.SetResult(result);
+                            }
+                            catch (Exception e)
+                            {
+                                completion_source.SetException(e);
+                            }
+                            break;
+                        }
+                    case EventThreadRequestType.Dispose:
+                        {
+                            var completion_source = (TaskCompletionSource<int>)request.CompletionSource;
+                            try
+                            {
+                                request.Disposable.Dispose();
+
+                                completion_source.SetResult(0);
                             }
                             catch (Exception e)
                             {
