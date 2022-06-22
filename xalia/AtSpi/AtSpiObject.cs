@@ -223,6 +223,10 @@ namespace Xalia.AtSpi
                 string[] names;
                 if (name == "push_button")
                     names = new[] { "push_button", "pushbutton", "button" };
+                else if (name == "page_tab")
+                    names = new[] { "page_tab", "pagetab", "tab" };
+                else if (name == "page_tab_list")
+                    names = new[] { "page_tab_list", "pagetablist", "tab_item", "tabitem" };
                 else if (name == "text")
                     names = new[] { "text", "text_box", "textbox" };
                 else if (name.Contains("_"))
@@ -942,8 +946,8 @@ namespace Xalia.AtSpi
                     // depends_on.Add((this, new IdentifierExpression(id))); // not needed because this property is known and can't change
                     return new UiDomString(Path);
                 case "role":
-                case "control_type:":
-                case "controltype:":
+                case "control_type":
+                case "controltype":
                 case "spi_role":
                     depends_on.Add((this, new IdentifierExpression("spi_role")));
                     if (Role > 0 && Role < role_to_enum.Length)

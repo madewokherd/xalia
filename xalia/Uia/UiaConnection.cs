@@ -18,6 +18,8 @@ namespace Xalia.Uia
         public UiaConnection(GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
             Automation = new UIA3Automation();
+            EventThread = new UiaEventThread();
+            CommandThread = new UiaCommandThread();
             DesktopElement = new UiaElement(Automation.GetDesktop(), this);
             AddChild(0, DesktopElement);
         }
@@ -27,5 +29,9 @@ namespace Xalia.Uia
         public AutomationBase Automation { get; }
 
         public UiaElement DesktopElement { get; }
+
+        public UiaEventThread EventThread { get; }
+        
+        public UiaCommandThread CommandThread { get; }
     }
 }

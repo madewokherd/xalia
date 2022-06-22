@@ -136,7 +136,7 @@ if (parent.spi_role.menu)
     interactable: false;
 }
 
-if (spi_role.(desktop_frame or application)) {
+if (role.(desktop_frame or application)) {
     recurse: true;
 
     if (spi_toolkit_name == "Qt") {
@@ -145,19 +145,19 @@ if (spi_role.(desktop_frame or application)) {
     }
 }
 
-if (spi_role.(window or frame or dialog or color_chooser or file_chooser or font_chooser))
+if (role.(window or frame or dialog or color_chooser or file_chooser or font_chooser))
 {
     recurse: true;
 }
 
 // List children of containers
-if (spi_role.(filler or internal_frame or panel or html_container or
+if (role.(filler or internal_frame or panel or html_container or
               layered_pane or option_pane or root_pane or scroll_pane or
               split_pane or table or table_cell or toolbar or
               viewport or embedded or document_frame or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list or menu_bar or menu or
-              combo_box or menu_item)) {
+              combo_box or menu_item or pane)) {
     recurse: true;
 }
 

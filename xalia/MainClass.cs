@@ -51,7 +51,7 @@ namespace Xalia
                 if (connection == null)
                 {
                     Console.WriteLine("No Accessibility API available");
-                }    
+                }
 
                 GameControllerInput.Init();
             }
