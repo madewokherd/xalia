@@ -25,7 +25,8 @@ namespace Xalia.Uia
             AutomationElement = element;
             Root = root;
             // There doesn't seem to be any reliable non-blocking away to get an element id, so we make one up
-            long debug_id = Interlocked.Increment(ref NextDebugId);
+            long debug_id = NextDebugId;
+            NextDebugId++;
             DebugId = $"UIA:{debug_id}";
         }
 
