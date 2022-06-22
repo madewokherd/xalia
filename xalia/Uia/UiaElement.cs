@@ -16,7 +16,7 @@ using Xalia.UiDom;
 
 namespace Xalia.Uia
 {
-    internal class UiaElement : UiDomObject
+    internal class UiaElement : UiDomElement
     {
         static long NextDebugId;
 
@@ -191,7 +191,7 @@ namespace Xalia.Uia
             return UiDomUndefined.Instance;
         }
 
-        private UiDomValue GetProperty(string name, PropertyId id, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        private UiDomValue GetProperty(string name, PropertyId id, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             depends_on.Add((this, new IdentifierExpression(name)));
             if (property_known.TryGetValue(id, out var known) && known)
@@ -201,7 +201,7 @@ namespace Xalia.Uia
             return UiDomUndefined.Instance;
         }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (id)
             {

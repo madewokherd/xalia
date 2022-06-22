@@ -12,13 +12,13 @@ namespace Xalia.UiDom
     public abstract class UiDomValue
     {
         protected virtual UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root,
-            [In][Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+            [In][Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             return UiDomUndefined.Instance;
         }
 
         public UiDomValue EvaluateIdentifier(string id, UiDomRoot root,
-            [In][Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+            [In][Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             try
             {
@@ -33,7 +33,7 @@ namespace Xalia.UiDom
         }
 
         protected virtual UiDomValue EvaluateDot(UiDomValue context, GudlExpression expr,
-            UiDomRoot root, [In][Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+            UiDomRoot root, [In][Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (expr is StringExpression st)
             {
@@ -43,7 +43,7 @@ namespace Xalia.UiDom
         }
 
         protected virtual UiDomValue EvaluateApply(UiDomValue context, GudlExpression expr,
-            UiDomRoot root, [In][Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+            UiDomRoot root, [In][Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             UiDomValue right = context.Evaluate(expr, root, depends_on);
             if (right is UiDomString st)
@@ -54,7 +54,7 @@ namespace Xalia.UiDom
         }
 
         public UiDomValue Evaluate(GudlExpression expr, UiDomRoot root,
-            [In] [Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+            [In] [Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (expr is StringExpression st)
                 return new UiDomString(st.Value);

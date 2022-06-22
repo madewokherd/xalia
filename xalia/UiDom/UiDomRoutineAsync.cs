@@ -13,7 +13,7 @@ namespace Xalia.UiDom
 
         public AsyncRoutine Routine { get; }
 
-        public UiDomRoutineAsync(UiDomObject element, string name,
+        public UiDomRoutineAsync(UiDomElement element, string name,
             AsyncRoutine routine) : base(element, name)
         {
             Routine = routine;

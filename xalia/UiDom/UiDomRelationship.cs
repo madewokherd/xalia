@@ -21,7 +21,7 @@ namespace Xalia.UiDom
 
     public class UiDomRelationship : UiDomValue
     {
-        public UiDomObject Owner { get; }
+        public UiDomElement Element { get; }
         public UiDomRelationshipKind Kind { get; }
 
         static UiDomRelationship()
@@ -36,9 +36,9 @@ namespace Xalia.UiDom
             Names["previous_sibling_matches"] = UiDomRelationshipKind.PreviousSibling;
         }
 
-        public UiDomRelationship(UiDomObject owner, UiDomRelationshipKind kind)
+        public UiDomRelationship(UiDomElement element, UiDomRelationshipKind kind)
         {
-            Owner = owner;
+            Element = element;
             Kind = kind;
         }
 
@@ -47,13 +47,13 @@ namespace Xalia.UiDom
             if (ReferenceEquals(this, obj))
                 return true;
             if (obj is UiDomRelationship rel)
-                return Owner.Equals(rel.Owner) && Kind == rel.Kind;
+                return Element.Equals(rel.Element) && Kind == rel.Kind;
             return false;
         }
 
         public override int GetHashCode()
         {
-            return (Owner, Kind).GetHashCode() ^ typeof(UiDomRelationship).GetHashCode();
+            return (Element, Kind).GetHashCode() ^ typeof(UiDomRelationship).GetHashCode();
         }
 
         public static Dictionary<string, UiDomRelationshipKind> Names;
@@ -83,16 +83,16 @@ namespace Xalia.UiDom
 
         public string Name => NameFromKind(Kind);
 
-        protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression expr, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression expr, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
-            depends_on.Add((Owner, new BinaryExpression(
+            depends_on.Add((Element, new BinaryExpression(
                 new IdentifierExpression(Name),
                 expr,
                 GudlToken.LParen)));
-            return Owner.EvaluateRelationship(Kind, expr);
+            return Element.EvaluateRelationship(Kind, expr);
         }
 
-        protected override UiDomValue EvaluateDot(UiDomValue context, GudlExpression expr, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateDot(UiDomValue context, GudlExpression expr, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             return EvaluateApply(context, expr, root, depends_on);
         }

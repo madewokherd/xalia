@@ -12,7 +12,7 @@ using System.Collections.Generic;
 
 namespace Xalia.AtSpi
 {
-    internal class AtSpiObject : UiDomObject
+    internal class AtSpiElement : UiDomElement
     {
         internal readonly AtSpiConnection Connection;
         internal readonly string Service;
@@ -213,7 +213,7 @@ namespace Xalia.AtSpi
         public string ToolkitName { get; private set; }
         private bool fetching_toolkit_name;
 
-        static AtSpiObject()
+        static AtSpiElement()
         {
             name_to_role = new Dictionary<string, int>();
             role_to_enum = new UiDomEnum[role_names.Length];
@@ -239,7 +239,7 @@ namespace Xalia.AtSpi
             }
         }
 
-        internal AtSpiObject(AtSpiConnection connection, string service, string path) : base(connection)
+        internal AtSpiElement(AtSpiConnection connection, string service, string path) : base(connection)
         {
             Path = path;
             Service = service;
@@ -254,7 +254,7 @@ namespace Xalia.AtSpi
             object_events = connection.connection.CreateProxy<IObject>(service, path);
         }
 
-        internal AtSpiObject(AtSpiConnection connection, string service, ObjectPath path) :
+        internal AtSpiElement(AtSpiConnection connection, string service, ObjectPath path) :
             this(connection, service, path.ToString())
         { }
 
@@ -376,14 +376,14 @@ namespace Xalia.AtSpi
             {
                 string service = children[i].Item1;
                 ObjectPath path = children[i].Item2;
-                AddChild(i, new AtSpiObject(Connection, service, path));
+                AddChild(i, new AtSpiElement(Connection, service, path));
             }
             children_known = true;
         }
 
-        private static bool ElementIdMatches(UiDomObject obj, (string, ObjectPath) id)
+        private static bool ElementIdMatches(UiDomElement element, (string, ObjectPath) id)
         {
-            if (obj is AtSpiObject atspi)
+            if (element is AtSpiElement atspi)
             {
                 return atspi.Service == id.Item1 && atspi.Path == id.Item2.ToString();
             }
@@ -404,7 +404,7 @@ namespace Xalia.AtSpi
             int i = 0;
             foreach (var new_child in children)
             {
-                if (!Children.Exists((UiDomObject obj) => ElementIdMatches(obj, new_child)))
+                if (!Children.Exists((UiDomElement element) => ElementIdMatches(element, new_child)))
                     continue;
                 while (!ElementIdMatches(Children[i], new_child))
                 {
@@ -420,7 +420,7 @@ namespace Xalia.AtSpi
                 {
                     string service = children[i].Item1;
                     ObjectPath path = children[i].Item2;
-                    AddChild(i, new AtSpiObject(Connection, service, path));
+                    AddChild(i, new AtSpiElement(Connection, service, path));
                 }
             }
 
@@ -483,7 +483,7 @@ namespace Xalia.AtSpi
             var path = id.Item2.ToString();
             if (detail == "add")
             {
-                AddChild((int)index, new AtSpiObject(Connection, id.Item1, id.Item2));
+                AddChild((int)index, new AtSpiElement(Connection, id.Item1, id.Item2));
             }
             else if (detail == "remove")
             {
@@ -493,7 +493,7 @@ namespace Xalia.AtSpi
 #endif
                 for (int i=0; i<Children.Count; i++)
                 {
-                    var child = (AtSpiObject)Children[i];
+                    var child = (AtSpiElement)Children[i];
                     if (child.Service == service && child.Path == path)
                     {
 #if DEBUG
@@ -515,7 +515,7 @@ namespace Xalia.AtSpi
             }
         }
 
-        protected override void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations, HashSet<(UiDomObject, GudlExpression)> dependencies)
+        protected override void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
             if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.ToBool())
                 WatchChildren();
@@ -911,7 +911,7 @@ namespace Xalia.AtSpi
 
         private async Task Select(UiDomRoutineAsync routine)
         {
-            if (Parent is AtSpiObject p)
+            if (Parent is AtSpiElement p)
             {
                 await p.selection.SelectChildAsync(p.Children.IndexOf(this));
             }
@@ -919,7 +919,7 @@ namespace Xalia.AtSpi
 
         private async Task Deselect(UiDomRoutineAsync routine)
         {
-            if (Parent is AtSpiObject p)
+            if (Parent is AtSpiElement p)
             {
                 await p.selection.DeselectChildAsync(p.Children.IndexOf(this));
             }
@@ -935,7 +935,7 @@ namespace Xalia.AtSpi
             await component.GrabFocusAsync();
         }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (id)
             {
@@ -1079,7 +1079,7 @@ namespace Xalia.AtSpi
                     {
                         foreach (var application in Connection.DesktopFrame.Children)
                         {
-                            if (application is AtSpiObject atspi && atspi.Service == Service)
+                            if (application is AtSpiElement atspi && atspi.Service == Service)
                             {
                                 return application;
                             }

@@ -11,10 +11,10 @@ namespace Xalia.UiDom
     {
         void RootElementCreated(UiDomRoot root);
 
-        void ElementDeclarationsChanged(UiDomObject element);
+        void ElementDeclarationsChanged(UiDomElement element);
 
-        void ElementDied(UiDomObject element);
+        void ElementDied(UiDomElement element);
 
-        UiDomValue EvaluateIdentifierHook(UiDomObject element, string id, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on);
+        UiDomValue EvaluateIdentifierHook(UiDomElement element, string id, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on);
     }
 }

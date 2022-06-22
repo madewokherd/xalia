@@ -33,7 +33,7 @@ namespace Xalia.Ui
         }
 
         protected override UiDomValue EvaluateDot(UiDomValue context, GudlExpression expr,
-            UiDomRoot root, [In][Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+            UiDomRoot root, [In][Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (expr is StringExpression st)
             {
@@ -47,7 +47,7 @@ namespace Xalia.Ui
         }
 
         protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression expr,
-            UiDomRoot root, [In][Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+            UiDomRoot root, [In][Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             UiDomValue right = context.Evaluate(expr, root, depends_on);
             if (right is UiDomString st)
@@ -61,7 +61,7 @@ namespace Xalia.Ui
             return UiDomUndefined.Instance;
         }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             var keycode = XKeyCodes.GetKeySym(id);
 

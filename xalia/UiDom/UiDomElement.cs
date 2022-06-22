@@ -9,13 +9,13 @@ using Xalia.Gudl;
 
 namespace Xalia.UiDom
 {
-    public abstract class UiDomObject : UiDomValue
+    public abstract class UiDomElement : UiDomValue
     {
         public abstract string DebugId { get; }
 
-        public List<UiDomObject> Children { get; } = new List<UiDomObject> ();
+        public List<UiDomElement> Children { get; } = new List<UiDomElement> ();
 
-        public UiDomObject Parent { get; private set; }
+        public UiDomElement Parent { get; private set; }
 
         public bool IsAlive { get; private set; }
 
@@ -27,7 +27,7 @@ namespace Xalia.UiDom
 
         private Dictionary<GudlExpression, LinkedList<PropertyChangeNotifier>> _propertyChangeNotifiers = new Dictionary<GudlExpression, LinkedList<PropertyChangeNotifier>>();
 
-        private Dictionary<(UiDomObject, GudlExpression), IDisposable> _dependencyPropertyChangeNotifiers = new Dictionary<(UiDomObject, GudlExpression), IDisposable>();
+        private Dictionary<(UiDomElement, GudlExpression), IDisposable> _dependencyPropertyChangeNotifiers = new Dictionary<(UiDomElement, GudlExpression), IDisposable>();
 
         bool _updatingRules;
 
@@ -65,12 +65,12 @@ namespace Xalia.UiDom
             }
         }
 
-        public UiDomObject(UiDomRoot root)
+        public UiDomElement(UiDomRoot root)
         {
             Root = root;
         }
 
-        internal UiDomObject()
+        internal UiDomElement()
         {
             if (this is UiDomRoot root)
             {
@@ -81,7 +81,7 @@ namespace Xalia.UiDom
                 throw new InvalidOperationException("UiDomObject constructor with no arguments can only be used by UiDomRoot");
         }
 
-        protected void AddChild(int index, UiDomObject child)
+        protected void AddChild(int index, UiDomElement child)
         {
 #if DEBUG
             Console.WriteLine("Child {0} added to {1} at index {2}", child.DebugId, DebugId, index);
@@ -131,7 +131,7 @@ namespace Xalia.UiDom
             return DebugId;
         }
 
-        public UiDomValue Evaluate(GudlExpression expr, HashSet<(UiDomObject, GudlExpression)> depends_on)
+        public UiDomValue Evaluate(GudlExpression expr, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             return Evaluate(expr, Root, depends_on);
         }
@@ -143,7 +143,7 @@ namespace Xalia.UiDom
             return UiDomUndefined.Instance;
         }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (id)
             {
@@ -263,7 +263,7 @@ namespace Xalia.UiDom
                 return;
             var activeDeclarations = new Dictionary<string, UiDomValue>();
             bool stop = false;
-            var depends_on = new HashSet<(UiDomObject, GudlExpression)>();
+            var depends_on = new HashSet<(UiDomElement, GudlExpression)>();
 #if DEBUG
             Console.WriteLine($"rule evaluation for {this}");
 #endif
@@ -310,7 +310,7 @@ namespace Xalia.UiDom
             }
 
 #if DEBUG
-            HashSet<(UiDomObject, GudlExpression)> dummy = new HashSet<(UiDomObject, GudlExpression)>();
+            HashSet<(UiDomElement, GudlExpression)> dummy = new HashSet<(UiDomElement, GudlExpression)>();
             foreach (var dep in depends_on)
             {
                 UiDomValue val = dep.Item1.Evaluate(dep.Item2, dummy);
@@ -324,7 +324,7 @@ namespace Xalia.UiDom
         }
 
         protected virtual void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations,
-            HashSet<(UiDomObject, GudlExpression)> dependencies)
+            HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
             HashSet<GudlExpression> changed = new HashSet<GudlExpression>();
 
@@ -342,7 +342,7 @@ namespace Xalia.UiDom
 
             _activeDeclarations = all_declarations;
 
-            var updated_dependency_notifiers = new Dictionary<(UiDomObject, GudlExpression), IDisposable>();
+            var updated_dependency_notifiers = new Dictionary<(UiDomElement, GudlExpression), IDisposable>();
 
             foreach (var dep in dependencies)
             {
@@ -366,31 +366,31 @@ namespace Xalia.UiDom
             PropertiesChanged(changed);
         }
 
-        private void OnDependencyPropertyChanged(UiDomObject obj, GudlExpression property)
+        private void OnDependencyPropertyChanged(UiDomElement element, GudlExpression property)
         {
             if (!_updatingRules)
             {
                 _updatingRules = true;
                 Utils.RunIdle(EvaluateRules);
 #if DEBUG
-                Console.WriteLine($"queued rule evaluation for {this} because {obj}.{property} changed");
+                Console.WriteLine($"queued rule evaluation for {this} because {element}.{property} changed");
 #endif
             }
         }
 
-        public delegate void PropertyChangeHandler(UiDomObject obj, GudlExpression property);
+        public delegate void PropertyChangeHandler(UiDomElement element, GudlExpression property);
 
         private class PropertyChangeNotifier : IDisposable
         {
-            public PropertyChangeNotifier(UiDomObject obj, GudlExpression expression, PropertyChangeHandler handler)
+            public PropertyChangeNotifier(UiDomElement element, GudlExpression expression, PropertyChangeHandler handler)
             {
-                Object = obj;
+                Element = element;
                 Expression = expression;
                 Handler = handler;
-                Object.AddPropertyChangeNotifier(this);
+                Element.AddPropertyChangeNotifier(this);
             }
 
-            public readonly UiDomObject Object;
+            public readonly UiDomElement Element;
             public readonly GudlExpression Expression;
             public readonly PropertyChangeHandler Handler;
             bool Disposed;
@@ -399,7 +399,7 @@ namespace Xalia.UiDom
             {
                 if (!Disposed)
                 {
-                    Object.RemovePropertyChangeNotifier(this);
+                    Element.RemovePropertyChangeNotifier(this);
                 }
                 Disposed = true;
             }

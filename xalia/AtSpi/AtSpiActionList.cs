@@ -11,19 +11,19 @@ namespace Xalia.AtSpi
 {
     internal class AtSpiActionList : UiDomValue
     {
-        public AtSpiActionList(AtSpiObject element)
+        public AtSpiActionList(AtSpiElement element)
         {
             Element = element;
         }
 
-        public AtSpiObject Element { get; }
+        public AtSpiElement Element { get; }
 
         public override string ToString()
         {
             return $"{Element}.spi_action [{string.Join(",",Element.Actions)}]";
         }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             for (int i=0; i < Element.Actions.Length; i++)
             {

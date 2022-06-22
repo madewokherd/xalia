@@ -29,7 +29,7 @@ namespace Xalia.UiDom
             return Names[0].GetHashCode() ^ typeof(UiDomEnum).GetHashCode();
         }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             return UiDomBoolean.FromBool(Names.Contains(id));
         }

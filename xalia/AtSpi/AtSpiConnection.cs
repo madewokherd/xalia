@@ -72,12 +72,12 @@ namespace Xalia.AtSpi
             // We don't use window:activate, but Qt only sends object:state-changed:activate if we ask for this
             await result.registry.RegisterEventAsync("window:activate");
 
-            result.DesktopFrame = new AtSpiObject(result, registryClient, "/org/a11y/atspi/accessible/root");
+            result.DesktopFrame = new AtSpiElement(result, registryClient, "/org/a11y/atspi/accessible/root");
             result.AddChild(0, result.DesktopFrame);
 
             return result;
         }
 
-        public AtSpiObject DesktopFrame { get; private set; }
+        public AtSpiElement DesktopFrame { get; private set; }
     }
 }

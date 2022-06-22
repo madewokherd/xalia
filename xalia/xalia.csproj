@@ -114,7 +114,7 @@
   <ItemGroup>
     <Compile Include="AtSpi\AtSpiActionList.cs" />
     <Compile Include="AtSpi\AtSpiConnection.cs" />
-    <Compile Include="AtSpi\AtSpiObject.cs" />
+    <Compile Include="AtSpi\AtSpiElement.cs" />
     <Compile Include="AtSpi\AtSpiState.cs" />
     <Compile Include="AtSpi\AtSpiSupported.cs" />
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.cs" />
@@ -151,7 +151,7 @@
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
     <Compile Include="UiDom\UiDomInt.cs" />
-    <Compile Include="UiDom\UiDomObject.cs" />
+    <Compile Include="UiDom\UiDomElement.cs" />
     <Compile Include="UiDom\UiDomRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />
     <Compile Include="UiDom\UiDomRoot.cs" />

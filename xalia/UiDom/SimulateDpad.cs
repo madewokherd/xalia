@@ -27,7 +27,7 @@ namespace Xalia.UiDom
 
         public SimulateDpad() : this("dpad") { }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             return new SimulateDpad(id);
         }

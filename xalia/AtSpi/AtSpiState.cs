@@ -74,19 +74,19 @@ namespace Xalia.AtSpi
             }
         }
         
-        internal AtSpiState(AtSpiObject owner)
+        internal AtSpiState(AtSpiElement element)
         {
-            Owner = owner;
+            Element = element;
         }
 
-        public readonly AtSpiObject Owner;
+        public readonly AtSpiElement Element;
 
         public HashSet<string> states = new HashSet<string>();
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append($"{Owner}.spi_states [");
+            sb.Append($"{Element}.spi_states [");
             bool delimiter = false;
             foreach (string state in states)
             {
@@ -99,12 +99,12 @@ namespace Xalia.AtSpi
             return sb.ToString();
         }
 
-        internal bool TryEvaluateIdentifier(string id, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on,
+        internal bool TryEvaluateIdentifier(string id, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on,
             out UiDomBoolean result)
         {
             if (name_mapping.TryGetValue(id, out var state))
             {
-                depends_on.Add((Owner, new BinaryExpression(
+                depends_on.Add((Element, new BinaryExpression(
                         new IdentifierExpression("spi_state"),
                         new IdentifierExpression(state),
                         GudlToken.Dot
@@ -116,7 +116,7 @@ namespace Xalia.AtSpi
             return false;
         }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (TryEvaluateIdentifier(id, depends_on, out var result))
                 return result;
@@ -142,7 +142,7 @@ namespace Xalia.AtSpi
                     state++;
                 }
             }
-            Owner.StatesChanged(old_states);
+            Element.StatesChanged(old_states);
         }
     }
 }

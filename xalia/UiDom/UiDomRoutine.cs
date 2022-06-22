@@ -10,17 +10,17 @@ namespace Xalia.UiDom
 {
     public class UiDomRoutine : UiDomValue
     {
-        public UiDomObject Element { get; }
+        public UiDomElement Element { get; }
         public string Name { get; }
 
-        public UiDomRoutine(UiDomObject element, string name)
+        public UiDomRoutine(UiDomElement element, string name)
         {
             Element = element;
             Name = name;
         }
 
         public UiDomRoutine() : this(null, null) { }
-        public UiDomRoutine(UiDomObject element) : this(element, null) { }
+        public UiDomRoutine(UiDomElement element) : this(element, null) { }
         public UiDomRoutine(string name) : this(null, name) { }
 
         public event InputSystem.ActionStateChangeEventHandler InputEvent;

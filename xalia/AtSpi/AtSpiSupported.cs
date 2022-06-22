@@ -11,19 +11,19 @@ namespace Xalia.AtSpi
 {
     internal class AtSpiSupported : UiDomValue
     {
-        public AtSpiSupported(AtSpiObject owner, string[] interfaces)
+        public AtSpiSupported(AtSpiElement element, string[] interfaces)
         {
-            Owner = owner;
+            Element = element;
             Interfaces = interfaces;
         }
 
-        public AtSpiObject Owner { get; }
+        public AtSpiElement Element { get; }
         public string[] Interfaces { get; }
 
         public override string ToString()
         {
             var result = new StringBuilder();
-            result.Append($"{Owner}.spi_supported [");
+            result.Append($"{Element}.spi_supported [");
             bool delimiter = false;
             foreach (string iface in Interfaces)
             {
@@ -96,7 +96,7 @@ namespace Xalia.AtSpi
 
             return sb.ToString();
         }
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomObject, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             string iface_name;
 

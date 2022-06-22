@@ -11,7 +11,7 @@ namespace Xalia.UiDom
     {
         public Action<UiDomRoutineSync> Routine { get; }
 
-        public UiDomRoutineSync(UiDomObject element, string name,
+        public UiDomRoutineSync(UiDomElement element, string name,
             Action<UiDomRoutineSync> routine) : base(element, name)
         {
             Routine = routine;

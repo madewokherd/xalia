@@ -189,7 +189,7 @@ if (spi_state.enabled and spi_state.showing and spi_state.sensitive and
     interactable: true;
 }
 
-// Rules for setting borders of targetable objects
+// Rules for setting borders of targetable elements
 if (targetable) {
     // "special" rules would go here
 
