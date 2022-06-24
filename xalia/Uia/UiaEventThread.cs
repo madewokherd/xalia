@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
+using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.EventHandlers;
@@ -18,6 +19,8 @@ namespace Xalia.Uia
         enum EventThreadRequestType
         {
             RegisterPropertyChangeEvent,
+            RegisterChildrenChangeEvent,
+            RegisterFocusChangedEvent,
             Dispose,
         }
 
@@ -26,6 +29,7 @@ namespace Xalia.Uia
             public EventThreadRequestType RequestType;
             public object CompletionSource;
             public AutomationElement Element;
+            public AutomationBase Automation;
             public PropertyId PropertyId;
             public SynchronizationContext HandlerContext;
             public object Handler;
@@ -60,6 +64,37 @@ namespace Xalia.Uia
             request.Handler = action;
             request.HandlerContext = SynchronizationContext.Current;
             request.PropertyId = propid;
+
+            await channel.Writer.WriteAsync(request);
+
+            return await source.Task;
+        }
+
+        public async Task<StructureChangedEventHandlerBase> RegisterChildrenChangedEventAsync(AutomationElement element,
+            Action<AutomationElement, StructureChangeType, int[]> action)
+        {
+            var request = new EventThreadRequest();
+            request.RequestType = EventThreadRequestType.RegisterChildrenChangeEvent;
+            var source = new TaskCompletionSource<StructureChangedEventHandlerBase>();
+            request.CompletionSource = source;
+            request.Element = element;
+            request.Handler = action;
+            request.HandlerContext = SynchronizationContext.Current;
+
+            await channel.Writer.WriteAsync(request);
+
+            return await source.Task;
+        }
+        public async Task<FocusChangedEventHandlerBase> RegisterFocusChangedEventAsync(
+            AutomationBase automation, Action<AutomationElement> action)
+        {
+            var request = new EventThreadRequest();
+            request.RequestType = EventThreadRequestType.RegisterFocusChangedEvent;
+            var source = new TaskCompletionSource<FocusChangedEventHandlerBase>();
+            request.CompletionSource = source;
+            request.Automation = automation;
+            request.Handler = action;
+            request.HandlerContext = SynchronizationContext.Current;
 
             await channel.Writer.WriteAsync(request);
 
@@ -102,6 +137,52 @@ namespace Xalia.Uia
                                         handler(element, propid, obj);
                                     }, null);
                                 }, new PropertyId[] { request.PropertyId });
+
+                                completion_source.SetResult(result);
+                            }
+                            catch (Exception e)
+                            {
+                                completion_source.SetException(e);
+                            }
+                            break;
+                        }
+                    case EventThreadRequestType.RegisterChildrenChangeEvent:
+                        {
+                            var completion_source = (TaskCompletionSource<StructureChangedEventHandlerBase>)request.CompletionSource;
+                            try
+                            {
+                                var result = request.Element.RegisterStructureChangedEvent(TreeScope.Element,
+                                    (AutomationElement element, StructureChangeType sct, int[] ints) =>
+                                    {
+                                        request.HandlerContext.Post((object state) =>
+                                        {
+                                            var handler = (Action<AutomationElement, StructureChangeType, int[]>)request.Handler;
+                                            handler(element, sct, ints);
+                                        }, null);
+                                    });
+
+                                completion_source.SetResult(result);
+                            }
+                            catch (Exception e)
+                            {
+                                completion_source.SetException(e);
+                            }
+                            break;
+                        }
+                    case EventThreadRequestType.RegisterFocusChangedEvent:
+                        {
+                            var completion_source = (TaskCompletionSource<FocusChangedEventHandlerBase>)request.CompletionSource;
+                            try
+                            {
+                                var result = request.Automation.RegisterFocusChangedEvent(
+                                    (AutomationElement element) =>
+                                    {
+                                        request.HandlerContext.Post((object state) =>
+                                        {
+                                            var handler = (Action<AutomationElement>)request.Handler;
+                                            handler(element);
+                                        }, null);
+                                    });
 
                                 completion_source.SetResult(result);
                             }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
+using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Identifiers;
 
@@ -16,6 +17,8 @@ namespace Xalia.Uia
         enum CommandThreadRequestType
         {
             GetPropertyValue,
+            GetChildren,
+            GetFocusedElement,
         }
 
         struct CommandThreadRequest
@@ -23,6 +26,7 @@ namespace Xalia.Uia
             public CommandThreadRequestType RequestType;
             public object CompletionSource;
             public AutomationElement Element;
+            public AutomationBase Automation;
             public PropertyId PropertyId;
         }
 
@@ -63,6 +67,32 @@ namespace Xalia.Uia
             return await source.Task;
         }
 
+        public async Task<AutomationElement[]> GetChildren(AutomationElement element)
+        {
+            var request = new CommandThreadRequest();
+            request.RequestType = CommandThreadRequestType.GetChildren;
+            var source = new TaskCompletionSource<AutomationElement[]>();
+            request.CompletionSource = source;
+            request.Element = element;
+
+            await channel.Writer.WriteAsync(request);
+
+            return await source.Task;
+        }
+
+        public async Task<AutomationElement> GetFocusedElement(AutomationBase automation)
+        {
+            var request = new CommandThreadRequest();
+            request.RequestType = CommandThreadRequestType.GetFocusedElement;
+            var source = new TaskCompletionSource<AutomationElement>();
+            request.CompletionSource = source;
+            request.Automation = automation;
+
+            await channel.Writer.WriteAsync(request);
+
+            return await source.Task;
+        }
+
         private void ThreadProc()
         {
             while (true)
@@ -78,6 +108,36 @@ namespace Xalia.Uia
                             try
                             {
                                 var result = request.Element.FrameworkAutomationElement.GetPropertyValue(request.PropertyId);
+
+                                completion_source.SetResult(result);
+                            }
+                            catch (Exception e)
+                            {
+                                completion_source.SetException(e);
+                            }
+                            break;
+                        }
+                    case CommandThreadRequestType.GetChildren:
+                        {
+                            var completion_source = (TaskCompletionSource<AutomationElement[]>)request.CompletionSource;
+                            try
+                            {
+                                var result = request.Element.FindAllChildren();
+
+                                completion_source.SetResult(result);
+                            }
+                            catch (Exception e)
+                            {
+                                completion_source.SetException(e);
+                            }
+                            break;
+                        }
+                    case CommandThreadRequestType.GetFocusedElement:
+                        {
+                            var completion_source = (TaskCompletionSource<AutomationElement>)request.CompletionSource;
+                            try
+                            {
+                                var result = request.Automation.FocusedElement();
 
                                 completion_source.SetResult(result);
                             }
