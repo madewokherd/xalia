@@ -403,6 +403,8 @@ namespace Xalia.Uia
                 case "uia_controltype":
                 case "uia_control_type":
                     return GetProperty("uia_control_type", Root.Automation.PropertyLibrary.Element.ControlType, depends_on);
+                case "desktop_frame":
+                    return UiDomBoolean.FromBool(Equals(Root.DesktopElement));
                 case "uia_focused":
                 case "focused":
                     depends_on.Add((this, new IdentifierExpression("uia_focused")));
@@ -411,6 +413,12 @@ namespace Xalia.Uia
                 case "focused_element":
                     depends_on.Add((Root, new IdentifierExpression("uia_focused_element")));
                     return (UiDomValue)Root.LookupAutomationElement(Root.FocusedElement) ?? UiDomUndefined.Instance;
+                case "is_uia_element":
+                    return UiDomBoolean.True;
+                case "is_spi_element":
+                case "is_atspi_element":
+                case "is_at_spi_element":
+                    return UiDomBoolean.False;
             }
 
             if (name_to_control_type.ContainsKey(id))

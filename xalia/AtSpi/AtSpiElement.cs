@@ -1086,6 +1086,12 @@ namespace Xalia.AtSpi
                         }
                     }
                     return UiDomUndefined.Instance;
+                case "is_uia_element":
+                    return UiDomBoolean.False;
+                case "is_spi_element":
+                case "is_atspi_element":
+                case "is_at_spi_element":
+                    return UiDomBoolean.True;
             }
 
             if (name_to_role.TryGetValue(id, out var expected_role))

@@ -174,6 +174,11 @@ if (spi_state.active and not root.disable_interactions) {
     interactable: true;
 }
 
+// We can't get the active window from UIAutomation, so we have to look for a window with a focused descendent
+if (is_uia_element and parent.desktop_frame and this_or_descendent_matches(uia_focused)) {
+    interactable: true;
+}
+
 // We'd need an unbroken chain of enabled/visible controls from the active window to interact with
 // a control through the mouse and keyboard, so normally we should only consider those. AT-SPI may
 // let us do things with other controls, but it might be confusing or break applications.
