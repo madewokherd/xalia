@@ -6,8 +6,6 @@ if (spi_attributes.xalia_ignore)
     stop: true;
 }
 
-uia_focused_test: uia_focused;
-
 // If a menu is open, we shouldn't try to interact with anything else.
 menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_box) or child_matches(spi_state.selected)))
 {
@@ -193,6 +191,10 @@ if (spi_state.enabled and spi_state.showing and spi_state.sensitive and
         interactable: false;
     }
 
+    interactable: true;
+}
+
+if (is_uia_element and parent.interactable and enabled) {
     interactable: true;
 }
 

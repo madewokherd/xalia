@@ -314,6 +314,11 @@ namespace Xalia.Uia
                             WatchProperty("uia_control_type", Root.Automation.PropertyLibrary.Element.ControlType, ConvertControlType);
                             break;
                         }
+                    case "uia_enabled":
+                        {
+                            WatchProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, ConvertBoolean);
+                            break;
+                        }
                 }
             }
 
@@ -345,6 +350,11 @@ namespace Xalia.Uia
                     case "uia_control_type":
                         {
                             UnwatchProperty(Root.Automation.PropertyLibrary.Element.ControlType);
+                            break;
+                        }
+                    case "uia_enabled":
+                        {
+                            UnwatchProperty(Root.Automation.PropertyLibrary.Element.IsEnabled);
                             break;
                         }
                 }
@@ -383,6 +393,15 @@ namespace Xalia.Uia
             return UiDomUndefined.Instance;
         }
 
+        private UiDomValue ConvertBoolean(object arg)
+        {
+            if (arg is bool b)
+            {
+                return UiDomBoolean.FromBool(b);
+            }
+            return UiDomUndefined.Instance;
+        }
+
         private UiDomValue GetProperty(string name, PropertyId id, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             depends_on.Add((this, new IdentifierExpression(name)));
@@ -403,6 +422,11 @@ namespace Xalia.Uia
                 case "uia_controltype":
                 case "uia_control_type":
                     return GetProperty("uia_control_type", Root.Automation.PropertyLibrary.Element.ControlType, depends_on);
+                case "enabled":
+                case "is_enabled":
+                case "uia_enabled":
+                case "uia_is_enabled":
+                    return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
                 case "desktop_frame":
                     return UiDomBoolean.FromBool(Equals(Root.DesktopElement));
                 case "uia_focused":
