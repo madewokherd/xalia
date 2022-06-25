@@ -51,6 +51,7 @@ namespace Xalia.Uia
 
         Dictionary<PropertyId, bool> watching_property = new Dictionary<PropertyId, bool>();
         Dictionary<PropertyId, bool> property_known = new Dictionary<PropertyId, bool>();
+        Dictionary<PropertyId, object> property_raw_value = new Dictionary<PropertyId, object>();
         Dictionary<PropertyId, UiDomValue> property_value = new Dictionary<PropertyId, UiDomValue>();
         Dictionary<PropertyId, PropertyChangedEventHandlerBase> property_change_handlers = new Dictionary<PropertyId, PropertyChangedEventHandlerBase>();
 
@@ -273,6 +274,7 @@ namespace Xalia.Uia
             {
                 property_known[propid] = true;
                 property_value[propid] = ui_dom_value;
+                property_raw_value[propid] = current_value;
 
                 PropertyChanged(name);
             }
@@ -290,6 +292,7 @@ namespace Xalia.Uia
             {
                 property_known[propid] = true;
                 property_value[propid] = new_value;
+                property_raw_value[propid] = value;
                 PropertyChanged(name);
             }
         }
@@ -319,6 +322,11 @@ namespace Xalia.Uia
                             WatchProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, ConvertBoolean);
                             break;
                         }
+                    case "uia_bounding_rectangle":
+                        {
+                            WatchProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, ConvertRectangle);
+                            break;
+                        }
                 }
             }
 
@@ -332,6 +340,7 @@ namespace Xalia.Uia
                 watching_property[propid] = false;
                 property_known[propid] = false;
                 property_value[propid] = UiDomUndefined.Instance;
+                property_raw_value[propid] = UiDomUndefined.Instance;
 
                 if (property_change_handlers.TryGetValue(propid, out var handler))
                 {
@@ -357,6 +366,11 @@ namespace Xalia.Uia
                             UnwatchProperty(Root.Automation.PropertyLibrary.Element.IsEnabled);
                             break;
                         }
+                    case "uia_bounding_rectangle":
+                        {
+                            UnwatchProperty(Root.Automation.PropertyLibrary.Element.BoundingRectangle);
+                            break;
+                        }
                 }
             }
             base.UnwatchProperty(expression);
@@ -376,6 +390,7 @@ namespace Xalia.Uia
             {
                 property_known.Clear();
                 property_value.Clear();
+                property_raw_value.Clear();
                 watching_property.Clear();
                 foreach (var kvp in property_change_handlers)
                 {
@@ -386,6 +401,15 @@ namespace Xalia.Uia
                 Root.elements_by_id.Remove(ElementIdentifier);
             }
             base.SetAlive(value);
+        }
+
+        private UiDomValue ConvertRectangle(object arg)
+        {
+            if (arg is System.Drawing.Rectangle r)
+            {
+                return new UiDomString(r.ToString());
+            }
+            return UiDomUndefined.Instance;
         }
 
         private UiDomValue ConvertControlType(object arg)
@@ -416,6 +440,16 @@ namespace Xalia.Uia
             return UiDomUndefined.Instance;
         }
 
+        private object GetRawProperty(string name, PropertyId id, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            depends_on.Add((this, new IdentifierExpression(name)));
+            if (property_known.TryGetValue(id, out var known) && known)
+            {
+                return property_raw_value[id];
+            }
+            return UiDomUndefined.Instance;
+        }
+
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (id)
@@ -431,6 +465,50 @@ namespace Xalia.Uia
                 case "uia_enabled":
                 case "uia_is_enabled":
                     return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
+                case "bounds":
+                case "bounding_rectangle":
+                case "uia_bounding_rectangle":
+                    return GetProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on);
+                case "x":
+                case "abs_x":
+                case "uia_x":
+                case "uia_abs_x":
+                    {
+                        if (GetRawProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on) is System.Drawing.Rectangle r)
+                        {
+                            return new UiDomInt(r.Left);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
+                case "y":
+                case "abs_y":
+                case "uia_y":
+                case "uia_abs_y":
+                    {
+                        if (GetRawProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on) is System.Drawing.Rectangle r)
+                        {
+                            return new UiDomInt(r.Top);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
+                case "width":
+                case "uia_width":
+                    {
+                        if (GetRawProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on) is System.Drawing.Rectangle r)
+                        {
+                            return new UiDomInt(r.Width);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
+                case "height":
+                case "uia_height":
+                    {
+                        if (GetRawProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on) is System.Drawing.Rectangle r)
+                        {
+                            return new UiDomInt(r.Height);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
                 case "desktop_frame":
                     return UiDomBoolean.FromBool(Equals(Root.DesktopElement));
                 case "uia_focused":

@@ -125,13 +125,13 @@ root
 }
 
 // Combo boxes contain subcontrols we don't want to directly navigate to
-if (parent.spi_role.combo_box)
+if (parent.combo_box)
 {
     interactable: false;
 }
 
 // We have a separate mechanism for interacting with menus
-if (parent.spi_role.menu)
+if (parent.menu)
 {
     interactable: false;
 }
@@ -202,22 +202,31 @@ if (is_uia_element and parent.interactable and enabled) {
 if (targetable) {
     // "special" rules would go here
 
-    // AT-SPI2 makes it practically impossible to monitor a control's position without polling. We get
-    // no notification of window movement. Calling GetExtents with ATSPI_COORD_TYPE_PARENT consistently
-    // gives screen coordinates. The BoundsChanged notification seems to give window-relative coordinates,
-    // but it doesn't do this consistently and doesn't always fire when window-relative coordinates change.
+    if (is_spi_element) {
+        // AT-SPI2 makes it practically impossible to monitor a control's position without polling. We get
+        // no notification of window movement. Calling GetExtents with ATSPI_COORD_TYPE_PARENT consistently
+        // gives screen coordinates. The BoundsChanged notification seems to give window-relative coordinates,
+        // but it doesn't do this consistently and doesn't always fire when window-relative coordinates change.
 
-    // If there are any specific cases where it's possible to do this better, we can add them here.
+        // If there are any specific cases where it's possible to do this better, we can add them here.
 
-    // Absolute screen coordinates
-    target_x: abs_x;
-    target_y: abs_y;
+        // Absolute screen coordinates
+        target_x: abs_x;
+        target_y: abs_y;
 
-    // For some reason, Qt often returns incorrect values when querying width or height in any
-    // coordinate space other than screen. Since we're already polling for absolute position,
-    // it doesn't make much sense to gate this behavior on toolkit.
-    target_width: spi_abs_width;
-    target_height: spi_abs_height;
+        // For some reason, Qt often returns incorrect values when querying width or height in any
+        // coordinate space other than screen. Since we're already polling for absolute position,
+        // it doesn't make much sense to gate this behavior on toolkit.
+        target_width: spi_abs_width;
+        target_height: spi_abs_height;
+    }
+
+    if (is_uia_element) {
+        target_x: x;
+        target_y: y;
+        target_width: width;
+        target_height: height;
+    }
 
     if (targeted and action_on_PrimaryAction) {
         action_on_A: action_on_PrimaryAction;
