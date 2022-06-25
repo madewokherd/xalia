@@ -12,7 +12,7 @@ using FlaUI.Core.Identifiers;
 
 namespace Xalia.Uia
 {
-    internal class UiaCommandThread
+    public class UiaCommandThread
     {
         enum CommandThreadRequestType
         {
@@ -25,8 +25,7 @@ namespace Xalia.Uia
         {
             public CommandThreadRequestType RequestType;
             public object CompletionSource;
-            public AutomationElement Element;
-            public AutomationBase Automation;
+            public UiaElementWrapper Element;
             public PropertyId PropertyId;
         }
 
@@ -52,7 +51,7 @@ namespace Xalia.Uia
             }
         }
 
-        public async Task<object> GetPropertyValue(AutomationElement element, PropertyId propid)
+        public async Task<object> GetPropertyValue(UiaElementWrapper element, PropertyId propid)
         {
             var request = new CommandThreadRequest();
             request.RequestType = CommandThreadRequestType.GetPropertyValue;
@@ -67,11 +66,11 @@ namespace Xalia.Uia
             return await source.Task;
         }
 
-        public async Task<AutomationElement[]> GetChildren(AutomationElement element)
+        public async Task<UiaElementWrapper[]> GetChildren(UiaElementWrapper element)
         {
             var request = new CommandThreadRequest();
             request.RequestType = CommandThreadRequestType.GetChildren;
-            var source = new TaskCompletionSource<AutomationElement[]>();
+            var source = new TaskCompletionSource<UiaElementWrapper[]>();
             request.CompletionSource = source;
             request.Element = element;
 
@@ -80,13 +79,13 @@ namespace Xalia.Uia
             return await source.Task;
         }
 
-        public async Task<AutomationElement> GetFocusedElement(AutomationBase automation)
+        public async Task<UiaElementWrapper> GetFocusedElement(UiaElementWrapper desktop)
         {
             var request = new CommandThreadRequest();
             request.RequestType = CommandThreadRequestType.GetFocusedElement;
-            var source = new TaskCompletionSource<AutomationElement>();
+            var source = new TaskCompletionSource<UiaElementWrapper>();
             request.CompletionSource = source;
-            request.Automation = automation;
+            request.Element = desktop;
 
             await channel.Writer.WriteAsync(request);
 
@@ -107,7 +106,12 @@ namespace Xalia.Uia
                             var completion_source = (TaskCompletionSource<object>)request.CompletionSource;
                             try
                             {
-                                var result = request.Element.FrameworkAutomationElement.GetPropertyValue(request.PropertyId);
+                                var result = request.Element.AutomationElement.FrameworkAutomationElement.GetPropertyValue(request.PropertyId);
+
+                                if (result is AutomationElement ae)
+                                {
+                                    result = request.Element.Connection.WrapElement(ae);
+                                }
 
                                 completion_source.SetResult(result);
                             }
@@ -119,10 +123,17 @@ namespace Xalia.Uia
                         }
                     case CommandThreadRequestType.GetChildren:
                         {
-                            var completion_source = (TaskCompletionSource<AutomationElement[]>)request.CompletionSource;
+                            var completion_source = (TaskCompletionSource<UiaElementWrapper[]>)request.CompletionSource;
                             try
                             {
-                                var result = request.Element.FindAllChildren();
+                                var elements = request.Element.AutomationElement.FindAllChildren();
+
+                                var result = new UiaElementWrapper[elements.Length];
+
+                                for (var i=0; i < elements.Length; i++)
+                                {
+                                    result[i] = request.Element.Connection.WrapElement(elements[i]);
+                                }
 
                                 completion_source.SetResult(result);
                             }
@@ -134,12 +145,12 @@ namespace Xalia.Uia
                         }
                     case CommandThreadRequestType.GetFocusedElement:
                         {
-                            var completion_source = (TaskCompletionSource<AutomationElement>)request.CompletionSource;
+                            var completion_source = (TaskCompletionSource<UiaElementWrapper>)request.CompletionSource;
                             try
                             {
-                                var result = request.Automation.FocusedElement();
+                                var result = request.Element.Connection.Automation.FocusedElement();
 
-                                completion_source.SetResult(result);
+                                completion_source.SetResult(request.Element.Connection.WrapElement(result));
                             }
                             catch (Exception e)
                             {

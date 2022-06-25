@@ -16,25 +16,38 @@ using Xalia.UiDom;
 
 namespace Xalia.Uia
 {
-    internal class UiaElement : UiDomElement
+    public class UiaElement : UiDomElement
     {
-        static long NextDebugId;
-
-        public UiaElement(AutomationElement element, UiaConnection root) : base(root)
+        public UiaElement(UiaElementWrapper wrapper) : base(wrapper.Connection)
         {
-            AutomationElement = element;
-            Root = root;
-            // There doesn't seem to be any reliable non-blocking away to get an element id, so we make one up
-            long debug_id = NextDebugId;
-            NextDebugId++;
-            DebugId = $"UIA:{debug_id}";
+            ElementWrapper = wrapper;
         }
 
-        public AutomationElement AutomationElement { get; }
+        public UiaElementWrapper ElementWrapper { get; }
 
-        public override string DebugId { get; }
+        public override string DebugId
+        {
+            get
+            {
+                return ElementWrapper.UniqueId;
+            }
+        }
 
-        public new UiaConnection Root { get; }
+        public string ElementIdentifier
+        {
+            get
+            {
+                return ElementWrapper.UniqueId;
+            }
+        }
+
+        public new UiaConnection Root
+        {
+            get
+            {
+                return ElementWrapper.Connection;
+            }
+        }
 
         Dictionary<PropertyId, bool> watching_property = new Dictionary<PropertyId, bool>();
         Dictionary<PropertyId, bool> property_known = new Dictionary<PropertyId, bool>();
@@ -136,7 +149,7 @@ namespace Xalia.Uia
 
             refreshing_children = true;
 
-            var children = await Root.CommandThread.GetChildren(AutomationElement);
+            var children = await Root.CommandThread.GetChildren(ElementWrapper);
 
             if (!watching_children)
                 return;
@@ -145,9 +158,9 @@ namespace Xalia.Uia
             int i = 0;
             foreach (var new_child in children)
             {
-                if (!Children.Exists((UiDomElement element) => ElementMatches(element, new_child)))
+                if (!Children.Exists((UiDomElement element) => ElementMatches(element, new_child.UniqueId)))
                     continue;
-                while (!ElementMatches(Children[i], new_child))
+                while (!ElementMatches(Children[i], new_child.UniqueId))
                 {
                     RemoveChild(i);
                 }
@@ -157,9 +170,9 @@ namespace Xalia.Uia
             // Add any new children
             for (i = 0; i < children.Length; i++)
             {
-                if (Children.Count <= i || !ElementMatches(Children[i], children[i]))
+                if (Children.Count <= i || !ElementMatches(Children[i], children[i].UniqueId))
                 {
-                    AddChild(i, new UiaElement(children[i], Root));
+                    AddChild(i, new UiaElement(children[i]));
                 }
             }
 
@@ -172,16 +185,16 @@ namespace Xalia.Uia
             }
         }
 
-        private bool ElementMatches(UiDomElement uidom, AutomationElement ae)
+        private bool ElementMatches(UiDomElement uidom, string element_id)
         {
             if (uidom is UiaElement uia)
-                return uia.AutomationElement.Equals(ae);
+                return uia.ElementIdentifier == element_id;
             return false;
         }
 
         internal async Task WatchChildrenTask()
         {
-            StructureChangedEventHandlerBase structure_changed_event = await Root.EventThread.RegisterChildrenChangedEventAsync(AutomationElement, OnChildrenChanged);
+            StructureChangedEventHandlerBase structure_changed_event = await Root.EventThread.RegisterChildrenChangedEventAsync(ElementWrapper, OnChildrenChanged);
 
             if (this.structure_changed_event != null)
                 Utils.RunTask(Root.EventThread.UnregisterEventHandler(this.structure_changed_event));
@@ -191,7 +204,7 @@ namespace Xalia.Uia
             await RefreshChildren();
         }
 
-        private void OnChildrenChanged(AutomationElement arg1, StructureChangeType arg2, int[] arg3)
+        private void OnChildrenChanged(StructureChangeType arg2, int[] arg3)
         {
 #if DEBUG
             Console.WriteLine("OnChildrenChanged for {0}", DebugId);
@@ -243,13 +256,13 @@ namespace Xalia.Uia
         private async Task WatchPropertyAsync(string name, PropertyId propid, Func<object, UiDomValue> conversion)
         {
             property_change_handlers[propid] =
-                await Root.EventThread.RegisterPropertyChangedEventAsync(AutomationElement, propid,
-                (AutomationElement element, PropertyId _propid, object value) =>
+                await Root.EventThread.RegisterPropertyChangedEventAsync(ElementWrapper, propid,
+                (PropertyId _propid, object value) =>
                 {
                     OnPropertyChange(name, propid, conversion, value);
                 });
 
-            object current_value = await Root.CommandThread.GetPropertyValue(AutomationElement, propid);
+            object current_value = await Root.CommandThread.GetPropertyValue(ElementWrapper, propid);
             UiDomValue ui_dom_value = conversion(current_value);
 
             UiDomValue old_value;
@@ -343,7 +356,7 @@ namespace Xalia.Uia
         {
             if (value)
             {
-                Root.elements_by_uia[AutomationElement] = this;
+                Root.elements_by_id[ElementIdentifier] = this;
             }
             else
             {
@@ -356,7 +369,7 @@ namespace Xalia.Uia
                 }
                 property_change_handlers.Clear();
                 UnwatchChildren();
-                Root.elements_by_uia.Remove(AutomationElement);
+                Root.elements_by_id.Remove(ElementIdentifier);
             }
             base.SetAlive(value);
         }
@@ -393,7 +406,7 @@ namespace Xalia.Uia
                 case "uia_focused":
                 case "focused":
                     depends_on.Add((this, new IdentifierExpression("uia_focused")));
-                    return UiDomBoolean.FromBool(AutomationElement.Equals(Root.FocusedElement));
+                    return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.FocusedElement));
                 case "uia_focused_element":
                 case "focused_element":
                     depends_on.Add((Root, new IdentifierExpression("uia_focused_element")));

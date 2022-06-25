@@ -145,6 +145,7 @@
     <Compile Include="Uia\UiaCommandThread.cs" />
     <Compile Include="Uia\UiaConnection.cs" />
     <Compile Include="Uia\UiaElement.cs" />
+    <Compile Include="Uia\UiaElementWrapper.cs" />
     <Compile Include="Uia\UiaEventThread.cs" />
     <Compile Include="UiDom\IUiDomApplication.cs" />
     <Compile Include="UiDom\SimulateDpad.cs" />

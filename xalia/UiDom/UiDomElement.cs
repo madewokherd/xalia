@@ -147,6 +147,8 @@ namespace Xalia.UiDom
         {
             switch (id)
             {
+                case "element_identifier":
+                    return new UiDomString(DebugId);
                 case "ancestor_matches":
                     if (Parent is null)
                         return UiDomUndefined.Instance;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using FlaUI.Core;
@@ -14,14 +15,16 @@ using Xalia.UiDom;
 
 namespace Xalia.Uia
 {
-    internal class UiaConnection : UiDomRoot
+    public class UiaConnection : UiDomRoot
     {
+        static int DummyElementId; // For the worst case, where we can't get any unique id for an element
+
         public UiaConnection(GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
             Automation = new UIA3Automation();
             EventThread = new UiaEventThread();
             CommandThread = new UiaCommandThread();
-            DesktopElement = new UiaElement(Automation.GetDesktop(), this);
+            DesktopElement = new UiaElement(WrapElement(Automation.GetDesktop()));
             AddChild(0, DesktopElement);
 
             Utils.RunTask(SetupFocusedElement());
@@ -29,14 +32,13 @@ namespace Xalia.Uia
 
         private async Task SetupFocusedElement()
         {
-            await EventThread.RegisterFocusChangedEventAsync(Automation, OnFocusChanged);
+            await EventThread.RegisterFocusChangedEventAsync(DesktopElement.ElementWrapper, OnFocusChanged);
 
-            FocusedElement = await CommandThread.GetFocusedElement(Automation);
+            FocusedElement = await CommandThread.GetFocusedElement(DesktopElement.ElementWrapper);
         }
 
-        private void OnFocusChanged(AutomationElement obj)
+        private void OnFocusChanged(UiaElementWrapper obj)
         {
-            Console.WriteLine("OnFocusChanged");
             FocusedElement = obj;
         }
 
@@ -50,24 +52,40 @@ namespace Xalia.Uia
         
         public UiaCommandThread CommandThread { get; }
 
-        internal Dictionary<AutomationElement, UiaElement> elements_by_uia = new Dictionary<AutomationElement, UiaElement>();
+        internal Dictionary<string, UiaElement> elements_by_id = new Dictionary<string, UiaElement>();
 
-        public UiaElement LookupAutomationElement(AutomationElement ae)
+        public UiaElement LookupAutomationElement(UiaElementWrapper ae)
         {
-            if (ae is null)
+            if (!ae.IsValid)
                 return null;
-            elements_by_uia.TryGetValue(ae, out var result);
+            elements_by_id.TryGetValue(ae.UniqueId, out var result);
             return result;
         }
 
-        AutomationElement focused_element;
+        public UiaElementWrapper WrapElement(AutomationElement ae)
+        {
+            if (ae is null)
+                return UiaElementWrapper.InvalidElement;
+            return new UiaElementWrapper(ae, this);
+        }
 
-        public AutomationElement FocusedElement
+        UiaElementWrapper focused_element;
+
+        public UiaElementWrapper FocusedElement
         {
             get { return focused_element; }
             private set
             {
                 var old_focused_element = focused_element;
+
+                if (old_focused_element.Equals(value))
+                {
+                    return;
+                }
+
+#if DEBUG
+                Console.WriteLine($"Focus changed to {value.UniqueId}");
+#endif
 
                 focused_element = value;
 
@@ -95,6 +113,40 @@ namespace Xalia.Uia
                     return (UiDomValue)LookupAutomationElement(FocusedElement) ?? UiDomUndefined.Instance;
             }
             return base.EvaluateIdentifierCore(id, root, depends_on);
+        }
+
+        internal string BlockingGetElementId(AutomationElement element)
+        {
+            try
+            {
+                if (element.FrameworkAutomationElement.TryGetPropertyValue<int[]>(
+                    Automation.PropertyLibrary.Element.RuntimeId, out var runtime_id))
+                {
+                    var sb = new StringBuilder();
+                    sb.Append("uia-runtime-id");
+                    foreach (var item in runtime_id)
+                        sb.Append($"-{item}");
+                    return sb.ToString();
+                }
+            }
+            catch (COMException)
+            {
+                // Fall back on other methods
+            }
+
+            // TODO: If automationid is provided, use automationid + parent id
+
+            // TODO: If hwnd differs from parent, use hwnd + parent id
+
+            // TOOD: Query for IAccessible2 directly using service id IAccessible, for old Qt versions
+
+            // TODO: Use NAV_PREVIOUS if supported to find index in parent, and use it for comparison.
+            // This requires saving the element along with the parent, because the index may change.
+
+            // TODO: If NAV_PREVIOUS is not supported, use every MSAA property we can find for comparison.
+
+            var id = Interlocked.Increment(ref DummyElementId);
+            return $"incomparable-element-{id}";
         }
     }
 }

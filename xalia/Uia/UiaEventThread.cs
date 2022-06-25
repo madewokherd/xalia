@@ -14,7 +14,7 @@ using FlaUI.Core.Identifiers;
 
 namespace Xalia.Uia
 {
-    internal class UiaEventThread
+    public class UiaEventThread
     {
         enum EventThreadRequestType
         {
@@ -28,8 +28,7 @@ namespace Xalia.Uia
         {
             public EventThreadRequestType RequestType;
             public object CompletionSource;
-            public AutomationElement Element;
-            public AutomationBase Automation;
+            public UiaElementWrapper Element;
             public PropertyId PropertyId;
             public SynchronizationContext HandlerContext;
             public object Handler;
@@ -53,8 +52,8 @@ namespace Xalia.Uia
             thread.Start();
         }
 
-        public async Task<PropertyChangedEventHandlerBase> RegisterPropertyChangedEventAsync(AutomationElement element,
-            PropertyId propid, Action<AutomationElement, PropertyId, object> action)
+        public async Task<PropertyChangedEventHandlerBase> RegisterPropertyChangedEventAsync(UiaElementWrapper element,
+            PropertyId propid, Action<PropertyId, object> action)
         {
             var request = new EventThreadRequest();
             request.RequestType = EventThreadRequestType.RegisterPropertyChangeEvent;
@@ -70,8 +69,8 @@ namespace Xalia.Uia
             return await source.Task;
         }
 
-        public async Task<StructureChangedEventHandlerBase> RegisterChildrenChangedEventAsync(AutomationElement element,
-            Action<AutomationElement, StructureChangeType, int[]> action)
+        public async Task<StructureChangedEventHandlerBase> RegisterChildrenChangedEventAsync(UiaElementWrapper element,
+            Action<StructureChangeType, int[]> action)
         {
             var request = new EventThreadRequest();
             request.RequestType = EventThreadRequestType.RegisterChildrenChangeEvent;
@@ -86,13 +85,13 @@ namespace Xalia.Uia
             return await source.Task;
         }
         public async Task<FocusChangedEventHandlerBase> RegisterFocusChangedEventAsync(
-            AutomationBase automation, Action<AutomationElement> action)
+            UiaElementWrapper element, Action<UiaElementWrapper> action)
         {
             var request = new EventThreadRequest();
             request.RequestType = EventThreadRequestType.RegisterFocusChangedEvent;
             var source = new TaskCompletionSource<FocusChangedEventHandlerBase>();
             request.CompletionSource = source;
-            request.Automation = automation;
+            request.Element = element;
             request.Handler = action;
             request.HandlerContext = SynchronizationContext.Current;
 
@@ -128,13 +127,13 @@ namespace Xalia.Uia
                             var completion_source = (TaskCompletionSource<PropertyChangedEventHandlerBase>)request.CompletionSource;
                             try
                             {
-                                var result = request.Element.RegisterPropertyChangedEvent(TreeScope.Element,
+                                var result = request.Element.AutomationElement.RegisterPropertyChangedEvent(TreeScope.Element,
                                     (AutomationElement element, PropertyId propid, object obj) =>
                                 {
                                     request.HandlerContext.Post((object state) =>
                                     {
-                                        var handler = (Action<AutomationElement, PropertyId, object>)request.Handler;
-                                        handler(element, propid, obj);
+                                        var handler = (Action<PropertyId, object>)request.Handler;
+                                        handler(propid, obj);
                                     }, null);
                                 }, new PropertyId[] { request.PropertyId });
 
@@ -151,13 +150,13 @@ namespace Xalia.Uia
                             var completion_source = (TaskCompletionSource<StructureChangedEventHandlerBase>)request.CompletionSource;
                             try
                             {
-                                var result = request.Element.RegisterStructureChangedEvent(TreeScope.Element,
+                                var result = request.Element.AutomationElement.RegisterStructureChangedEvent(TreeScope.Element,
                                     (AutomationElement element, StructureChangeType sct, int[] ints) =>
                                     {
                                         request.HandlerContext.Post((object state) =>
                                         {
-                                            var handler = (Action<AutomationElement, StructureChangeType, int[]>)request.Handler;
-                                            handler(element, sct, ints);
+                                            var handler = (Action<StructureChangeType, int[]>)request.Handler;
+                                            handler(sct, ints);
                                         }, null);
                                     });
 
@@ -174,13 +173,14 @@ namespace Xalia.Uia
                             var completion_source = (TaskCompletionSource<FocusChangedEventHandlerBase>)request.CompletionSource;
                             try
                             {
-                                var result = request.Automation.RegisterFocusChangedEvent(
+                                var result = request.Element.Connection.Automation.RegisterFocusChangedEvent(
                                     (AutomationElement element) =>
                                     {
+                                        var wrapped = request.Element.Connection.WrapElement(element);
                                         request.HandlerContext.Post((object state) =>
                                         {
-                                            var handler = (Action<AutomationElement>)request.Handler;
-                                            handler(element);
+                                            var handler = (Action<UiaElementWrapper>)request.Handler;
+                                            handler(wrapped);
                                         }, null);
                                     });
 
