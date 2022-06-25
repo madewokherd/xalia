@@ -240,6 +240,16 @@ namespace Xalia.UiDom
                 case "parent":
                     // We assume for now that this cannot change during an object's lifetime
                     return (UiDomValue)Parent ?? UiDomUndefined.Instance;
+                case "is_child_of":
+                    return new UiDomIsRelationship(this, UiDomIsRelationship.IsRelationshipType.Child);
+                case "is_parent_of":
+                    return new UiDomIsRelationship(this, UiDomIsRelationship.IsRelationshipType.Parent);
+                case "is_ancestor_of":
+                    return new UiDomIsRelationship(this, UiDomIsRelationship.IsRelationshipType.Ancestor);
+                case "is_descendent_of":
+                    return new UiDomIsRelationship(this, UiDomIsRelationship.IsRelationshipType.Descendent);
+                case "is_sibling_of":
+                    return new UiDomIsRelationship(this, UiDomIsRelationship.IsRelationshipType.Sibling);
                 case "is_root":
                     return UiDomBoolean.FromBool(this is UiDomRoot);
                 case "root":

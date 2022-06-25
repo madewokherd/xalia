@@ -153,6 +153,7 @@
     <Compile Include="UiDom\UiDomEnum.cs" />
     <Compile Include="UiDom\UiDomInt.cs" />
     <Compile Include="UiDom\UiDomElement.cs" />
+    <Compile Include="UiDom\UiDomIsRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />
     <Compile Include="UiDom\UiDomRoot.cs" />
