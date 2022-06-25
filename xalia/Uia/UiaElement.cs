@@ -367,6 +367,10 @@ namespace Xalia.Uia
             if (value)
             {
                 Root.elements_by_id[ElementIdentifier] = this;
+                if (ElementWrapper.Equals(Root.FocusedElement))
+                {
+                    Root.PropertyChanged("uia_focused_element");
+                }
             }
             else
             {
