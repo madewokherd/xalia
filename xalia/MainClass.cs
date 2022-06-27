@@ -62,6 +62,7 @@ namespace Xalia
             }
         }
 
+        [STAThread()]
         public static int Main()
         {
             SDL.SDL_SetHint(SDL.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");

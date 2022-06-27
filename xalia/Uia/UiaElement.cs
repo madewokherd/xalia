@@ -120,9 +120,9 @@ namespace Xalia.Uia
                 if (name == "button")
                     names = new[] { "button", "push_button", "pushbutton" };
                 else if (name == "tab")
-                    names = new[] { "tab", "page_tab", "pagetab" };
+                    names = new[] { "tab", "page_tab_list", "pagetablist" };
                 else if (name == "tab_item")
-                    names = new[] { "tab_item", "tabitem", "page_tab_list", "pagetablist" };
+                    names = new[] { "tab_item", "tabitem", "page_tab", "pagetab" };
                 else if (name == "text")
                     names = new[] { "text", "text_box", "textbox" };
                 else if (name.Contains("_"))

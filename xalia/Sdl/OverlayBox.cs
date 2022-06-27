@@ -184,11 +184,13 @@ namespace Xalia.Sdl
 
         private void UpdatePosition()
         {
+            SdlSynchronizationContext.Instance.AssertMainThread();
             SDL.SDL_SetWindowPosition(_window, _x - _effective_thickness, _y - _effective_thickness);
         }
 
         private void UpdateRegion()
         {
+            SdlSynchronizationContext.Instance.AssertMainThread();
             var window_width = _width + _effective_thickness * 2;
             var window_height = _height + _effective_thickness * 2;
             SDL.SDL_SetWindowSize(_window, window_width, window_height);
@@ -244,12 +246,14 @@ namespace Xalia.Sdl
 
         public void Show()
         {
+            SdlSynchronizationContext.Instance.AssertMainThread();
             Shown = true;
             SDL.SDL_ShowWindow(_window);
         }
 
         public void Hide()
         {
+            SdlSynchronizationContext.Instance.AssertMainThread();
             Shown = false;
             SDL.SDL_HideWindow(_window);
         }

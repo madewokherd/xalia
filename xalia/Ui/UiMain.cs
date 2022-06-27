@@ -217,6 +217,10 @@ namespace Xalia.Ui
                         target_sequence_counter++;
                     }
 
+#if DEBUG
+                    Console.WriteLine($"targeted_element: {_targetedElement}");
+#endif
+
                     Root.PropertyChanged("targeted_element");
                     if (!(_targetedElement is null))
                         _targetedElement.PropertyChanged("targeted");
