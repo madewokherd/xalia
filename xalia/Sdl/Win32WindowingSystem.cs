@@ -41,10 +41,19 @@ namespace Xalia.Sdl
                 return SetWindowLongW(hwnd, index, new_long);
         }
 
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        extern static bool SetWindowPos(IntPtr hwnd, IntPtr insert_after, int x, int y, int width, int height, uint flags);
+
         const int GWLP_EXSTYLE = -20;
 
         const int WS_EX_NOACTIVATE = 0x08000000;
         const int WS_EX_TOPMOST = 0x00000008;
+
+        static readonly IntPtr HWND_TOPMOST = (IntPtr)(-1);
+
+        const uint SWP_NOACTIVATE = 0x0010;
+        const uint SWP_NOSIZE = 0x0001;
+        const uint SWP_NOMOVE = 0x0002;
 
         public IntPtr GetWindowHandle(IntPtr sdl_window)
         {
@@ -64,9 +73,11 @@ namespace Xalia.Sdl
 
             var old_exstyle = GetWindowLong(win32_window, GWLP_EXSTYLE);
 
-            IntPtr new_exstyle = (IntPtr)((int)old_exstyle | WS_EX_NOACTIVATE | WS_EX_TOPMOST);
+            IntPtr new_exstyle = (IntPtr)((int)old_exstyle | WS_EX_NOACTIVATE);
 
             SetWindowLong(win32_window, GWLP_EXSTYLE, new_exstyle);
+
+            SetWindowPos(win32_window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 
             base.CustomizeOverlayWindow(sdl_window);
         }
