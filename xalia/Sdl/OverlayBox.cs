@@ -19,6 +19,8 @@ namespace Xalia.Sdl
             if (_window == IntPtr.Zero)
                 throw new Exception(SDL.SDL_GetError());
 
+            windowingSystem.CustomizeOverlayWindow(_window);
+
             this.windowingSystem = windowingSystem;
             this.windowingSystem.BoxCreated(this);
         }

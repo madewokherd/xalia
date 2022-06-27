@@ -22,6 +22,8 @@ namespace Xalia.Sdl
                     return new X11WindowingSystem();
                 case "wayland":
                     return new XdgWindowingSystem();
+                case "windows":
+                    return new Win32WindowingSystem();
                 default:
                     return new WindowingSystem();
             }
@@ -127,6 +129,10 @@ namespace Xalia.Sdl
         public virtual Task SendKey(string key)
         {
             throw new NotImplementedException();
+        }
+
+        public virtual void CustomizeOverlayWindow(IntPtr sdl_window)
+        {
         }
     }
 }

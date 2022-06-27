@@ -141,6 +141,7 @@
     <Compile Include="MainClass.cs" />
     <Compile Include="Sdl\GameControllerInput.cs" />
     <Compile Include="Sdl\SdlSynchronizationContext.cs" />
+    <Compile Include="Sdl\Win32WindowingSystem.cs" />
     <Compile Include="Sdl\X11WindowingSystem.cs" />
     <Compile Include="Sdl\XdgWindowingSystem.cs" />
     <Compile Include="Uia\UiaCommandThread.cs" />
