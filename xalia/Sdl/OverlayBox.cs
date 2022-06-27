@@ -220,10 +220,11 @@ namespace Xalia.Sdl
 
                     SDL.SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
 
-                    rect.x = _effective_thickness;
-                    rect.y = _effective_thickness;
-                    rect.w = _width;
-                    rect.h = _height;
+                    // FIXME: Why is the 1 pixel adjustment needed?
+                    rect.x = _effective_thickness - 1;
+                    rect.y = _effective_thickness - 1;
+                    rect.w = _width + 1;
+                    rect.h = _height + 1;
 
                     SDL.SDL_RenderFillRect(surface_renderer, ref rect);
                 }
@@ -271,9 +272,33 @@ namespace Xalia.Sdl
 
             try
             {
-                SDL.SDL_SetRenderDrawColor(renderer, _color.r, _color.g, _color.b, _color.a);
+                float dpi_ul = windowingSystem.GetDpi(_x, _y);
+                float dpi_br = windowingSystem.GetDpi(_x + _width, _y + _height);
+                int pixel_width = (int)Math.Round(Math.Max(dpi_ul, dpi_br) / 96.0);
+
+                SDL.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 
                 SDL.SDL_RenderClear(renderer);
+
+                SDL.SDL_SetRenderDrawColor(renderer, _color.r, _color.g, _color.b, _color.a);
+
+                SDL.SDL_Rect rc;
+
+                rc.x = pixel_width;
+                rc.y = pixel_width;
+                rc.w = Width + _effective_thickness * 2 - pixel_width * 2;
+                rc.h = Height + _effective_thickness * 2 - pixel_width * 2;
+
+                SDL.SDL_RenderFillRect(renderer, ref rc);
+
+                SDL.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+
+                rc.x = _effective_thickness - pixel_width;
+                rc.y = _effective_thickness - pixel_width;
+                rc.w = Width + pixel_width * 2;
+                rc.h = Height + pixel_width * 2;
+
+                SDL.SDL_RenderFillRect(renderer, ref rc);
 
                 SDL.SDL_RenderPresent(renderer);
             }
