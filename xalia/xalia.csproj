@@ -66,6 +66,9 @@
     <Reference Include="FlaUI.Core, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\FlaUI.Core.3.2.0\lib\net45\FlaUI.Core.dll</HintPath>
     </Reference>
+    <Reference Include="FlaUI.UIA2, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\FlaUI.UIA2.3.2.0\lib\net48\FlaUI.UIA2.dll</HintPath>
+    </Reference>
     <Reference Include="FlaUI.UIA3, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\FlaUI.UIA3.3.2.0\lib\net45\FlaUI.UIA3.dll</HintPath>
     </Reference>
@@ -98,6 +101,8 @@
     <Reference Include="Tmds.DBus, Version=0.10.0.0, Culture=neutral, PublicKeyToken=9abd76e9812c1bca, processorArchitecture=MSIL">
       <HintPath>..\packages\Tmds.DBus.0.10.1\lib\netstandard2.0\Tmds.DBus.dll</HintPath>
     </Reference>
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>

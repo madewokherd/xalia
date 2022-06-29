@@ -43,9 +43,15 @@ namespace Xalia
                 }
 
                 if (connection == null &&
+                    (Environment.GetEnvironmentVariable("XALIA_USE_UIA2") ?? "0") != "0")
+                {
+                    connection = UiaConnection.CreateFromUia2(config, application);
+                }
+
+                if (connection == null &&
                     (Environment.GetEnvironmentVariable("XALIA_USE_UIA3") ?? (IsWindows() ? "1" : "0")) != "0")
                 {
-                    connection = new UiaConnection(config, application);
+                    connection = UiaConnection.CreateFromUia3(config, application);
                 }
 
                 if (connection == null)

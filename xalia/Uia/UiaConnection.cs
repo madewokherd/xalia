@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
-using FlaUI.UIA3;
 
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -24,9 +23,9 @@ namespace Xalia.Uia
 
         static List<WINEVENTPROC> event_proc_delegates = new List<WINEVENTPROC>(); // to make sure delegates aren't GC'd while in use
 
-        public UiaConnection(GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
+        public UiaConnection(AutomationBase automation, GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
-            Automation = new UIA3Automation();
+            Automation = automation;
             EventThread = new UiaEventThread();
             CommandThread = new UiaCommandThread();
             DesktopElement = new UiaElement(WrapElement(Automation.GetDesktop()));
@@ -44,6 +43,16 @@ namespace Xalia.Uia
             Utils.RunTask(SetupFocusedElement());
 
             Utils.RunTask(SetupWindowEvents());
+        }
+
+        public static UiaConnection CreateFromUia2(GudlStatement[] rules, IUiDomApplication app)
+        {
+            return new UiaConnection(new FlaUI.UIA2.UIA2Automation(), rules, app);
+        }
+
+        public static UiaConnection CreateFromUia3(GudlStatement[] rules, IUiDomApplication app)
+        {
+            return new UiaConnection(new FlaUI.UIA3.UIA3Automation(), rules, app);
         }
 
         private void OnMsaaEvent(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
