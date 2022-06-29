@@ -198,11 +198,16 @@ namespace Xalia.Uia
             StructureChangedEventHandlerBase structure_changed_event = await Root.EventThread.RegisterChildrenChangedEventAsync(ElementWrapper, OnChildrenChanged);
 
             if (this.structure_changed_event != null)
-                Utils.RunTask(Root.EventThread.UnregisterEventHandler(this.structure_changed_event));
+                Utils.RunTask(Root.EventThread.UnregisterEventHandlerAsync(this.structure_changed_event));
 
             this.structure_changed_event = structure_changed_event;
 
             await RefreshChildren();
+        }
+
+        internal void UpdateChildren()
+        {
+            Utils.RunTask(RefreshChildren());
         }
 
         private void OnChildrenChanged(StructureChangeType arg2, int[] arg3)
@@ -210,7 +215,7 @@ namespace Xalia.Uia
 #if DEBUG
             Console.WriteLine("OnChildrenChanged for {0}", DebugId);
 #endif
-            Utils.RunTask(RefreshChildren());
+            UpdateChildren();
         }
 
         internal void WatchChildren()
@@ -235,7 +240,7 @@ namespace Xalia.Uia
 
             if (structure_changed_event != null)
             {
-                Utils.RunTask(Root.EventThread.UnregisterEventHandler(structure_changed_event));
+                Utils.RunTask(Root.EventThread.UnregisterEventHandlerAsync(structure_changed_event));
                 structure_changed_event = null;
             }
             for (int i = Children.Count - 1; i >= 0; i--)
@@ -345,7 +350,7 @@ namespace Xalia.Uia
                 if (property_change_handlers.TryGetValue(propid, out var handler))
                 {
                     property_change_handlers.Remove(propid);
-                    Utils.RunTask(Root.EventThread.UnregisterEventHandler(handler));
+                    Utils.RunTask(Root.EventThread.UnregisterEventHandlerAsync(handler));
                 }
             }
         }
@@ -394,7 +399,7 @@ namespace Xalia.Uia
                 watching_property.Clear();
                 foreach (var kvp in property_change_handlers)
                 {
-                    Utils.RunTask(Root.EventThread.UnregisterEventHandler(kvp.Value));
+                    Utils.RunTask(Root.EventThread.UnregisterEventHandlerAsync(kvp.Value));
                 }
                 property_change_handlers.Clear();
                 UnwatchChildren();

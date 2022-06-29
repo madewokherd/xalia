@@ -21,6 +21,7 @@ namespace Xalia.Uia
             RegisterPropertyChangeEvent,
             RegisterChildrenChangeEvent,
             RegisterFocusChangedEvent,
+            RegisterAutomationEvent,
             Dispose,
         }
 
@@ -29,6 +30,8 @@ namespace Xalia.Uia
             public EventThreadRequestType RequestType;
             public object CompletionSource;
             public UiaElementWrapper Element;
+            public TreeScope TreeScope;
+            public EventId EventId;
             public PropertyId PropertyId;
             public SynchronizationContext HandlerContext;
             public object Handler;
@@ -100,7 +103,25 @@ namespace Xalia.Uia
             return await source.Task;
         }
 
-        public async Task UnregisterEventHandler(EventHandlerBase handler)
+        public async Task<AutomationEventHandlerBase> RegisterAutomationEventAsync(UiaElementWrapper element,
+            EventId eventid, TreeScope treescope, Action<UiaElementWrapper> action)
+        {
+            var request = new EventThreadRequest();
+            request.RequestType = EventThreadRequestType.RegisterAutomationEvent;
+            var source = new TaskCompletionSource<AutomationEventHandlerBase>();
+            request.CompletionSource = source;
+            request.Element = element;
+            request.EventId = eventid;
+            request.TreeScope = treescope;
+            request.Handler = action;
+            request.HandlerContext = SynchronizationContext.Current;
+
+            await channel.Writer.WriteAsync(request);
+
+            return await source.Task;
+        }
+
+        public async Task UnregisterEventHandlerAsync(EventHandlerBase handler)
         {
             var request = new EventThreadRequest();
             request.RequestType = EventThreadRequestType.Dispose;
@@ -184,6 +205,29 @@ namespace Xalia.Uia
                                         }, null);
                                     });
 
+                                completion_source.SetResult(result);
+                            }
+                            catch (Exception e)
+                            {
+                                completion_source.SetException(e);
+                            }
+                            break;
+                        }
+                    case EventThreadRequestType.RegisterAutomationEvent:
+                        {
+                            var completion_source = (TaskCompletionSource<AutomationEventHandlerBase>)request.CompletionSource;
+                            try
+                            {
+                                var result = request.Element.AutomationElement.RegisterAutomationEvent(request.EventId,
+                                request.TreeScope, (AutomationElement element, EventId ei) =>
+                                {
+                                    var wrapped = request.Element.Connection.WrapElement(element);
+                                    request.HandlerContext.Post((object state) =>
+                                    {
+                                        var handler = (Action<UiaElementWrapper>)request.Handler;
+                                        handler(wrapped);
+                                    }, null);
+                                });
                                 completion_source.SetResult(result);
                             }
                             catch (Exception e)

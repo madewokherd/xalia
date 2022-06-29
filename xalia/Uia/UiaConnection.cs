@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Definitions;
 using FlaUI.UIA3;
 
 using Xalia.Gudl;
@@ -28,6 +29,8 @@ namespace Xalia.Uia
             AddChild(0, DesktopElement);
 
             Utils.RunTask(SetupFocusedElement());
+
+            Utils.RunTask(SetupWindowEvents());
         }
 
         private async Task SetupFocusedElement()
@@ -40,6 +43,27 @@ namespace Xalia.Uia
         private void OnFocusChanged(UiaElementWrapper obj)
         {
             FocusedElement = obj;
+        }
+
+        private async Task SetupWindowEvents()
+        {
+            await EventThread.RegisterAutomationEventAsync(DesktopElement.ElementWrapper,
+                Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Children,
+                OnWindowOpened);
+            await EventThread.RegisterAutomationEventAsync(DesktopElement.ElementWrapper,
+                Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Children,
+                OnWindowClosed);
+            DesktopElement.UpdateChildren(); // in case children changed before the events were registered
+        }
+
+        private void OnWindowClosed(UiaElementWrapper obj)
+        {
+            DesktopElement.UpdateChildren();
+        }
+
+        private void OnWindowOpened(UiaElementWrapper obj)
+        {
+            DesktopElement.UpdateChildren();
         }
 
         public override string DebugId => "UiaConnection";
