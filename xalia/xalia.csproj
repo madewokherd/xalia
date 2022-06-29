@@ -138,6 +138,8 @@
     <Compile Include="Input\InputSystem.cs" />
     <Compile Include="Input\VirtualInputBackend.cs" />
     <Compile Include="Input\VirtualInputSink.cs" />
+    <Compile Include="Interop\Win32.cs" />
+    <Compile Include="Interop\X11.cs" />
     <Compile Include="MainClass.cs" />
     <Compile Include="Sdl\GameControllerInput.cs" />
     <Compile Include="Sdl\SdlSynchronizationContext.cs" />
