@@ -14,11 +14,15 @@ using FlaUI.UIA3;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
+using static Xalia.Interop.Win32;
+
 namespace Xalia.Uia
 {
     public class UiaConnection : UiDomRoot
     {
         static int DummyElementId; // For the worst case, where we can't get any unique id for an element
+
+        static List<WINEVENTPROC> event_proc_delegates = new List<WINEVENTPROC>(); // to make sure delegates aren't GC'd while in use
 
         public UiaConnection(GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
@@ -28,9 +32,29 @@ namespace Xalia.Uia
             DesktopElement = new UiaElement(WrapElement(Automation.GetDesktop()));
             AddChild(0, DesktopElement);
 
+            // If a top-level window does not support WindowPattern, we don't get
+            // any notification from UIAutomation when it's created.
+            var eventprocdelegate = new WINEVENTPROC(OnMsaaEvent);
+
+            event_proc_delegates.Add(eventprocdelegate);
+
+            SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY, IntPtr.Zero,
+                eventprocdelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
+
             Utils.RunTask(SetupFocusedElement());
 
             Utils.RunTask(SetupWindowEvents());
+        }
+
+        private void OnMsaaEvent(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
+        {
+            if (eventId == EVENT_OBJECT_CREATE || eventId == EVENT_OBJECT_DESTROY)
+            {
+                if (GetAncestor(hwnd, GA_PARENT) == GetDesktopWindow())
+                {
+                    DesktopElement.UpdateChildren();
+                }
+            }
         }
 
         private async Task SetupFocusedElement()

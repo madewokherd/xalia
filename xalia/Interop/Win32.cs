@@ -55,6 +55,28 @@ namespace Xalia.Interop
         public const uint SWP_NOSIZE = 0x0001;
         public const uint SWP_NOMOVE = 0x0002;
 
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        public delegate void WINEVENTPROC(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject,
+            int idChild, int idEventThread, int dwmsEventTime);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc,
+            WINEVENTPROC pfnWinEventProc, int idProcess, int idThread, uint dwFlags);
+
+        public static uint EVENT_OBJECT_CREATE = 0x8000;
+        public static uint EVENT_OBJECT_DESTROY = 0x8001;
+
+        public static uint WINEVENT_OUTOFCONTEXT = 0;
+
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
+
+        public static uint GA_PARENT = 1;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr GetDesktopWindow();
+
         public static IntPtr GetSdlWindowHwnd(IntPtr sdl_window)
         {
             SDL_SysWMinfo info = default;
