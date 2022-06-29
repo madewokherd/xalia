@@ -19,6 +19,8 @@ namespace Xalia.Uia
             GetPropertyValue,
             GetChildren,
             GetFocusedElement,
+            GetSupportedPatterns,
+            Invoke,
         }
 
         struct CommandThreadRequest
@@ -92,6 +94,32 @@ namespace Xalia.Uia
             return await source.Task;
         }
 
+        public async Task<PatternId[]> GetSupportedPatterns(UiaElementWrapper element)
+        {
+            var request = new CommandThreadRequest();
+            request.RequestType = CommandThreadRequestType.GetSupportedPatterns;
+            var source = new TaskCompletionSource<PatternId[]>();
+            request.CompletionSource = source;
+            request.Element = element;
+
+            await channel.Writer.WriteAsync(request);
+
+            return await source.Task;
+        }
+
+        public async Task Invoke(UiaElementWrapper element)
+        {
+            var request = new CommandThreadRequest();
+            request.RequestType = CommandThreadRequestType.Invoke;
+            var source = new TaskCompletionSource<bool>();
+            request.CompletionSource = source;
+            request.Element = element;
+
+            await channel.Writer.WriteAsync(request);
+
+            await source.Task;
+        }
+
         private void ThreadProc()
         {
             while (true)
@@ -158,6 +186,36 @@ namespace Xalia.Uia
                             }
                             break;
                         }
+                    case CommandThreadRequestType.GetSupportedPatterns:
+                        {
+                            var completion_source = (TaskCompletionSource<PatternId[]>)request.CompletionSource;
+                            try
+                            {
+                                var result = request.Element.AutomationElement.GetSupportedPatterns();
+
+                                completion_source.SetResult(result);
+                            }
+                            catch (Exception e)
+                            {
+                                completion_source.SetException(e);
+                            }
+                        }
+                        break;
+                    case CommandThreadRequestType.Invoke:
+                        {
+                            var completion_source = (TaskCompletionSource<bool>)request.CompletionSource;
+                            try
+                            {
+                                request.Element.AutomationElement.Patterns.Invoke.Pattern.Invoke();
+
+                                completion_source.SetResult(true);
+                            }
+                            catch (Exception e)
+                            {
+                                completion_source.SetException(e);
+                            }
+                        }
+                        break;
                 }
             }
         }

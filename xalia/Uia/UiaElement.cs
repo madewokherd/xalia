@@ -60,6 +60,9 @@ namespace Xalia.Uia
         bool inflight_structure_changed;
         StructureChangedEventHandlerBase structure_changed_event;
 
+        PatternId[] supported_patterns;
+        bool fetching_supported_patterns;
+
         internal static readonly string[] control_type_names =
         {
             "unknown",
@@ -332,10 +335,26 @@ namespace Xalia.Uia
                             WatchProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, ConvertRectangle);
                             break;
                         }
+                    case "uia_supported_patterns":
+                        {
+                            if (!fetching_supported_patterns)
+                            {
+                                fetching_supported_patterns = true;
+                                Utils.RunTask(FetchSupportedPatterns());
+                            }
+                            break;
+                        }
                 }
             }
 
             base.WatchProperty(expression);
+        }
+
+        private async Task FetchSupportedPatterns()
+        {
+            supported_patterns = await Root.CommandThread.GetSupportedPatterns(ElementWrapper);
+
+            PropertyChanged("uia_supported_patterns");
         }
 
         private void UnwatchProperty(PropertyId propid)
@@ -530,6 +549,14 @@ namespace Xalia.Uia
                 case "is_atspi_element":
                 case "is_at_spi_element":
                     return UiDomBoolean.False;
+                case "invoke":
+                case "uia_invoke":
+                    depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
+                    if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.InvokePattern))
+                    {
+                        return new UiDomRoutineAsync(this, "uia_invoke", Invoke);
+                    }
+                    return UiDomUndefined.Instance;
             }
 
             if (name_to_control_type.ContainsKey(id))
@@ -541,6 +568,11 @@ namespace Xalia.Uia
             }
 
             return base.EvaluateIdentifierCore(id, root, depends_on);
+        }
+
+        private async Task Invoke(UiDomRoutineAsync obj)
+        {
+            await Root.CommandThread.Invoke(ElementWrapper);
         }
     }
 }

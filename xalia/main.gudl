@@ -278,6 +278,13 @@ if (interactable) {
         action_on_PrimaryAction: spi_action.(click or Press or Toggle);
         action_name_PrimaryAction: "Click";
     }
+
+    if (uia_control_type.button and uia_invoke) {
+        targetable: true;
+        action_on_PrimaryAction: uia_invoke;
+        action_name_PrimaryAction: "Click";
+    }
+
     check_box (spi_action.(click or Toggle or Press)) {
         targetable: true;
         action_on_PrimaryAction: spi_action.(click or Toggle or Press);
@@ -310,15 +317,15 @@ if (interactable) {
         action_name_start: "Open Menu";
     }
 
-    button ((spi_name == "OK" or spi_name == "Run" or spi_name == "Play" or spi_name == "PLAY" or spi_name == "Yes") and action_on_PrimaryAction)
+    button ((name == "OK" or name == "Run" or name == "Play" or name == "PLAY" or name == "Yes") and action_on_PrimaryAction)
     {
         action_on_start: action_on_PrimaryAction;
-        action_name_start: spi_name;
+        action_name_start: name;
     }
 
-    button ((spi_name == "Cancel" or spi_name == "Close" or spi_name == "No") and action_on_PrimaryAction)
+    button ((name == "Cancel" or name == "Close" or name == "No") and action_on_PrimaryAction)
     {
         action_on_B: action_on_PrimaryAction;
-        action_name_B: spi_name;
+        action_name_B: name;
     }
 }
