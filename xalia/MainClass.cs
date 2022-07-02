@@ -11,7 +11,7 @@ using Xalia.UiDom;
 using Xalia.Uia;
 using Xalia.Sdl;
 
-using SDL2;
+using static SDL2.SDL;
 
 namespace Xalia
 {
@@ -71,9 +71,9 @@ namespace Xalia
         [STAThread()]
         public static int Main()
         {
-            SDL.SDL_SetHint(SDL.SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+            SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
-            SdlSynchronizationContext.Instance.Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_JOYSTICK | SDL.SDL_INIT_GAMECONTROLLER);
+            SdlSynchronizationContext.Instance.Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
 
             GudlStatement[] config;
 

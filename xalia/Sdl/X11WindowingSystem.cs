@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using SDL2;
+using static SDL2.SDL;
 
 using static Xalia.Interop.X11;
 
@@ -24,19 +24,19 @@ namespace Xalia.Sdl
 
         public X11WindowingSystem()
         {
-            IntPtr window = SDL.SDL_CreateWindow("dummy window", 0, 0, 1, 1, SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN);
+            IntPtr window = SDL_CreateWindow("dummy window", 0, 0, 1, 1, SDL_WindowFlags.SDL_WINDOW_HIDDEN);
 
             if (window == IntPtr.Zero)
-                throw new Exception(SDL.SDL_GetError());
+                throw new Exception(SDL_GetError());
 
-            SDL.SDL_SysWMinfo info = default;
+            SDL_SysWMinfo info = default;
 
-            SDL.SDL_VERSION(out info.version);
+            SDL_VERSION(out info.version);
 
-            if (SDL.SDL_GetWindowWMInfo(window, ref info) != SDL.SDL_bool.SDL_TRUE)
-                throw new Exception(SDL.SDL_GetError());
+            if (SDL_GetWindowWMInfo(window, ref info) != SDL_bool.SDL_TRUE)
+                throw new Exception(SDL_GetError());
 
-            SDL.SDL_DestroyWindow(window);
+            SDL_DestroyWindow(window);
 
             display = info.info.x11.display;
 
@@ -60,12 +60,12 @@ namespace Xalia.Sdl
             
             ((SdlSynchronizationContext)SynchronizationContext.Current).SdlEvent += OnSdlEvent;
 
-            SDL.SDL_EventState(SDL.SDL_EventType.SDL_SYSWMEVENT, SDL.SDL_ENABLE);
+            SDL_EventState(SDL_EventType.SDL_SYSWMEVENT, SDL_ENABLE);
         }
 
         private void OnSdlEvent(object sender, SdlSynchronizationContext.SdlEventArgs e)
         {
-            if (e.SdlEvent.type == SDL.SDL_EventType.SDL_SYSWMEVENT)
+            if (e.SdlEvent.type == SDL_EventType.SDL_SYSWMEVENT)
             {
                 var syswm = Marshal.PtrToStructure<SDL_SysWMmsg_X11>(e.SdlEvent.syswm.msg);
 

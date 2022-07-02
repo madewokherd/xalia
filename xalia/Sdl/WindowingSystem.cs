@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using SDL2;
+
+using static SDL2.SDL;
 
 namespace Xalia.Sdl
 {
@@ -15,7 +16,7 @@ namespace Xalia.Sdl
 
         public static WindowingSystem Create()
         {
-            var driver = SDL.SDL_GetCurrentVideoDriver();
+            var driver = SDL_GetCurrentVideoDriver();
             switch (driver)
             {
                 case "x11":
@@ -35,7 +36,7 @@ namespace Xalia.Sdl
         {
             switch (e.SdlEvent.type)
             {
-                case SDL.SDL_EventType.SDL_WINDOWEVENT:
+                case SDL_EventType.SDL_WINDOWEVENT:
                     if (_windows.TryGetValue(e.SdlEvent.window.windowID, out var obj))
                     {
                         if (obj is OverlayBox box)
@@ -49,12 +50,12 @@ namespace Xalia.Sdl
 
         internal void BoxCreated(OverlayBox box)
         {
-            _windows.Add(SDL.SDL_GetWindowID(box._window), box);
+            _windows.Add(SDL_GetWindowID(box._window), box);
         }
 
         internal void BoxDestroyed(OverlayBox box)
         {
-            _windows.Remove(SDL.SDL_GetWindowID(box._window));
+            _windows.Remove(SDL_GetWindowID(box._window));
         }
 
         public virtual OverlayBox CreateOverlayBox()
@@ -64,18 +65,18 @@ namespace Xalia.Sdl
 
         public virtual float GetDpi(int x, int y)
         {
-            int count = SDL.SDL_GetNumVideoDisplays();
+            int count = SDL_GetNumVideoDisplays();
             int closest_display = 0;
             long closest_display_distance = long.MaxValue;
             float ddpi, hdpi, vdpi;
             for (int i=0; i<0; i++)
             {
-                SDL.SDL_GetDisplayBounds(i, out var bounds);
+                SDL_GetDisplayBounds(i, out var bounds);
 
                 if (bounds.x <= x && bounds.x + bounds.w > x &&
                     bounds.y <= y && bounds.y + bounds.h > y)
                 {
-                    SDL.SDL_GetDisplayDPI(i, out ddpi, out hdpi, out vdpi);
+                    SDL_GetDisplayDPI(i, out ddpi, out hdpi, out vdpi);
 
                     return hdpi;
                 }
@@ -104,7 +105,7 @@ namespace Xalia.Sdl
                 }    
             }
 
-            SDL.SDL_GetDisplayDPI(closest_display, out ddpi, out hdpi, out vdpi);
+            SDL_GetDisplayDPI(closest_display, out ddpi, out hdpi, out vdpi);
 
             return hdpi;
         }

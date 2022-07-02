@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using SDL2;
+
+using static SDL2.SDL;
 
 namespace Xalia.Sdl
 {
@@ -10,18 +11,18 @@ namespace Xalia.Sdl
         {
             SdlSynchronizationContext.Instance.AssertMainThread();
 
-            _window = SDL.SDL_CreateShapedWindow("overlay box", 0, 0, 10, 10,
-                SDL.SDL_WindowFlags.SDL_WINDOW_ALWAYS_ON_TOP |
-                SDL.SDL_WindowFlags.SDL_WINDOW_BORDERLESS |
-                SDL.SDL_WindowFlags.SDL_WINDOW_TOOLTIP |
-                SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN);
+            _window = SDL_CreateShapedWindow("overlay box", 0, 0, 10, 10,
+                SDL_WindowFlags.SDL_WINDOW_ALWAYS_ON_TOP |
+                SDL_WindowFlags.SDL_WINDOW_BORDERLESS |
+                SDL_WindowFlags.SDL_WINDOW_TOOLTIP |
+                SDL_WindowFlags.SDL_WINDOW_HIDDEN);
 
             if (_window == IntPtr.Zero)
-                throw new Exception(SDL.SDL_GetError());
+                throw new Exception(SDL_GetError());
 
             windowingSystem.CustomizeOverlayWindow(this, _window);
 
-            _renderer = SDL.SDL_CreateRenderer(_window, -1, 0);
+            _renderer = SDL_CreateRenderer(_window, -1, 0);
 
             this.windowingSystem = windowingSystem;
             this.windowingSystem.BoxCreated(this);
@@ -31,9 +32,9 @@ namespace Xalia.Sdl
 
         internal bool HideWhenResizing { get; set; }
 
-        internal void OnWindowEvent(SDL.SDL_WindowEvent window)
+        internal void OnWindowEvent(SDL_WindowEvent window)
         {
-            if (window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_EXPOSED)
+            if (window.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_EXPOSED)
                 Redraw();
         }
 
@@ -100,8 +101,8 @@ namespace Xalia.Sdl
             }
         }
 
-        private SDL.SDL_Color _color;
-        public SDL.SDL_Color Color
+        private SDL_Color _color;
+        public SDL_Color Color
         {
             get => _color;
             set
@@ -116,7 +117,7 @@ namespace Xalia.Sdl
 
         public void SetColor(byte r, byte g, byte b, byte a)
         {
-            var color = new SDL.SDL_Color();
+            var color = new SDL_Color();
             color.r = r;
             color.g = g;
             color.b = b;
@@ -190,7 +191,7 @@ namespace Xalia.Sdl
         private void UpdatePosition()
         {
             SdlSynchronizationContext.Instance.AssertMainThread();
-            SDL.SDL_SetWindowPosition(_window, _x - _effective_thickness, _y - _effective_thickness);
+            SDL_SetWindowPosition(_window, _x - _effective_thickness, _y - _effective_thickness);
         }
 
         private void UpdateRegion()
@@ -198,32 +199,32 @@ namespace Xalia.Sdl
             SdlSynchronizationContext.Instance.AssertMainThread();
             var window_width = _width + _effective_thickness * 2;
             var window_height = _height + _effective_thickness * 2;
-            SDL.SDL_SetWindowSize(_window, window_width, window_height);
+            SDL_SetWindowSize(_window, window_width, window_height);
 
-            var surface = SDL.SDL_CreateRGBSurfaceWithFormat(0, window_width, window_height, 16,
-                SDL.SDL_PIXELFORMAT_BGRA5551);
+            var surface = SDL_CreateRGBSurfaceWithFormat(0, window_width, window_height, 16,
+                SDL_PIXELFORMAT_BGRA5551);
 
             try
             {
-                var surface_renderer = SDL.SDL_CreateSoftwareRenderer(surface);
+                var surface_renderer = SDL_CreateSoftwareRenderer(surface);
 
                 try
                 {
-                    SDL.SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
+                    SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
 
-                    SDL.SDL_RenderClear(surface_renderer);
+                    SDL_RenderClear(surface_renderer);
 
-                    SDL.SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 255);
+                    SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 255);
 
-                    var rect = new SDL.SDL_Rect();
+                    var rect = new SDL_Rect();
                     rect.x = 0;
                     rect.y = 0;
                     rect.w = window_width;
                     rect.h = window_height;
 
-                    SDL.SDL_RenderFillRect(surface_renderer, ref rect);
+                    SDL_RenderFillRect(surface_renderer, ref rect);
 
-                    SDL.SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
+                    SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
 
                     // FIXME: Why is the 1 pixel adjustment needed?
                     rect.x = _effective_thickness - 1;
@@ -231,21 +232,21 @@ namespace Xalia.Sdl
                     rect.w = _width + 1;
                     rect.h = _height + 1;
 
-                    SDL.SDL_RenderFillRect(surface_renderer, ref rect);
+                    SDL_RenderFillRect(surface_renderer, ref rect);
                 }
                 finally
                 {
-                    SDL.SDL_DestroyRenderer(surface_renderer);
+                    SDL_DestroyRenderer(surface_renderer);
                 }
 
-                var mode = new SDL.SDL_WindowShapeMode();
-                mode.mode = SDL.WindowShapeMode.ShapeModeDefault;
+                var mode = new SDL_WindowShapeMode();
+                mode.mode = WindowShapeMode.ShapeModeDefault;
 
-                SDL.SDL_SetWindowShape(_window, surface, ref mode);
+                SDL_SetWindowShape(_window, surface, ref mode);
             }
             finally
             {
-                SDL.SDL_FreeSurface(surface);
+                SDL_FreeSurface(surface);
             }
         }
 
@@ -254,22 +255,22 @@ namespace Xalia.Sdl
         {
             SdlSynchronizationContext.Instance.AssertMainThread();
             Shown = true;
-            SDL.SDL_ShowWindow(_window);
+            SDL_ShowWindow(_window);
         }
 
         public void Hide()
         {
             SdlSynchronizationContext.Instance.AssertMainThread();
             Shown = false;
-            SDL.SDL_HideWindow(_window);
+            SDL_HideWindow(_window);
         }
 
         public void Dispose()
         {
             windowingSystem.BoxDestroyed(this);
-            SDL.SDL_DestroyWindow(_window);
+            SDL_DestroyWindow(_window);
             _window = IntPtr.Zero;
-            SDL.SDL_DestroyRenderer(_renderer);
+            SDL_DestroyRenderer(_renderer);
             _renderer = IntPtr.Zero;
         }
 
@@ -279,31 +280,31 @@ namespace Xalia.Sdl
             float dpi_br = windowingSystem.GetDpi(_x + _width, _y + _height);
             int pixel_width = (int)Math.Round(Math.Max(dpi_ul, dpi_br) / 96.0);
 
-            SDL.SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 0);
+            SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 0);
 
-            SDL.SDL_RenderClear(_renderer);
+            SDL_RenderClear(_renderer);
 
-            SDL.SDL_SetRenderDrawColor(_renderer, _color.r, _color.g, _color.b, _color.a);
+            SDL_SetRenderDrawColor(_renderer, _color.r, _color.g, _color.b, _color.a);
 
-            SDL.SDL_Rect rc;
+            SDL_Rect rc;
 
             rc.x = pixel_width;
             rc.y = pixel_width;
             rc.w = Width + _effective_thickness * 2 - pixel_width * 2;
             rc.h = Height + _effective_thickness * 2 - pixel_width * 2;
 
-            SDL.SDL_RenderFillRect(_renderer, ref rc);
+            SDL_RenderFillRect(_renderer, ref rc);
 
-            SDL.SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 0);
+            SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 0);
 
             rc.x = _effective_thickness - pixel_width;
             rc.y = _effective_thickness - pixel_width;
             rc.w = Width + pixel_width * 2;
             rc.h = Height + pixel_width * 2;
 
-            SDL.SDL_RenderFillRect(_renderer, ref rc);
+            SDL_RenderFillRect(_renderer, ref rc);
 
-            SDL.SDL_RenderPresent(_renderer);
+            SDL_RenderPresent(_renderer);
         }
     }
 }

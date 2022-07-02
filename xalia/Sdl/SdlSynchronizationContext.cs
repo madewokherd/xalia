@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using SDL2;
+
+using static SDL2.SDL;
 
 namespace Xalia.Sdl
 {
@@ -42,16 +43,16 @@ namespace Xalia.Sdl
 
             SetSynchronizationContext(this);
 
-            SDL.SDL_SetMainReady();
+            SDL_SetMainReady();
 
-            SDL.SDL_Init(flags);
+            SDL_Init(flags);
 
-            _queue_updated_event = SDL.SDL_RegisterEvents(1);
+            _queue_updated_event = SDL_RegisterEvents(1);
         }
 
         public void Init()
         {
-            Init(SDL.SDL_INIT_EVERYTHING);
+            Init(SDL_INIT_EVERYTHING);
         }
 
         public void AssertMainThread()
@@ -66,18 +67,18 @@ namespace Xalia.Sdl
         {
             AssertMainThread();
             _quitting = true;
-            SDL.SDL_Quit();
+            SDL_Quit();
         }
 
         public class SdlEventArgs : EventArgs
         {
-            public SdlEventArgs(SDL.SDL_Event sdl_event)
+            public SdlEventArgs(SDL_Event sdl_event)
             {
                 SdlEvent = sdl_event;
             }
 
             public bool Cancel { get; set; }
-            public SDL.SDL_Event SdlEvent { get; }
+            public SDL_Event SdlEvent { get; }
         }
 
         public delegate void SdlEventHandler(object sender, SdlEventArgs e);
@@ -95,7 +96,7 @@ namespace Xalia.Sdl
                     send.completed_event.Set();
                     continue;
                 }
-                if (SDL.SDL_PollEvent(out var poll_e) != 0)
+                if (SDL_PollEvent(out var poll_e) != 0)
                 {
                     try
                     {
@@ -112,7 +113,7 @@ namespace Xalia.Sdl
                     post.Item1(post.Item2);
                     continue;
                 }
-                if (SDL.SDL_WaitEvent(out var wait_e) != 0)
+                if (SDL_WaitEvent(out var wait_e) != 0)
                 {
                     HandleEvent(wait_e);
                     continue;
@@ -120,7 +121,7 @@ namespace Xalia.Sdl
             }
         }
 
-        private void HandleEvent(SDL.SDL_Event e)
+        private void HandleEvent(SDL_Event e)
         {
             var handler = SdlEvent;
             var eventargs = new SdlEventArgs(e);
@@ -128,7 +129,7 @@ namespace Xalia.Sdl
                 handler(this, eventargs);
             if (eventargs.Cancel)
                 return;
-            if (e.type == SDL.SDL_EventType.SDL_QUIT)
+            if (e.type == SDL_EventType.SDL_QUIT)
                 Quit();
         }
 
@@ -136,9 +137,9 @@ namespace Xalia.Sdl
         {
             if (Thread.CurrentThread == MainThread)
                 return;
-            SDL.SDL_Event e = new SDL.SDL_Event();
-            e.type = (SDL.SDL_EventType)_queue_updated_event;
-            SDL.SDL_PushEvent(ref e);
+            SDL_Event e = new SDL_Event();
+            e.type = (SDL_EventType)_queue_updated_event;
+            SDL_PushEvent(ref e);
         }
 
         public override void Post(SendOrPostCallback d, object state)

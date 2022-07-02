@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using Xalia.Input;
 
-using SDL2;
+using static SDL2.SDL;
 
 namespace Xalia.Sdl
 {
@@ -79,7 +79,7 @@ namespace Xalia.Sdl
 
             sdl.SdlEvent += OnSdlEvent;
 
-            for (int i = 0; i < SDL.SDL_NumJoysticks(); i++)
+            for (int i = 0; i < SDL_NumJoysticks(); i++)
             {
                 OpenJoystick(i);
             }
@@ -89,36 +89,36 @@ namespace Xalia.Sdl
         {
             switch (e.SdlEvent.type)
             {
-                case SDL.SDL_EventType.SDL_CONTROLLERAXISMOTION:
+                case SDL_EventType.SDL_CONTROLLERAXISMOTION:
                     {
                         var axis = e.SdlEvent.caxis;
 #if DEBUG
-                        Console.WriteLine($"axis {(SDL.SDL_GameControllerAxis)axis.axis} value updated to {axis.axisValue}");
+                        Console.WriteLine($"axis {(SDL_GameControllerAxis)axis.axis} value updated to {axis.axisValue}");
 #endif
-                        switch ((SDL.SDL_GameControllerAxis)axis.axis)
+                        switch ((SDL_GameControllerAxis)axis.axis)
                         {
-                            case SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX:
-                            case SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY:
+                            case SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX:
+                            case SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY:
                                 ActionStateUpdated("left_stick");
                                 break;
-                            case SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX:
-                            case SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY:
+                            case SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX:
+                            case SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY:
                                 ActionStateUpdated("right_stick");
                                 break;
-                            case SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+                            case SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT:
                                 ActionStateUpdated("LT");
                                 break;
-                            case SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+                            case SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
                                 ActionStateUpdated("RT");
                                 break;
                         }
                         break;
                     }
-                case SDL.SDL_EventType.SDL_CONTROLLERBUTTONDOWN:
+                case SDL_EventType.SDL_CONTROLLERBUTTONDOWN:
                     {
                         var button = e.SdlEvent.cbutton;
 #if DEBUG
-                        Console.WriteLine($"button {(SDL.SDL_GameControllerButton)button.button} pressed on controller {button.which}");
+                        Console.WriteLine($"button {(SDL_GameControllerButton)button.button} pressed on controller {button.which}");
 #endif
                         if (button_states.TryGetValue(button.which, out var states))
                         {
@@ -127,11 +127,11 @@ namespace Xalia.Sdl
                         ActionStateUpdated(button_names[button.button]);
                         break;
                     }
-                case SDL.SDL_EventType.SDL_CONTROLLERBUTTONUP:
+                case SDL_EventType.SDL_CONTROLLERBUTTONUP:
                     {
                         var button = e.SdlEvent.cbutton;
 #if DEBUG
-                        Console.WriteLine($"button {(SDL.SDL_GameControllerButton)button.button} released on controller {button.which}");
+                        Console.WriteLine($"button {(SDL_GameControllerButton)button.button} released on controller {button.which}");
 #endif
                         if (button_states.TryGetValue(button.which, out var states))
                         {
@@ -140,19 +140,19 @@ namespace Xalia.Sdl
                         ActionStateUpdated(button_names[button.button]);
                         break;
                     }
-                case SDL.SDL_EventType.SDL_CONTROLLERDEVICEADDED:
+                case SDL_EventType.SDL_CONTROLLERDEVICEADDED:
                     {
                         var device = e.SdlEvent.cdevice;
                         OpenJoystick(device.which);
                         break;
                     }
-                case SDL.SDL_EventType.SDL_CONTROLLERDEVICEREMOVED:
+                case SDL_EventType.SDL_CONTROLLERDEVICEREMOVED:
                     {
                         var device = e.SdlEvent.cdevice;
                         CloseJoystick(device.which);
                         break;
                     }
-                case SDL.SDL_EventType.SDL_CONTROLLERDEVICEREMAPPED:
+                case SDL_EventType.SDL_CONTROLLERDEVICEREMAPPED:
                     {
                         var device = e.SdlEvent.cdevice;
                         UpdateMappings(device.which);
@@ -177,34 +177,34 @@ namespace Xalia.Sdl
                     {
                         case "left_stick":
                             {
-                                var bind = SDL.SDL_GameControllerGetBindForAxis(game_controller, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX);
-                                bind_exists = bind.bindType != SDL.SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
+                                var bind = SDL_GameControllerGetBindForAxis(game_controller, SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX);
+                                bind_exists = bind.bindType != SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
                                 // FIXME: Check for LEFTY?
                                 break;
                             }
                         case "right_stick":
                             {
-                                var bind = SDL.SDL_GameControllerGetBindForAxis(game_controller, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX);
-                                bind_exists = bind.bindType != SDL.SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
+                                var bind = SDL_GameControllerGetBindForAxis(game_controller, SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX);
+                                bind_exists = bind.bindType != SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
                                 // FIXME: Check for RIGHTY?
                                 break;
                             }
                         case "LT":
                             {
-                                var bind = SDL.SDL_GameControllerGetBindForAxis(game_controller, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-                                bind_exists = bind.bindType != SDL.SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
+                                var bind = SDL_GameControllerGetBindForAxis(game_controller, SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+                                bind_exists = bind.bindType != SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
                                 break;
                             }
                         case "RT":
                             {
-                                var bind = SDL.SDL_GameControllerGetBindForAxis(game_controller, SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
-                                bind_exists = bind.bindType != SDL.SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
+                                var bind = SDL_GameControllerGetBindForAxis(game_controller, SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+                                bind_exists = bind.bindType != SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
                                 break;
                             }
                         default:
                             {
-                                var bind = SDL.SDL_GameControllerGetBindForButton(game_controller, (SDL.SDL_GameControllerButton)button);
-                                bind_exists = bind.bindType != SDL.SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
+                                var bind = SDL_GameControllerGetBindForButton(game_controller, (SDL_GameControllerButton)button);
+                                bind_exists = bind.bindType != SDL_GameControllerBindType.SDL_CONTROLLER_BINDTYPE_NONE;
                                 break;
                             }
                     }
@@ -239,9 +239,9 @@ namespace Xalia.Sdl
 
         private void OpenJoystick(int device_index)
         {
-            var game_controller = SDL.SDL_GameControllerOpen(device_index);
-            var joystick = SDL.SDL_GameControllerGetJoystick(game_controller);
-            var index = SDL.SDL_JoystickInstanceID(joystick);
+            var game_controller = SDL_GameControllerOpen(device_index);
+            var joystick = SDL_GameControllerGetJoystick(game_controller);
+            var index = SDL_JoystickInstanceID(joystick);
 #if DEBUG
             Console.WriteLine($"Game controller connected: {index}");
 #endif
@@ -258,7 +258,7 @@ namespace Xalia.Sdl
                 Console.WriteLine($"Game controller disconnected: {index}");
 #endif
                 UpdateMappings(index, disconnected: true);
-                SDL.SDL_GameControllerClose(controller);
+                SDL_GameControllerClose(controller);
                 game_controllers.Remove(index);
                 button_states.Remove(index);
             }
@@ -275,8 +275,8 @@ namespace Xalia.Sdl
 
             if (context is SdlSynchronizationContext sdl)
             {
-                SDL.SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
-                SDL.SDL_GameControllerEventState(SDL.SDL_ENABLE);
+                SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+                SDL_GameControllerEventState(SDL_ENABLE);
                 new GameControllerInput(sdl);
                 initialized = true;
             }
@@ -313,8 +313,8 @@ namespace Xalia.Sdl
                 case "left_stick":
                 case "right_stick":
                     {
-                        var x_axis = action == "left_stick" ? SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX : SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX;
-                        var y_axis = action == "left_stick" ? SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY : SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY;
+                        var x_axis = action == "left_stick" ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTX;
+                        var y_axis = action == "left_stick" ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTY : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_RIGHTY;
 
                         var controllers = controllers_providing_button[action == "left_stick" ? BUTTON_LEFTSTICK : BUTTON_RIGHTSTICK];
                         if ((controllers?.Count ?? 0) != 0)
@@ -323,8 +323,8 @@ namespace Xalia.Sdl
                             {
                                 var axis_state = new InputState();
                                 axis_state.Kind = InputStateKind.AnalogJoystick;
-                                axis_state.XAxis = SDL.SDL_GameControllerGetAxis(game_controllers[controller], x_axis);
-                                axis_state.YAxis = SDL.SDL_GameControllerGetAxis(game_controllers[controller], y_axis);
+                                axis_state.XAxis = SDL_GameControllerGetAxis(game_controllers[controller], x_axis);
+                                axis_state.YAxis = SDL_GameControllerGetAxis(game_controllers[controller], y_axis);
 
                                 result = InputState.Combine(result, axis_state);
                             }
@@ -336,7 +336,7 @@ namespace Xalia.Sdl
                 case "LT":
                 case "RT":
                     {
-                        var axis = action == "LT" ? SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT : SDL.SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
+                        var axis = action == "LT" ? SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERLEFT : SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
 
                         var controllers = controllers_providing_button[action == "LT" ? BUTTON_LEFTTRIGGER : BUTTON_RIGHTTRIGGER];
                         if ((controllers?.Count ?? 0) != 0)
@@ -345,7 +345,7 @@ namespace Xalia.Sdl
                             {
                                 var axis_state = new InputState();
                                 axis_state.Kind = InputStateKind.AnalogButton;
-                                axis_state.XAxis = SDL.SDL_GameControllerGetAxis(game_controllers[controller], axis);
+                                axis_state.XAxis = SDL_GameControllerGetAxis(game_controllers[controller], axis);
 
                                 result = InputState.Combine(result, axis_state);
                             }
