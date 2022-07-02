@@ -49,16 +49,14 @@ namespace Xalia.Uia
             }
         }
 
-        Dictionary<PropertyId, bool> watching_property = new Dictionary<PropertyId, bool>();
+        Dictionary<PropertyId, bool> fetching_property = new Dictionary<PropertyId, bool>();
         Dictionary<PropertyId, bool> property_known = new Dictionary<PropertyId, bool>();
         Dictionary<PropertyId, object> property_raw_value = new Dictionary<PropertyId, object>();
         Dictionary<PropertyId, UiDomValue> property_value = new Dictionary<PropertyId, UiDomValue>();
-        Dictionary<PropertyId, PropertyChangedEventHandlerBase> property_change_handlers = new Dictionary<PropertyId, PropertyChangedEventHandlerBase>();
 
         bool watching_children;
         bool refreshing_children;
         bool inflight_structure_changed;
-        StructureChangedEventHandlerBase structure_changed_event;
 
         PatternId[] supported_patterns;
         bool fetching_supported_patterns;
@@ -196,24 +194,12 @@ namespace Xalia.Uia
             return false;
         }
 
-        internal async Task WatchChildrenTask()
-        {
-            StructureChangedEventHandlerBase structure_changed_event = await Root.EventThread.RegisterChildrenChangedEventAsync(ElementWrapper, OnChildrenChanged);
-
-            if (this.structure_changed_event != null)
-                Utils.RunTask(Root.EventThread.UnregisterEventHandlerAsync(this.structure_changed_event));
-
-            this.structure_changed_event = structure_changed_event;
-
-            await RefreshChildren();
-        }
-
         internal void UpdateChildren()
         {
             Utils.RunTask(RefreshChildren());
         }
 
-        private void OnChildrenChanged(StructureChangeType arg2, int[] arg3)
+        internal void OnChildrenChanged(StructureChangeType arg2, int[] arg3)
         {
 #if DEBUG
             Console.WriteLine("OnChildrenChanged for {0}", DebugId);
@@ -229,88 +215,60 @@ namespace Xalia.Uia
             Console.WriteLine("WatchChildren for {0}", DebugId);
 #endif
             watching_children = true;
-            Utils.RunTask(WatchChildrenTask());
-        }
-
-        internal void UnwatchChildren()
-        {
-            if (!watching_children)
-                return;
-#if DEBUG
-            Console.WriteLine("UnwatchChildren for {0}", DebugId);
-#endif
-            watching_children = false;
-
-            if (structure_changed_event != null)
-            {
-                Utils.RunTask(Root.EventThread.UnregisterEventHandlerAsync(structure_changed_event));
-                structure_changed_event = null;
-            }
-            for (int i = Children.Count - 1; i >= 0; i--)
-            {
-                RemoveChild(i);
-            }
+            Utils.RunTask(RefreshChildren());
         }
 
         protected override void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
             if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.ToBool())
                 WatchChildren();
-            else
-                UnwatchChildren();
 
             base.DeclarationsChanged(all_declarations, dependencies);
         }
 
-        private async Task WatchPropertyAsync(string name, PropertyId propid, Func<object, UiDomValue> conversion)
+        private async Task FetchPropertyAsync(string name, PropertyId propid)
         {
-            property_change_handlers[propid] =
-                await Root.EventThread.RegisterPropertyChangedEventAsync(ElementWrapper, propid,
-                (PropertyId _propid, object value) =>
-                {
-                    OnPropertyChange(name, propid, conversion, value);
-                });
-
             object current_value = await Root.CommandThread.GetPropertyValue(ElementWrapper, propid);
-            UiDomValue ui_dom_value = conversion(current_value);
-
-            UiDomValue old_value;
-            if (!property_value.TryGetValue(propid, out old_value))
-                old_value = UiDomUndefined.Instance;
-
-            if (!old_value.Equals(ui_dom_value))
-            {
-                property_known[propid] = true;
-                property_value[propid] = ui_dom_value;
-                property_raw_value[propid] = current_value;
-
-                PropertyChanged(name);
-            }
+            OnPropertyChange(name, propid, current_value);
         }
 
-        private void OnPropertyChange(string name, PropertyId propid, Func<object, UiDomValue> conversion, object value)
+        public void OnPropertyChange(string name, PropertyId propid, object value)
         {
-            UiDomValue new_value = conversion(value);
+            UiDomValue new_value;
+
+            if (value is System.Drawing.Rectangle r)
+            {
+                new_value = new UiDomString(r.ToString());
+            }
+            else if (value is System.Windows.Rect swr)
+            {
+                value = new System.Drawing.Rectangle((int)swr.Left, (int)swr.Top, (int)swr.Width, (int)swr.Height);
+                new_value = new UiDomString(value.ToString());
+            }
+            else if (value is ControlType ct && (int)ct < control_type_to_enum.Length)
+            {
+                new_value = control_type_to_enum[(int)ct];
+            }
+            else if (value is bool b)
+            {
+                new_value = UiDomBoolean.FromBool(b);
+            }
+            else
+                new_value = UiDomUndefined.Instance;
 
             UiDomValue old_value;
             if (!property_value.TryGetValue(propid, out old_value))
                 old_value = UiDomUndefined.Instance;
 
+            property_known[propid] = true;
             if (!old_value.Equals(new_value))
             {
-                property_known[propid] = true;
+#if DEBUG
+                Console.WriteLine($"{DebugId}.{name}: {new_value}");
+#endif
                 property_value[propid] = new_value;
                 property_raw_value[propid] = value;
                 PropertyChanged(name);
-            }
-        }
-
-        private void WatchProperty(string name, PropertyId propid, Func<object, UiDomValue> conversion)
-        {
-            if (!watching_property.TryGetValue(propid, out var watching) || !watching)
-            {
-                watching_property[propid] = true;
-                Utils.RunTask(WatchPropertyAsync(name, propid, conversion));
             }
         }
 
@@ -320,21 +278,6 @@ namespace Xalia.Uia
             {
                 switch (id.Name)
                 {
-                    case "uia_control_type":
-                        {
-                            WatchProperty("uia_control_type", Root.Automation.PropertyLibrary.Element.ControlType, ConvertControlType);
-                            break;
-                        }
-                    case "uia_enabled":
-                        {
-                            WatchProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, ConvertBoolean);
-                            break;
-                        }
-                    case "uia_bounding_rectangle":
-                        {
-                            WatchProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, ConvertRectangle);
-                            break;
-                        }
                     case "uia_supported_patterns":
                         {
                             if (!fetching_supported_patterns)
@@ -344,6 +287,14 @@ namespace Xalia.Uia
                             }
                             break;
                         }
+                }
+
+                if (Root.names_to_property.TryGetValue(id.Name, out var propid) &&
+                    (!property_known.TryGetValue(propid, out var known) || !known) &&
+                    (!fetching_property.TryGetValue(propid, out var fetching) || !fetching))
+                {
+                    fetching_property[propid] = true;
+                    Utils.RunTask(FetchPropertyAsync(id.Name, propid));
                 }
             }
 
@@ -355,49 +306,6 @@ namespace Xalia.Uia
             supported_patterns = await Root.CommandThread.GetSupportedPatterns(ElementWrapper);
 
             PropertyChanged("uia_supported_patterns");
-        }
-
-        private void UnwatchProperty(PropertyId propid)
-        {
-            if (watching_property.TryGetValue(propid, out var watching) && watching)
-            {
-                watching_property[propid] = false;
-                property_known[propid] = false;
-                property_value[propid] = UiDomUndefined.Instance;
-                property_raw_value[propid] = UiDomUndefined.Instance;
-
-                if (property_change_handlers.TryGetValue(propid, out var handler))
-                {
-                    property_change_handlers.Remove(propid);
-                    Utils.RunTask(Root.EventThread.UnregisterEventHandlerAsync(handler));
-                }
-            }
-        }
-
-        protected override void UnwatchProperty(GudlExpression expression)
-        {
-            if (expression is IdentifierExpression id)
-            {
-                switch (id.Name)
-                {
-                    case "uia_control_type":
-                        {
-                            UnwatchProperty(Root.Automation.PropertyLibrary.Element.ControlType);
-                            break;
-                        }
-                    case "uia_enabled":
-                        {
-                            UnwatchProperty(Root.Automation.PropertyLibrary.Element.IsEnabled);
-                            break;
-                        }
-                    case "uia_bounding_rectangle":
-                        {
-                            UnwatchProperty(Root.Automation.PropertyLibrary.Element.BoundingRectangle);
-                            break;
-                        }
-                }
-            }
-            base.UnwatchProperty(expression);
         }
 
         protected override void SetAlive(bool value)
@@ -415,43 +323,9 @@ namespace Xalia.Uia
                 property_known.Clear();
                 property_value.Clear();
                 property_raw_value.Clear();
-                watching_property.Clear();
-                foreach (var kvp in property_change_handlers)
-                {
-                    Utils.RunTask(Root.EventThread.UnregisterEventHandlerAsync(kvp.Value));
-                }
-                property_change_handlers.Clear();
-                UnwatchChildren();
                 Root.elements_by_id.Remove(ElementIdentifier);
             }
             base.SetAlive(value);
-        }
-
-        private UiDomValue ConvertRectangle(object arg)
-        {
-            if (arg is System.Drawing.Rectangle r)
-            {
-                return new UiDomString(r.ToString());
-            }
-            return UiDomUndefined.Instance;
-        }
-
-        private UiDomValue ConvertControlType(object arg)
-        {
-            if (arg is ControlType ct && (int)ct < control_type_to_enum.Length)
-            {
-                return control_type_to_enum[(int)ct];
-            }
-            return UiDomUndefined.Instance;
-        }
-
-        private UiDomValue ConvertBoolean(object arg)
-        {
-            if (arg is bool b)
-            {
-                return UiDomBoolean.FromBool(b);
-            }
-            return UiDomUndefined.Instance;
         }
 
         private UiDomValue GetProperty(string name, PropertyId id, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)

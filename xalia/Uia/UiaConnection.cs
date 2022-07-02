@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
-
+using FlaUI.Core.Identifiers;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
@@ -23,10 +23,13 @@ namespace Xalia.Uia
 
         static List<WINEVENTPROC> event_proc_delegates = new List<WINEVENTPROC>(); // to make sure delegates aren't GC'd while in use
 
+        internal Dictionary<string, PropertyId> names_to_property = new Dictionary<string, PropertyId>();
+        internal Dictionary<PropertyId, string> properties_to_name = new Dictionary<PropertyId, string>();
+
         public UiaConnection(AutomationBase automation, GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
             Automation = automation;
-            EventThread = new UiaEventThread();
+            MainContext = SynchronizationContext.Current;
             CommandThread = new UiaCommandThread();
             DesktopElement = new UiaElement(WrapElement(Automation.GetDesktop()));
             AddChild(0, DesktopElement);
@@ -40,9 +43,96 @@ namespace Xalia.Uia
             SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY, IntPtr.Zero,
                 eventprocdelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
 
-            Utils.RunTask(SetupFocusedElement());
+            Automation.RegisterFocusChangedEvent(OnFocusChangedBackground);
 
-            Utils.RunTask(SetupWindowEvents());
+            DesktopElement.ElementWrapper.AutomationElement.RegisterStructureChangedEvent(
+                TreeScope.Element | TreeScope.Descendants, OnStructureChangedBackground);
+
+            RegisterPropertyMapping("uia_control_type", Automation.PropertyLibrary.Element.ControlType);
+            RegisterPropertyMapping("uia_enabled", Automation.PropertyLibrary.Element.IsEnabled);
+            RegisterPropertyMapping("uia_bounding_rectangle", Automation.PropertyLibrary.Element.BoundingRectangle);
+
+            DesktopElement.ElementWrapper.AutomationElement.RegisterPropertyChangedEvent(
+                TreeScope.Element | TreeScope.Descendants, OnPropertyChangedBackground,
+                properties_to_name.Keys.ToArray());
+
+            DesktopElement.ElementWrapper.AutomationElement.RegisterAutomationEvent(
+                Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
+                OnWindowOpenedBackground);
+
+            DesktopElement.ElementWrapper.AutomationElement.RegisterAutomationEvent(
+                Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
+                OnWindowClosedBackground);
+
+            Utils.RunTask(UpdateFocusedElement());
+
+            DesktopElement.UpdateChildren(); // in case children changed before the events were registered
+        }
+
+        private void OnPropertyChangedBackground(AutomationElement arg1, PropertyId arg2, object arg3)
+        {
+            var wrapper = WrapElement(arg1);
+            MainContext.Post((state) =>
+            {
+                var element = LookupAutomationElement(wrapper);
+                if (!(element is null) && properties_to_name.TryGetValue(arg2, out var name))
+                    element.OnPropertyChange(name, arg2, arg3);
+            }, null);
+        }
+
+        private void RegisterPropertyMapping(string name, PropertyId propid)
+        {
+            names_to_property[name] = propid;
+            properties_to_name[propid] = name;
+        }
+
+        private void OnStructureChangedBackground(AutomationElement arg1, StructureChangeType arg2, int[] arg3)
+        {
+            UiaElementWrapper wrapper;
+            if (arg2 == StructureChangeType.ChildAdded)
+                wrapper = WrapElement(arg1.Parent);
+            else
+                wrapper = WrapElement(arg1);
+            MainContext.Post((state) =>
+            {
+                var element = LookupAutomationElement(wrapper);
+                if (!(element is null))
+                    element.OnChildrenChanged(arg2, arg3);
+            }, null);
+        }
+
+        private void OnFocusChangedBackground(AutomationElement obj)
+        {
+            var wrapper = WrapElement(obj);
+            MainContext.Post((state) =>
+            {
+                OnFocusChanged(wrapper);
+            }, null);
+        }
+
+        private async Task UpdateFocusedElement()
+        {
+            FocusedElement = await CommandThread.GetFocusedElement(DesktopElement.ElementWrapper);
+        }
+
+        private void OnWindowOpenedBackground(AutomationElement arg1, EventId arg2)
+        {
+            var wrapper = WrapElement(arg1.Parent);
+
+            MainContext.Post((object state) =>
+            {
+                OnWindowOpened(wrapper);
+            }, null);
+        }
+
+        private void OnWindowClosedBackground(AutomationElement arg1, EventId arg2)
+        {
+            var wrapper = WrapElement(arg1.Parent);
+
+            MainContext.Post((object state) =>
+            {
+                OnWindowClosed(wrapper);
+            }, null);
         }
 
         public static UiaConnection CreateFromUia2(GudlStatement[] rules, IUiDomApplication app)
@@ -66,46 +156,30 @@ namespace Xalia.Uia
             }
         }
 
-        private async Task SetupFocusedElement()
-        {
-            await EventThread.RegisterFocusChangedEventAsync(DesktopElement.ElementWrapper, OnFocusChanged);
-
-            FocusedElement = await CommandThread.GetFocusedElement(DesktopElement.ElementWrapper);
-        }
-
         private void OnFocusChanged(UiaElementWrapper obj)
         {
             FocusedElement = obj;
         }
 
-        private async Task SetupWindowEvents()
+        private void OnWindowClosed(UiaElementWrapper parent)
         {
-            await EventThread.RegisterAutomationEventAsync(DesktopElement.ElementWrapper,
-                Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Children,
-                OnWindowOpened);
-            await EventThread.RegisterAutomationEventAsync(DesktopElement.ElementWrapper,
-                Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Children,
-                OnWindowClosed);
-            DesktopElement.UpdateChildren(); // in case children changed before the events were registered
+            var element = LookupAutomationElement(parent);
+            if (!(element is null))
+                element.UpdateChildren();
         }
 
-        private void OnWindowClosed(UiaElementWrapper obj)
+        private void OnWindowOpened(UiaElementWrapper parent)
         {
-            DesktopElement.UpdateChildren();
-        }
-
-        private void OnWindowOpened(UiaElementWrapper obj)
-        {
-            DesktopElement.UpdateChildren();
+            var element = LookupAutomationElement(parent);
+            if (!(element is null))
+                element.UpdateChildren();
         }
 
         public override string DebugId => "UiaConnection";
 
         public AutomationBase Automation { get; }
-
+        public SynchronizationContext MainContext { get; }
         public UiaElement DesktopElement { get; }
-
-        public UiaEventThread EventThread { get; }
         
         public UiaCommandThread CommandThread { get; }
 
