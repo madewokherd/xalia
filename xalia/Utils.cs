@@ -58,5 +58,26 @@ namespace Xalia
         {
             SynchronizationContext.Current.Post(RunTaskCallback, t);
         }
+
+        internal static T WaitTask<T>(ValueTask<T> task)
+        {
+            return WaitTask(task.AsTask());
+        }
+
+        internal static T WaitTask<T>(Task<T> task)
+        {
+            task.Wait();
+            if (!(task.Exception is null))
+                throw task.Exception;
+            else
+                return task.Result;
+        }
+
+        internal static void WaitTask(Task task)
+        {
+            task.Wait();
+            if (!(task.Exception is null))
+                throw task.Exception;
+        }
     }
 }

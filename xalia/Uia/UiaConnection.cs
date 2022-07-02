@@ -26,12 +26,24 @@ namespace Xalia.Uia
         internal Dictionary<string, PropertyId> names_to_property = new Dictionary<string, PropertyId>();
         internal Dictionary<PropertyId, string> properties_to_name = new Dictionary<PropertyId, string>();
 
-        public UiaConnection(AutomationBase automation, GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
+        public UiaConnection(bool use_uia3, GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
-            Automation = automation;
             MainContext = SynchronizationContext.Current;
             CommandThread = new UiaCommandThread();
-            DesktopElement = new UiaElement(WrapElement(Automation.GetDesktop()));
+            Utils.RunTask(InitUia(use_uia3));
+        }
+
+        private async Task InitUia(bool use_uia3)
+        {
+            await CommandThread.OnBackgroundThread(() =>
+            {
+                if (use_uia3)
+                    Automation = new FlaUI.UIA3.UIA3Automation();
+                else
+                    Automation = new FlaUI.UIA2.UIA2Automation();
+                DesktopElement = new UiaElement(WrapElement(Automation.GetDesktop()));
+            });
+
             AddChild(0, DesktopElement);
 
             // If a top-level window does not support WindowPattern, we don't get
@@ -43,26 +55,29 @@ namespace Xalia.Uia
             SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY, IntPtr.Zero,
                 eventprocdelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
 
-            Automation.RegisterFocusChangedEvent(OnFocusChangedBackground);
-
-            DesktopElement.ElementWrapper.AutomationElement.RegisterStructureChangedEvent(
-                TreeScope.Element | TreeScope.Descendants, OnStructureChangedBackground);
-
             RegisterPropertyMapping("uia_control_type", Automation.PropertyLibrary.Element.ControlType);
             RegisterPropertyMapping("uia_enabled", Automation.PropertyLibrary.Element.IsEnabled);
             RegisterPropertyMapping("uia_bounding_rectangle", Automation.PropertyLibrary.Element.BoundingRectangle);
 
-            DesktopElement.ElementWrapper.AutomationElement.RegisterPropertyChangedEvent(
-                TreeScope.Element | TreeScope.Descendants, OnPropertyChangedBackground,
-                properties_to_name.Keys.ToArray());
+            await CommandThread.OnBackgroundThread(() =>
+            {
+                Automation.RegisterFocusChangedEvent(OnFocusChangedBackground);
 
-            DesktopElement.ElementWrapper.AutomationElement.RegisterAutomationEvent(
-                Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
-                OnWindowOpenedBackground);
+                DesktopElement.ElementWrapper.AutomationElement.RegisterStructureChangedEvent(
+                    TreeScope.Element | TreeScope.Descendants, OnStructureChangedBackground);
 
-            DesktopElement.ElementWrapper.AutomationElement.RegisterAutomationEvent(
-                Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
-                OnWindowClosedBackground);
+                DesktopElement.ElementWrapper.AutomationElement.RegisterPropertyChangedEvent(
+                    TreeScope.Element | TreeScope.Descendants, OnPropertyChangedBackground,
+                    properties_to_name.Keys.ToArray());
+
+                DesktopElement.ElementWrapper.AutomationElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnWindowOpenedBackground);
+
+                DesktopElement.ElementWrapper.AutomationElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnWindowClosedBackground);
+            });
 
             Utils.RunTask(UpdateFocusedElement());
 
@@ -135,16 +150,6 @@ namespace Xalia.Uia
             }, null);
         }
 
-        public static UiaConnection CreateFromUia2(GudlStatement[] rules, IUiDomApplication app)
-        {
-            return new UiaConnection(new FlaUI.UIA2.UIA2Automation(), rules, app);
-        }
-
-        public static UiaConnection CreateFromUia3(GudlStatement[] rules, IUiDomApplication app)
-        {
-            return new UiaConnection(new FlaUI.UIA3.UIA3Automation(), rules, app);
-        }
-
         private void OnMsaaEvent(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
         {
             if (eventId == EVENT_OBJECT_CREATE || eventId == EVENT_OBJECT_DESTROY)
@@ -177,9 +182,9 @@ namespace Xalia.Uia
 
         public override string DebugId => "UiaConnection";
 
-        public AutomationBase Automation { get; }
+        public AutomationBase Automation { get; private set; }
         public SynchronizationContext MainContext { get; }
-        public UiaElement DesktopElement { get; }
+        public UiaElement DesktopElement { get; private set; }
         
         public UiaCommandThread CommandThread { get; }
 
