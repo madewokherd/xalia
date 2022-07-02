@@ -131,7 +131,7 @@ namespace Xalia.Sdl
             throw new NotImplementedException();
         }
 
-        public virtual void CustomizeOverlayWindow(IntPtr sdl_window)
+        public virtual void CustomizeOverlayWindow(OverlayBox box, IntPtr sdl_window)
         {
         }
     }

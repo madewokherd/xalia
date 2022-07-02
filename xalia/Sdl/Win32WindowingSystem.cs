@@ -13,7 +13,7 @@ namespace Xalia.Sdl
 {
     internal class Win32WindowingSystem : WindowingSystem
     {
-        public override void CustomizeOverlayWindow(IntPtr sdl_window)
+        public override void CustomizeOverlayWindow(OverlayBox box, IntPtr sdl_window)
         {
             var win32_window = GetSdlWindowHwnd(sdl_window);
 
@@ -25,7 +25,7 @@ namespace Xalia.Sdl
 
             SetWindowPos(win32_window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 
-            base.CustomizeOverlayWindow(sdl_window);
+            base.CustomizeOverlayWindow(box, sdl_window);
         }
     }
 }

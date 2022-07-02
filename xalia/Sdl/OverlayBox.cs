@@ -19,13 +19,17 @@ namespace Xalia.Sdl
             if (_window == IntPtr.Zero)
                 throw new Exception(SDL.SDL_GetError());
 
-            windowingSystem.CustomizeOverlayWindow(_window);
+            windowingSystem.CustomizeOverlayWindow(this, _window);
+
+            _renderer = SDL.SDL_CreateRenderer(_window, -1, 0);
 
             this.windowingSystem = windowingSystem;
             this.windowingSystem.BoxCreated(this);
         }
 
         private int _x, _y, _width, _height;
+
+        internal bool HideWhenResizing { get; set; }
 
         internal void OnWindowEvent(SDL.SDL_WindowEvent window)
         {
@@ -135,13 +139,13 @@ namespace Xalia.Sdl
             // windows that we flip between, to prevent flickering on and off as well.
             // That's likely to be required when we start animating the target box.
             bool updated_thickness = UpdateEffectiveThickness();
-            if (was_shown && (update_region || updated_thickness))
+            if (HideWhenResizing && was_shown && (update_region || updated_thickness))
                 Hide();
             if (update_position || updated_thickness)
                 UpdatePosition();
             if (update_region || updated_thickness)
                 UpdateRegion();
-            if (was_shown && (update_region || updated_thickness))
+            if (HideWhenResizing && was_shown && (update_region || updated_thickness))
                 Show();
         }
 
@@ -180,6 +184,7 @@ namespace Xalia.Sdl
         }
 
         internal IntPtr _window;
+        internal IntPtr _renderer;
         private readonly WindowingSystem windowingSystem;
 
         private void UpdatePosition()
@@ -264,48 +269,41 @@ namespace Xalia.Sdl
             windowingSystem.BoxDestroyed(this);
             SDL.SDL_DestroyWindow(_window);
             _window = IntPtr.Zero;
+            SDL.SDL_DestroyRenderer(_renderer);
+            _renderer = IntPtr.Zero;
         }
 
         public void Redraw()
         {
-            IntPtr renderer = SDL.SDL_CreateRenderer(_window, -1, 0);
+            float dpi_ul = windowingSystem.GetDpi(_x, _y);
+            float dpi_br = windowingSystem.GetDpi(_x + _width, _y + _height);
+            int pixel_width = (int)Math.Round(Math.Max(dpi_ul, dpi_br) / 96.0);
 
-            try
-            {
-                float dpi_ul = windowingSystem.GetDpi(_x, _y);
-                float dpi_br = windowingSystem.GetDpi(_x + _width, _y + _height);
-                int pixel_width = (int)Math.Round(Math.Max(dpi_ul, dpi_br) / 96.0);
+            SDL.SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 0);
 
-                SDL.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            SDL.SDL_RenderClear(_renderer);
 
-                SDL.SDL_RenderClear(renderer);
+            SDL.SDL_SetRenderDrawColor(_renderer, _color.r, _color.g, _color.b, _color.a);
 
-                SDL.SDL_SetRenderDrawColor(renderer, _color.r, _color.g, _color.b, _color.a);
+            SDL.SDL_Rect rc;
 
-                SDL.SDL_Rect rc;
+            rc.x = pixel_width;
+            rc.y = pixel_width;
+            rc.w = Width + _effective_thickness * 2 - pixel_width * 2;
+            rc.h = Height + _effective_thickness * 2 - pixel_width * 2;
 
-                rc.x = pixel_width;
-                rc.y = pixel_width;
-                rc.w = Width + _effective_thickness * 2 - pixel_width * 2;
-                rc.h = Height + _effective_thickness * 2 - pixel_width * 2;
+            SDL.SDL_RenderFillRect(_renderer, ref rc);
 
-                SDL.SDL_RenderFillRect(renderer, ref rc);
+            SDL.SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 0);
 
-                SDL.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            rc.x = _effective_thickness - pixel_width;
+            rc.y = _effective_thickness - pixel_width;
+            rc.w = Width + pixel_width * 2;
+            rc.h = Height + pixel_width * 2;
 
-                rc.x = _effective_thickness - pixel_width;
-                rc.y = _effective_thickness - pixel_width;
-                rc.w = Width + pixel_width * 2;
-                rc.h = Height + pixel_width * 2;
+            SDL.SDL_RenderFillRect(_renderer, ref rc);
 
-                SDL.SDL_RenderFillRect(renderer, ref rc);
-
-                SDL.SDL_RenderPresent(renderer);
-            }
-            finally
-            {
-                SDL.SDL_DestroyRenderer(renderer);
-            }
+            SDL.SDL_RenderPresent(_renderer);
         }
     }
 }

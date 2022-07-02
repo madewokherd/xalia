@@ -22,7 +22,6 @@ namespace Xalia.Sdl
 
         private bool xtest_supported;
 
-
         public X11WindowingSystem()
         {
             IntPtr window = SDL.SDL_CreateWindow("dummy window", 0, 0, 1, 1, SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN);
@@ -175,6 +174,14 @@ namespace Xalia.Sdl
                 return;
             }
             await base.SendKey(keysym);
+        }
+
+        public override void CustomizeOverlayWindow(OverlayBox box, IntPtr sdl_window)
+        {
+            // For some reason, this reduces flickering on X11
+            box.HideWhenResizing = true;
+
+            base.CustomizeOverlayWindow(box, sdl_window);
         }
     }
 }
