@@ -25,7 +25,11 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <Configurations>Debug-Windows;Release-Windows;Debug-Linux;Release-Linux</Configurations>
   </PropertyGroup>
-  
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug-Linux' OR '$(Configuration)'=='Debug-Windows'">
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)'=='Release-Linux' OR '$(Configuration)'=='Debug-Linux'">
     <DefineConstants>$(DefineConstants);LINUX</DefineConstants>
     <TargetFramework>net6.0</TargetFramework>
