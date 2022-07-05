@@ -32,6 +32,8 @@ namespace Xalia.Sdl
 
         internal bool HideWhenResizing { get; set; }
 
+        internal bool Win32ShapeWorkaround { get; set; }
+
         internal void OnWindowEvent(SDL_WindowEvent window)
         {
             if (window.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_EXPOSED)
@@ -226,11 +228,20 @@ namespace Xalia.Sdl
 
                     SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
 
-                    // FIXME: Why is the 1 pixel adjustment needed?
-                    rect.x = _effective_thickness - 1;
-                    rect.y = _effective_thickness - 1;
-                    rect.w = _width + 1;
-                    rect.h = _height + 1;
+                    if (Win32ShapeWorkaround)
+                    {
+                        rect.x = _effective_thickness - 1;
+                        rect.y = _effective_thickness - 1;
+                        rect.w = _width + 1;
+                        rect.h = _height + 1;
+                    }
+                    else
+                    {
+                        rect.x = _effective_thickness;
+                        rect.y = _effective_thickness;
+                        rect.w = _width;
+                        rect.h = _height;
+                    }
 
                     SDL_RenderFillRect(surface_renderer, ref rect);
                 }

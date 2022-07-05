@@ -27,6 +27,8 @@ namespace Xalia.Sdl
 
             box.HideWhenResizing = true;
 
+            box.Win32ShapeWorkaround = true;
+
             base.CustomizeOverlayWindow(box, sdl_window);
         }
     }
