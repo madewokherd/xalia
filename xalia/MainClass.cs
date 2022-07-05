@@ -8,7 +8,9 @@ using Xalia.AtSpi;
 using Xalia.Gudl;
 using Xalia.Ui;
 using Xalia.UiDom;
+#if WINDOWS
 using Xalia.Uia;
+#endif
 using Xalia.Sdl;
 
 using static SDL2.SDL;
@@ -42,6 +44,7 @@ namespace Xalia
                     connection = await AtSpiConnection.Connect(config, application);
                 }
 
+#if WINDOWS
                 if (connection == null &&
                     (Environment.GetEnvironmentVariable("XALIA_USE_UIA2") ?? "0") != "0")
                 {
@@ -53,6 +56,7 @@ namespace Xalia
                 {
                     connection = new UiaConnection(true, config, application);
                 }
+#endif
 
                 if (connection == null)
                 {
