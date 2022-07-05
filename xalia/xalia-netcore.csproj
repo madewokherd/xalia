@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <RootNamespace>Xalia</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <StartupObject>Xalia.MainClass</StartupObject>
+    <AssemblyName>xalia</AssemblyName>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="external\SDL2-CS\gitlab-ci\**" />
+    <Compile Remove="xalia-netcore\**" />
+    <EmbeddedResource Remove="external\SDL2-CS\gitlab-ci\**" />
+    <EmbeddedResource Remove="xalia-netcore\**" />
+    <None Remove="external\SDL2-CS\gitlab-ci\**" />
+    <None Remove="xalia-netcore\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="external\SDL2-CS\src\SDL2_gfx.cs" />
+    <Compile Remove="external\SDL2-CS\src\SDL2_image.cs" />
+    <Compile Remove="external\SDL2-CS\src\SDL2_mixer.cs" />
+    <Compile Remove="external\SDL2-CS\src\SDL2_ttf.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="external\SDL2-CS\.gitignore" />
+    <None Remove="external\SDL2-CS\.gitlab-ci.yml" />
+    <None Remove="external\SDL2-CS\app.config" />
+    <None Remove="external\SDL2-CS\LICENSE" />
+    <None Remove="external\SDL2-CS\Makefile" />
+    <None Remove="external\SDL2-CS\README" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FlaUI.Core" Version="3.2.0" />
+    <PackageReference Include="FlaUI.UIA2" Version="3.2.0" />
+    <PackageReference Include="FlaUI.UIA3" Version="3.2.0" />
+    <PackageReference Include="Superpower" Version="3.0.0" />
+    <PackageReference Include="Tmds.DBus" Version="0.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="main.gudl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
