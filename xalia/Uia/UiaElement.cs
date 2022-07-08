@@ -355,20 +355,44 @@ namespace Xalia.Uia
                 case "role":
                 case "control_type":
                 case "controltype":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_control_type";
                 case "uia_controltype":
                 case "uia_control_type":
                     return GetProperty("uia_control_type", Root.Automation.PropertyLibrary.Element.ControlType, depends_on);
                 case "enabled":
                 case "is_enabled":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_enabled";
                 case "uia_enabled":
                 case "uia_is_enabled":
                     return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
                 case "bounds":
                 case "bounding_rectangle":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_bounding_rectangle";
                 case "uia_bounding_rectangle":
                     return GetProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on);
                 case "x":
                 case "abs_x":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_x";
                 case "uia_x":
                 case "uia_abs_x":
                     {
@@ -380,6 +404,12 @@ namespace Xalia.Uia
                     }
                 case "y":
                 case "abs_y":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_y";
                 case "uia_y":
                 case "uia_abs_y":
                     {
@@ -390,6 +420,12 @@ namespace Xalia.Uia
                         return UiDomUndefined.Instance;
                     }
                 case "width":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_width";
                 case "uia_width":
                     {
                         if (GetRawProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on) is System.Drawing.Rectangle r)
@@ -399,6 +435,12 @@ namespace Xalia.Uia
                         return UiDomUndefined.Instance;
                     }
                 case "height":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_height";
                 case "uia_height":
                     {
                         if (GetRawProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on) is System.Drawing.Rectangle r)
@@ -408,13 +450,30 @@ namespace Xalia.Uia
                         return UiDomUndefined.Instance;
                     }
                 case "desktop_frame":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
                     return UiDomBoolean.FromBool(Equals(Root.DesktopElement));
-                case "uia_focused":
                 case "focused":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_focused";
+                case "uia_focused":
                     depends_on.Add((this, new IdentifierExpression("uia_focused")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.FocusedElement));
-                case "uia_focused_element":
                 case "focused_element":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_focused_element";
+                case "uia_focused_element":
                     depends_on.Add((Root, new IdentifierExpression("uia_focused_element")));
                     return (UiDomValue)Root.LookupAutomationElement(Root.FocusedElement) ?? UiDomUndefined.Instance;
                 case "is_uia_element":
@@ -424,6 +483,12 @@ namespace Xalia.Uia
                 case "is_at_spi_element":
                     return UiDomBoolean.False;
                 case "invoke":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_invoke";
                 case "uia_invoke":
                     depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
                     if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.InvokePattern))
@@ -431,6 +496,12 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "uia_invoke", Invoke);
                     }
                     return UiDomUndefined.Instance;
+            }
+
+            {
+                var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                if (!value.Equals(UiDomUndefined.Instance))
+                    return value;
             }
 
             if (name_to_control_type.ContainsKey(id))
@@ -441,7 +512,7 @@ namespace Xalia.Uia
                     GudlToken.Dot), depends_on);
             }
 
-            return base.EvaluateIdentifierCore(id, root, depends_on);
+            return UiDomUndefined.Instance;
         }
 
         private async Task Invoke(UiDomRoutineAsync obj)

@@ -948,6 +948,12 @@ namespace Xalia.AtSpi
                 case "role":
                 case "control_type":
                 case "controltype":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_role";
                 case "spi_role":
                     depends_on.Add((this, new IdentifierExpression("spi_role")));
                     if (Role > 0 && Role < role_to_enum.Length)
@@ -955,18 +961,36 @@ namespace Xalia.AtSpi
                     // TODO: return unknown values as numbers?
                     return UiDomUndefined.Instance;
                 case "name":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_name";
                 case "spi_name":
                     depends_on.Add((this, new IdentifierExpression("spi_name")));
                     if (NameKnown)
                         return new UiDomString(Name);
                     return UiDomUndefined.Instance;
                 case "rel_x":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_rel_x";
                 case "spi_rel_x":
                     depends_on.Add((this, new IdentifierExpression("spi_bounds")));
                     if (BoundsKnown)
                         return new UiDomInt(X);
                     return UiDomUndefined.Instance;
                 case "rel_y":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_rel_y";
                 case "spi_rel_y":
                     depends_on.Add((this, new IdentifierExpression("spi_bounds")));
                     if (BoundsKnown)
@@ -983,12 +1007,24 @@ namespace Xalia.AtSpi
                         return new UiDomInt(Height);
                     return UiDomUndefined.Instance;
                 case "bounds":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_bounds";
                 case "spi_bounds":
                     depends_on.Add((this, new IdentifierExpression("spi_bounds")));
                     if (BoundsKnown)
                         return new UiDomString($"({X},{Y}: {Width}x{Height})");
                     return UiDomUndefined.Instance;
                 case "text_contents":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_text";
                 case "spi_text":
                 case "spi_text_contents":
                     depends_on.Add((this, new IdentifierExpression("spi_text")));
@@ -999,6 +1035,12 @@ namespace Xalia.AtSpi
                     return state;
                 case "x":
                 case "abs_x":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_abs_x";
                 case "spi_abs_x":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
@@ -1006,18 +1048,36 @@ namespace Xalia.AtSpi
                     return UiDomUndefined.Instance;
                 case "y":
                 case "abs_y":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_abs_y";
                 case "spi_abs_y":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
                         return new UiDomInt(AbsY);
                     return UiDomUndefined.Instance;
                 case "width":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_abs_width";
                 case "spi_abs_width":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
                         return new UiDomInt(AbsWidth);
                     return UiDomUndefined.Instance;
                 case "height":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_height";
                 case "spi_abs_height":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
@@ -1036,25 +1096,54 @@ namespace Xalia.AtSpi
                     }
                     return UiDomUndefined.Instance;
                 case "click":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
                     depends_on.Add((this, new IdentifierExpression("spi_action")));
                     if (Actions != null)
                     {
                         return new AtSpiActionList(this).EvaluateIdentifier("click", root, depends_on);
                     }
                     return UiDomUndefined.Instance;
-                case "spi_select":
                 case "select":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_select";
+                case "spi_select":
                     // FIXME: check whether parent supports ISelection?
                     return new UiDomRoutineAsync(this, "spi_select", Select);
-                case "spi_deselect":
                 case "deselect":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_deselect";
+                case "spi_deselect":
                     // FIXME: check whether parent supports ISelection?
                     return new UiDomRoutineAsync(this, "spi_deselect", Deselect);
-                case "spi_clear_selection":
                 case "clear_selection":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_clear_selection";
+                case "spi_clear_selection":
                     // FIXME: check whether this supports ISelection?
                     return new UiDomRoutineAsync(this, "spi_clear_selection", ClearSelection);
                 case "set_focus":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_set_focus";
                 case "spi_set_focus":
                 case "spi_grab_focus":
                     return new UiDomRoutineAsync(this, "spi_grab_focus", SetFocus);
@@ -1067,6 +1156,12 @@ namespace Xalia.AtSpi
                     return UiDomUndefined.Instance;
                 case "toolkit":
                 case "toolkit_name":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_toolkit_name";
                 case "spi_toolkit":
                 case "spi_toolkit_name":
                     depends_on.Add((this, new IdentifierExpression("spi_toolkit_name")));
@@ -1094,6 +1189,12 @@ namespace Xalia.AtSpi
                     return UiDomBoolean.True;
             }
 
+            {
+                var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                if (!value.Equals(UiDomUndefined.Instance))
+                    return value;
+            }
+
             if (name_to_role.TryGetValue(id, out var expected_role))
             {
                 depends_on.Add((this, new IdentifierExpression("spi_role")));
@@ -1105,7 +1206,7 @@ namespace Xalia.AtSpi
                 return result;
             }
 
-            return base.EvaluateIdentifierCore(id, root, depends_on);
+            return UiDomUndefined.Instance;
         }
     }
 }

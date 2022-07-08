@@ -301,12 +301,25 @@ if (interactable) {
 
     // Tab bar navigation
 
-    // Qt/AT-SPI2: It's not possible to determine which tab is active so this won't work.
-    page_tab (previous_sibling_matches(interactable).(spi_state.selected or child_matches(spi_state.showing))) {
+    // GTK2: Sometimes the initially selected tab does not have the selected state.
+    page_tab (spi_application.toolkit_name == "GAIL" and child_matches(spi_state.showing)) {
+        selected: true;
+    }
+
+    // Qt/AT-SPI2: The selected state is not set, but we can infer it using the sibling layered_pane
+    page_tab (spi_application.toolkit_name == "Qt" and
+        parent.spi_role.page_tab_list and
+        parent.parent.spi_role.filler and
+        parent.first_sibling.spi_role.layered_pane and
+        parent.first_sibling.child_at_index(index_in_parent).spi_state.showing) {
+        selected: true;
+    }
+
+    page_tab (previous_sibling_matches(interactable).selected) {
         action_on_RB: action_on_PrimaryAction;
         action_name_RB: spi_name;
     }
-    page_tab (next_sibling_matches(interactable).(spi_state.selected or child_matches(spi_state.showing))) {
+    page_tab (next_sibling_matches(interactable).selected) {
         action_on_LB: action_on_PrimaryAction;
         action_name_LB: spi_name;
     }

@@ -36,7 +36,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;LINUX</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;LINUX;WINDOWS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -48,7 +48,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;LINUX</DefineConstants>
+    <DefineConstants>TRACE;LINUX;WINDOWS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -125,6 +125,7 @@
     <Compile Include="UiDom\IUiDomApplication.cs" />
     <Compile Include="UiDom\SimulateDpad.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
+    <Compile Include="UiDom\UiDomChildAtIndex.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
     <Compile Include="UiDom\UiDomInt.cs" />
     <Compile Include="UiDom\UiDomElement.cs" />

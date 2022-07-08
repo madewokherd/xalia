@@ -193,16 +193,16 @@ namespace Xalia.UiDom
                     }
                 case "first_child":
                     {
+                        depends_on.Add((this, new IdentifierExpression("children")));
                         if (Children.Count == 0)
                             return UiDomUndefined.Instance;
-                        depends_on.Add((this, new IdentifierExpression("children")));
                         return Children[0];
                     }
                 case "last_child":
                     {
+                        depends_on.Add((this, new IdentifierExpression("children")));
                         if (Children.Count == 0)
                             return UiDomUndefined.Instance;
-                        depends_on.Add((this, new IdentifierExpression("children")));
                         return Children[Children.Count - 1];
                     }
                 case "first_sibling":
@@ -258,6 +258,15 @@ namespace Xalia.UiDom
                     return root;
                 case "simulate_dpad":
                     return new SimulateDpad();
+                case "index_in_parent":
+                    if (!(Parent is null))
+                    {
+                        depends_on.Add((Parent, new IdentifierExpression("children")));
+                        return new UiDomInt(Parent.Children.IndexOf(this));
+                    }
+                    return UiDomUndefined.Instance;
+                case "child_at_index":
+                    return new UiDomChildAtIndex(this);
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))
