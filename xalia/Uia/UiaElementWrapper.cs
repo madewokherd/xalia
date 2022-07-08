@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,6 +20,23 @@ namespace Xalia.Uia
             AutomationElement = ae;
             Connection = connection;
             UniqueId = connection.BlockingGetElementId(ae);
+            try
+            {
+                if (ae.FrameworkAutomationElement.TryGetPropertyValue(
+                    Connection.Automation.PropertyLibrary.Element.ProcessId, out var pid) &&
+                    pid is int i)
+                {
+                    Pid = i;
+                }
+                else
+                {
+                    Pid = 0;
+                }
+            }
+            catch (COMException)
+            {
+                Pid = 0;
+            }
         }
 
         public AutomationElement AutomationElement { get; }
@@ -26,6 +44,8 @@ namespace Xalia.Uia
         public UiaConnection Connection { get; }
 
         public string UniqueId { get; }
+
+        public int Pid { get; }
 
         public bool IsValid
         {
