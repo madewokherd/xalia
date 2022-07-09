@@ -290,7 +290,8 @@ if (interactable) {
         action_on_PrimaryAction: spi_action.(click or Toggle or Press);
         action_name_PrimaryAction: "Toggle";
     }
-    text {
+
+    if ((is_spi_element and spi_role.text) or (is_uia_element and uia_control_type.(edit or document))) {
         targetable: true;
         if (targeted)
         {
