@@ -93,10 +93,12 @@ namespace Xalia.Uia
 
             foreach (var hwnd in EnumWindows())
             {
-                var style = unchecked((int)(long)GetWindowLong(hwnd, GWL_STYLE));
-                bool visible = (style & WS_VISIBLE) != 0;
+                if (!WindowIsVisible(hwnd))
+                    continue;
 
-                if (!visible)
+                var owner_window = GetWindow(hwnd, GW_OWNER);
+
+                if (owner_window != IntPtr.Zero && WindowIsVisible(owner_window))
                     continue;
 
                 if (missing_hwnds.Contains(hwnd))

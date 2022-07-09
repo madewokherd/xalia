@@ -112,6 +112,20 @@ namespace Xalia.Interop
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int GetWindowThreadProcessId(IntPtr hwnd, out int lpdwProcessId);
 
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr GetParent(IntPtr hWnd);
+
+        public const int GW_OWNER = 4;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr GetWindow(IntPtr hWnd, int uCmd);
+
+        public static bool WindowIsVisible(IntPtr hwnd)
+        {
+            var style = unchecked((int)(long)GetWindowLong(hwnd, GWL_STYLE));
+            return (style & WS_VISIBLE) != 0;
+        }
+
         [ComImport, Guid("4ce576fa-83dc-4F88-951c-9d0782b4e376")]
         public class UIHostNoLaunch
         {
