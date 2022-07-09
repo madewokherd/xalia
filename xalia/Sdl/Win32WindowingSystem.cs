@@ -31,5 +31,19 @@ namespace Xalia.Sdl
 
             base.CustomizeOverlayWindow(box, sdl_window);
         }
+
+        public override bool CanShowKeyboard()
+        {
+            return true;
+        }
+
+        public override Task ShowKeyboardAsync()
+        {
+            var invocation = new UIHostNoLaunch() as ITipInvocation;
+
+            invocation.Toggle(GetDesktopWindow());
+
+            return Task.CompletedTask;
+        }
     }
 }

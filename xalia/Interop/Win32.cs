@@ -112,6 +112,18 @@ namespace Xalia.Interop
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int GetWindowThreadProcessId(IntPtr hwnd, out int lpdwProcessId);
 
+        [ComImport, Guid("4ce576fa-83dc-4F88-951c-9d0782b4e376")]
+        public class UIHostNoLaunch
+        {
+        }
+
+        [ComImport, Guid("37c994e7-432b-4834-a2f7-dce1f13b834b")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface ITipInvocation
+        {
+            void Toggle(IntPtr hwnd);
+        }
+
         public static IntPtr GetSdlWindowHwnd(IntPtr sdl_window)
         {
             SDL_SysWMinfo info = default;
