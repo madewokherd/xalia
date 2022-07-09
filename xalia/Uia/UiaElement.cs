@@ -449,13 +449,6 @@ namespace Xalia.Uia
                         }
                         return UiDomUndefined.Instance;
                     }
-                case "desktop_frame":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    return UiDomBoolean.FromBool(Equals(Root.DesktopElement));
                 case "focused":
                     {
                         var value = base.EvaluateIdentifierCore(id, root, depends_on);

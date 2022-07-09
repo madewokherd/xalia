@@ -173,7 +173,7 @@ if (spi_state.active and not root.disable_interactions) {
 }
 
 // We can't get the active window from UIAutomation, so we have to look for a window with a focused descendent
-if (is_uia_element and parent.desktop_frame and (this == uia_focused_element or is_ancestor_of(uia_focused_element))) {
+if (is_uia_element and parent.is_root and (this == uia_focused_element or is_ancestor_of(uia_focused_element))) {
     interactable: true;
 }
 

@@ -41,10 +41,7 @@ namespace Xalia.Uia
                     Automation = new FlaUI.UIA3.UIA3Automation();
                 else
                     Automation = new FlaUI.UIA2.UIA2Automation();
-                DesktopElement = new UiaElement(WrapElement(Automation.GetDesktop()));
             });
-
-            AddChild(0, DesktopElement);
 
             // If a top-level window does not support WindowPattern, we don't get
             // any notification from UIAutomation when it's created.
@@ -61,27 +58,85 @@ namespace Xalia.Uia
 
             await CommandThread.OnBackgroundThread(() =>
             {
+                var DesktopElement = Automation.GetDesktop();
+
                 Automation.RegisterFocusChangedEvent(OnFocusChangedBackground);
 
-                DesktopElement.ElementWrapper.AutomationElement.RegisterStructureChangedEvent(
+                DesktopElement.RegisterStructureChangedEvent(
                     TreeScope.Element | TreeScope.Descendants, OnStructureChangedBackground);
 
-                DesktopElement.ElementWrapper.AutomationElement.RegisterPropertyChangedEvent(
+                DesktopElement.RegisterPropertyChangedEvent(
                     TreeScope.Element | TreeScope.Descendants, OnPropertyChangedBackground,
                     properties_to_name.Keys.ToArray());
 
-                DesktopElement.ElementWrapper.AutomationElement.RegisterAutomationEvent(
+                DesktopElement.RegisterAutomationEvent(
                     Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
                     OnWindowOpenedBackground);
 
-                DesktopElement.ElementWrapper.AutomationElement.RegisterAutomationEvent(
+                DesktopElement.RegisterAutomationEvent(
                     Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
                     OnWindowClosedBackground);
             });
 
             Utils.RunTask(UpdateFocusedElement());
 
-            DesktopElement.UpdateChildren(); // in case children changed before the events were registered
+            UpdateChildren(); // in case children changed before the events were registered
+        }
+
+        HashSet<IntPtr> visible_toplevel_hwnds = new HashSet<IntPtr>();
+
+        Dictionary<IntPtr, UiaElement> toplevels_by_hwnd = new Dictionary<IntPtr, UiaElement>();
+
+        internal void UpdateChildren()
+        {
+            var missing_hwnds = new HashSet<IntPtr>(visible_toplevel_hwnds);
+
+            foreach (var hwnd in EnumWindows())
+            {
+                var style = unchecked((int)(long)GetWindowLong(hwnd, GWL_STYLE));
+                bool visible = (style & WS_VISIBLE) != 0;
+
+                if (!visible)
+                    continue;
+
+                if (missing_hwnds.Contains(hwnd))
+                {
+                    missing_hwnds.Remove(hwnd);
+                }
+                else
+                {
+                    visible_toplevel_hwnds.Add(hwnd);
+                    Utils.RunTask(AddToplevelHwnd(hwnd));
+                }
+            }
+
+            foreach (var hwnd in missing_hwnds)
+            {
+                visible_toplevel_hwnds.Remove(hwnd);
+                if (toplevels_by_hwnd.TryGetValue(hwnd, out var element))
+                {
+                    toplevels_by_hwnd.Remove(hwnd);
+                    RemoveChild(Children.IndexOf(element));
+                }
+            }
+        }
+
+        internal async Task AddToplevelHwnd(IntPtr hwnd)
+        {
+            GetWindowThreadProcessId(hwnd, out int pid);
+
+            UiaElementWrapper wrapper = await CommandThread.OnBackgroundThread(() =>
+            {
+                var element = Automation.FromHandle(hwnd);
+
+                return WrapElement(element);
+            }, pid);
+
+            if (!visible_toplevel_hwnds.Contains(hwnd) || toplevels_by_hwnd.ContainsKey(hwnd) ||
+                !wrapper.IsValid)
+                return;
+
+            AddChild(Children.Count, new UiaElement(wrapper));
         }
 
         private void OnPropertyChangedBackground(AutomationElement arg1, PropertyId arg2, object arg3)
@@ -104,10 +159,17 @@ namespace Xalia.Uia
         private void OnStructureChangedBackground(AutomationElement arg1, StructureChangeType arg2, int[] arg3)
         {
             UiaElementWrapper wrapper;
-            if (arg2 == StructureChangeType.ChildAdded)
-                wrapper = WrapElement(arg1.Parent);
-            else
-                wrapper = WrapElement(arg1);
+            try
+            {
+                if (arg2 == StructureChangeType.ChildAdded)
+                    wrapper = WrapElement(arg1.Parent);
+                else
+                    wrapper = WrapElement(arg1);
+            }
+            catch (COMException)
+            {
+                return;
+            }
             MainContext.Post((state) =>
             {
                 var element = LookupAutomationElement(wrapper);
@@ -127,7 +189,7 @@ namespace Xalia.Uia
 
         private async Task UpdateFocusedElement()
         {
-            FocusedElement = await CommandThread.GetFocusedElement(DesktopElement.ElementWrapper);
+            FocusedElement = await CommandThread.GetFocusedElement(this);
         }
 
         private void OnWindowOpenedBackground(AutomationElement arg1, EventId arg2)
@@ -156,7 +218,7 @@ namespace Xalia.Uia
             {
                 if (GetAncestor(hwnd, GA_PARENT) == GetDesktopWindow())
                 {
-                    DesktopElement.UpdateChildren();
+                    UpdateChildren();
                 }
             }
         }
@@ -184,7 +246,6 @@ namespace Xalia.Uia
 
         public AutomationBase Automation { get; private set; }
         public SynchronizationContext MainContext { get; }
-        public UiaElement DesktopElement { get; private set; }
         
         public UiaCommandThread CommandThread { get; }
 

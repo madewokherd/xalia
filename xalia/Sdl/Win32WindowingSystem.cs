@@ -17,11 +17,11 @@ namespace Xalia.Sdl
         {
             var win32_window = GetSdlWindowHwnd(sdl_window);
 
-            var old_exstyle = GetWindowLong(win32_window, GWLP_EXSTYLE);
+            var old_exstyle = GetWindowLong(win32_window, GWL_EXSTYLE);
 
             IntPtr new_exstyle = (IntPtr)((int)old_exstyle | WS_EX_NOACTIVATE);
 
-            SetWindowLong(win32_window, GWLP_EXSTYLE, new_exstyle);
+            SetWindowLong(win32_window, GWL_EXSTYLE, new_exstyle);
 
             SetWindowPos(win32_window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 

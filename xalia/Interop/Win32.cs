@@ -44,7 +44,10 @@ namespace Xalia.Interop
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
         public extern static bool SetWindowPos(IntPtr hwnd, IntPtr insert_after, int x, int y, int width, int height, uint flags);
 
-        public const int GWLP_EXSTYLE = -20;
+        public const int GWL_STYLE = -16;
+        public const int GWL_EXSTYLE = -20;
+
+        public const int WS_VISIBLE = 0x10000000;
 
         public const int WS_EX_NOACTIVATE = 0x08000000;
         public const int WS_EX_TOPMOST = 0x00000008;
@@ -76,6 +79,38 @@ namespace Xalia.Interop
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern IntPtr GetDesktopWindow();
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        public delegate bool WNDENUMPROC(IntPtr hwnd, IntPtr lParam);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        public static extern bool EnumWindows(WNDENUMPROC lpEnumProc, IntPtr lParam);
+
+        [ThreadStatic]
+        private static List<IntPtr> EnumWindowsList;
+
+        private static bool EnumWindowsToList(IntPtr hwnd, IntPtr lParam)
+        {
+            EnumWindowsList.Add(hwnd);
+            return true;
+        }
+
+        private static WNDENUMPROC EnumWindowsToListDelegate = new WNDENUMPROC(EnumWindowsToList);
+
+        public static IEnumerable<IntPtr> EnumWindows()
+        {
+            var result = new List<IntPtr>();
+            EnumWindowsList = result;
+
+            EnumWindows(EnumWindowsToListDelegate, IntPtr.Zero);
+
+            EnumWindowsList = null;
+
+            return result;
+        }
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int GetWindowThreadProcessId(IntPtr hwnd, out int lpdwProcessId);
 
         public static IntPtr GetSdlWindowHwnd(IntPtr sdl_window)
         {

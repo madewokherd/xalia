@@ -25,7 +25,7 @@ namespace Xalia.Uia
 
         ConcurrentQueue<(int, ConcurrentQueue<CommandThreadRequest>, SpinLock)> worker_pid_queue = new ConcurrentQueue<(int, ConcurrentQueue<CommandThreadRequest>, SpinLock)>();
 
-        Semaphore worker_pid_queue_sem; // Lower bound on the number of threads that should be woken to process current requests.
+        Semaphore worker_pid_queue_sem; // Upper bound on the number of threads that should be woken to process current requests.
 
         Thread thread;
 
@@ -152,14 +152,14 @@ namespace Xalia.Uia
             }, element);
         }
 
-        public async Task<UiaElementWrapper> GetFocusedElement(UiaElementWrapper desktop)
+        public async Task<UiaElementWrapper> GetFocusedElement(UiaConnection connection)
         {
             return await OnBackgroundThread(() =>
             {
-                var result = desktop.Connection.Automation.FocusedElement();
+                var result = connection.Automation.FocusedElement();
 
-                return desktop.Connection.WrapElement(result);
-            }, desktop);
+                return connection.WrapElement(result);
+            }, 0);
         }
 
         public async Task<PatternId[]> GetSupportedPatterns(UiaElementWrapper element)
