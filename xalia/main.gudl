@@ -251,7 +251,7 @@ if (interactable) {
     }
 
     // Direct control interaction
-    menu {
+    if (is_spi_element and menu) {
         targetable: true;
 
         action_on_PrimaryAction: spi_action.click;
@@ -264,6 +264,15 @@ if (interactable) {
         targetable: true;
 
         action_on_PrimaryAction: spi_action.ShowMenu;
+        action_name_PrimaryAction: "Click";
+    }
+
+    // UI Automation menu
+    menu_item (is_uia_element and parent.menu_bar)
+    {
+        targetable: true;
+
+        action_on_PrimaryAction: uia_invoke or msaa_do_default_action;
         action_name_PrimaryAction: "Click";
     }
 

@@ -500,6 +500,13 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "uia_invoke", Invoke);
                     }
                     return UiDomUndefined.Instance;
+                case "msaa_do_default_action":
+                    depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
+                    if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.LegacyIAccessiblePattern))
+                    {
+                        return new UiDomRoutineAsync(this, "msaa_do_default_action", MsaaDefaultAction);
+                    }
+                    return UiDomUndefined.Instance;
             }
 
             {
@@ -517,6 +524,14 @@ namespace Xalia.Uia
             }
 
             return UiDomUndefined.Instance;
+        }
+
+        private Task MsaaDefaultAction(UiDomRoutineAsync obj)
+        {
+            return Root.CommandThread.OnBackgroundThread(() =>
+            {
+                ElementWrapper.AutomationElement.Patterns.LegacyIAccessible.Pattern.DoDefaultAction();
+            }, ElementWrapper);
         }
 
         private Task DoSetFocus(UiDomRoutineAsync obj)
