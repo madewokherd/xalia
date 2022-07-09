@@ -459,6 +459,17 @@ namespace Xalia.Uia
                 case "uia_focused":
                     depends_on.Add((this, new IdentifierExpression("uia_focused")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.FocusedElement));
+                case "set_focus":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_set_focus";
+                case "uia_set_focus":
+                    {
+                        return new UiDomRoutineAsync(this, "uia_set_focus", DoSetFocus);
+                    }
                 case "focused_element":
                     {
                         var value = base.EvaluateIdentifierCore(id, root, depends_on);
@@ -508,9 +519,17 @@ namespace Xalia.Uia
             return UiDomUndefined.Instance;
         }
 
-        private async Task Invoke(UiDomRoutineAsync obj)
+        private Task DoSetFocus(UiDomRoutineAsync obj)
         {
-            await Root.CommandThread.Invoke(ElementWrapper);
+            return Root.CommandThread.OnBackgroundThread(() =>
+            {
+                ElementWrapper.AutomationElement.Focus();
+            }, ElementWrapper);
+        }
+
+        private Task Invoke(UiDomRoutineAsync obj)
+        {
+            return Root.CommandThread.Invoke(ElementWrapper);
         }
     }
 }
