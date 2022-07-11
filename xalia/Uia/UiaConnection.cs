@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
+using FlaUI.Core.Exceptions;
 using FlaUI.Core.Identifiers;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -87,18 +88,29 @@ namespace Xalia.Uia
 
         Dictionary<IntPtr, UiaElement> toplevels_by_hwnd = new Dictionary<IntPtr, UiaElement>();
 
+        internal bool IsUiaToplevel(IntPtr hwnd)
+        {
+            if (!WindowIsVisible(hwnd))
+                return false;
+
+            if (GetAncestor(hwnd, GA_PARENT) != GetDesktopWindow())
+                return false;
+
+            var owner_window = GetWindow(hwnd, GW_OWNER);
+
+            if (owner_window != IntPtr.Zero && WindowIsVisible(owner_window))
+                return false;
+
+            return true;
+        }
+
         internal void UpdateChildren()
         {
             var missing_hwnds = new HashSet<IntPtr>(visible_toplevel_hwnds);
 
             foreach (var hwnd in EnumWindows())
             {
-                if (!WindowIsVisible(hwnd))
-                    continue;
-
-                var owner_window = GetWindow(hwnd, GW_OWNER);
-
-                if (owner_window != IntPtr.Zero && WindowIsVisible(owner_window))
+                if (!IsUiaToplevel(hwnd))
                     continue;
 
                 if (missing_hwnds.Contains(hwnd))
@@ -123,16 +135,79 @@ namespace Xalia.Uia
             }
         }
 
-        internal async Task AddToplevelHwnd(IntPtr hwnd)
+        internal Task<UiaElementWrapper> WrapperFromHwnd(IntPtr hwnd)
         {
+            if (hwnd == IntPtr.Zero || hwnd == GetDesktopWindow() || !WindowIsVisible(hwnd))
+                return Task.FromResult(UiaElementWrapper.InvalidElement);
+
             GetWindowThreadProcessId(hwnd, out int pid);
 
-            UiaElementWrapper wrapper = await CommandThread.OnBackgroundThread(() =>
+            return CommandThread.OnBackgroundThread(() =>
             {
-                var element = Automation.FromHandle(hwnd);
+                try
+                {
+                    var element = Automation.FromHandle(hwnd);
 
-                return WrapElement(element);
+                    return WrapElement(element);
+                }
+                catch (COMException)
+                {
+                    return UiaElementWrapper.InvalidElement;
+                }
+                catch (ElementNotAvailableException)
+                {
+                    return UiaElementWrapper.InvalidElement;
+                }
             }, pid);
+        }
+        internal Task<UiaElementWrapper> WrapperFromHwnd(IntPtr hwnd, int objectId, int childId)
+        {
+            if ((objectId == OBJID_WINDOW || objectId == OBJID_CLIENT) && childId == CHILDID_SELF)
+            {
+                return WrapperFromHwnd(hwnd);
+            }
+
+            if (!(Automation is FlaUI.UIA3.UIA3Automation))
+            {
+                // Hopefully we don't need to handle UIA2 because it translates the events for us.
+                return Task.FromResult(UiaElementWrapper.InvalidElement);
+            }
+
+            if (hwnd == IntPtr.Zero || hwnd == GetDesktopWindow() || !WindowIsVisible(hwnd))
+                return Task.FromResult(UiaElementWrapper.InvalidElement);
+
+            GetWindowThreadProcessId(hwnd, out int pid);
+
+            return CommandThread.OnBackgroundThread(() =>
+            {
+                try
+                {
+                    int hr = AccessibleObjectFromEvent(hwnd, objectId, childId, out var acc, out var res_childid);
+
+                    Marshal.ThrowExceptionForHR(hr);
+
+                    var au3 = (FlaUI.UIA3.UIA3Automation)Automation;
+
+                    var native = au3.NativeAutomation.ElementFromIAccessible(acc, (int)res_childid);
+
+                    var element = au3.WrapNativeElement(native);
+
+                    return WrapElement(element);
+                }
+                catch (COMException)
+                {
+                    return UiaElementWrapper.InvalidElement;
+                }
+                catch (ElementNotAvailableException)
+                {
+                    return UiaElementWrapper.InvalidElement;
+                }
+            }, pid);
+        }
+
+        internal async Task AddToplevelHwnd(IntPtr hwnd)
+        {
+            UiaElementWrapper wrapper = await WrapperFromHwnd(hwnd);
 
             if (!visible_toplevel_hwnds.Contains(hwnd) || toplevels_by_hwnd.ContainsKey(hwnd) ||
                 !wrapper.IsValid)
@@ -216,12 +291,66 @@ namespace Xalia.Uia
 
         private void OnMsaaEvent(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
         {
+            switch (eventId)
+            {
+                case EVENT_OBJECT_CREATE:
+                case EVENT_OBJECT_DESTROY:
+                    TranslateMsaaEvent(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime);
+                    break;
+            }
+        }
+
+        private void TranslateMsaaEvent(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
+        {
+            Utils.RunTask(TranslateMsaaEventTask(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime));
+        }
+
+        private async Task TranslateMsaaEventTask(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
+        {
             if (eventId == EVENT_OBJECT_CREATE || eventId == EVENT_OBJECT_DESTROY)
             {
-                if (GetAncestor(hwnd, GA_PARENT) == GetDesktopWindow())
+                // Can't retrieve the actual IAccessible for this event, get the parent instead.
+
+                if (idChild != CHILDID_SELF)
+                    idChild = CHILDID_SELF;
+                else if (idObject != OBJID_WINDOW && idObject != OBJID_CLIENT)
+                    idObject = OBJID_WINDOW;
+                else
                 {
+                    var parent = GetAncestor(hwnd, GA_PARENT);
+                    if (parent == GetDesktopWindow())
+                        hwnd = GetWindow(hwnd, GW_OWNER);
+                    else
+                        hwnd = parent;
+                    idObject = OBJID_CLIENT;
+                }
+            }
+
+            var wrapper = await WrapperFromHwnd(hwnd, idObject, idChild);
+
+            if (!wrapper.IsValid)
+            {
+                if ((eventId == EVENT_OBJECT_CREATE || eventId == EVENT_OBJECT_DESTROY) &&
+                    idChild == CHILDID_SELF &&
+                    (idObject == OBJID_WINDOW || idObject == OBJID_CLIENT))
+                {
+                    // Parent may be effectively the desktop window.
                     UpdateChildren();
                 }
+                return;
+            }
+
+            var element = LookupAutomationElement(wrapper);
+
+            if (element is null)
+                return;
+
+            switch (eventId)
+            {
+                case EVENT_OBJECT_CREATE:
+                case EVENT_OBJECT_DESTROY:
+                    element.UpdateChildren();
+                    break;
             }
         }
 

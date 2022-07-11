@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
+using Interop.UIAutomationClient;
+
 using static SDL2.SDL;
 
 namespace Xalia.Interop
@@ -12,6 +14,7 @@ namespace Xalia.Interop
     internal static class Win32
     {
         const string USER_LIB = "user32";
+        const string OLEACC_LIB = "oleacc";
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
         public extern static IntPtr GetWindowLongPtrW(IntPtr hwnd, int index);
@@ -66,16 +69,25 @@ namespace Xalia.Interop
         public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc,
             WINEVENTPROC pfnWinEventProc, int idProcess, int idThread, uint dwFlags);
 
-        public static uint EVENT_OBJECT_CREATE = 0x8000;
-        public static uint EVENT_OBJECT_DESTROY = 0x8001;
+        public const uint EVENT_OBJECT_CREATE = 0x8000;
+        public const uint EVENT_OBJECT_DESTROY = 0x8001;
 
-        public static uint WINEVENT_OUTOFCONTEXT = 0;
+        public const uint WINEVENT_OUTOFCONTEXT = 0;
 
+        public const int OBJID_WINDOW = 0;
+        public const int OBJID_CLIENT = -4;
+
+        public const int CHILDID_SELF = 0;
+
+        [DllImport(OLEACC_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int AccessibleObjectFromEvent(IntPtr hwnd, int dwId, int dwChildId,
+            [Out, MarshalAs(UnmanagedType.Interface)] out IAccessible accessible,
+            [Out, MarshalAs(UnmanagedType.Struct)] out object pvarChild);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
 
-        public static uint GA_PARENT = 1;
+        public const uint GA_PARENT = 1;
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern IntPtr GetDesktopWindow();
