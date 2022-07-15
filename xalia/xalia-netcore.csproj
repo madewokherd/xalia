@@ -105,7 +105,12 @@
 
   <ItemGroup>
     <PackageReference Include="Superpower" Version="3.0.0" />
-    <PackageReference Include="Tmds.DBus" Version="0.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Tmds.DBus">
+      <HintPath>..\external\Tmds.Dbus\src\Tmds.DBus\bin\Release\netstandard2.0\Tmds.DBus.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

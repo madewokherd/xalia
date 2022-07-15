@@ -54,8 +54,6 @@ namespace Xalia.Sdl
                 // no libXtst
             }
 
-            Console.WriteLine($"Xtest: {xtest_supported}");
-
             EnableInputMask(root_window, PropertyChangeMask);
             
             ((SdlSynchronizationContext)SynchronizationContext.Current).SdlEvent += OnSdlEvent;

@@ -68,6 +68,10 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="Tmds.DBus, Version=0.10.0.0, Culture=neutral, PublicKeyToken=9abd76e9812c1bca, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\external\Tmds.Dbus\src\Tmds.DBus\bin\Release\netstandard2.0\Tmds.DBus.dll</HintPath>
+    </Reference>
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />

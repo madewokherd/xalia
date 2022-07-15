@@ -23,8 +23,10 @@ namespace Xalia.Sdl
                     return new X11WindowingSystem();
                 case "wayland":
                     return new XdgWindowingSystem();
+#if WINDOWS
                 case "windows":
                     return new Win32WindowingSystem();
+#endif
                 default:
                     return new WindowingSystem();
             }
