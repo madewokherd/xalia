@@ -160,7 +160,7 @@ namespace Xalia.Sdl
             if (dpi != 0.0)
                 return dpi;
 
-            return base.GetDpi(x, y);
+            return 96;
         }
 
         public override bool CanSendKeys => xtest_supported || base.CanSendKeys;
