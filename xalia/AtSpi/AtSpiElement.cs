@@ -483,6 +483,12 @@ namespace Xalia.AtSpi
             var path = id.Item2.ToString();
             if (detail == "add")
             {
+                if (index > Children.Count)
+                {
+                    Console.WriteLine($"WARNING: Index {index} for new child of {service}:{path} is out of range");
+                    index = (uint)Children.Count;
+                }
+
                 AddChild((int)index, new AtSpiElement(Connection, id.Item1, id.Item2));
             }
             else if (detail == "remove")
