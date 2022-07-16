@@ -88,34 +88,52 @@ namespace Xalia.Sdl
             }
         }
 
-        private void CheckDpi()
+        private string GetStringProperty(IntPtr window, IntPtr property)
         {
-            dpi_checked = true;
+            string result;
             int length = 1024;
-
-            string resources;
 
             while (true)
             {
-                var result = XGetWindowProperty(display, root_window, XA_RESOURCE_MANAGER, IntPtr.Zero, (IntPtr)length,
+                var ret = XGetWindowProperty(display, window, property, IntPtr.Zero, (IntPtr)length,
                     False, XA_STRING, out var actual_type, out var actual_format, out var nitems, out var bytes_after,
                     out var prop);
-                if (result != Success || actual_type != XA_STRING || actual_format != 8)
+                if (ret != Success || actual_type != XA_STRING || actual_format != 8)
                 {
-                    dpi = 0;
-                    return;
+                    return null;
                 }
 
                 if (bytes_after != UIntPtr.Zero)
                 {
-                    length += ((int)bytes_after + 3)/4;
+                    length += ((int)bytes_after + 3) / 4;
                     continue;
                 }
 
-                resources = Marshal.PtrToStringAnsi(prop);
+                result = Marshal.PtrToStringAnsi(prop);
                 XFree(prop);
                 break;
             }
+
+            return result;
+        }
+
+        internal string GetAtSpiBusAddress()
+        {
+            var XA_AT_SPI_BUS = XInternAtom(display, "AT_SPI_BUS", True);
+
+            if (XA_AT_SPI_BUS != IntPtr.Zero)
+            {
+                return GetStringProperty(root_window, XA_AT_SPI_BUS);
+            }
+
+            return null;
+        }
+
+        private void CheckDpi()
+        {
+            dpi_checked = true;
+
+            string resources = GetStringProperty(root_window, XA_RESOURCE_MANAGER);
 
             foreach (var line in resources.Split('\n'))
             {

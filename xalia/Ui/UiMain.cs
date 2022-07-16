@@ -66,7 +66,7 @@ namespace Xalia.Ui
 
         public UiMain()
         {
-            Windowing = WindowingSystem.Create();
+            Windowing = WindowingSystem.Instance;
 
             target_box = Windowing.CreateOverlayBox();
             target_box.SetColor(224, 255, 255, 255);

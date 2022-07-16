@@ -8,6 +8,7 @@ using Tmds.DBus;
 
 using Xalia.AtSpi.DBus;
 using Xalia.Gudl;
+using Xalia.Sdl;
 using Xalia.UiDom;
 
 namespace Xalia.AtSpi
@@ -28,7 +29,17 @@ namespace Xalia.AtSpi
         internal static async Task<string> GetAtSpiBusAddress()
         {
             string result = Environment.GetEnvironmentVariable("AT_SPI_BUS_ADDRESS");
-            // TODO: Try getting AT_SPI_BUS property from X11 root
+
+            // Try getting AT_SPI_BUS property from X11 root
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                var windowing = WindowingSystem.Instance;
+
+                if (windowing is X11WindowingSystem x11)
+                {
+                    result = x11.GetAtSpiBusAddress();
+                }
+            }
 
             // Try getting bus address from session bus org.a11y.Bus interface
             if (string.IsNullOrWhiteSpace(result))

@@ -14,7 +14,9 @@ namespace Xalia.Sdl
             SdlSynchronizationContext.Instance.SdlEvent += OnSdlEvent;
         }
 
-        public static WindowingSystem Create()
+        static WindowingSystem _instance;
+
+        private static WindowingSystem Create()
         {
             var driver = SDL_GetCurrentVideoDriver();
             switch (driver)
@@ -29,6 +31,16 @@ namespace Xalia.Sdl
 #endif
                 default:
                     return new WindowingSystem();
+            }
+        }
+
+        public static WindowingSystem Instance
+        {
+            get
+            {
+                if (_instance is null)
+                    _instance = Create();
+                return _instance;
             }
         }
 
