@@ -45,6 +45,11 @@ namespace Xalia.AtSpi
             if (string.IsNullOrWhiteSpace(result))
             {
                 var session = Connection.Session;
+
+                // Request that accessibility support be enabled, before fetching address.
+                var status = session.CreateProxy<IStatus>("org.a11y.Bus", "/org/a11y/bus");
+                await status.SetIsEnabledAsync(true);
+
                 var launcher = session.CreateProxy<IBus>("org.a11y.Bus", "/org/a11y/bus");
                 result = await launcher.GetAddressAsync();
             }
