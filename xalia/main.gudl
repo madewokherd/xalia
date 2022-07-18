@@ -172,9 +172,14 @@ if (spi_state.active and not root.disable_interactions) {
     interactable: true;
 }
 
-// We can't get the active window from UIAutomation, so we have to look for a window with a focused descendent
-if (is_uia_element and parent.is_root and (this == uia_focused_element or is_ancestor_of(uia_focused_element))) {
+if (foreground and not root.disable_interactions) {
     interactable: true;
+}
+
+if (uia_control_type.window) {
+    // In UI Automation, "owned" windows (usually dialog boxes) are children of the "owner" window.
+    // We don't want to try to interact with controls in these windows when the owner is the foreground window.
+    interactable: false;
 }
 
 // We'd need an unbroken chain of enabled/visible controls from the active window to interact with

@@ -317,6 +317,10 @@ namespace Xalia.Uia
                 {
                     Root.PropertyChanged("uia_focused_element");
                 }
+                if (ElementWrapper.Equals(Root.ForegroundElement))
+                {
+                    Root.PropertyChanged("msaa_foreground_element");
+                }
             }
             else
             {
@@ -459,6 +463,16 @@ namespace Xalia.Uia
                 case "uia_focused":
                     depends_on.Add((this, new IdentifierExpression("uia_focused")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.FocusedElement));
+                case "foreground":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "msaa_foreground";
+                case "msaa_foreground":
+                    depends_on.Add((this, new IdentifierExpression("msaa_foreground")));
+                    return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.ForegroundElement));
                 case "set_focus":
                     {
                         var value = base.EvaluateIdentifierCore(id, root, depends_on);

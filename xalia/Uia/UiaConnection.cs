@@ -50,7 +50,7 @@ namespace Xalia.Uia
 
             event_proc_delegates.Add(eventprocdelegate);
 
-            SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY, IntPtr.Zero,
+            SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_DESTROY, IntPtr.Zero,
                 eventprocdelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
 
             RegisterPropertyMapping("uia_control_type", Automation.PropertyLibrary.Element.ControlType);
@@ -293,6 +293,7 @@ namespace Xalia.Uia
         {
             switch (eventId)
             {
+                case EVENT_SYSTEM_FOREGROUND:
                 case EVENT_OBJECT_CREATE:
                 case EVENT_OBJECT_DESTROY:
                     TranslateMsaaEvent(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime);
@@ -327,6 +328,13 @@ namespace Xalia.Uia
             }
 
             var wrapper = await WrapperFromHwnd(hwnd, idObject, idChild);
+
+            if (eventId == EVENT_SYSTEM_FOREGROUND)
+            {
+                // We may not know about the element yet, so just set the wrapper.
+                ForegroundElement = wrapper;
+                return;
+            }
 
             if (!wrapper.IsValid)
             {
@@ -431,6 +439,39 @@ namespace Xalia.Uia
             }
         }
 
+        UiaElementWrapper foreground_element;
+
+        public UiaElementWrapper ForegroundElement
+        {
+            get { return foreground_element; }
+            private set
+            {
+                var old_foreground_element = foreground_element;
+
+                if (old_foreground_element.Equals(value))
+                {
+                    return;
+                }
+
+#if DEBUG
+                Console.WriteLine($"Foreground window changed to {value.UniqueId}");
+#endif
+
+                foreground_element = value;
+
+                PropertyChanged("msaa_foreground_element");
+
+                if (LookupAutomationElement(old_foreground_element) is UiaElement old)
+                {
+                    old.PropertyChanged("msaa_foreground");
+                }
+
+                if (LookupAutomationElement(value) is UiaElement new_focused)
+                {
+                    new_focused.PropertyChanged("msaa_foreground");
+                }
+            }
+        }
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (id)
@@ -439,6 +480,10 @@ namespace Xalia.Uia
                 case "focused_element":
                     depends_on.Add((Root, new IdentifierExpression("uia_focused_element")));
                     return (UiDomValue)LookupAutomationElement(FocusedElement) ?? UiDomUndefined.Instance;
+                case "msaa_foreground_element":
+                case "foreground_element":
+                    depends_on.Add((Root, new IdentifierExpression("msaa_foreground_element")));
+                    return (UiDomValue)LookupAutomationElement(ForegroundElement) ?? UiDomUndefined.Instance;
             }
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }

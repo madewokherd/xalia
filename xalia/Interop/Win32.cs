@@ -70,6 +70,8 @@ namespace Xalia.Interop
         public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc,
             WINEVENTPROC pfnWinEventProc, int idProcess, int idThread, uint dwFlags);
 
+        public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+
         public const uint EVENT_OBJECT_CREATE = 0x8000;
         public const uint EVENT_OBJECT_DESTROY = 0x8001;
 
