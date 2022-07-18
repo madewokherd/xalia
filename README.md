@@ -7,48 +7,78 @@ Global actions are also possible, such as opening a program's menus or switching
 
 # Current Status
 
-Only the Linux platform with AT-SPI2 is currently working.
+## Linux
 
-The GTK and wxWidgets toolkits work. Standard button, text box, combo box, check box, and tab controls are usable. Activating a textbox is currently hard-coded to run "onboard", unfortunately I could not find any on-screen keyboard for Linux that I could start which would allow for gamepad inputs.
+Linux/X11 is supported using AT-SPI2.
 
-Qt works but requires separate configuration and keyboard injection support (only implemented on X11).
+I have not tested on Wayland yet, but I'm not aware of anything that would prevent it from working right now. However, some features require keyboard injection which is not yet implemented for Wayland. These are noted under "Toolkit Support" as requring "XTEST".
 
-I have not tested on Wayland yet, but I'm not aware of anything that would prevent it from working right now.
+## Windows
 
-No button prompts are displayed yet. I think this would be good to have in the future.
+Windows support is a work in progress. New UI elements are not detected reliably, and only a few will work. 
+
+## Toolkit support
+
+Widget \ Toolkit | Linux/GTK2 | Linux/GTK3 | Linux/Qt | Windows/Comctl32
+--- | --- | --- | --- | ---
+Button | Supported | Supported | Supported | Supported
+Check Box | Supported | Supported | Supported | Supported
+Combo Box | Broken[5] | Supported | Supported | Unsupported
+Menu | Supported[6] | Supported[6] | Partial[1] | Partial[2]
+Text Entry | Partial[3] | Partial[3] | Partial[3] | Partial[4]
+Tab Bar | Supported | Supported | Supported | Unsupported
+
+Notes:
+1. Menus on Linux/Qt cannot be accessed through AT-SPI2 and require XTEST.
+2. Menus on Windows can be opened, but cannot be navigated yet.
+3. I have not found an On-Screen Keyboard on Linux I can use that supports gamepad input or interaction through AT-SPI2. For now, the "show keyboard" functionality is hard-coded to start "onboard".
+4. The Windows On-Screen Keyboard cannot be controlled with a gamepad. I am hoping to add this support in the future using UI Automation.
+5. It's not possible to reliably determine when a combo box is open with GTK2, which can cause strange behaviors. This is unlikely to ever be fixed because GTK2 is no longer in development.
+6. Dismissing pop-up menus on Linux/GTK requires XTEST: https://gitlab.gnome.org/GNOME/gtk/-/issues/5008
 
 # Setup
 
 The latest release can be downloaded from https://github.com/madewokherd/xalia/releases
 
-On Linux, use the archive labeled "netstandard2.0". It contains an exe that can run with Mono.
-
 ## Linux
 
 Requirements:
- * Mono. On Ubuntu, for some reason, the "Facade" assemblies (which are needed to support .NET Standard applications) are in the `mono-devel` package, so you'll need to install that.
+ * A .NET runtime. This can either be Mono or .NET 6. The "self-contained" archives contain a build of .NET 6. When using Mono, the "Facade" assemblies (which are needed to support .NET Standard applications) are required; for some reason, Ubuntu has them in the `mono-devel` package.
  * SDL2. This should just be a matter of installing the libsdl2 packages on your distribution (`libsdl2-2.0-0` on Ubuntu).
  * AT-SPI2. This is probably included with your desktop environment, but you will need to enable it.
 
-You will need to enable AT-SPI2. On XFCE, this can be done by starting "Accessibility" in the applications menu and enabling the checkbox labeled "Enable assistive technologies". You will need to log in again for the change to take effect.
+You will need to enable AT-SPI2. On XFCE, this can be done by starting "Accessibility" in the applications menu and enabling the checkbox labeled "Enable assistive technologies". On Plasma, the option is in Accessibility settings under the Screen Reader tab, misleadingly named "Screen reader enabled". You will need to log in again for the change to take effect.
 
-For Qt applications, you will need to run this command:
+For Qt applications, you may need to run this command:
 ```
 gsettings set org.gnome.desktop.a11y.applications screen-reader-enabled true
 ```
 or set the environment variable `QT_LINUX_ACCESSIBILITY_ALWAYS_ON=1`.
 
-Once all of the setup is complete, run `mono xalia.exe` in a terminal. To quit, press Ctrl+C in the terminal. There is no GUI available for configuration and starting/stopping the program yet, but hopefully that will change in the future.
+Once all of the setup is complete, run `mono xalia.exe`, `dotnet xalia.dll`, or './xalia' in a terminal, depending on which build you are using. To quit, press Ctrl+C in the terminal. There is no GUI available for configuration and starting/stopping the program yet, but hopefully that will change in the future.
+
+## Windows
+
+The Windows backend does not work reliably yet and is not recommended. You can try the net48-mono archive if you're brave.
 
 # Building
 
-I do my development on Windows using Visual Studio. I'm hoping to be able to target both Windows and Linux with a single build.
+I do my development on Windows using Visual Studio.
 
-There is one quirk currently, which is that we need a special build of Tmds.DBus to work around an incompatibility with Mono: https://github.com/tmds/Tmds.DBus/issues/155. I use a build from this revision: https://github.com/madewokherd/Tmds.DBus/commit/c3debb916ba18cf7a39ea244ad59f3a79e8ab2c8
+There is one quirk currently, which is that we need a special build of Tmds.DBus to work around an incompatibility with Mono: https://github.com/tmds/Tmds.DBus/issues/155. A submodule of Tmds.DBus is provided for this reason, but it needs to be manually built before Xalia.
 
 Mono should hopefully also be able to build the project, but I have not tried it.
 
-Similarly, I have not tried .NET Core/5/6, but I'm not aware of any reason it can't work.
+The single-assembly version (which works on both Linux/Mono and Windows/.NET Framework 4.8), can be built from xalia.sln.
+
+A .NET 6 version can be built with one of the following commands:
+
+```
+dotnet publish xalia-netcore.sln --runtime linux-x64 --configuration Release-Linux --self-contained
+dotnet publish xalia-netcore.sln --runtime linux-x64 --configuration Release-Linux --no-self-contained
+dotnet publish xalia-netcore.sln --runtime win-x64 --configuration Release-Windows --self-contained
+dotnet publish xalia-netcore.sln --runtime win-x64 --configuration Release-Windows --no-self-contained
+```
 
 # Default Gamepad Controls
 
@@ -58,7 +88,7 @@ Here are the default controls when using a gamepad:
  * **X (or top face button)**: Secondary action for the selected control, currently this opens a virtual keyboard when a combo box containing a text field is targeted.
  * **B (or right face button)**: Exit a submenu, or click the Close/Cancel/No button if one exists in the current window.
  * **Start**: Toggle the application menu, or click the OK/Yes button if one exists in the current window.
- * **LB (or front left shoulder button)** and **RB (or front right shoulder button)**: Switch to the previous or next tab respectively. (Does not work in Qt applications because it is not possible to determine which tab is selected.)
+ * **LB (or front left shoulder button)** and **RB (or front right shoulder button)**: Switch to the previous or next tab respectively.
 
 This is based on SDL2's GameController mapping, which should use the same layout for whatever controller you have, but the buttons may be labeled differently.
 
