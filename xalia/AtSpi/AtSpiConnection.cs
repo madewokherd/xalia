@@ -74,6 +74,7 @@ namespace Xalia.AtSpi
             // Resolve the service name to an actual client. Signals will come from the client name, so
             // we need this to distinguish between signals from the AT-SPI root and signals from an
             // application's root, both of which use the object path "/org/a11y/atspi/accessible/root"
+            await connection.ActivateServiceAsync("org.a11y.atspi.Registry");
             string registryClient = await connection.ResolveServiceOwnerAsync("org.a11y.atspi.Registry");
 
             result.registry = connection.CreateProxy<IRegistry>(registryClient, "/org/a11y/atspi/registry");
