@@ -56,6 +56,7 @@ namespace Xalia.Uia
             RegisterPropertyMapping("uia_control_type", Automation.PropertyLibrary.Element.ControlType);
             RegisterPropertyMapping("uia_enabled", Automation.PropertyLibrary.Element.IsEnabled);
             RegisterPropertyMapping("uia_bounding_rectangle", Automation.PropertyLibrary.Element.BoundingRectangle);
+            RegisterPropertyMapping("uia_name", Automation.PropertyLibrary.Element.Name);
 
             await CommandThread.OnBackgroundThread(() =>
             {

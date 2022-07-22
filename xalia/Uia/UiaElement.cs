@@ -253,6 +253,10 @@ namespace Xalia.Uia
             {
                 new_value = UiDomBoolean.FromBool(b);
             }
+            else if (value is string s)
+            {
+                new_value = new UiDomString(s);
+            }
             else
                 new_value = UiDomUndefined.Instance;
 
@@ -457,6 +461,15 @@ namespace Xalia.Uia
                         }
                         return UiDomUndefined.Instance;
                     }
+                case "name":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_name";
+                case "uia_name":
+                    return GetProperty("uia_name", Root.Automation.PropertyLibrary.Element.Name, depends_on);
                 case "focused":
                     {
                         var value = base.EvaluateIdentifierCore(id, root, depends_on);
