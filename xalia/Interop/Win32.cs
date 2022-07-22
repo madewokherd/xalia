@@ -135,6 +135,29 @@ namespace Xalia.Interop
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern IntPtr GetWindow(IntPtr hWnd, int uCmd);
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int left, top, right, bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct GUITHREADINFO
+        {
+            public int cbSize;
+            public int flags;
+            public IntPtr hwndActive;
+            public IntPtr hwndFocus;
+            public IntPtr hwndCapture;
+            public IntPtr hwndMenuOwner;
+            public IntPtr hwndMoveSize;
+            public IntPtr hwndCaret;
+            public RECT rcCaret;
+        }
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool GetGUIThreadInfo(int idThread, ref GUITHREADINFO pgui);
+
         public static bool WindowIsVisible(IntPtr hwnd)
         {
             var style = unchecked((int)(long)GetWindowLong(hwnd, GWL_STYLE));

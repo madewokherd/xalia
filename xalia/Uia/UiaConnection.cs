@@ -82,6 +82,8 @@ namespace Xalia.Uia
             Utils.RunTask(UpdateFocusedElement());
 
             UpdateChildren(); // in case children changed before the events were registered
+
+            Utils.RunTask(UpdateActiveWindow());
         }
 
         HashSet<IntPtr> visible_toplevel_hwnds = new HashSet<IntPtr>();
@@ -333,6 +335,7 @@ namespace Xalia.Uia
             {
                 // We may not know about the element yet, so just set the wrapper.
                 ForegroundElement = wrapper;
+                Utils.RunTask(UpdateActiveWindow());
                 return;
             }
 
@@ -365,6 +368,7 @@ namespace Xalia.Uia
         private void OnFocusChanged(UiaElementWrapper obj)
         {
             FocusedElement = obj;
+            Utils.RunTask(UpdateActiveWindow());
         }
 
         private void OnWindowClosed(UiaElementWrapper parent)
@@ -472,6 +476,76 @@ namespace Xalia.Uia
                 }
             }
         }
+
+        UiaElementWrapper active_element;
+
+        public UiaElementWrapper ActiveElement
+        {
+            get { return active_element; }
+            private set
+            {
+                var old_active_element = active_element;
+
+                if (old_active_element.Equals(value))
+                {
+                    return;
+                }
+
+#if DEBUG
+                Console.WriteLine($"Active window changed to {value.UniqueId}");
+#endif
+
+                active_element = value;
+
+                PropertyChanged("win32_active_element");
+
+                if (LookupAutomationElement(old_active_element) is UiaElement old)
+                {
+                    old.PropertyChanged("win32_active");
+                }
+
+                if (LookupAutomationElement(value) is UiaElement new_active)
+                {
+                    new_active.PropertyChanged("win32_active");
+                }
+            }
+        }
+
+        bool updating_active_window;
+        bool inflight_updating_active_window;
+
+        internal async Task UpdateActiveWindow()
+        {
+            if (updating_active_window)
+            {
+                inflight_updating_active_window = true;
+                return;
+            }
+
+            updating_active_window = true;
+
+            GUITHREADINFO info = default;
+            info.cbSize = Marshal.SizeOf<GUITHREADINFO>();
+            GetGUIThreadInfo(0, ref info);
+
+            try
+            {
+                ActiveElement = await WrapperFromHwnd(info.hwndActive);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error getting element for active window:");
+                Console.WriteLine(e);
+            }
+
+            updating_active_window = false;
+            if (inflight_updating_active_window)
+            {
+                inflight_updating_active_window = false;
+                Utils.RunTask(UpdateActiveWindow());
+            }
+        }
+
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (id)
@@ -484,6 +558,10 @@ namespace Xalia.Uia
                 case "foreground_element":
                     depends_on.Add((Root, new IdentifierExpression("msaa_foreground_element")));
                     return (UiDomValue)LookupAutomationElement(ForegroundElement) ?? UiDomUndefined.Instance;
+                case "active_element":
+                case "win32_active_element":
+                    depends_on.Add((Root, new IdentifierExpression("win32_active_element")));
+                    return (UiDomValue)LookupAutomationElement(ActiveElement) ?? UiDomUndefined.Instance;
             }
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }

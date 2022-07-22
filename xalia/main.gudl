@@ -168,11 +168,7 @@ list (parent.spi_role.combo_box and spi_application.toolkit_name == "Qt")
 }
 
 // We normally should only consider the active window when searching for controls to interact with
-if (spi_state.active and not root.disable_interactions) {
-    interactable: true;
-}
-
-if (foreground and not root.disable_interactions) {
+if (active and not root.disable_interactions) {
     interactable: true;
 }
 

@@ -321,6 +321,10 @@ namespace Xalia.Uia
                 {
                     Root.PropertyChanged("msaa_foreground_element");
                 }
+                if (ElementWrapper.Equals(Root.ActiveElement))
+                {
+                    Root.PropertyChanged("win32_active_element");
+                }
             }
             else
             {
@@ -473,6 +477,16 @@ namespace Xalia.Uia
                 case "msaa_foreground":
                     depends_on.Add((this, new IdentifierExpression("msaa_foreground")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.ForegroundElement));
+                case "active":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "win32_active";
+                case "win32_active":
+                    depends_on.Add((this, new IdentifierExpression("win32_active")));
+                    return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.ActiveElement));
                 case "set_focus":
                     {
                         var value = base.EvaluateIdentifierCore(id, root, depends_on);
@@ -494,6 +508,26 @@ namespace Xalia.Uia
                 case "uia_focused_element":
                     depends_on.Add((Root, new IdentifierExpression("uia_focused_element")));
                     return (UiDomValue)Root.LookupAutomationElement(Root.FocusedElement) ?? UiDomUndefined.Instance;
+                case "foreground_element":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "msaa_foreground_element";
+                case "msaa_foreground_element":
+                    depends_on.Add((Root, new IdentifierExpression("msaa_foreground_element")));
+                    return (UiDomValue)Root.LookupAutomationElement(Root.ForegroundElement) ?? UiDomUndefined.Instance;
+                case "active_element":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "win32_active_element";
+                case "win32_active_element":
+                    depends_on.Add((Root, new IdentifierExpression("win32_active_element")));
+                    return (UiDomValue)Root.LookupAutomationElement(Root.ActiveElement) ?? UiDomUndefined.Instance;
                 case "is_uia_element":
                     return UiDomBoolean.True;
                 case "is_spi_element":
