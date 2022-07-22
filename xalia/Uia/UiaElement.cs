@@ -245,6 +245,11 @@ namespace Xalia.Uia
                 value = new System.Drawing.Rectangle((int)swr.Left, (int)swr.Top, (int)swr.Width, (int)swr.Height);
                 new_value = new UiDomString(value.ToString());
             }
+            else if (value is double[] dba && name == "uia_bounding_rectangle" && dba.Length == 4)
+            {
+                value = new System.Drawing.Rectangle((int)dba[0], (int)dba[1], (int)dba[2], (int)dba[3]);
+                new_value = new UiDomString(value.ToString());
+            }
             else if (value is ControlType ct && (int)ct < control_type_to_enum.Length)
             {
                 new_value = control_type_to_enum[(int)ct];
@@ -258,7 +263,11 @@ namespace Xalia.Uia
                 new_value = new UiDomString(s);
             }
             else
+            {
+                if (!(value is null))
+                    Console.WriteLine($"Warning: value for {name} has unsupported type {value.GetType()}");
                 new_value = UiDomUndefined.Instance;
+            }
 
             UiDomValue old_value;
             if (!property_value.TryGetValue(propid, out old_value))
