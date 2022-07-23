@@ -158,6 +158,75 @@ namespace Xalia.Interop
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern bool GetGUIThreadInfo(int idThread, ref GUITHREADINFO pgui);
 
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode)]
+        public static extern short VkKeyScanW(char ch);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern short GetAsyncKeyState(int vKey);
+
+        public const int INPUT_MOUSE = 0;
+        public const int INPUT_KEYBOARD = 1;
+        public const int INPUT_HARDWARE = 2;
+
+        public const int KEYEVENTF_EXTENDEDKEY = 0x1;
+        public const int KEYEVENTF_KEYUP = 0x2;
+        public const int KEYEVENTF_UNICODE = 0x4;
+        public const int KEYEVENTF_SCANCODE = 0x8;
+
+        public const int VK_SHIFT = 0x10;
+        public const int VK_CONTROL = 0x11;
+        public const int VK_MENU = 0x12;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MOUSEINPUT
+        {
+            public int dx, dy;
+            public int mouseData, dwFlags, time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KEYBDINPUT
+        {
+            public short wVk;
+            public short wScan;
+            public int dwFlags;
+            public int time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct HARDWAREINPUT
+        {
+            public int uMsg;
+            public short wParamL;
+            public short wParamH;
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct INPUT_UNION
+        {
+            [FieldOffset(0)]
+            public MOUSEINPUT mi;
+
+            [FieldOffset(0)]
+            public KEYBDINPUT ki;
+
+            [FieldOffset(0)]
+            public HARDWAREINPUT hi;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct INPUT
+        {
+            public int type;
+
+            public INPUT_UNION u;
+        }
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int SendInput(int cInputs, INPUT[] pInputs, int cbSize);
+
         public static bool WindowIsVisible(IntPtr hwnd)
         {
             var style = unchecked((int)(long)GetWindowLong(hwnd, GWL_STYLE));

@@ -165,15 +165,6 @@ namespace Xalia.Sdl
 
         public override bool CanSendKeys => xtest_supported || base.CanSendKeys;
 
-        public override Task SendKey(string key)
-        {
-            if (xtest_supported)
-            {
-                return SendKey(XKeyCodes.GetKeySym(key));
-            }
-            return base.SendKey(key);
-        }
-
         public override async Task SendKey(int keysym)
         {
             if (xtest_supported)

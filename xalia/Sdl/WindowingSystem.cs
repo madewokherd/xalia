@@ -141,9 +141,9 @@ namespace Xalia.Sdl
             throw new NotImplementedException();
         }
 
-        public virtual Task SendKey(string key)
+        public virtual int GetKeySym(string key)
         {
-            throw new NotImplementedException();
+            return XKeyCodes.GetKeySym(key);
         }
 
         public virtual void CustomizeOverlayWindow(OverlayBox box, IntPtr sdl_window)

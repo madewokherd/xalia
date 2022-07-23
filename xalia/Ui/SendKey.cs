@@ -63,7 +63,7 @@ namespace Xalia.Ui
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
-            var keycode = XKeyCodes.GetKeySym(id);
+            var keycode = Windowing.GetKeySym(id);
 
             if (keycode != 0)
             {
