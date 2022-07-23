@@ -11,6 +11,7 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Exceptions;
 using FlaUI.Core.Identifiers;
+using FlaUI.Core.Patterns;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
@@ -140,6 +141,9 @@ namespace Xalia.Uia
 
         internal Task<UiaElementWrapper> WrapperFromHwnd(IntPtr hwnd)
         {
+            if (elements_by_id.TryGetValue($"hwnd-{hwnd}", out var cached))
+                return Task.FromResult(cached.ElementWrapper);
+
             if (hwnd == IntPtr.Zero || hwnd == GetDesktopWindow() || !WindowIsVisible(hwnd))
                 return Task.FromResult(UiaElementWrapper.InvalidElement);
 
@@ -165,9 +169,12 @@ namespace Xalia.Uia
         }
         internal Task<UiaElementWrapper> WrapperFromHwnd(IntPtr hwnd, int objectId, int childId)
         {
-            if ((objectId == OBJID_WINDOW || objectId == OBJID_CLIENT) && childId == CHILDID_SELF)
+            if (objectId == OBJID_WINDOW || objectId == OBJID_CLIENT)
             {
-                return WrapperFromHwnd(hwnd);
+                if (childId == CHILDID_SELF)
+                    return WrapperFromHwnd(hwnd);
+                if (elements_by_id.TryGetValue($"hwnd-{hwnd}-{childId}", out var cached))
+                    return Task.FromResult(cached.ElementWrapper);
             }
 
             if (!(Automation is FlaUI.UIA3.UIA3Automation))
@@ -569,6 +576,40 @@ namespace Xalia.Uia
 
         internal string BlockingGetElementId(AutomationElement element)
         {
+            // hwnd/childid pair
+            try
+            {
+                if (element.FrameworkAutomationElement.TryGetPropertyValue<IntPtr>(
+                    Automation.PropertyLibrary.Element.NativeWindowHandle, out var hwnd))
+                {
+                    int childid = 0;
+
+                    try
+                    {
+                        if (element.FrameworkAutomationElement.TryGetPropertyValue<int>(
+                            Automation.PropertyLibrary.LegacyIAccessible.ChildId, out var cid))
+                        {
+                            childid = cid;
+                        }
+                    }
+                    catch (COMException) { }
+
+                    if (childid == 0)
+                    {
+                        return $"hwnd-{hwnd}";
+                    }
+                    else
+                    {
+                        return $"hwnd-{hwnd}-{childid}";
+                    }
+                }
+            }
+            catch (COMException)
+            {
+                // Fall back on other methods
+            }
+
+            // UIAutomation runtimeid
             try
             {
                 if (element.FrameworkAutomationElement.TryGetPropertyValue<int[]>(
