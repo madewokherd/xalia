@@ -79,6 +79,14 @@ namespace Xalia.Uia
                 DesktopElement.RegisterAutomationEvent(
                     Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
                     OnWindowClosedBackground);
+
+                DesktopElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.Element.MenuModeStartEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnMenuModeStartBackground);
+
+                DesktopElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.Element.MenuModeEndEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnMenuModeEndBackground);
             });
 
             Utils.RunTask(UpdateFocusedElement());
@@ -86,6 +94,26 @@ namespace Xalia.Uia
             UpdateChildren(); // in case children changed before the events were registered
 
             Utils.RunTask(UpdateActiveWindow());
+        }
+
+        public bool UiaMenuMode { get; private set; } = false;
+
+        private void OnMenuModeEndBackground(AutomationElement arg1, EventId arg2)
+        {
+            MainContext.Post((object s) =>
+            {
+                UiaMenuMode = false;
+                PropertyChanged("uia_menu_mode");
+            }, null);
+        }
+
+        private void OnMenuModeStartBackground(AutomationElement arg1, EventId arg2)
+        {
+            MainContext.Post((object s) =>
+            {
+                UiaMenuMode = true;
+                PropertyChanged("uia_menu_mode");
+            }, null);
         }
 
         HashSet<IntPtr> visible_toplevel_hwnds = new HashSet<IntPtr>();
@@ -570,6 +598,10 @@ namespace Xalia.Uia
                 case "win32_active_element":
                     depends_on.Add((Root, new IdentifierExpression("win32_active_element")));
                     return (UiDomValue)LookupAutomationElement(ActiveElement) ?? UiDomUndefined.Instance;
+                case "menu_mode":
+                case "uia_menu_mode":
+                    depends_on.Add((Root, new IdentifierExpression("uia_menu_mode")));
+                    return UiDomBoolean.FromBool(UiaMenuMode);
             }
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }

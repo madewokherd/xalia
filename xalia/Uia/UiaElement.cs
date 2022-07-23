@@ -550,6 +550,16 @@ namespace Xalia.Uia
                 case "win32_active_element":
                     depends_on.Add((Root, new IdentifierExpression("win32_active_element")));
                     return (UiDomValue)Root.LookupAutomationElement(Root.ActiveElement) ?? UiDomUndefined.Instance;
+                case "menu_mode":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_menu_mode";
+                case "uia_menu_mode":
+                    depends_on.Add((Root, new IdentifierExpression("uia_menu_mode")));
+                    return UiDomBoolean.FromBool(Root.UiaMenuMode);
                 case "is_uia_element":
                     return UiDomBoolean.True;
                 case "is_spi_element":

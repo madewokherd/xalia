@@ -101,6 +101,25 @@ popup_menu (spi_state.showing)
     action_name_start: "Close Menu";
 }
 
+// UI Automation menubars
+root (uia_menu_mode)
+{
+    disable_interactions: true;
+
+    action_on_dpad_up: send_key.up;
+    action_on_dpad_down: send_key.down;
+    action_on_dpad_left: send_key.left;
+    action_on_dpad_right: send_key.right;
+    action_on_left_stick: simulate_dpad;
+    action_on_A: send_key.enter;
+    // On Windows, pressing Escape hides the menu but stays in "menu mode", so we must use Alt to dismiss
+    action_name_A: "Select";
+    action_on_B: send_key.alt; // FIXME: Press escape if we're in a submenu
+    action_name_B: "Back";
+    action_on_start: send_key.alt;
+    action_name_start: "Close Menu";
+}
+
 // Controls for targeting elements
 root
 {
