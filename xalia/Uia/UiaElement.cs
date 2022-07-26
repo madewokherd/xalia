@@ -338,6 +338,10 @@ namespace Xalia.Uia
                 {
                     Root.PropertyChanged("win32_active_element");
                 }
+                if (ElementWrapper.Equals(Root.UiaOpenedMenu))
+                {
+                    Root.PropertyChanged("uia_opened_menu");
+                }
             }
             else
             {
@@ -560,6 +564,33 @@ namespace Xalia.Uia
                 case "uia_menu_mode":
                     depends_on.Add((Root, new IdentifierExpression("uia_menu_mode")));
                     return UiDomBoolean.FromBool(Root.UiaMenuMode);
+                case "opened_menu":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_opened_menu";
+                case "uia_opened_menu":
+                    return Root.EvaluateIdentifier(id, Root, depends_on);
+                case "in_menu":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_in_menu";
+                case "uia_in_menu":
+                    return Root.EvaluateIdentifier(id, Root, depends_on);
+                case "in_submenu":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_in_submenu";
+                case "uia_in_submenu":
+                    return Root.EvaluateIdentifier(id, Root, depends_on);
                 case "is_uia_element":
                     return UiDomBoolean.True;
                 case "is_spi_element":

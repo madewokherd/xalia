@@ -102,7 +102,7 @@ popup_menu (spi_state.showing)
 }
 
 // UI Automation menubars
-root (uia_menu_mode)
+root (uia_menu_mode or uia_in_menu)
 {
     disable_interactions: true;
 
@@ -114,7 +114,10 @@ root (uia_menu_mode)
     action_on_A: send_key.enter;
     // On Windows, pressing Escape hides the menu but stays in "menu mode", so we must use Alt to dismiss
     action_name_A: "Select";
-    action_on_B: send_key.alt; // FIXME: Press escape if we're in a submenu
+    if (uia_in_submenu) {
+        action_on_B: send_key.esc;
+    }
+    action_on_B: send_key.alt;
     action_name_B: "Back";
     action_on_start: send_key.alt;
     action_name_start: "Close Menu";

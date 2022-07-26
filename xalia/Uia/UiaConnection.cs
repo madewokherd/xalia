@@ -87,6 +87,15 @@ namespace Xalia.Uia
                 DesktopElement.RegisterAutomationEvent(
                     Automation.EventLibrary.Element.MenuModeEndEvent, TreeScope.Element | TreeScope.Descendants,
                     OnMenuModeEndBackground);
+
+
+                DesktopElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.Element.MenuOpenedEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnMenuOpenedBackground);
+
+                DesktopElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.Element.MenuClosedEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnMenuClosedBackground);
             });
 
             Utils.RunTask(UpdateFocusedElement());
@@ -94,6 +103,75 @@ namespace Xalia.Uia
             UpdateChildren(); // in case children changed before the events were registered
 
             Utils.RunTask(UpdateActiveWindow());
+        }
+
+        internal List<UiaElementWrapper> menu_elements = new List<UiaElementWrapper>();
+
+        public UiaElementWrapper UiaOpenedMenu
+        {
+            get
+            {
+                return menu_elements.LastOrDefault();
+            }
+        }
+
+        public bool UiaInMenu
+        {
+            get
+            {
+                return menu_elements.Count >= 1;
+            }
+        }
+
+        public bool UiaInSubmenu
+        {
+            get
+            {
+                return menu_elements.Count >= 2;
+            }
+        }
+
+        private void OnMenuClosed(object state)
+        {
+            // A closing menu may no longer have an HWND or RuntimeId.
+            // Just assume it was the last menu to be opened.
+            if (menu_elements.Count == 0)
+                return;
+
+            menu_elements.RemoveAt(menu_elements.Count - 1);
+
+            PropertyChanged("uia_opened_menu");
+
+            if (menu_elements.Count == 0)
+                PropertyChanged("uia_in_menu");
+            else if (menu_elements.Count == 1)
+                PropertyChanged("uia_in_submenu");
+        }
+
+        private void OnMenuClosedBackground(AutomationElement arg1, EventId arg2)
+        {
+            MainContext.Post(OnMenuClosed, null);
+        }
+
+        private void OnMenuOpened(object state)
+        {
+            var wrapper = (UiaElementWrapper)state;
+
+            menu_elements.Add(wrapper);
+
+            PropertyChanged("uia_opened_menu");
+
+            if (menu_elements.Count == 1)
+                PropertyChanged("uia_in_menu");
+            else if (menu_elements.Count == 2)
+                PropertyChanged("uia_in_submenu");
+        }
+
+        private void OnMenuOpenedBackground(AutomationElement arg1, EventId arg2)
+        {
+            var wrapper = WrapElement(arg1);
+
+            MainContext.Post(OnMenuOpened, wrapper);
         }
 
         public bool UiaMenuMode { get; private set; } = false;
@@ -602,6 +680,18 @@ namespace Xalia.Uia
                 case "uia_menu_mode":
                     depends_on.Add((Root, new IdentifierExpression("uia_menu_mode")));
                     return UiDomBoolean.FromBool(UiaMenuMode);
+                case "opened_menu":
+                case "uia_opened_menu":
+                    depends_on.Add((Root, new IdentifierExpression("uia_opened_menu")));
+                    return (UiDomValue)LookupAutomationElement(UiaOpenedMenu) ?? UiDomUndefined.Instance;
+                case "in_menu":
+                case "uia_in_menu":
+                    depends_on.Add((Root, new IdentifierExpression("uia_in_menu")));
+                    return UiDomBoolean.FromBool(UiaInSubmenu);
+                case "in_submenu":
+                case "uia_in_submenu":
+                    depends_on.Add((Root, new IdentifierExpression("uia_in_submenu")));
+                    return UiDomBoolean.FromBool(UiaInSubmenu);
             }
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }
