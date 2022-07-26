@@ -34,7 +34,7 @@ namespace Xalia.Ui
 
                 if (Math.Abs((int)analog_state.XAxis) > Math.Abs((int)analog_state.YAxis))
                 {
-                    double bias = analog_state.YAxis / (double)Math.Abs(analog_state.XAxis);
+                    double bias = analog_state.YAxis / Math.Abs((double)analog_state.XAxis);
                     if (analog_state.XAxis > 0)
                         Main.TargetMove(UiMain.Direction.Right, bias);
                     else
@@ -42,7 +42,7 @@ namespace Xalia.Ui
                 }
                 else
                 {
-                    double bias = analog_state.XAxis / (double)Math.Abs(analog_state.YAxis);
+                    double bias = analog_state.XAxis / Math.Abs((double)analog_state.YAxis);
                     if (analog_state.YAxis > 0)
                         Main.TargetMove(UiMain.Direction.Down, bias);
                     else
