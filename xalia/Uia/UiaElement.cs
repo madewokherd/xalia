@@ -400,6 +400,17 @@ namespace Xalia.Uia
                 case "uia_enabled":
                 case "uia_is_enabled":
                     return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
+                case "selected":
+                case "is_selected":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_selected";
+                case "uia_selected":
+                case "uia_is_selected":
+                    return GetProperty("uia_selected", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
                 case "bounds":
                 case "bounding_rectangle":
                     {
@@ -618,6 +629,20 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "msaa_do_default_action", MsaaDefaultAction);
                     }
                     return UiDomUndefined.Instance;
+                case "select":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_select";
+                case "uia_select":
+                    depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
+                    if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.SelectionItemPattern))
+                    {
+                        return new UiDomRoutineAsync(this, "uia_select", Select);
+                    }
+                    return UiDomUndefined.Instance;
             }
 
             {
@@ -656,6 +681,14 @@ namespace Xalia.Uia
         private Task Invoke(UiDomRoutineAsync obj)
         {
             return Root.CommandThread.Invoke(ElementWrapper);
+        }
+
+        private Task Select(UiDomRoutineAsync obj)
+        {
+            return Root.CommandThread.OnBackgroundThread(() =>
+            {
+                ElementWrapper.AutomationElement.Patterns.SelectionItem.Pattern.Select();
+            }, ElementWrapper);
         }
     }
 }
