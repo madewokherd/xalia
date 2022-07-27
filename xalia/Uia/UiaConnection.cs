@@ -97,6 +97,18 @@ namespace Xalia.Uia
                 DesktopElement.RegisterAutomationEvent(
                     Automation.EventLibrary.Element.MenuClosedEvent, TreeScope.Element | TreeScope.Descendants,
                     OnMenuClosedBackground);
+
+                DesktopElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.SelectionItem.ElementSelectedEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnSelectedBackground);
+
+                DesktopElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.SelectionItem.ElementAddedToSelectionEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnAddedToSelectionBackground);
+
+                DesktopElement.RegisterAutomationEvent(
+                    Automation.EventLibrary.SelectionItem.ElementRemovedFromSelectionEvent, TreeScope.Element | TreeScope.Descendants,
+                    OnRemovedFromSelectionBackground);
             });
 
             Utils.RunTask(UpdateFocusedElement());
@@ -104,6 +116,64 @@ namespace Xalia.Uia
             UpdateChildren(); // in case children changed before the events were registered
 
             Utils.RunTask(UpdateActiveWindow());
+        }
+
+        private void OnSelected(object s)
+        {
+            var wrapper = (UiaElementWrapper)s;
+
+            var element = LookupAutomationElement(wrapper);
+
+            if (element != null)
+            {
+                foreach (var sibling in element.Parent.Children)
+                {
+                    ((UiaElement)sibling).OnPropertyChange("uia_selected", Automation.PropertyLibrary.SelectionItem.IsSelected,
+                        sibling == element);
+                }
+            }
+        }
+
+        private void OnSelectedBackground(AutomationElement arg1, EventId arg2)
+        {
+            var wrapper = WrapElement(arg1);
+            MainContext.Post(OnSelected, wrapper);
+        }
+
+        private void OnAddedToSelection(object s)
+        {
+            var wrapper = (UiaElementWrapper)s;
+
+            var element = LookupAutomationElement(wrapper);
+
+            if (element != null)
+            {
+                element.OnPropertyChange("uia_selected", Automation.PropertyLibrary.SelectionItem.IsSelected, true);
+            }
+        }
+        
+        private void OnAddedToSelectionBackground(AutomationElement arg1, EventId arg2)
+        {
+            var wrapper = WrapElement(arg1);
+            MainContext.Post(OnAddedToSelection, wrapper);
+        }
+
+        private void OnRemovedFromSelection(object s)
+        {
+            var wrapper = (UiaElementWrapper)s;
+
+            var element = LookupAutomationElement(wrapper);
+
+            if (element != null)
+            {
+                element.OnPropertyChange("uia_selected", Automation.PropertyLibrary.SelectionItem.IsSelected, false);
+            }
+        }
+
+        private void OnRemovedFromSelectionBackground(AutomationElement arg1, EventId arg2)
+        {
+            var wrapper = WrapElement(arg1);
+            MainContext.Post(OnRemovedFromSelection, wrapper);
         }
 
         internal List<UiaElementWrapper> menu_elements = new List<UiaElementWrapper>();
