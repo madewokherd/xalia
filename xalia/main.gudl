@@ -311,15 +311,21 @@ if (interactable) {
         action_name_PrimaryAction: "Click";
     }
 
-    if (uia_control_type.button and uia_invoke) {
+    if (uia_control_type.(button or radio_button)) {
         targetable: true;
-        action_on_PrimaryAction: uia_invoke;
+        action_on_PrimaryAction: uia_invoke or msaa_do_default_action;
         action_name_PrimaryAction: "Click";
     }
 
     check_box (spi_action.(click or Toggle or Press)) {
         targetable: true;
         action_on_PrimaryAction: spi_action.(click or Toggle or Press);
+        action_name_PrimaryAction: "Toggle";
+    }
+
+    if (uia_control_type.check_box) {
+        targetable: true;
+        action_on_PrimaryAction: uia_invoke or msaa_do_default_action;
         action_name_PrimaryAction: "Toggle";
     }
 
