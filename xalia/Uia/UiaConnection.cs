@@ -206,10 +206,16 @@ namespace Xalia.Uia
             if (GetAncestor(hwnd, GA_PARENT) != GetDesktopWindow())
                 return false;
 
-            var owner_window = GetWindow(hwnd, GW_OWNER);
+            var window_class = RealGetWindowClass(hwnd);
 
-            if (owner_window != IntPtr.Zero && WindowIsVisible(owner_window))
-                return false;
+            if (window_class == "#32770")
+            {
+                // Owned dialog windows show up as children of the owner in the UIA tree
+                var owner_window = GetWindow(hwnd, GW_OWNER);
+
+                if (owner_window != IntPtr.Zero && WindowIsVisible(owner_window))
+                    return false;
+            }
 
             return true;
         }

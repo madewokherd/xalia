@@ -159,6 +159,19 @@ namespace Xalia.Interop
         public static extern bool GetGUIThreadInfo(int idThread, ref GUITHREADINFO pgui);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode)]
+        public static extern int RealGetWindowClassW(IntPtr hwnd, StringBuilder ptszClassName, int cchClassNameMax);
+
+        public static string RealGetWindowClass(IntPtr hwnd)
+        {
+            // According to WNDCLASS documentation, the maximum name length is 256
+            var sb = new StringBuilder(256);
+
+            RealGetWindowClassW(hwnd, sb, 256);
+
+            return sb.ToString();
+        }
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode)]
         public static extern short VkKeyScanW(char ch);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode, SetLastError = true)]
