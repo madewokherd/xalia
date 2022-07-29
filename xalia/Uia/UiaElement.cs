@@ -124,8 +124,8 @@ namespace Xalia.Uia
                     names = new[] { "tab", "page_tab_list", "pagetablist" };
                 else if (name == "tab_item")
                     names = new[] { "tab_item", "tabitem", "page_tab", "pagetab" };
-                else if (name == "text")
-                    names = new[] { "text", "text_box", "textbox" };
+                else if (name == "edit")
+                    names = new[] { "edit", "text_box", "textbox" };
                 else if (name.Contains("_"))
                     names = new[] { name, name.Replace("_", "") };
                 else
@@ -236,6 +236,15 @@ namespace Xalia.Uia
         {
             UiDomValue new_value;
 
+            if (name == "uia_expand_collapse_state" && value is int ecsi)
+            {
+                value = (ExpandCollapseState)ecsi;
+            }
+            else if (name == "uia_control_type" && value is int cti)
+            {
+                value = (ControlType)cti;
+            }
+
             if (value is System.Drawing.Rectangle r)
             {
                 new_value = new UiDomString(r.ToString());
@@ -261,6 +270,27 @@ namespace Xalia.Uia
             else if (value is string s)
             {
                 new_value = new UiDomString(s);
+            }
+            else if (value is ExpandCollapseState ecs)
+            {
+                switch (ecs)
+                {
+                    case ExpandCollapseState.Collapsed:
+                        new_value = new UiDomEnum(new[] { "collapsed" });
+                        break;
+                    case ExpandCollapseState.Expanded:
+                        new_value = new UiDomEnum(new[] { "expanded" });
+                        break;
+                    case ExpandCollapseState.PartiallyExpanded:
+                        new_value = new UiDomEnum(new[] { "partially_expanded" });
+                        break;
+                    case ExpandCollapseState.LeafNode:
+                        new_value = new UiDomEnum(new[] { "leaf_node" });
+                        break;
+                    default:
+                        new_value = UiDomUndefined.Instance;
+                        break;
+                }
             }
             else
             {
@@ -358,7 +388,9 @@ namespace Xalia.Uia
             depends_on.Add((this, new IdentifierExpression(name)));
             if (property_known.TryGetValue(id, out var known) && known)
             {
-                return property_value[id];
+                if (property_value.TryGetValue(id, out var val))
+                    return val;
+                return UiDomUndefined.Instance;
             }
             return UiDomUndefined.Instance;
         }
@@ -368,7 +400,9 @@ namespace Xalia.Uia
             depends_on.Add((this, new IdentifierExpression(name)));
             if (property_known.TryGetValue(id, out var known) && known)
             {
-                return property_raw_value[id];
+                if (property_raw_value.TryGetValue(id, out var val))
+                    return val;
+                return null;
             }
             return UiDomUndefined.Instance;
         }
@@ -494,6 +528,15 @@ namespace Xalia.Uia
                     goto case "uia_name";
                 case "uia_name":
                     return GetProperty("uia_name", Root.Automation.PropertyLibrary.Element.Name, depends_on);
+                case "expand_collapse_state":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_expand_collapse_state";
+                case "uia_expand_collapse_state":
+                    return GetProperty("uia_expand_collapse_state", Root.Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, depends_on);
                 case "focused":
                     {
                         var value = base.EvaluateIdentifierCore(id, root, depends_on);
@@ -643,6 +686,34 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "uia_select", Select);
                     }
                     return UiDomUndefined.Instance;
+                case "expand":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_expand";
+                case "uia_expand":
+                    depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
+                    if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.ExpandCollapsePattern))
+                    {
+                        return new UiDomRoutineAsync(this, "uia_expand", Expand);
+                    }
+                    return UiDomUndefined.Instance;
+                case "collapse":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_collapse";
+                case "uia_collapse":
+                    depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
+                    if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.ExpandCollapsePattern))
+                    {
+                        return new UiDomRoutineAsync(this, "uia_collapse", Collapse);
+                    }
+                    return UiDomUndefined.Instance;
             }
 
             {
@@ -688,6 +759,22 @@ namespace Xalia.Uia
             return Root.CommandThread.OnBackgroundThread(() =>
             {
                 ElementWrapper.AutomationElement.Patterns.SelectionItem.Pattern.Select();
+            }, ElementWrapper);
+        }
+
+        private Task Expand(UiDomRoutineAsync obj)
+        {
+            return Root.CommandThread.OnBackgroundThread(() =>
+            {
+                ElementWrapper.AutomationElement.Patterns.ExpandCollapse.Pattern.Expand();
+            }, ElementWrapper);
+        }
+
+        private Task Collapse(UiDomRoutineAsync obj)
+        {
+            return Root.CommandThread.OnBackgroundThread(() =>
+            {
+                ElementWrapper.AutomationElement.Patterns.ExpandCollapse.Pattern.Collapse();
             }, ElementWrapper);
         }
     }

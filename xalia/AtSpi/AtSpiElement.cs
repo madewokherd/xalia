@@ -228,7 +228,7 @@ namespace Xalia.AtSpi
                 else if (name == "page_tab_list")
                     names = new[] { "page_tab_list", "pagetablist", "tab_item", "tabitem" };
                 else if (name == "text")
-                    names = new[] { "text", "text_box", "textbox" };
+                    names = new[] { "text", "text_box", "textbox", "edit" };
                 else if (name.Contains("_"))
                     names = new[] { name, name.Replace("_", "") };
                 else

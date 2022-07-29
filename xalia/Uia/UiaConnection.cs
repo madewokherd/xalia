@@ -59,6 +59,7 @@ namespace Xalia.Uia
             RegisterPropertyMapping("uia_bounding_rectangle", Automation.PropertyLibrary.Element.BoundingRectangle);
             RegisterPropertyMapping("uia_name", Automation.PropertyLibrary.Element.Name);
             RegisterPropertyMapping("uia_selected", Automation.PropertyLibrary.SelectionItem.IsSelected);
+            RegisterPropertyMapping("uia_expand_collapse_state", Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState);
 
             await CommandThread.OnBackgroundThread(() =>
             {
@@ -88,7 +89,6 @@ namespace Xalia.Uia
                 DesktopElement.RegisterAutomationEvent(
                     Automation.EventLibrary.Element.MenuModeEndEvent, TreeScope.Element | TreeScope.Descendants,
                     OnMenuModeEndBackground);
-
 
                 DesktopElement.RegisterAutomationEvent(
                     Automation.EventLibrary.Element.MenuOpenedEvent, TreeScope.Element | TreeScope.Descendants,
@@ -412,6 +412,15 @@ namespace Xalia.Uia
         private void OnPropertyChangedBackground(AutomationElement arg1, PropertyId arg2, object arg3)
         {
             var wrapper = WrapElement(arg1);
+            if (arg3 is null)
+            {
+                try
+                {
+                    arg1.FrameworkAutomationElement.TryGetPropertyValue(arg2, out arg3);
+                }
+                catch (COMException) { }
+                catch (ElementNotAvailableException) { }
+            }
             MainContext.Post((state) =>
             {
                 var element = LookupAutomationElement(wrapper);

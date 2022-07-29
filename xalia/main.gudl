@@ -79,6 +79,23 @@ combo_box (child_matches(spi_role.list and (spi_state.focused or child_matches(s
     action_name_start: "Close Menu";
 }
 
+combo_box (uia_expand_collapse_state.expanded) {
+    root
+    {
+        disable_interactions: true;
+    }
+
+    action_on_dpad_up: send_key.up;
+    action_on_dpad_down: send_key.down;
+    action_on_left_stick: simulate_dpad;
+    action_on_A: send_key.enter;
+    action_name_A: "Select";
+    action_on_B: uia_collapse or send_key.esc;
+    action_name_B: "Back";
+    action_on_start: uia_collapse or send_key.esc;
+    action_name_start: "Close Menu";
+}
+
 // Qt/AT-SPI2 menus
 popup_menu (spi_state.showing)
 {
@@ -147,7 +164,7 @@ root
 }
 
 // Combo boxes contain subcontrols we don't want to directly navigate to
-if (parent.combo_box)
+if (parent.combo_box and not uia_expand_collapse_state.leaf_node)
 {
     interactable: false;
 }
@@ -259,14 +276,14 @@ if (targetable) {
 
 // Rules that apply to controls in the active window
 if (interactable) {
-    combo_box {
+    combo_box (not uia_expand_collapse_state.leaf_node) {
         targetable: true;
 
-        action_on_PrimaryAction: spi_action.(press or Press);
+        action_on_PrimaryAction: spi_action.(press or Press) or uia_expand or uia_invoke or msaa_do_default_action;
         action_name_PrimaryAction: "Select";
 
         if (targeted) {
-            child (spi_role.text) {
+            child (text_box) {
                 action_on_Y: set_focus+show_keyboard;
                 action_name_Y: "Show Keyboard";
             }
