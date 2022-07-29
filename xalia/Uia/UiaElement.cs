@@ -434,6 +434,26 @@ namespace Xalia.Uia
                 case "uia_enabled":
                 case "uia_is_enabled":
                     return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
+                case "offscreen":
+                case "is_offscreen":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_offscreen";
+                case "uia_offscreen":
+                case "uia_is_offscreen":
+                    return GetProperty("uia_offscreen", Root.Automation.PropertyLibrary.Element.IsOffscreen, depends_on);
+                case "visible":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_visible";
+                case "uia_visible":
+                    return UiDomBoolean.FromBool(!GetProperty("uia_offscreen", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on).ToBool());
                 case "selected":
                 case "is_selected":
                     {

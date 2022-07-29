@@ -234,7 +234,7 @@ if (is_spi_element and spi_state.enabled and spi_state.showing and spi_state.sen
     interactable: true;
 }
 
-if (is_uia_element and parent.interactable and enabled) {
+if (is_uia_element and parent.interactable and enabled and not offscreen) {
     interactable: true;
 }
 
