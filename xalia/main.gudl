@@ -1,5 +1,19 @@
 ﻿/* Default UI description, language subject to change as it develops */
 
+// Application-specific behaviors:
+
+// APPLICATION: Firefox
+window (uia_class_name == "MozillaWindowClass") {
+    firefox_use_offscreen_menu: true;
+}
+
+if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_offscreen_menu) {
+    offscreen: false;
+    firefox_use_offscreen_menu: true;
+}
+
+// General behaviors:
+
 if (spi_attributes.xalia_ignore)
 {
     recurse: false;

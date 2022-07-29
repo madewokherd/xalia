@@ -548,6 +548,15 @@ namespace Xalia.Uia
                     goto case "uia_name";
                 case "uia_name":
                     return GetProperty("uia_name", Root.Automation.PropertyLibrary.Element.Name, depends_on);
+                case "class_name":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "uia_class_name";
+                case "uia_class_name":
+                    return GetProperty("uia_class_name", Root.Automation.PropertyLibrary.Element.ClassName, depends_on);
                 case "expand_collapse_state":
                     {
                         var value = base.EvaluateIdentifierCore(id, root, depends_on);
