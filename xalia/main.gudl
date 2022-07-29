@@ -301,6 +301,11 @@ if (interactable) {
                 action_on_Y: set_focus+show_keyboard;
                 action_name_Y: "Show Keyboard";
             }
+
+            action_on_right_stick: simulate_dpad("rs");
+            action_name_right_stick: "Scroll";
+            action_on_rs_up: set_focus+send_key.up;
+            action_on_rs_down: set_focus+send_key.down;
         }
     }
 
