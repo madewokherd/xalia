@@ -1,7 +1,7 @@
 # Introduction
-Xalia is a program that provides a gamepad UI for traditional desktop applications. It does this using accessibility platforms like AT-SPI2 and UIAutomation(not yet implemented), a unique rule-based language, the .NET standard, and SDL2.
+Xalia is a program that provides a gamepad UI for traditional desktop applications. It does this using accessibility platforms like AT-SPI2 and UIAutomation, a unique rule-based language, the .NET standard, and SDL2.
 
-Rather than directly simulate a keyboard or mouse through gamepad inputs (which can be done using the AntiMicro projects or Steam Input), Xalia scans the active window for controls it can interact with, such as buttons and text boxes. An analog joystick or D-Pad can then be used to navigate to a specific control. There is no virtual mouse cursor, it simply jumps to a control in the direction pressed. The way you then interact with the control depends on what it is, but in simple cases like buttons it can be activated with the A button by default.
+Rather than directly simulate a keyboard or mouse through gamepad inputs (which can be done using AntiMicroX or Steam Input), Xalia scans the active window for controls it can interact with, such as buttons and text boxes. An analog joystick or D-Pad can then be used to navigate to a specific control. There is no virtual mouse cursor, it simply jumps to a control in the direction pressed. The way you then interact with the control depends on what it is, but in simple cases like buttons it can be activated with the A button by default.
 
 Global actions are also possible, such as opening a program's menus or switching tabs, without needing to navigate to a specific control.
 
@@ -30,7 +30,7 @@ Check Box | Supported | Supported | Supported | Supported
 Combo Box | Broken[5] | Supported | Supported | Supported
 Menu | Supported[2] | Supported[2] | Partial[1] | Supported
 Text Entry | Partial[3] | Partial[3] | Partial[3] | Partial[4]
-Tab Bar | Supported | Supported | Supported | Unsupported
+Tab Bar | Supported | Supported | Supported | Supported
 
 Notes:
 1. Menus on Linux/Qt cannot be accessed through AT-SPI2 and require XTEST.
