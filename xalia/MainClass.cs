@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.InteropServices;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -75,6 +78,10 @@ namespace Xalia
         [STAThread()]
         public static int Main()
         {
+#if NETCOREAPP3_0_OR_GREATER
+            NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), OnDllImport);
+#endif
+
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
             SdlSynchronizationContext.Instance.Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
@@ -94,5 +101,36 @@ namespace Xalia
 
             return 0;
         }
+
+#if NETCOREAPP3_0_OR_GREATER
+        private static IntPtr OnDllImport(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            string actual_library = null;
+
+            switch ($"{Environment.OSVersion.Platform}:{libraryName}")
+            {
+                case "Win32NT:SDL2":
+                    actual_library = "SDL2.dll";
+                    break;
+                case "Unix:SDL2":
+                    actual_library = "libSDL2-2.0.so.0";
+                    break;
+                case "MacOSX:SDL2":
+                    actual_library = "libSDL2-2.0.0.dylib";
+                    break;
+                case "Unix:X11":
+                    actual_library = "libX11.so.6";
+                    break;
+                case "Unix:Xtst":
+                    actual_library = "libXtst.so.6";
+                    break;
+            }
+
+            if (!(actual_library is null) && NativeLibrary.TryLoad(actual_library, assembly, searchPath, out IntPtr result))
+                return result;
+
+            return IntPtr.Zero;
+        }
+#endif
     }
 }
