@@ -110,6 +110,8 @@ namespace Xalia.Uia
         private static readonly Dictionary<string, ControlType> name_to_control_type;
         private static readonly UiDomEnum[] control_type_to_enum;
 
+        private static readonly Dictionary<string, string> property_aliases;
+
         static UiaElement()
         {
             name_to_control_type = new Dictionary<string, ControlType>();
@@ -133,6 +135,49 @@ namespace Xalia.Uia
                 control_type_to_enum[i] = new UiDomEnum(names);
                 foreach (string rolename in names)
                     name_to_control_type[rolename] = (ControlType)i;
+            }
+            string[] aliases = {
+                "role", "uia_control_type",
+                "control_type", "uia_control_type",
+                "controltype", "uia_control_type",
+                "enabled", "uia_enabled",
+                "is_enabled", "uia_enabled",
+                "offscreen", "uia_offscreen",
+                "is_offscreen", "uia_offscreen",
+                "visible", "uia_visible",
+                "selected", "uia_selected",
+                "is_selected", "uia_selected",
+                "bounds", "uia_bounding_rectangle",
+                "bounding_rectangle", "uia_bounding_rectangle",
+                "x", "uia_x",
+                "abs_x", "uia_x",
+                "y", "uia_y",
+                "abs_y", "uia_y",
+                "width", "uia_width",
+                "height", "uia_height",
+                "name", "uia_name",
+                "class_name", "uia_class_name",
+                "expand_collapse_state", "uia_expand_collapse_state",
+                "focused", "uia_focused",
+                "foreground", "msaa_foreground",
+                "active", "win32_active",
+                "set_focus", "uia_set_focus",
+                "focused_element", "uia_focused_element",
+                "foreground_element", "uia_foreground_element",
+                "active_element", "win32_active_element",
+                "menu_mode", "uia_menu_mode",
+                "opened_menu", "uia_opened_menu",
+                "in_menu", "uia_in_menu",
+                "in_submenu", "uia_in_submenu",
+                "invoke", "ui_invoke",
+                "select", "uia_select",
+                "expand", "uia_expand",
+                "collapse", "uia_collapse",
+            };
+            property_aliases = new Dictionary<string, string>(aliases.Length / 2);
+            for (int i=0; i<aliases.Length; i+=2)
+            {
+                property_aliases[aliases[i]] = aliases[i + 1];
             }
         }
 
@@ -409,80 +454,33 @@ namespace Xalia.Uia
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            if (property_aliases.TryGetValue(id, out string aliased))
+            {
+                var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                if (!value.Equals(UiDomUndefined.Instance))
+                    return value;
+                id = aliased;
+            }
+
+
             switch (id)
             {
-                case "role":
-                case "control_type":
-                case "controltype":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_control_type";
                 case "uia_controltype":
                 case "uia_control_type":
                     return GetProperty("uia_control_type", Root.Automation.PropertyLibrary.Element.ControlType, depends_on);
-                case "enabled":
-                case "is_enabled":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_enabled";
                 case "uia_enabled":
                 case "uia_is_enabled":
                     return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
-                case "offscreen":
-                case "is_offscreen":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_offscreen";
                 case "uia_offscreen":
                 case "uia_is_offscreen":
                     return GetProperty("uia_offscreen", Root.Automation.PropertyLibrary.Element.IsOffscreen, depends_on);
-                case "visible":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_visible";
                 case "uia_visible":
                     return UiDomBoolean.FromBool(!GetProperty("uia_offscreen", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on).ToBool());
-                case "selected":
-                case "is_selected":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_selected";
                 case "uia_selected":
                 case "uia_is_selected":
                     return GetProperty("uia_selected", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
-                case "bounds":
-                case "bounding_rectangle":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_bounding_rectangle";
                 case "uia_bounding_rectangle":
                     return GetProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on);
-                case "x":
-                case "abs_x":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_x";
                 case "uia_x":
                 case "uia_abs_x":
                     {
@@ -492,14 +490,6 @@ namespace Xalia.Uia
                         }
                         return UiDomUndefined.Instance;
                     }
-                case "y":
-                case "abs_y":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_y";
                 case "uia_y":
                 case "uia_abs_y":
                     {
@@ -509,13 +499,6 @@ namespace Xalia.Uia
                         }
                         return UiDomUndefined.Instance;
                     }
-                case "width":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_width";
                 case "uia_width":
                     {
                         if (GetRawProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on) is System.Drawing.Rectangle r)
@@ -524,13 +507,6 @@ namespace Xalia.Uia
                         }
                         return UiDomUndefined.Instance;
                     }
-                case "height":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_height";
                 case "uia_height":
                     {
                         if (GetRawProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on) is System.Drawing.Rectangle r)
@@ -539,139 +515,41 @@ namespace Xalia.Uia
                         }
                         return UiDomUndefined.Instance;
                     }
-                case "name":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_name";
                 case "uia_name":
                     return GetProperty("uia_name", Root.Automation.PropertyLibrary.Element.Name, depends_on);
-                case "class_name":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_class_name";
                 case "uia_class_name":
                     return GetProperty("uia_class_name", Root.Automation.PropertyLibrary.Element.ClassName, depends_on);
-                case "expand_collapse_state":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_expand_collapse_state";
                 case "uia_expand_collapse_state":
                     return GetProperty("uia_expand_collapse_state", Root.Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, depends_on);
-                case "focused":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_focused";
                 case "uia_focused":
                     depends_on.Add((this, new IdentifierExpression("uia_focused")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.FocusedElement));
-                case "foreground":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "msaa_foreground";
                 case "msaa_foreground":
                     depends_on.Add((this, new IdentifierExpression("msaa_foreground")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.ForegroundElement));
-                case "active":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "win32_active";
                 case "win32_active":
                     depends_on.Add((this, new IdentifierExpression("win32_active")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.ActiveElement));
-                case "set_focus":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_set_focus";
                 case "uia_set_focus":
                     {
                         return new UiDomRoutineAsync(this, "uia_set_focus", DoSetFocus);
                     }
-                case "focused_element":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_focused_element";
                 case "uia_focused_element":
                     depends_on.Add((Root, new IdentifierExpression("uia_focused_element")));
                     return (UiDomValue)Root.LookupAutomationElement(Root.FocusedElement) ?? UiDomUndefined.Instance;
-                case "foreground_element":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "msaa_foreground_element";
                 case "msaa_foreground_element":
                     depends_on.Add((Root, new IdentifierExpression("msaa_foreground_element")));
                     return (UiDomValue)Root.LookupAutomationElement(Root.ForegroundElement) ?? UiDomUndefined.Instance;
-                case "active_element":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "win32_active_element";
                 case "win32_active_element":
                     depends_on.Add((Root, new IdentifierExpression("win32_active_element")));
                     return (UiDomValue)Root.LookupAutomationElement(Root.ActiveElement) ?? UiDomUndefined.Instance;
-                case "menu_mode":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_menu_mode";
                 case "uia_menu_mode":
                     depends_on.Add((Root, new IdentifierExpression("uia_menu_mode")));
                     return UiDomBoolean.FromBool(Root.UiaMenuMode);
-                case "opened_menu":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_opened_menu";
                 case "uia_opened_menu":
                     return Root.EvaluateIdentifier(id, Root, depends_on);
-                case "in_menu":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_in_menu";
                 case "uia_in_menu":
                     return Root.EvaluateIdentifier(id, Root, depends_on);
-                case "in_submenu":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_in_submenu";
                 case "uia_in_submenu":
                     return Root.EvaluateIdentifier(id, Root, depends_on);
                 case "is_uia_element":
@@ -680,13 +558,6 @@ namespace Xalia.Uia
                 case "is_atspi_element":
                 case "is_at_spi_element":
                     return UiDomBoolean.False;
-                case "invoke":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_invoke";
                 case "uia_invoke":
                     depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
                     if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.InvokePattern))
@@ -701,13 +572,6 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "msaa_do_default_action", MsaaDefaultAction);
                     }
                     return UiDomUndefined.Instance;
-                case "select":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_select";
                 case "uia_select":
                     depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
                     if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.SelectionItemPattern))
@@ -715,13 +579,6 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "uia_select", Select);
                     }
                     return UiDomUndefined.Instance;
-                case "expand":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_expand";
                 case "uia_expand":
                     depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
                     if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.ExpandCollapsePattern))
@@ -729,13 +586,6 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "uia_expand", Expand);
                     }
                     return UiDomUndefined.Instance;
-                case "collapse":
-                    {
-                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
-                        if (!value.Equals(UiDomUndefined.Instance))
-                            return value;
-                    }
-                    goto case "uia_collapse";
                 case "uia_collapse":
                     depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
                     if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.ExpandCollapsePattern))
