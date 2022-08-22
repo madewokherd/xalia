@@ -87,6 +87,152 @@ namespace Xalia.Interop
             [Out, MarshalAs(UnmanagedType.Interface)] out IAccessible accessible,
             [Out, MarshalAs(UnmanagedType.Struct)] out object pvarChild);
 
+        [ComImport, Guid("6d5140c1-7436-11ce-8034-00aa006009fa")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IServiceProvider
+        {
+            IntPtr QueryService(
+                ref Guid guidService,
+                ref Guid riid);
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct IA2Locale
+        {
+            [MarshalAs(UnmanagedType.BStr)] public string language;
+            [MarshalAs(UnmanagedType.BStr)] public string country;
+            [MarshalAs(UnmanagedType.BStr)] public string variant;
+        }
+
+        [ComImport, Guid("e89f726e-c4f4-4c19-bb19-b647d7fa8478")]
+        [InterfaceType(ComInterfaceType.InterfaceIsDual)]
+        public interface IAccessible2
+        {
+            // IAccessible methods
+            [return: MarshalAs(UnmanagedType.IDispatch)]
+            object get_accParent();
+
+            int get_accChildCount();
+
+            [return: MarshalAs(UnmanagedType.IDispatch)]
+            object get_accChild([MarshalAs(UnmanagedType.Struct)] object varChildId);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accName([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accValue([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accDescription([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object get_accRole([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object get_accState([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accHelp([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            long get_accHelpTopic([MarshalAs(UnmanagedType.BStr)] out string helpfile, [MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accKeyboardShortcut([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object get_accFocus();
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object get_accSelection();
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accDefaultAction([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            void accSelect(long flagsSelect, [MarshalAs(UnmanagedType.Struct)] object varID);
+
+            void accLocation(out int left, out int top, out int width, out int height, [MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object accNavigate(long dir, [MarshalAs(UnmanagedType.Struct)] object varStart);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object accHitTest(long left, long top);
+
+            void accDoDefaultAction([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            void set_accName([MarshalAs(UnmanagedType.Struct)] object varID, [MarshalAs(UnmanagedType.BStr)] string name);
+
+            void set_accValue([MarshalAs(UnmanagedType.Struct)] object varID, [MarshalAs(UnmanagedType.BStr)] string value);
+
+            //IAccessible2 methods
+
+            long nRelations { get; }
+
+            IntPtr get_relation(long relationIndex); // returns IAccessibleRelation*
+
+            long get_relations(long maxRelations, [Out] IntPtr[] relations); // array of IAccessibleRelation*
+
+            long role { get; }
+
+            void scrollTo(int scrollType); // takes IA2ScrollType enum
+
+            void scrollToPoint(int coordinateType, long x, long y); // takes IA2CoordinateType enum
+
+            long get_groupPosition(out long groupLevel, out long similarItemsInGroup);
+
+            long states { get; } // returns AccessibleStates
+
+            string extendedRole { [return: MarshalAs(UnmanagedType.BStr)] get; }
+
+            string localizedExtendedRole { [return: MarshalAs(UnmanagedType.BStr)] get; }
+
+            long nExtendedStates { get; }
+
+            long get_extendedStates(long maxExtendedStates,
+                [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.BStr)][In][Out] ref string[] extendedStates);
+
+            long get_localizedExtendedStates(long maxLocalizedExtendedStates,
+                [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.BStr)][In][Out] ref string[] localizedExtendedStates);
+
+            int uniqueID { get; }
+
+            IntPtr windowHandle { get; }
+
+            long indexInParent { get; }
+
+            IA2Locale locale { get; }
+
+            string attributes { [return: MarshalAs(UnmanagedType.BStr)] get; }
+        }
+
+        public static readonly Guid IID_IAccessible = new Guid("618736e0-3c3d-11cf-810c-00aa00389b71");
+        public static readonly Guid IID_IAccessible2 = new Guid("e89f726e-c4f4-4c19-bb19-b647d7fa8478");
+
+        public static IAccessible2 QueryIAccessible2(object acc)
+        {
+            IServiceProvider sp = (IServiceProvider)acc;
+
+            Guid service_id = IID_IAccessible;
+            Guid iid = IID_IAccessible2;
+
+            IntPtr pIA2;
+
+            try
+            {
+                // This is the method documented by the spec - guidService = IID_IAccessible
+                pIA2 = sp.QueryService(ref service_id, ref iid);
+            }
+            catch
+            {
+                // This is the method UI Automation seems to use - guidService = IID_IAccessible2
+                service_id = IID_IAccessible2;
+                pIA2 = sp.QueryService(ref service_id, ref iid);
+            }
+
+            return (IAccessible2)Marshal.GetTypedObjectForIUnknown(pIA2, typeof(IAccessible2));
+        }
+
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
 
