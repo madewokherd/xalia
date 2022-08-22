@@ -214,6 +214,11 @@ if (role.(filler or internal_frame or panel or html_container or
     recurse: true;
 }
 
+if (is_uia_element and uia_control_type == undefined and msaa_role.(border or client)) {
+    // Origin client has a lot of elements like this
+    recurse: true;
+}
+
 // Required to determine when a combo box is open in Qt
 list (parent.spi_role.combo_box and spi_application.toolkit_name == "Qt")
 {

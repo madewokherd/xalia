@@ -62,6 +62,7 @@ namespace Xalia.Uia
             RegisterPropertyMapping("uia_offscreen", Automation.PropertyLibrary.Element.IsOffscreen);
             RegisterPropertyMapping("uia_selected", Automation.PropertyLibrary.SelectionItem.IsSelected);
             RegisterPropertyMapping("uia_expand_collapse_state", Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState);
+            RegisterPropertyMapping("msaa_role", Automation.PropertyLibrary.LegacyIAccessible.Role);
 
             await CommandThread.OnBackgroundThread(() =>
             {

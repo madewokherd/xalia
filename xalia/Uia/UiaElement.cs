@@ -11,6 +11,7 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.EventHandlers;
 using FlaUI.Core.Identifiers;
+using FlaUI.Core.WindowsAPI;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
@@ -107,8 +108,79 @@ namespace Xalia.Uia
             "window",
         };
 
+        internal static readonly string[] msaa_role_names =
+        {
+            "unknown",
+            "title_bar",
+            "menu_bar",
+            "scroll_bar",
+            "grip",
+            "sound",
+            "cursor",
+            "caret",
+            "alert",
+            "window",
+            "client",
+            "menu_popup",
+            "menu_item",
+            "tool_tip",
+            "application",
+            "document",
+            "pane",
+            "chart",
+            "dialog",
+            "border",
+            "grouping",
+            "separator",
+            "tool_bar",
+            "status_bar",
+            "table",
+            "column_header",
+            "row_header",
+            "column",
+            "row",
+            "cell",
+            "link",
+            "help_balloon",
+            "character",
+            "list",
+            "list_item",
+            "outline",
+            "outline_item",
+            "page_tab",
+            "property_page",
+            "indicator",
+            "graphic",
+            "static_text",
+            "text",
+            "push_button",
+            "check_button",
+            "radio_button",
+            "combo_box",
+            "drop_list",
+            "progress_bar",
+            "dial",
+            "hotkey_field",
+            "slider",
+            "spin_button",
+            "diagram",
+            "animation",
+            "equation",
+            "button_dropdown",
+            "button_menu",
+            "button_dropdown_grid",
+            "white_space",
+            "page_tab_list",
+            "clock",
+            "split_button",
+            "ip_address",
+            "outline_button",
+        };
+
         private static readonly Dictionary<string, ControlType> name_to_control_type;
         private static readonly UiDomEnum[] control_type_to_enum;
+
+        private static readonly UiDomEnum[] msaa_role_to_enum;
 
         private static readonly Dictionary<string, string> property_aliases;
 
@@ -135,6 +207,17 @@ namespace Xalia.Uia
                 control_type_to_enum[i] = new UiDomEnum(names);
                 foreach (string rolename in names)
                     name_to_control_type[rolename] = (ControlType)i;
+            }
+            msaa_role_to_enum = new UiDomEnum[msaa_role_names.Length];
+            for (int i = 0; i < msaa_role_names.Length; i++)
+            {
+                string name = msaa_role_names[i];
+                string[] names;
+                if (name.Contains("_"))
+                    names = new[] { name, name.Replace("_", "") };
+                else
+                    names = new[] { name };
+                msaa_role_to_enum[i] = new UiDomEnum(names);
             }
             string[] aliases = {
                 "role", "uia_control_type",
@@ -289,6 +372,10 @@ namespace Xalia.Uia
             {
                 value = (ControlType)cti;
             }
+            else if (name == "msaa_role" && value is int rolei)
+            {
+                value = (AccessibilityRole)rolei;
+            }
 
             if (value is System.Drawing.Rectangle r)
             {
@@ -307,6 +394,10 @@ namespace Xalia.Uia
             else if (value is ControlType ct && (int)ct < control_type_to_enum.Length)
             {
                 new_value = control_type_to_enum[(int)ct];
+            }
+            else if (value is AccessibilityRole role)
+            {
+                new_value = msaa_role_to_enum[(int)role];
             }
             else if (value is bool b)
             {
@@ -521,6 +612,8 @@ namespace Xalia.Uia
                     return GetProperty("uia_class_name", Root.Automation.PropertyLibrary.Element.ClassName, depends_on);
                 case "uia_expand_collapse_state":
                     return GetProperty("uia_expand_collapse_state", Root.Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, depends_on);
+                case "msaa_role":
+                    return GetProperty("msaa_role", Root.Automation.PropertyLibrary.LegacyIAccessible.Role, depends_on);
                 case "uia_focused":
                     depends_on.Add((this, new IdentifierExpression("uia_focused")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.FocusedElement));
