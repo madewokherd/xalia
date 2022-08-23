@@ -409,7 +409,10 @@ namespace Xalia.Uia
                 !wrapper.IsValid)
                 return;
 
-            AddChild(Children.Count, new UiaElement(wrapper));
+            var element = new UiaElement(wrapper);
+
+            AddChild(Children.Count, element);
+            toplevels_by_hwnd[hwnd] = element;
         }
 
         private void OnPropertyChangedBackground(AutomationElement arg1, PropertyId arg2, object arg3)
