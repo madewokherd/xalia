@@ -1,6 +1,8 @@
 ﻿#if WINDOWS
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -40,9 +42,18 @@ namespace Xalia.Sdl
 
         public override Task ShowKeyboardAsync()
         {
-            var invocation = new UIHostNoLaunch() as ITipInvocation;
+            try {
+                var invocation = new UIHostNoLaunch() as ITipInvocation;
 
-            invocation.Toggle(GetDesktopWindow());
+                invocation.Toggle(GetDesktopWindow());
+            }
+            catch (COMException)
+            {
+                // If TabTip.exe is not running, we can get REGDB_E_CLASSNOTREG
+                Process.Start(Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                    @"Common Files\microsoft shared\ink\TabTip.exe"));
+            }
 
             return Task.CompletedTask;
         }
