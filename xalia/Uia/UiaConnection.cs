@@ -82,7 +82,7 @@ namespace Xalia.Uia
                     OnWindowOpenedBackground);
 
                 DesktopElement.RegisterAutomationEvent(
-                    Automation.EventLibrary.Window.WindowOpenedEvent, TreeScope.Element | TreeScope.Descendants,
+                    Automation.EventLibrary.Window.WindowClosedEvent, TreeScope.Element | TreeScope.Descendants,
                     OnWindowClosedBackground);
 
                 DesktopElement.RegisterAutomationEvent(
