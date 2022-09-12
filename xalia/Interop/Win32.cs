@@ -332,6 +332,21 @@ namespace Xalia.Interop
         public const int KEYEVENTF_UNICODE = 0x4;
         public const int KEYEVENTF_SCANCODE = 0x8;
 
+        public const int MOUSEEVENTF_MOVE = 0x1;
+        public const int MOUSEEVENTF_LEFTDOWN = 0x2;
+        public const int MOUSEEVENTF_LEFTUP = 0x4;
+        public const int MOUSEEVENTF_RIGHTDOWN = 0x8;
+        public const int MOUSEEVENTF_RIGHTUP = 0x10;
+        public const int MOUSEEVENTF_MIDDLEDOWN = 0x20;
+        public const int MOUSEEVENTF_MIDDLEUP = 0x40;
+        public const int MOUSEEVENTF_XDOWN = 0x80;
+        public const int MOUSEEVENTF_XUP = 0x100;
+        public const int MOUSEEVENTF_WHEEL = 0x800;
+        public const int MOUSEEVENTF_HWHEEL = 0x1000;
+        public const int MOUSEEVENTF_MOVE_NOCOALESCE = 0x2000;
+        public const int MOUSEEVENTF_VIRTUALDESK = 0x4000;
+        public const int MOUSEEVENTF_ABSOLUTE = 0x8000;
+
         public const int VK_SHIFT = 0x10;
         public const int VK_CONTROL = 0x11;
         public const int VK_MENU = 0x12;
@@ -339,8 +354,11 @@ namespace Xalia.Interop
         [StructLayout(LayoutKind.Sequential)]
         public struct MOUSEINPUT
         {
-            public int dx, dy;
-            public int mouseData, dwFlags, time;
+            public int dx;
+            public int dy;
+            public int mouseData;
+            public int dwFlags;
+            public int time;
             public IntPtr dwExtraInfo;
         }
 
@@ -390,6 +408,21 @@ namespace Xalia.Interop
         {
             var style = unchecked((int)(long)GetWindowLong(hwnd, GWL_STYLE));
             return (style & WS_VISIBLE) != 0;
+        }
+
+        public const int SM_XVIRTUALSCREEN = 76;
+        public const int SM_YVIRTUALSCREEN = 77;
+        public const int SM_CXVIRTUALSCREEN = 78;
+        public const int SM_CYVIRTUALSCREEN = 79;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int GetSystemMetrics(int nIndex);
+
+        public static System.Drawing.Point NormalizeScreenCoordinates(System.Drawing.Point orig)
+        {
+            return new System.Drawing.Point(
+                (int)Math.Round((double)(orig.X - GetSystemMetrics(SM_XVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CXVIRTUALSCREEN)),
+                (int)Math.Round((double)(orig.Y - GetSystemMetrics(SM_YVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CYVIRTUALSCREEN)));
         }
 
         [ComImport, Guid("4ce576fa-83dc-4F88-951c-9d0782b4e376")]

@@ -398,11 +398,12 @@ if (interactable) {
     if ((is_spi_element and spi_role.text) or (is_uia_element and uia_control_type.edit or
         (uia_control_type.document and not first_child))) { // Qt web controls show up as document but aren't really editable
         targetable: true;
-        if (targeted)
-        {
-            action_on_A: set_focus+show_keyboard;
-            action_name_A: "Show Keyboard";
-        }
+		if (is_uia_element and ancestor_matches(uia_control_type.document)) {
+			// set_focus doesn't seem to work for Qt web views
+			action_on_PrimaryAction: send_click+show_keyboard;
+		}
+		action_on_PrimaryAction: set_focus+show_keyboard;
+		action_name_PrimaryAction: "Show Keyboard";
     }
 
     // Tab bar navigation

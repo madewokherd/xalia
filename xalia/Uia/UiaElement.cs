@@ -10,10 +10,13 @@ using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.EventHandlers;
+using FlaUI.Core.Exceptions;
 using FlaUI.Core.Identifiers;
 using FlaUI.Core.WindowsAPI;
 using Xalia.Gudl;
 using Xalia.UiDom;
+using static Xalia.Interop.Win32;
+using INPUT = Xalia.Interop.Win32.INPUT;
 
 namespace Xalia.Uia
 {
@@ -256,6 +259,7 @@ namespace Xalia.Uia
                 "select", "uia_select",
                 "expand", "uia_expand",
                 "collapse", "uia_collapse",
+                "send_click", "win32_send_click",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -686,6 +690,9 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "uia_collapse", Collapse);
                     }
                     return UiDomUndefined.Instance;
+                case "win32_send_click":
+                    depends_on.Add((Root, new IdentifierExpression("uia_bounding_rectangle")));
+                    return new UiDomRoutineAsync(this, "win32_send_click", SendClick);
             }
 
             {
@@ -703,6 +710,52 @@ namespace Xalia.Uia
             }
 
             return UiDomUndefined.Instance;
+        }
+
+        private async Task SendClick(UiDomRoutineAsync obj)
+        {
+            System.Drawing.Point? clickable = null;
+
+            try
+            {
+                clickable = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return ElementWrapper.AutomationElement.GetClickablePoint();
+                }, ElementWrapper);
+            }
+            catch(NoClickablePointException) { }
+            catch(COMException) { }
+
+            if (property_known.TryGetValue(Root.Automation.PropertyLibrary.Element.BoundingRectangle, out var known) && known)
+            {
+                if (property_raw_value.TryGetValue(Root.Automation.PropertyLibrary.Element.BoundingRectangle, out var val) &&
+                    val is System.Drawing.Rectangle r)
+                {
+                    Console.WriteLine($"{r.Left},{r.Top} - {r.Right},{r.Bottom}");
+                    clickable = new System.Drawing.Point(r.Left + r.Width / 2, r.Top + r.Height / 2);
+                    Console.WriteLine($"{clickable.Value.X}, {clickable.Value.Y}");
+                }
+            }
+
+            if (clickable is System.Drawing.Point p)
+            {
+                INPUT[] inputs = new INPUT[3];
+
+                p = NormalizeScreenCoordinates(p);
+
+                inputs[0].type = INPUT_MOUSE;
+                inputs[0].u.mi.dx = p.X;
+                inputs[0].u.mi.dy = p.Y;
+                inputs[0].u.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
+
+                inputs[1].type = INPUT_MOUSE;
+                inputs[1].u.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+
+                inputs[2].type = INPUT_MOUSE;
+                inputs[2].u.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+
+                SendInput(3, inputs, Marshal.SizeOf<INPUT>());
+            }
         }
 
         private Task MsaaDefaultAction(UiDomRoutineAsync obj)
