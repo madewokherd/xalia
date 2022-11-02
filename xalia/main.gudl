@@ -2,6 +2,12 @@
 
 // Application-specific behaviors:
 
+// APPLICATION: EA App
+
+window (uia_class_name == "eax::services::windowing::QmlView") {
+    manual_buttons: true; // buttons do not respond to uia_invoke
+}
+
 // APPLICATION: Firefox
 window (uia_class_name == "MozillaWindowClass") {
     firefox_use_offscreen_menu: true;
@@ -238,6 +244,11 @@ if (is_uia_element and uia_control_type == undefined and msaa_role.(border or cl
     recurse: true;
 }
 
+if (is_uia_element and uia_control_type.custom and msaa_role.(push_button or client)) {
+    // EA App has container controls that look like this
+    recurse: true;
+}
+
 if (is_uia_element and uia_control_type.text and ancestor_matches(uia_class_name == "Qt5QWindowIcon")) {
     // In Qt web views, these can contain edit boxes
     recurse: true;
@@ -280,6 +291,16 @@ if (is_spi_element and spi_state.enabled and spi_state.showing and spi_state.sen
 if (is_uia_element and parent.interactable and enabled and
     (not offscreen or (acc2_toolkit_name == "Qt" and ancestor_matches(uia_control_type.document)))) { // Qt web views can have offscreen client controls with visible children
     interactable: true;
+}
+
+// manual_buttons hack
+if (parent.manual_buttons) {
+    manual_buttons: true;
+}
+
+if (uia_control_type.hyperlink and acc2_toolkit_name == "Qt" and ancestor_matches(uia_control_type.document)) {
+	// uia_invoke doesn't seem to work for links in Qt web views
+    manual_buttons: true;
 }
 
 // Rules for setting borders of targetable elements
@@ -379,10 +400,9 @@ if (interactable) {
 
     if (uia_control_type.(button or radio_button or hyperlink)) {
         targetable: true;
-		if (uia_control_type.hyperlink and ancestor_matches(uia_control_type.document)) {
-			// uia_invoke doesn't seem to work for links in Qt web views
+        if (manual_buttons)  {
 			action_on_PrimaryAction: send_click;
-		}
+        }
         action_on_PrimaryAction: uia_invoke or msaa_do_default_action or send_click;
         action_name_PrimaryAction: "Click";
     }
