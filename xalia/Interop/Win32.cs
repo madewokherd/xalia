@@ -206,8 +206,38 @@ namespace Xalia.Interop
             string attributes { [return: MarshalAs(UnmanagedType.BStr)] get; }
         }
 
+        [ComImport, Guid("d49ded83-5b25-43f4-9b95-93b44595979e")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IAccessibleApplication
+        {
+            string appName
+            {
+                [return: MarshalAs(UnmanagedType.BStr)]
+                get;
+            }
+
+            string appVersion
+            {
+                [return: MarshalAs(UnmanagedType.BStr)]
+                get;
+            }
+
+            string toolkitName
+            {
+                [return: MarshalAs(UnmanagedType.BStr)]
+                get;
+            }
+
+            string toolkitVersion
+            {
+                [return: MarshalAs(UnmanagedType.BStr)]
+                get;
+            }
+        }
+
         public static readonly Guid IID_IAccessible = new Guid("618736e0-3c3d-11cf-810c-00aa00389b71");
         public static readonly Guid IID_IAccessible2 = new Guid("e89f726e-c4f4-4c19-bb19-b647d7fa8478");
+        public static readonly Guid IID_IAccessibleApplication = new Guid("d49ded83-5b25-43f4-9b95-93b44595979e");
 
         public static IAccessible2 QueryIAccessible2(object acc)
         {
