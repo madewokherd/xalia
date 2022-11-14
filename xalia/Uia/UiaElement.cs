@@ -63,6 +63,9 @@ namespace Xalia.Uia
         bool refreshing_children;
         bool inflight_structure_changed;
 
+        bool polling_children;
+        CancellationTokenSource children_poll_token;
+
         PatternId[] supported_patterns;
         bool fetching_supported_patterns;
 
@@ -366,10 +369,54 @@ namespace Xalia.Uia
             Utils.RunTask(RefreshChildren());
         }
 
+        private async Task PollChildren()
+        {
+            if (!polling_children)
+                return;
+
+            await RefreshChildren();
+
+            children_poll_token = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Delay(500, children_poll_token.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                children_poll_token = null;
+                return;
+            }
+
+            children_poll_token = null;
+            Utils.RunIdle(PollChildren()); // Unsure if RunTask would accumulate stack frames forever
+        }
+
         protected override void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
             if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.ToBool())
                 WatchChildren();
+
+            if (all_declarations.TryGetValue("poll_children", out var poll_children) && poll_children.ToBool())
+            {
+                if (!polling_children)
+                {
+                    polling_children = true;
+                    Utils.RunTask(PollChildren());
+                }
+            }
+            else
+            {
+                if (polling_children)
+                {
+                    polling_children = false;
+                    if (children_poll_token != null)
+                    {
+                        children_poll_token.Cancel();
+                        children_poll_token = null;
+                    }
+                }
+            }
 
             base.DeclarationsChanged(all_declarations, dependencies);
         }
@@ -625,6 +672,12 @@ namespace Xalia.Uia
                 property_value.Clear();
                 property_raw_value.Clear();
                 Root.elements_by_id.Remove(ElementIdentifier);
+                if (children_poll_token != null)
+                {
+                    children_poll_token.Cancel();
+                    children_poll_token = null;
+                }
+                polling_children = false;
             }
             base.SetAlive(value);
         }
