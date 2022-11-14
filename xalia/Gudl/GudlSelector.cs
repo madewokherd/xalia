@@ -9,9 +9,9 @@ namespace Xalia.Gudl
         {
             relationship_conditions = new Dictionary<string, string>();
             relationship_conditions["parent"] = "child_matches";
-            relationship_conditions["ancestor"] = "desendent_matches";
+            relationship_conditions["ancestor"] = "descendent_matches";
             relationship_conditions["child"] = "parent_matches";
-            relationship_conditions["desdendent"] = "ancestor_matches";
+            relationship_conditions["descendent"] = "ancestor_matches";
             relationship_conditions["previous_sibling"] = "next_sibling_matches";
             relationship_conditions["next_sibling"] = "previous_sibling_matches";
         }

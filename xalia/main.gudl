@@ -9,17 +9,15 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
 
     // We don't get structure change notifications from elements.
     poll_children: true;
+
+    descendent (recurse) {
+        poll_children: true;
+    }
 }
 
 group (parent.(uia_control_type.custom and parent.uia_class_name == "eax::services::windowing::QmlView")) {
     // Most controls have reported coordinates offset by the height of the titlebar
     offset_target_y: parent.child_matches(uia_control_type.button).height;
-
-    poll_children: true;
-
-    descendent (uia_control_type.custom and msaa_role.(push_button or client)) {
-        poll_children: true;
-    }
 }
 
 // APPLICATION: Firefox
