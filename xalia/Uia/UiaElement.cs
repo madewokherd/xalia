@@ -835,25 +835,39 @@ namespace Xalia.Uia
         {
             System.Drawing.Point? clickable = null;
 
-            try
+            if (GetDeclaration("target_x") is UiDomInt tx &&
+                GetDeclaration("target_y") is UiDomInt ty &&
+                GetDeclaration("target_width") is UiDomInt tw &&
+                GetDeclaration("target_height") is UiDomInt th)
             {
-                clickable = await Root.CommandThread.OnBackgroundThread(() =>
-                {
-                    return ElementWrapper.AutomationElement.GetClickablePoint();
-                }, ElementWrapper);
+                clickable = new System.Drawing.Point(
+                    tx.Value + tw.Value / 2,
+                    ty.Value + th.Value / 2);
             }
-            catch(NoClickablePointException) { }
-            catch(COMException) { }
 
-            if (property_known.TryGetValue(Root.Automation.PropertyLibrary.Element.BoundingRectangle, out var known) && known)
+            if (clickable is null)
             {
-                if (property_raw_value.TryGetValue(Root.Automation.PropertyLibrary.Element.BoundingRectangle, out var val) &&
-                    val is System.Drawing.Rectangle r)
+                if (property_known.TryGetValue(Root.Automation.PropertyLibrary.Element.BoundingRectangle, out var known) && known)
                 {
-                    Console.WriteLine($"{r.Left},{r.Top} - {r.Right},{r.Bottom}");
-                    clickable = new System.Drawing.Point(r.Left + r.Width / 2, r.Top + r.Height / 2);
-                    Console.WriteLine($"{clickable.Value.X}, {clickable.Value.Y}");
+                    if (property_raw_value.TryGetValue(Root.Automation.PropertyLibrary.Element.BoundingRectangle, out var val) &&
+                        val is System.Drawing.Rectangle r)
+                    {
+                        clickable = new System.Drawing.Point(r.Left + r.Width / 2, r.Top + r.Height / 2);
+                    }
                 }
+            }
+
+            if (clickable is null)
+            {
+                try
+                {
+                    clickable = await Root.CommandThread.OnBackgroundThread(() =>
+                    {
+                        return ElementWrapper.AutomationElement.GetClickablePoint();
+                    }, ElementWrapper);
+                }
+                catch (NoClickablePointException) { }
+                catch (COMException) { }
             }
 
             if (clickable is System.Drawing.Point p)

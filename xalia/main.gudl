@@ -8,6 +8,12 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
     manual_buttons: true; // buttons do not respond to uia_invoke
 }
 
+if (parent.(uia_control_type.custom and parent.uia_class_name == "eax::services::windowing::QmlView") and
+    not uia_control_type.button) {
+    // Most controls have reported coordinates offset by the height of the titlebar
+    offset_target_y: parent.child_matches(uia_control_type.button).height;
+}
+
 // APPLICATION: Firefox
 window (uia_class_name == "MozillaWindowClass") {
     firefox_use_offscreen_menu: true;
@@ -303,6 +309,14 @@ if (uia_control_type.hyperlink and acc2_toolkit_name == "Qt" and ancestor_matche
     manual_buttons: true;
 }
 
+if (parent.offset_target_x) {
+    offset_target_x: parent.offset_target_x;
+}
+
+if (parent.offset_target_y) {
+    offset_target_y: parent.offset_target_y;
+}
+
 // Rules for setting borders of targetable elements
 if (targetable) {
     // "special" rules would go here
@@ -316,8 +330,8 @@ if (targetable) {
         // If there are any specific cases where it's possible to do this better, we can add them here.
 
         // Absolute screen coordinates
-        target_x: abs_x;
-        target_y: abs_y;
+        target_x: abs_x + (offset_target_x or 0);
+        target_y: abs_y + (offset_target_y or 0);
 
         // For some reason, Qt often returns incorrect values when querying width or height in any
         // coordinate space other than screen. Since we're already polling for absolute position,
@@ -327,8 +341,8 @@ if (targetable) {
     }
 
     if (is_uia_element) {
-        target_x: x;
-        target_y: y;
+        target_x: x + (offset_target_x or 0);
+        target_y: y + (offset_target_y or 0);
         target_width: width;
         target_height: height;
     }
