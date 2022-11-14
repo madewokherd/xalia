@@ -311,11 +311,18 @@ namespace Xalia.Uia
             }
 
             // Add any new children
+            int j = 0;
             for (i = 0; i < children.Length; i++)
             {
-                if (Children.Count <= i || !ElementMatches(Children[i], children[i].UniqueId))
+                if (Children.Count <= i || !ElementMatches(Children[j], children[i].UniqueId))
                 {
-                    AddChild(i, new UiaElement(children[i]));
+                    if (!(Root.LookupAutomationElement(children[i]) is null))
+                    {
+                        // Child element is a duplicate of another element somewhere in the tree.
+                        continue;
+                    }
+                    AddChild(j, new UiaElement(children[i]));
+                    j += 1;
                 }
             }
 
