@@ -6,6 +6,7 @@
 
 window (uia_class_name == "eax::services::windowing::QmlView") {
     manual_buttons: true; // buttons do not respond to uia_invoke
+    manual_checkboxes: true; // checkboxes do not respond to uia_invoke
 
     // We don't get structure change notifications from elements.
     poll_children: true;
@@ -310,6 +311,11 @@ if (parent.manual_buttons) {
     manual_buttons: true;
 }
 
+// manual_checkboxes hack
+if (parent.manual_checkboxes) {
+    manual_checkboxes: true;
+}
+
 if (uia_control_type.hyperlink and acc2_toolkit_name == "Qt" and ancestor_matches(uia_control_type.document)) {
 	// uia_invoke doesn't seem to work for links in Qt web views
     manual_buttons: true;
@@ -425,6 +431,12 @@ if (interactable) {
         }
         action_on_PrimaryAction: uia_invoke or msaa_do_default_action or send_click;
         action_name_PrimaryAction: "Click";
+    }
+
+    check_box (manual_checkboxes) {
+        targetable: true;
+        action_on_PrimaryAction: send_click;
+        action_name_PrimaryAction: "Toggle";
     }
 
     check_box (spi_action.(click or Toggle or Press)) {
