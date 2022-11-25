@@ -57,6 +57,7 @@ namespace Xalia.Uia
             RegisterPropertyMapping("uia_control_type", Automation.PropertyLibrary.Element.ControlType);
             RegisterPropertyMapping("uia_class_name", Automation.PropertyLibrary.Element.ClassName);
             RegisterPropertyMapping("uia_enabled", Automation.PropertyLibrary.Element.IsEnabled);
+            RegisterPropertyMapping("uia_keyboard_focusable", Automation.PropertyLibrary.Element.IsKeyboardFocusable);
             RegisterPropertyMapping("uia_bounding_rectangle", Automation.PropertyLibrary.Element.BoundingRectangle);
             RegisterPropertyMapping("uia_name", Automation.PropertyLibrary.Element.Name);
             RegisterPropertyMapping("uia_offscreen", Automation.PropertyLibrary.Element.IsOffscreen);

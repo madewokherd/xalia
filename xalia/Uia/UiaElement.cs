@@ -729,14 +729,17 @@ namespace Xalia.Uia
                 case "uia_enabled":
                 case "uia_is_enabled":
                     return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
+                case "is_keyboard_focusable":
+                case "uia_is_keyboard_focusable":
+                    return GetProperty("uia_keyboard_focusable", Root.Automation.PropertyLibrary.Element.IsKeyboardFocusable, depends_on);
                 case "uia_offscreen":
                 case "uia_is_offscreen":
                     return GetProperty("uia_offscreen", Root.Automation.PropertyLibrary.Element.IsOffscreen, depends_on);
                 case "uia_visible":
-                    return UiDomBoolean.FromBool(!GetProperty("uia_offscreen", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on).ToBool());
+                    return UiDomBoolean.FromBool(!GetProperty("uia_offscreen", Root.Automation.PropertyLibrary.Element.IsOffscreen, depends_on).ToBool());
                 case "uia_selected":
                 case "uia_is_selected":
-                    return GetProperty("uia_selected", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
+                    return GetProperty("uia_selected", Root.Automation.PropertyLibrary.SelectionItem.IsSelected, depends_on);
                 case "uia_bounding_rectangle":
                     return GetProperty("uia_bounding_rectangle", Root.Automation.PropertyLibrary.Element.BoundingRectangle, depends_on);
                 case "uia_x":
