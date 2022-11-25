@@ -313,20 +313,24 @@ namespace Xalia.Uia
                 i++;
             }
 
+            // Remove any remaining missing children
+            while (i < Children.Count)
+                RemoveChild(i);
+
             // Add any new children
-            int j = 0;
-            for (i = 0; i < children.Length; i++)
+            i = 0;
+            foreach (var new_child in children)
             {
-                if (Children.Count <= i || !ElementMatches(Children[j], children[i].UniqueId))
+                if (Children.Count <= i || !ElementMatches(Children[i], new_child.UniqueId))
                 {
-                    if (!(Root.LookupAutomationElement(children[i]) is null))
+                    if (!(Root.LookupAutomationElement(new_child) is null))
                     {
                         // Child element is a duplicate of another element somewhere in the tree.
                         continue;
                     }
-                    AddChild(j, new UiaElement(children[i]));
-                    j += 1;
+                    AddChild(i, new UiaElement(new_child));
                 }
+                i += 1;
             }
 
             refreshing_children = false;
