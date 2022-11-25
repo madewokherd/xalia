@@ -11,8 +11,12 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
     // We don't get structure change notifications from elements.
     poll_children: true;
 
-    descendent (recurse) {
-        poll_children: true;
+    descendent {
+        if (recurse) {
+            poll_children: true;
+        }
+
+        toolkit: "Qt";
     }
 }
 
@@ -262,7 +266,7 @@ if (is_uia_element and uia_control_type.custom and msaa_role.(push_button or cli
     recurse: true;
 }
 
-if (is_uia_element and uia_control_type.text and ancestor_matches(uia_class_name == "Qt5QWindowIcon")) {
+if (is_uia_element and uia_control_type.(text or list_item) and toolkit == "Qt") {
     // In Qt web views, these can contain edit boxes
     recurse: true;
 }
@@ -302,7 +306,7 @@ if (is_spi_element and spi_state.enabled and spi_state.showing and spi_state.sen
 }
 
 if (is_uia_element and parent.interactable and enabled and
-    (not offscreen or (acc2_toolkit_name == "Qt" and ancestor_matches(uia_control_type.document)))) { // Qt web views can have offscreen client controls with visible children
+    (not offscreen or (toolkit == "Qt" and ancestor_matches(uia_control_type.document)))) { // Qt web views can have offscreen client controls with visible children
     interactable: true;
 }
 
@@ -316,7 +320,7 @@ if (parent.manual_checkboxes) {
     manual_checkboxes: true;
 }
 
-if (uia_control_type.hyperlink and acc2_toolkit_name == "Qt" and ancestor_matches(uia_control_type.document)) {
+if (uia_control_type.hyperlink and toolkit == "Qt" and ancestor_matches(uia_control_type.document)) {
 	// uia_invoke doesn't seem to work for links in Qt web views
     manual_buttons: true;
 }
