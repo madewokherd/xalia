@@ -32,6 +32,7 @@ namespace Xalia.UiDom
         bool _updatingRules;
 
         private Dictionary<GudlExpression, UiDomRelationshipWatcher> _relationshipWatchers = new Dictionary<GudlExpression, UiDomRelationshipWatcher>();
+        private bool disposing;
 
         protected virtual void SetAlive(bool value)
         {
@@ -45,6 +46,7 @@ namespace Xalia.UiDom
                 }
                 else
                 {
+                    disposing = true;
                     foreach (var watcher in _relationshipWatchers.Values)
                     {
                         watcher.Dispose();
@@ -351,6 +353,11 @@ namespace Xalia.UiDom
         {
             HashSet<GudlExpression> changed = new HashSet<GudlExpression>();
 
+            if (disposing)
+            {
+                return;
+            }
+
             foreach (var kvp in _activeDeclarations)
             {
                 if (!all_declarations.TryGetValue(kvp.Key, out var value) || !value.Equals(kvp.Value))
@@ -466,6 +473,10 @@ namespace Xalia.UiDom
 
         protected virtual void WatchProperty(GudlExpression expression)
         {
+            if (disposing)
+            {
+                return;
+            }
             if (expression is BinaryExpression bin)
             {
                 if (bin.Kind == GudlToken.LParen &&
@@ -482,6 +493,10 @@ namespace Xalia.UiDom
 
         protected virtual void UnwatchProperty(GudlExpression expression)
         {
+            if (disposing)
+            {
+                return;
+            }
             if (_relationshipWatchers.TryGetValue(expression, out var watcher))
             {
                 watcher.Dispose();
