@@ -28,6 +28,9 @@ namespace Xalia.Uia
         internal Dictionary<string, PropertyId> names_to_property = new Dictionary<string, PropertyId>();
         internal Dictionary<PropertyId, string> properties_to_name = new Dictionary<PropertyId, string>();
 
+        bool polling_focus;
+        CancellationTokenSource focus_poll_token;
+
         public UiaConnection(bool use_uia3, GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
             MainContext = SynchronizationContext.Current;
@@ -476,6 +479,51 @@ namespace Xalia.Uia
         private async Task UpdateFocusedElement()
         {
             FocusedElement = await CommandThread.GetFocusedElement(this);
+        }
+
+        private async Task PollFocusedElement()
+        {
+            if (!polling_focus)
+                return;
+
+            await UpdateFocusedElement();
+
+            focus_poll_token = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Delay(200, focus_poll_token.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                focus_poll_token = null;
+                return;
+            }
+
+            focus_poll_token = null;
+            Utils.RunIdle(PollFocusedElement());
+        }
+
+        protected override void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
+        {
+            bool poll_focus = all_declarations.TryGetValue("poll_focus", out var ui_dom_poll_focus) && ui_dom_poll_focus.ToBool();
+
+            if (poll_focus != polling_focus)
+            {
+                polling_focus = poll_focus;
+
+                if (poll_focus)
+                {
+                    Utils.RunTask(PollFocusedElement());
+                }
+                else if (!(focus_poll_token is null))
+                {
+                    focus_poll_token.Cancel();
+                    focus_poll_token = null;
+                }
+            }
+
+            base.DeclarationsChanged(all_declarations, dependencies);
         }
 
         private void OnWindowOpenedBackground(AutomationElement arg1, EventId arg2)

@@ -16,6 +16,19 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
             poll_children: true;
         }
 
+        combo_box {
+            recurse: false; // this can get all the list items which is time-consuming
+
+            if (uia_focused) {
+                root
+                {
+                    disable_interactions: true; // TODO: Map keyboard commands
+                    poll_focus: true;
+                }
+
+            }
+        }
+
         toolkit: "Qt";
     }
 }
