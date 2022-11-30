@@ -254,6 +254,8 @@ namespace Xalia.Uia
                 "name", "uia_name",
                 "class_name", "uia_class_name",
                 "expand_collapse_state", "uia_expand_collapse_state",
+                "framework_id", "uia_framework_id",
+                "frameworkid", "uia_framework_id",
                 "focused", "uia_focused",
                 "foreground", "msaa_foreground",
                 "active", "win32_active",
@@ -273,7 +275,6 @@ namespace Xalia.Uia
                 "application_name", "acc2_application_name",
                 "application_version", "acc2_application_version",
                 "toolkit_name", "acc2_toolkit_name",
-                "toolkit", "acc2_toolkit_name",
                 "toolkit_version", "acc2_toolkit_version",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
@@ -858,6 +859,8 @@ namespace Xalia.Uia
                     return GetProperty("uia_class_name", Root.Automation.PropertyLibrary.Element.ClassName, depends_on);
                 case "uia_expand_collapse_state":
                     return GetProperty("uia_expand_collapse_state", Root.Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, depends_on);
+                case "uia_framework_id":
+                    return GetProperty("uia_framework_id", Root.Automation.PropertyLibrary.Element.FrameworkId, depends_on);
                 case "msaa_role":
                     return GetProperty("msaa_role", Root.Automation.PropertyLibrary.LegacyIAccessible.Role, depends_on);
                 case "uia_focused":
@@ -961,6 +964,19 @@ namespace Xalia.Uia
                 var value = base.EvaluateIdentifierCore(id, root, depends_on);
                 if (!value.Equals(UiDomUndefined.Instance))
                     return value;
+            }
+
+            switch (id)
+            {
+                case "toolkit":
+                    {
+                        var acc2_toolkit = EvaluateIdentifierCore("acc2_toolkit_name", root, depends_on);
+                        if (!acc2_toolkit.Equals(UiDomUndefined.Instance))
+                        {
+                            return acc2_toolkit;
+                        }
+                        return EvaluateIdentifierCore("uia_framework_id", root, depends_on);
+                    }
             }
 
             if (name_to_control_type.ContainsKey(id))

@@ -39,8 +39,6 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
                 poll_uia_bounding_rectangle: true;
             }
         }
-
-        toolkit: "Qt";
     }
 }
 
