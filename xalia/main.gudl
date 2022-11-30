@@ -20,12 +20,17 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
             recurse: false; // this can get all the list items which is time-consuming
 
             if (uia_focused) {
+                _ea_app_combobox_open: true;
                 root
                 {
                     disable_interactions: true; // TODO: Map keyboard commands
                     poll_focus: true;
                 }
+            }
 
+            if (_ea_app_combobox_open and not uia_focused) {
+                // We should momentarily encounter this state when the combo box is unfocused, use it to poll bounding box
+                poll_uia_bounding_rectangle: true;
             }
         }
 

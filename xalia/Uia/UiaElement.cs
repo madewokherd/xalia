@@ -69,6 +69,9 @@ namespace Xalia.Uia
         PatternId[] supported_patterns;
         bool fetching_supported_patterns;
 
+        Dictionary<PropertyId, bool> polling_property = new Dictionary<PropertyId, bool>(0);
+        Dictionary<PropertyId, CancellationTokenSource> property_poll_token = new Dictionary<PropertyId, CancellationTokenSource>(0);
+
         string application_name, application_version, toolkit_name, toolkit_version;
         bool fetching_application_name, fetching_application_version, fetching_toolkit_name, fetching_toolkit_version;
 
@@ -373,6 +376,30 @@ namespace Xalia.Uia
             Utils.RunTask(RefreshChildren());
         }
 
+        private async Task PollProperty(string name, PropertyId propid)
+        {
+            if (!polling_property.TryGetValue(propid, out bool polling) || !polling)
+                return;
+
+            await FetchPropertyAsync(name, propid);
+
+            var poll_token = new CancellationTokenSource();
+            property_poll_token[propid] = poll_token;
+
+            try
+            {
+                await Task.Delay(200, poll_token.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                property_poll_token[propid] = null;
+                return;
+            }
+
+            property_poll_token[propid] = null;
+            Utils.RunIdle(PollProperty(name, propid));
+        }
+
         private async Task PollChildren()
         {
             if (!polling_children)
@@ -419,6 +446,46 @@ namespace Xalia.Uia
                         children_poll_token.Cancel();
                         children_poll_token = null;
                     }
+                }
+            }
+
+            foreach (var kvp in all_declarations)
+            {
+                if (!kvp.Key.StartsWith("poll_") || !kvp.Value.ToBool())
+                    continue;
+
+                var prop_name = kvp.Key.Substring(5);
+
+                if (!Root.names_to_property.TryGetValue(prop_name, out var propid))
+                    continue;
+
+                if (!polling_property.TryGetValue(propid, out bool polling))
+                {
+                    polling_property[propid] = true;
+                    Utils.RunTask(PollProperty(prop_name, propid));
+                }
+            }
+
+            // Search for properties to stop polling
+            foreach (var kvp in new List<KeyValuePair<PropertyId, bool>>(polling_property))
+            {
+                var propid = kvp.Key;
+                string prop_name = Root.properties_to_name[propid];
+
+                if (!kvp.Value)
+                    // not being currently polled
+                    continue;
+
+                if (all_declarations.TryGetValue("poll_"+prop_name, out var polling) &&
+                    polling.ToBool())
+                    // still being polled
+                    continue;
+
+                polling_property[propid] = false;
+                if (property_poll_token[propid] != null)
+                {
+                    property_poll_token[propid].Cancel();
+                    property_poll_token[propid] = null;
                 }
             }
 
@@ -682,6 +749,15 @@ namespace Xalia.Uia
                     children_poll_token = null;
                 }
                 polling_children = false;
+                foreach (var token in property_poll_token.Values)
+                {
+                    if (!(token is null))
+                    {
+                        token.Cancel();
+                    }
+                }
+                property_poll_token.Clear();
+                polling_property.Clear();
             }
             base.SetAlive(value);
         }
