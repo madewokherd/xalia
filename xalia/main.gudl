@@ -16,6 +16,10 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
             poll_children: true;
         }
 
+        if (targetable) {
+            poll_uia_bounding_rectangle: true;
+        }
+
         combo_box {
             recurse: false; // this can get all the list items which is time-consuming
 
@@ -32,11 +36,6 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
                 // We can't dismiss these with any key other than enter.
                 action_on_MenuBack: send_key.enter;
                 action_on_MenuClose: send_key.enter;
-            }
-
-            if (in_menu and not uia_focused) {
-                // We should momentarily encounter this state when the combo box is unfocused, use it to poll bounding box
-                poll_uia_bounding_rectangle: true;
             }
         }
     }
