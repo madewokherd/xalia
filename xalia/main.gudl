@@ -20,15 +20,21 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
             recurse: false; // this can get all the list items which is time-consuming
 
             if (uia_focused) {
-                _ea_app_combobox_open: true;
                 root
                 {
-                    disable_interactions: true; // TODO: Map keyboard commands
                     poll_focus: true;
                 }
+
+                in_menu: true;
+                action_on_MenuUp: send_key.up;
+                action_on_MenuDown: send_key.down;
+                action_on_MenuSelect: send_key.enter;
+                // We can't dismiss these with any key other than enter.
+                action_on_MenuBack: send_key.enter;
+                action_on_MenuClose: send_key.enter;
             }
 
-            if (_ea_app_combobox_open and not uia_focused) {
+            if (in_menu and not uia_focused) {
                 // We should momentarily encounter this state when the combo box is unfocused, use it to poll bounding box
                 poll_uia_bounding_rectangle: true;
             }
@@ -61,28 +67,43 @@ if (spi_attributes.xalia_ignore)
     stop: true;
 }
 
+if (in_menu) {
+    root {
+        disable_interactions: true;
+    }
+
+    action_on_left_stick: simulate_dpad;
+    action_on_dpad_left: action_on_MenuLeft;
+    action_on_dpad_right: action_on_MenuRight;
+    action_on_dpad_down: action_on_MenuDown;
+    action_on_dpad_up: action_on_MenuUp;
+    action_on_A: action_on_MenuSelect;
+    action_name_A: action_name_MenuSelect or "Select";
+    action_on_B: action_on_MenuBack;
+    action_name_B: action_name_MenuBack or "Back";
+    action_on_start: action_on_MenuClose;
+    action_name_start: action_name_MenuClose or "Close Menu";
+}
+
 // If a menu is open, we shouldn't try to interact with anything else.
 menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_box) or child_matches(spi_state.selected)))
 {
-    root
-    {
-        disable_interactions: true;
-    }
+    in_menu: true;
 
     // Find the deepest menu that is showing and has an item selected, or
     // the top-level menu if there is no item selected.
     if (not child_matches(spi_role.menu and spi_state.selected and child_matches(spi_state.selected)))
     {
         // Use keyboard interaction for this if possible, it's probably less janky than going through AT-SPI
-        action_on_dpad_up: send_key.up or
+        action_on_MenuUp: send_key.up or
             child_matches(spi_state.selected).previous_sibling_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
             last_child_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
-        action_on_dpad_down: send_key.down or
+        action_on_MenuDown: send_key.down or
             child_matches(spi_state.selected).next_sibling_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
             first_child_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
 
         // Open a menu if possible, otherwise go to the "next" menu
-        action_on_dpad_right: send_key.right or
+        action_on_MenuRight: send_key.right or
             child_matches(spi_state.selected and spi_role.menu).spi_action.click or
             ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
                 next_sibling_matches(sensitive and visible and showing) or
@@ -90,128 +111,95 @@ menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_b
             ).spi_action.click;
         // We can't really hide a menu, but we can deselect its child which (based on the
         // logic above) will mean we no longer treat it as open, and will hide its children.
-        action_on_dpad_left: send_key.left or
+        action_on_MenuLeft: send_key.left or
             (parent.spi_role.menu and spi_clear_selection) or
             ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
                 previous_sibling_matches(sensitive and visible and showing) or
                 last_sibling_matches(sensitive and visible and showing)
             ).spi_action.click;
-        action_on_left_stick: simulate_dpad;
-        action_on_A: send_key.enter or child_matches(spi_state.selected).click;
-        action_name_A: "Select";
+        action_on_MenuSelect: send_key.enter or child_matches(spi_state.selected).click;
         if (parent.spi_role.menu)
         {
-            action_on_B: send_key.left or spi_clear_selection;
+            action_on_MenuBack: send_key.left or spi_clear_selection;
         }
-        action_on_B: send_key.escape or
+        action_on_MenuBack: send_key.escape or
             (parent.spi_role.(menu or menu_bar) and spi_deselect) or 
             root.this_or_descendent_matches(spi_role.combo_box and child_matches(spi_role.menu and spi_state.showing)).spi_action.press;
-        action_name_B: "Back";
-        action_on_start: send_key.escape or
+        action_on_MenuClose: send_key.escape or
             this_or_ancestor_matches(parent.spi_role.menu_bar).spi_deselect or
             root.this_or_descendent_matches(spi_role.combo_box and child_matches(spi_role.menu and spi_state.showing)).spi_action.press;
-        action_name_Start: "Close Menu";
     }
 }
 
 // Qt combo boxes contain lists, not menus like in Gtk
 combo_box (child_matches(spi_role.list and (spi_state.focused or child_matches(spi_state.focused))))
 {
-    root
-    {
-        disable_interactions: true;
-    }
+    in_menu: true;
 
     // We can't manipulate the menu through AT-SPI, we have to use the keyboard
-    action_on_dpad_up: send_key.up;
-    action_on_dpad_down: send_key.down;
-    action_on_left_stick: simulate_dpad;
-    action_on_A: send_key.enter;
-    action_name_A: "Select";
-    action_on_B: send_key.esc or spi_action.Press;
-    action_name_B: "Back";
-    action_on_start: send_key.esc or spi_action.Press;
-    action_name_start: "Close Menu";
+    action_on_MenuUp: send_key.up;
+    action_on_MenuDown: send_key.down;
+    action_on_MenuSelect: send_key.enter;
+    action_on_MenuBack: send_key.esc or spi_action.Press;
+    action_on_MenuClose: send_key.esc or spi_action.Press;
 }
 
 combo_box (uia_expand_collapse_state.expanded) {
-    root
-    {
-        disable_interactions: true;
-    }
+    in_menu: true;
 
-    action_on_dpad_up: send_key.up;
-    action_on_dpad_down: send_key.down;
-    action_on_left_stick: simulate_dpad;
-    action_on_A: send_key.enter;
-    action_name_A: "Select";
-    action_on_B: uia_collapse or send_key.esc;
-    action_name_B: "Back";
-    action_on_start: uia_collapse or send_key.esc;
-    action_name_start: "Close Menu";
+    action_on_MenuUp: send_key.up;
+    action_on_MenuDown: send_key.down;
+    action_on_MenuSelect: send_key.enter;
+    action_on_MenuBack: uia_collapse or send_key.esc;
+    action_on_MenuClose: uia_collapse or send_key.esc;
 }
 
 // Qt/AT-SPI2 menus
 popup_menu (spi_state.showing)
 {
-    root
-    {
-        disable_interactions: true;
-    }
+    in_menu: true;
 
     // We can't manipulate the menu through AT-SPI, we have to use the keyboard
-    action_on_dpad_up: send_key.up;
-    action_on_dpad_down: send_key.down;
-    action_on_dpad_left: send_key.left;
-    action_on_dpad_right: send_key.right;
-    action_on_left_stick: simulate_dpad;
-    action_on_A: send_key.enter;
-    action_name_A: "Select";
-    action_on_B: send_key.esc or parent.spi_action.ShowMenu;
-    action_name_B: "Back";
-    action_on_start: send_key.esc or parent.spi_action.ShowMenu;
-    action_name_start: "Close Menu";
+    action_on_MenuUp: send_key.up;
+    action_on_MenuDown: send_key.down;
+    action_on_MenuLeft: send_key.left;
+    action_on_MenuRight: send_key.right;
+    action_on_MenuSelect: send_key.enter;
+    action_on_MenuBack: send_key.esc or parent.spi_action.ShowMenu;
+    action_on_MenuClose: send_key.esc or parent.spi_action.ShowMenu;
 }
 
 // UI Automation menubars
 root (win32_active_element.uia_class_name == "#32768")
 {
     // Active menu, this doesn't normally happen and suggests Alt to dismiss may not work if the normal menu loop isn't used
-    disable_interactions: true;
+    in_menu: true;
 
-    action_on_dpad_up: send_key.up;
-    action_on_dpad_down: send_key.down;
-    action_on_dpad_left: send_key.left;
-    action_on_dpad_right: send_key.right;
-    action_on_left_stick: simulate_dpad;
-    action_on_A: send_key.enter;
-    action_name_A: "Select";
-	action_on_B: send_key.esc;
-    action_name_B: "Back";
-	action_on_start: send_key.esc;
-    action_name_start: "Close Menu";
+    action_on_MenuUp: send_key.up;
+    action_on_MenuDown: send_key.down;
+    action_on_MenuLeft: send_key.left;
+    action_on_MenuRight: send_key.right;
+    action_on_MenuSelect: send_key.enter;
+	action_on_MenuBack: send_key.esc;
+	action_on_MenuClose: send_key.esc;
 }
 
 root (uia_menu_mode or uia_in_menu or
     child_matches(uia_class_name == "Qt5QWindowPopupDropShadowSaveBits"))
 {
-    disable_interactions: true;
+    in_menu: true;
 
-    action_on_dpad_up: send_key.up;
-    action_on_dpad_down: send_key.down;
-    action_on_dpad_left: send_key.left;
-    action_on_dpad_right: send_key.right;
-    action_on_left_stick: simulate_dpad;
-    action_on_A: send_key.enter;
+    action_on_MenuUp: send_key.up;
+    action_on_MenuDown: send_key.down;
+    action_on_MenuLeft: send_key.left;
+    action_on_MenuRight: send_key.right;
+    action_on_MenuSelect: send_key.enter;
     // On Windows, pressing Escape hides the menu but stays in "menu mode", so we must use Alt to dismiss
-    action_name_A: "Select";
     if (uia_in_submenu) {
-        action_on_B: send_key.esc;
+        action_on_MenuBack: send_key.esc;
     }
-    action_on_B: send_key.alt;
-    action_name_B: "Back";
-    action_on_start: send_key.alt;
-    action_name_start: "Close Menu";
+    action_on_MenuBack: send_key.alt;
+    action_on_MenuClose: send_key.alt;
 }
 
 // Controls for targeting elements
