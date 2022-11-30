@@ -334,15 +334,6 @@ namespace Xalia.UiDom
                     break;
             }
 
-#if DEBUG
-            HashSet<(UiDomElement, GudlExpression)> dummy = new HashSet<(UiDomElement, GudlExpression)>();
-            foreach (var dep in depends_on)
-            {
-                UiDomValue val = dep.Item1.Evaluate(dep.Item2, dummy);
-                Console.WriteLine($"  depends on: {dep.Item1}.{dep.Item2} [{val}]");
-            }
-#endif
-
             DeclarationsChanged(activeDeclarations, depends_on);
 
             Root?.RaiseElementDeclarationsChangedEvent(this);
