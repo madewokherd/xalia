@@ -597,6 +597,47 @@ namespace Xalia.Ui
 
                 candidate_bounds = TranslateBox(candidate_bounds, direction);
 
+                if (candidate_bounds.Item1 + candidate_bounds.Item3 > current_bounds.Item1 &&
+                    current_bounds.Item1 + current_bounds.Item3 > candidate_bounds.Item1 &&
+                    candidate_bounds.Item2 + candidate_bounds.Item4 > current_bounds.Item2 &&
+                    current_bounds.Item2 + current_bounds.Item4 > candidate_bounds.Item2)
+                {
+                    // candidate intersects current target
+                    int current_center_x = current_bounds.Item1 + current_bounds.Item3 / 2;
+                    int current_center_y = current_bounds.Item2 + current_bounds.Item4 / 2;
+                    int candidate_center_x = candidate_bounds.Item1 + candidate_bounds.Item3 / 2;
+                    int candidate_center_y = candidate_bounds.Item2 + candidate_bounds.Item4 / 2;
+
+                    int center_dx = candidate_center_x - current_center_x;
+                    int center_dy = candidate_center_y - current_center_y;
+
+                    if (center_dx <= 0)
+                    {
+                        // candidate center is not to the right of target
+                        continue;
+                    }
+
+                    if (center_dx < Math.Abs(center_dy))
+                    {
+                        // candidate is more up/down than right.
+                        continue;
+                    }
+
+                    /* This value of edge_distance will be negative. This is intentional. */
+                    int edge_distance = candidate_bounds.Item1 - (current_bounds.Item1 + current_bounds.Item3);
+                    int center_distance = center_dx * center_dx + center_dy * center_dy;
+
+                    if (best_element is null ||
+                        edge_distance < best_edge_distance ||
+                        (edge_distance == best_edge_distance && center_distance < best_center_distance))
+                    {
+                        best_element = candidate_element;
+                        best_edge_distance = edge_distance;
+                        best_center_distance = center_distance;
+                    }
+                    continue;
+                }
+
                 if (candidate_bounds.Item1 < current_bounds.Item1 + current_bounds.Item3)
                 {
                     // candidate's left edge must be to the right of current target
