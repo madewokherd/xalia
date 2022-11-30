@@ -29,7 +29,7 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
                     poll_focus: true;
                 }
 
-                in_menu: true;
+                in_menu_navigation: true;
                 action_on_MenuUp: send_key.up;
                 action_on_MenuDown: send_key.down;
                 action_on_MenuSelect: send_key.enter;
@@ -64,7 +64,7 @@ if (spi_attributes.xalia_ignore)
     stop: true;
 }
 
-if (in_menu) {
+if (in_menu_navigation) {
     root {
         disable_interactions: true;
     }
@@ -85,7 +85,7 @@ if (in_menu) {
 // If a menu is open, we shouldn't try to interact with anything else.
 menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_box) or child_matches(spi_state.selected)))
 {
-    in_menu: true;
+    in_menu_navigation: true;
 
     // Find the deepest menu that is showing and has an item selected, or
     // the top-level menu if there is no item selected.
@@ -131,7 +131,7 @@ menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_b
 // Qt combo boxes contain lists, not menus like in Gtk
 combo_box (child_matches(spi_role.list and (spi_state.focused or child_matches(spi_state.focused))))
 {
-    in_menu: true;
+    in_menu_navigation: true;
 
     // We can't manipulate the menu through AT-SPI, we have to use the keyboard
     action_on_MenuUp: send_key.up;
@@ -142,7 +142,7 @@ combo_box (child_matches(spi_role.list and (spi_state.focused or child_matches(s
 }
 
 combo_box (uia_expand_collapse_state.expanded) {
-    in_menu: true;
+    in_menu_navigation: true;
 
     action_on_MenuUp: send_key.up;
     action_on_MenuDown: send_key.down;
@@ -154,7 +154,7 @@ combo_box (uia_expand_collapse_state.expanded) {
 // Qt/AT-SPI2 menus
 popup_menu (spi_state.showing)
 {
-    in_menu: true;
+    in_menu_navigation: true;
 
     // We can't manipulate the menu through AT-SPI, we have to use the keyboard
     action_on_MenuUp: send_key.up;
@@ -170,7 +170,7 @@ popup_menu (spi_state.showing)
 root (win32_active_element.uia_class_name == "#32768")
 {
     // Active menu, this doesn't normally happen and suggests Alt to dismiss may not work if the normal menu loop isn't used
-    in_menu: true;
+    in_menu_navigation: true;
 
     action_on_MenuUp: send_key.up;
     action_on_MenuDown: send_key.down;
@@ -184,7 +184,7 @@ root (win32_active_element.uia_class_name == "#32768")
 root (uia_menu_mode or uia_in_menu or
     child_matches(uia_class_name == "Qt5QWindowPopupDropShadowSaveBits"))
 {
-    in_menu: true;
+    in_menu_navigation: true;
 
     action_on_MenuUp: send_key.up;
     action_on_MenuDown: send_key.down;
