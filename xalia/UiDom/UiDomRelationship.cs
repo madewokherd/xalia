@@ -12,6 +12,8 @@ namespace Xalia.UiDom
     {
         ThisOrAncestor,
         ThisOrDescendent,
+        Ancestor,
+        Descendent,
         Child,
         Parent,
         LastChild,
@@ -29,6 +31,8 @@ namespace Xalia.UiDom
             Names = new Dictionary<string, UiDomRelationshipKind>();
             Names["this_or_ancestor_matches"] = UiDomRelationshipKind.ThisOrAncestor;
             Names["this_or_descendent_matches"] = UiDomRelationshipKind.ThisOrDescendent;
+            Names["ancestor_matches"] = UiDomRelationshipKind.Ancestor;
+            Names["descendent_matches"] = UiDomRelationshipKind.Descendent;
             Names["child_matches"] = UiDomRelationshipKind.Child;
             Names["parent_matches"] = UiDomRelationshipKind.Parent;
             Names["last_child_matches"] = UiDomRelationshipKind.LastChild;
@@ -66,6 +70,10 @@ namespace Xalia.UiDom
                     return "this_or_ancestor_matches";
                 case UiDomRelationshipKind.ThisOrDescendent:
                     return "this_or_descendent_matches";
+                case UiDomRelationshipKind.Ancestor:
+                    return "ancestor_matches";
+                case UiDomRelationshipKind.Descendent:
+                    return "descendent_matches";
                 case UiDomRelationshipKind.Child:
                     return "child_matches";
                 case UiDomRelationshipKind.Parent:

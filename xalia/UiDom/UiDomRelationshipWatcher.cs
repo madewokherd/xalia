@@ -74,6 +74,41 @@ namespace Xalia.UiDom
                             return match;
                         return UiDomUndefined.Instance;
                     }
+                case UiDomRelationshipKind.Ancestor:
+                    {
+                        if (!(Element.Parent is null))
+                        {
+                            return Element.Parent.Evaluate(
+                                new BinaryExpression(
+                                    new IdentifierExpression("this_or_ancestor_matches"),
+                                    Expression,
+                                    GudlToken.LParen),
+                                depends_on);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
+                case UiDomRelationshipKind.Descendent:
+                    {
+                        depends_on.Add((Element, new IdentifierExpression("children")));
+                        UiDomValue match = null;
+                        foreach (var child in Element.Children)
+                        {
+                            var value = child.Evaluate(
+                                new BinaryExpression(
+                                    new IdentifierExpression("this_or_descendent_matches"),
+                                    Expression,
+                                    GudlToken.LParen),
+                                depends_on);
+                            if (match == null && value.ToBool())
+                            {
+                                match = value;
+                            }
+                            // Continue evaluating other children to add dependencies
+                        }
+                        if (match != null)
+                            return match;
+                        return UiDomUndefined.Instance;
+                    }
                 case UiDomRelationshipKind.Child:
                     {
                         depends_on.Add((Element, new IdentifierExpression("children")));

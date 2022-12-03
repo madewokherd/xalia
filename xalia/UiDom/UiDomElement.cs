@@ -153,14 +153,14 @@ namespace Xalia.UiDom
                     return this;
                 case "element_identifier":
                     return new UiDomString(DebugId);
-                case "ancestor_matches":
-                    if (Parent is null)
-                        return UiDomUndefined.Instance;
-                    return Parent.EvaluateIdentifier("this_or_ancestor_matches", root, depends_on);
                 case "this_or_ancestor_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.ThisOrAncestor);
                 case "this_or_descendent_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.ThisOrDescendent);
+                case "ancestor_matches":
+                    return new UiDomRelationship(this, UiDomRelationshipKind.Ancestor);
+                case "descendent_matches":
+                    return new UiDomRelationship(this, UiDomRelationshipKind.Descendent);
                 case "child_matches":
                 case "first_child_matches":
                     return new UiDomRelationship(this, UiDomRelationshipKind.Child);
