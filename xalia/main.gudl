@@ -38,6 +38,10 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
                 action_on_MenuClose: send_key.enter;
             }
         }
+
+        button {
+            poll_uia_enabled: true;
+        }
     }
 }
 
