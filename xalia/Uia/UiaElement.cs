@@ -460,7 +460,7 @@ namespace Xalia.Uia
                 if (!Root.names_to_property.TryGetValue(prop_name, out var propid))
                     continue;
 
-                if (!polling_property.TryGetValue(propid, out bool polling))
+                if (!polling_property.TryGetValue(propid, out bool polling) || !polling)
                 {
                     polling_property[propid] = true;
                     Utils.RunTask(PollProperty(prop_name, propid));
@@ -483,9 +483,9 @@ namespace Xalia.Uia
                     continue;
 
                 polling_property[propid] = false;
-                if (property_poll_token[propid] != null)
+                if (property_poll_token.TryGetValue(propid, out var token) && token != null)
                 {
-                    property_poll_token[propid].Cancel();
+                    token.Cancel();
                     property_poll_token[propid] = null;
                 }
             }
