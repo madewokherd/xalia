@@ -750,12 +750,12 @@ namespace Xalia.Uia
                     children_poll_token = null;
                 }
                 polling_children = false;
-                foreach (var token in property_poll_token.Values)
+                while (property_poll_token.Count != 0)
                 {
-                    if (!(token is null))
-                    {
-                        token.Cancel();
-                    }
+                    var kvp = property_poll_token.First();
+                    if (!(kvp.Value is null))
+                        kvp.Value.Cancel();
+                    property_poll_token.Remove(kvp.Key);
                 }
                 property_poll_token.Clear();
                 polling_property.Clear();
