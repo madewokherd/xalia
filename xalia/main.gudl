@@ -44,6 +44,13 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
         button {
             poll_uia_enabled: true;
         }
+
+        if (uia_control_type.custom and previous_sibling.uia_control_type.image and
+            descendent_matches(button and name == "Close") and
+            ancestor_matches(window and active)) {
+            // Popover in EA App
+            is_active_modal: true;
+        }
     }
 }
 
@@ -318,8 +325,16 @@ list (parent.spi_role.combo_box and spi_application.toolkit_name == "Qt")
     recurse: true;
 }
 
+root (descendent_matches(is_active_modal)) {
+    active_modal: descendent_matches(is_active_modal);
+}
+
+if (is_active_modal) {
+    interactable: true;
+}
+
 // We normally should only consider the active window when searching for controls to interact with
-if (active and not root.disable_interactions) {
+if (active and not root.disable_interactions and not root.active_modal) {
     interactable: true;
 }
 
