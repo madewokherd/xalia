@@ -352,6 +352,10 @@ namespace Xalia.Uia
                 {
                     return UiaElementWrapper.InvalidElement;
                 }
+                catch (TimeoutException)
+                {
+                    return UiaElementWrapper.InvalidElement;
+                }
                 catch (ElementNotAvailableException)
                 {
                     return UiaElementWrapper.InvalidElement;
@@ -910,6 +914,14 @@ namespace Xalia.Uia
                 var acc2 = QueryIAccessible2(acc);
 
                 return $"{BlockingGetElementId(element.Parent)}-acc2-{acc2.uniqueID}";
+            }
+            catch (PatternNotSupportedException)
+            {
+                // Fall back on other methods
+            }
+            catch (InvalidOperationException)
+            {
+                // Pattern not supported
             }
             catch (NotImplementedException)
             {

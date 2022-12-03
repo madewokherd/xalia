@@ -152,7 +152,15 @@ namespace Xalia.Uia
         {
             return await OnBackgroundThread(() =>
             {
-                var elements = element.AutomationElement.FindAllChildren();
+                AutomationElement[] elements;
+                try
+                {
+                    elements = element.AutomationElement.FindAllChildren();
+                }
+                catch (COMException)
+                {
+                    return new UiaElementWrapper[0];
+                }
 
                 var result = new UiaElementWrapper[elements.Length];
 
