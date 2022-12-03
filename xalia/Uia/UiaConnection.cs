@@ -539,7 +539,16 @@ namespace Xalia.Uia
 
         private void OnWindowClosedBackground(AutomationElement arg1, EventId arg2)
         {
-            var wrapper = WrapElement(arg1.Parent);
+            UiaElementWrapper wrapper;
+            try
+            {
+                wrapper = WrapElement(arg1.Parent);
+            }
+            catch (NullReferenceException)
+            {
+                // This can be thrown by AutomationElement.get_Parent
+                return;
+            }
 
             MainContext.Post((object state) =>
             {

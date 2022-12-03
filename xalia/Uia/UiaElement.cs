@@ -672,6 +672,12 @@ namespace Xalia.Uia
 
                 IServiceProvider sp = (IServiceProvider)acc;
 
+                if (sp is null)
+                {
+                    // Unsure how this can happen
+                    return null;
+                }
+
                 Guid iid = IID_IAccessibleApplication;
 
                 pIAA = sp.QueryService(ref iid, ref iid);
