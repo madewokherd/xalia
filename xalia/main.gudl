@@ -23,7 +23,9 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
         combo_box {
             recurse: false; // this can get all the list items which is time-consuming
 
-            if (uia_focused) {
+            action_on_PrimaryAction: send_click; // The "Profile Visibility" combo box does not open when invoked
+
+            if (uia_focused and not root.child_matches(uia_class_name == "QQuickWindow" and uia_name == "EADesktop")) {
                 root
                 {
                     poll_focus: true;
@@ -43,6 +45,38 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
             poll_uia_enabled: true;
         }
     }
+}
+
+window (uia_class_name == "QQuickWindow" and uia_name == "EADesktop") {
+    // The "Profile Visibility" combo box creates a window like this
+
+    in_menu_navigation: true;
+    action_on_MenuUp: send_key.up;
+    action_on_MenuDown: send_key.down;
+
+    debug_toplevel_window: root.
+        child_matches(uia_class_name == "eax::services::windowing::QmlView");
+    debug_focusable_descendent: root.
+        child_matches(uia_class_name == "eax::services::windowing::QmlView").
+        descendent_matches(not combo_box and not window and uia_keyboard_focusable);
+    debug_set_focus: root.
+        child_matches(uia_class_name == "eax::services::windowing::QmlView").
+        descendent_matches(not combo_box and not window and uia_keyboard_focusable and set_focus).
+        set_focus;
+
+    // We need to focus some other control because we can't tell this kind of combo box apart from others in EA App that are always open when focused
+    action_on_MenuSelect: send_key.enter + root.
+        child_matches(uia_class_name == "eax::services::windowing::QmlView").
+        descendent_matches(not combo_box and not window and uia_keyboard_focusable and set_focus).
+        set_focus;
+    action_on_MenuBack: send_key.enter + root.
+        child_matches(uia_class_name == "eax::services::windowing::QmlView").
+        descendent_matches(not combo_box and not window and uia_keyboard_focusable and set_focus).
+        set_focus;
+    action_on_MenuClose: send_key.enter + root.
+        child_matches(uia_class_name == "eax::services::windowing::QmlView").
+        descendent_matches(not combo_box and not window and uia_keyboard_focusable and set_focus).
+        set_focus;
 }
 
 group (parent.(uia_control_type.custom and parent.uia_class_name == "eax::services::windowing::QmlView")) {
