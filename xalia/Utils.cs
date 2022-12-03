@@ -15,8 +15,7 @@ namespace Xalia
             }
             catch (Exception e)
             {
-                Console.WriteLine("Unhandled exception:");
-                Console.WriteLine(e);
+                OnError(e);
             }
         }
 
@@ -34,6 +33,9 @@ namespace Xalia
         {
             Console.WriteLine("Unhandled exception:");
             Console.WriteLine(obj);
+#if DEBUG
+            Environment.FailFast(obj.ToString());
+#endif
         }
 
         static void RunActionCallback(object o)
@@ -44,8 +46,7 @@ namespace Xalia
             }
             catch (Exception e)
             {
-                Console.WriteLine("Unhandled exception:");
-                Console.WriteLine(e);
+                OnError(e);
             }
         }
 
