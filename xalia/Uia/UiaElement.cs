@@ -682,6 +682,10 @@ namespace Xalia.Uia
 
                 pIAA = sp.QueryService(ref iid, ref iid);
             }
+            catch (PatternNotSupportedException)
+            {
+                return null;
+            }
             catch (InvalidCastException) // E_NOINTERFACE
             {
                 return null;
@@ -998,7 +1002,7 @@ namespace Xalia.Uia
             return UiDomUndefined.Instance;
         }
 
-        private async Task SendClick(UiDomRoutineAsync obj)
+        private async Task SendClick(UiDomRoutineAsync obj = null)
         {
             System.Drawing.Point? clickable = null;
 
@@ -1058,12 +1062,24 @@ namespace Xalia.Uia
             }
         }
 
-        private Task MsaaDefaultAction(UiDomRoutineAsync obj)
+        private async Task MsaaDefaultAction(UiDomRoutineAsync obj)
         {
-            return Root.CommandThread.OnBackgroundThread(() =>
+            var supported = await Root.CommandThread.OnBackgroundThread(() =>
             {
+                try
+                {
                 ElementWrapper.AutomationElement.Patterns.LegacyIAccessible.Pattern.DoDefaultAction();
+                }
+                catch (PatternNotSupportedException)
+                {
+                    return false;
+                }
+
+                return true;
             }, ElementWrapper);
+
+            if (!supported)
+                await SendClick();
         }
 
         private Task DoSetFocus(UiDomRoutineAsync obj)
@@ -1074,16 +1090,38 @@ namespace Xalia.Uia
             }, ElementWrapper);
         }
 
-        private Task Invoke(UiDomRoutineAsync obj)
+        private async Task Invoke(UiDomRoutineAsync obj)
         {
-            return Root.CommandThread.Invoke(ElementWrapper);
+            var supported = await Root.CommandThread.OnBackgroundThread(() =>
+            {
+                try
+                {
+                    ElementWrapper.AutomationElement.Patterns.Invoke.Pattern.Invoke();
+                }
+                catch (PatternNotSupportedException)
+                {
+                    return false;
+                }
+
+                return true;
+            }, ElementWrapper);
+
+            if (!supported)
+                await SendClick();
         }
 
         private Task Select(UiDomRoutineAsync obj)
         {
             return Root.CommandThread.OnBackgroundThread(() =>
             {
-                ElementWrapper.AutomationElement.Patterns.SelectionItem.Pattern.Select();
+                try
+                {
+                    ElementWrapper.AutomationElement.Patterns.SelectionItem.Pattern.Select();
+                }
+                catch (PatternNotSupportedException)
+                {
+                    Console.WriteLine($"WARNING: uia_select failed for {DebugId}");
+                }
             }, ElementWrapper);
         }
 
@@ -1091,7 +1129,14 @@ namespace Xalia.Uia
         {
             return Root.CommandThread.OnBackgroundThread(() =>
             {
-                ElementWrapper.AutomationElement.Patterns.ExpandCollapse.Pattern.Expand();
+                try
+                {
+                    ElementWrapper.AutomationElement.Patterns.ExpandCollapse.Pattern.Expand();
+                }
+                catch (PatternNotSupportedException)
+                {
+                    Console.WriteLine($"WARNING: uia_expand failed for {DebugId}");
+                }
             }, ElementWrapper);
         }
 
@@ -1099,7 +1144,14 @@ namespace Xalia.Uia
         {
             return Root.CommandThread.OnBackgroundThread(() =>
             {
-                ElementWrapper.AutomationElement.Patterns.ExpandCollapse.Pattern.Collapse();
+                try
+                {
+                    ElementWrapper.AutomationElement.Patterns.ExpandCollapse.Pattern.Collapse();
+                }
+                catch (PatternNotSupportedException)
+                {
+                    Console.WriteLine($"WARNING: uia_collapse failed for {DebugId}");
+                }
             }, ElementWrapper);
         }
     }

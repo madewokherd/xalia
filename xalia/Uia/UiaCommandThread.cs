@@ -191,14 +191,6 @@ namespace Xalia.Uia
             }, element);
         }
 
-        public async Task Invoke(UiaElementWrapper element)
-        {
-            await OnBackgroundThread(() =>
-            {
-                element.AutomationElement.Patterns.Invoke.Pattern.Invoke();
-            }, element);
-        }
-
         private void ThreadProc()
         {
             while (true)
