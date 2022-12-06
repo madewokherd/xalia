@@ -8,9 +8,9 @@ using Xalia.Gudl;
 
 namespace Xalia.UiDom
 {
-    internal class UiDomChildAtIndex : UiDomValue
+    internal class UiDomAssign : UiDomValue
     {
-        public UiDomChildAtIndex(UiDomElement element)
+        public UiDomAssign(UiDomElement element)
         {
             Element = element;
         }
@@ -19,38 +19,40 @@ namespace Xalia.UiDom
 
         public override bool Equals(object obj)
         {
-            if (obj is UiDomChildAtIndex ch)
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (obj is UiDomAssign assign)
             {
-                return ch.Element == Element;
+                return assign.Element.Equals(Element);
             }
             return false;
         }
 
         public override int GetHashCode()
         {
-            return Element.GetHashCode() ^ typeof(UiDomChildAtIndex).GetHashCode();
+            return typeof(UiDomAssign).GetHashCode() ^ Element.GetHashCode();
         }
 
         public override string ToString()
         {
-            return $"{Element}.child_at_index";
+            return $"{Element}.assign";
         }
 
         protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression[] arglist, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
-            if (arglist.Length != 1)
+            if (arglist.Length != 2)
                 return UiDomUndefined.Instance;
-            var expr = arglist[0];
-            UiDomValue right = context.Evaluate(expr, root, depends_on);
-            if (right is UiDomInt i)
+
+            var name = context.Evaluate(arglist[0], root, depends_on);
+
+            if (!(name is UiDomString st))
             {
-                depends_on.Add((Element, new IdentifierExpression("children")));
-                if (i.Value >= 0 && i.Value < Element.Children.Count)
-                {
-                    return Element.Children[i.Value];
-                }
+                return UiDomUndefined.Instance;
             }
-            return UiDomUndefined.Instance;
+
+            var value = context.Evaluate(arglist[1], root, depends_on);
+
+            return new UiDomAssignRoutine(Element, st.Value, value);
         }
     }
 }

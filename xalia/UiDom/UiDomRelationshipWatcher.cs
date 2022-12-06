@@ -15,10 +15,9 @@ namespace Xalia.UiDom
             Kind = kind;
             Expression = expr;
             Value = UiDomUndefined.Instance;
-            AsProperty = new BinaryExpression(
+            AsProperty = new ApplyExpression(
                 new IdentifierExpression(UiDomRelationship.NameFromKind(Kind)),
-                Expression,
-                GudlToken.LParen);
+                new GudlExpression[] { Expression });
             updating = true;
             Utils.RunIdle(Update);
         }
@@ -79,10 +78,9 @@ namespace Xalia.UiDom
                         if (!(Element.Parent is null))
                         {
                             return Element.Parent.Evaluate(
-                                new BinaryExpression(
+                                new ApplyExpression(
                                     new IdentifierExpression("this_or_ancestor_matches"),
-                                    Expression,
-                                    GudlToken.LParen),
+                                    new GudlExpression[] { Expression }),
                                 depends_on);
                         }
                         return UiDomUndefined.Instance;
@@ -94,10 +92,9 @@ namespace Xalia.UiDom
                         foreach (var child in Element.Children)
                         {
                             var value = child.Evaluate(
-                                new BinaryExpression(
+                                new ApplyExpression(
                                     new IdentifierExpression("this_or_descendent_matches"),
-                                    Expression,
-                                    GudlToken.LParen),
+                                    new GudlExpression[] { Expression }),
                                 depends_on);
                             if (match == null && value.ToBool())
                             {

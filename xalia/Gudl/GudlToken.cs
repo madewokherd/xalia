@@ -73,5 +73,6 @@ namespace Xalia.Gudl
         String,
 
         Integer,
+        Comma,
     }
 }

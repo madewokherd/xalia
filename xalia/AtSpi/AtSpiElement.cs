@@ -43,6 +43,9 @@ namespace Xalia.AtSpi
         public bool TextKnown { get; private set; }
         public string Text { get; private set; }
 
+        public bool AttributesKnown { get; private set; }
+        public IDictionary<string, string> Attributes { get; private set; }
+
         private bool watching_abs_position;
         private CancellationTokenSource abs_position_refresh_token;
         public bool AbsPositionKnown;
@@ -212,6 +215,7 @@ namespace Xalia.AtSpi
 
         public string ToolkitName { get; private set; }
         private bool fetching_toolkit_name;
+        private bool fetching_attributes;
 
         static AtSpiElement()
         {
@@ -683,6 +687,18 @@ namespace Xalia.AtSpi
             }
         }
 
+        private async Task FetchAttributes()
+        {
+            Attributes = await acc.GetAttributesAsync();
+            AttributesKnown = true;
+#if DEBUG
+            foreach (var kvp in Attributes)
+                Console.WriteLine($"{this}.spi_attributes.{kvp.Key}: {kvp.Value}");
+#endif
+            PropertyChanged("spi_attributes");
+            // FIXME: There is an AttributesChanged event, but no toolkit implements it so there's no info on how it works.
+        }
+
         protected override void WatchProperty(GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
@@ -745,6 +761,13 @@ namespace Xalia.AtSpi
                             Utils.RunTask(FetchToolkitName());
                         }
                         break;
+                    case "spi_attributes":
+                        if (!fetching_attributes)
+                        {
+                            fetching_attributes = true;
+                            Utils.RunTask(FetchAttributes());
+                        }
+                        break;
                 }
             }
 
@@ -799,11 +822,19 @@ namespace Xalia.AtSpi
         private async Task FetchActions()
         {
             // FIXME: For some reason calling GetActions through Tmds.DBus crashes the target process
-            int count = await action.GetNActionsAsync();
-            var result = new string[count];
-            for (int i=0; i < count; i++)
+            string[] result;
+            try
             {
-                result[i] = await action.GetNameAsync(i);
+                int count = await action.GetNActionsAsync();
+                result = new string[count];
+                for (int i = 0; i < count; i++)
+                {
+                    result[i] = await action.GetNameAsync(i);
+                }
+            }
+            catch (DBusException)
+            {
+                return;
             }
             Actions = result;
 #if DEBUG
@@ -1186,6 +1217,11 @@ namespace Xalia.AtSpi
                             }
                         }
                     }
+                    return UiDomUndefined.Instance;
+                case "spi_attributes":
+                    depends_on.Add((this, new IdentifierExpression("spi_attributes")));
+                    if (AttributesKnown)
+                        return new AtSpiAttributes(this);
                     return UiDomUndefined.Instance;
                 case "is_uia_element":
                     return UiDomBoolean.False;

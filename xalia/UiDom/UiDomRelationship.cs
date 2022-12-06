@@ -91,18 +91,25 @@ namespace Xalia.UiDom
 
         public string Name => NameFromKind(Kind);
 
-        protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression expr, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression[] arglist, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
-            depends_on.Add((Element, new BinaryExpression(
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+            var expr = arglist[0];
+            depends_on.Add((Element, new ApplyExpression(
                 new IdentifierExpression(Name),
-                expr,
-                GudlToken.LParen)));
+                new GudlExpression[] { expr })));
             return Element.EvaluateRelationship(Kind, expr);
         }
 
         protected override UiDomValue EvaluateDot(UiDomValue context, GudlExpression expr, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
-            return EvaluateApply(context, expr, root, depends_on);
+            return EvaluateApply(context, new GudlExpression[] { expr }, root, depends_on);
+        }
+
+        public override string ToString()
+        {
+            return $"{Element}.{Name}";
         }
     }
 }

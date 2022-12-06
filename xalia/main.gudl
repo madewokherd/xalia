@@ -254,6 +254,7 @@ root
         action_on_dpad_left: target_move_left;
         action_on_dpad_right: target_move_right;
         action_on_left_stick: target_move;
+        action_on_back: action_on_TogglePanel;
     }
     action_repeat_delay_dpad_up: 500;
     action_repeat_delay_dpad_down: 500;
@@ -334,8 +335,21 @@ if (is_active_modal) {
 }
 
 // We normally should only consider the active window when searching for controls to interact with
-if (active and not root.disable_interactions and not root.active_modal) {
+if (active and not root.disable_interactions and not root.active_modal and not root.in_panel_mode) {
     interactable: true;
+}
+
+// Panels
+if (is_panel and root.in_panel_mode) {
+    interactable: true;
+}
+
+root (descendent_matches(is_panel) and not root.disable_interactions) {
+    action_on_TogglePanel: assign("in_panel_mode", not in_panel_mode);
+}
+
+if (is_spi_element and parent.spi_role.application and spi_attributes.window_type == "dock") {
+    is_panel: true;
 }
 
 if (uia_control_type.window) {
@@ -487,6 +501,13 @@ if (interactable) {
     if ((spi_role.button or spi_role.radio_button) and spi_action.(click or Press or Toggle)) {
         targetable: true;
         action_on_PrimaryAction: spi_action.(click or Press or Toggle);
+        action_name_PrimaryAction: "Click";
+    }
+
+    if (spi_role.toggle_button) {
+        // In theory, we can click these with spi_action, but applications tend to expect an event
+        targetable: true;
+        action_on_PrimaryAction: send_click;
         action_name_PrimaryAction: "Click";
     }
 

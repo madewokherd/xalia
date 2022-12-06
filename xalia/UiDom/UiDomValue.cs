@@ -42,9 +42,12 @@ namespace Xalia.UiDom
             return Evaluate(expr, root, depends_on);
         }
 
-        protected virtual UiDomValue EvaluateApply(UiDomValue context, GudlExpression expr,
+        protected virtual UiDomValue EvaluateApply(UiDomValue context, GudlExpression[] arglist,
             UiDomRoot root, [In][Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+            var expr = arglist[0];
             UiDomValue right = context.Evaluate(expr, root, depends_on);
             if (right is UiDomString st)
             {
@@ -103,6 +106,21 @@ namespace Xalia.UiDom
                 }
             }
 
+            if (expr is ApplyExpression apply)
+            {
+                UiDomValue left = Evaluate(apply.Left, root, depends_on);
+                try
+                {
+                    return left.EvaluateApply(this, apply.Arglist, root, depends_on);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"failed evaluation of apply expression {apply} in {this}");
+                    Console.WriteLine(e);
+                    return UiDomUndefined.Instance;
+                }
+            }
+
             if (expr is BinaryExpression bin)
             {
                 switch (bin.Kind)
@@ -117,20 +135,6 @@ namespace Xalia.UiDom
                             catch (Exception e)
                             {
                                 Console.WriteLine($"failed evaluation of dot expression {bin.Right} on {left} in {this}");
-                                Console.WriteLine(e);
-                                return UiDomUndefined.Instance;
-                            }
-                        }
-                    case GudlToken.LParen:
-                        {
-                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
-                            try
-                            {
-                                return left.EvaluateApply(this, bin.Right, root, depends_on);
-                            }
-                            catch (Exception e)
-                            {
-                                Console.WriteLine($"failed evaluation of apply expression {bin.Right} on {left} in {this}");
                                 Console.WriteLine(e);
                                 return UiDomUndefined.Instance;
                             }

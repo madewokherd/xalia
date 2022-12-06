@@ -89,24 +89,34 @@ namespace Xalia.Gudl
             }));
         }
 
-        public static TokenListParser<GudlToken, (GudlToken, GudlExpression)> DotOperation =
+        public static TokenListParser<GudlToken, (GudlToken, GudlExpression[])> DotOperation =
             from _token in Token.EqualTo(GudlToken.Dot)
             from expr in UnitExpression
-            select (GudlToken.Dot, expr);
+            select (GudlToken.Dot, new GudlExpression[] { expr });
 
-        public static TokenListParser<GudlToken, (GudlToken, GudlExpression)> ApplyOperation =
-            from expr in ParenExpression
-            select (GudlToken.LParen, expr);
+        public static TokenListParser<GudlToken, (GudlToken, GudlExpression[])> ArglistExpression =
+            from _start in Token.EqualTo(GudlToken.LParen)
+            from arglist in Expression.ManyDelimitedBy(Token.EqualTo(GudlToken.Comma))
+            from _end in Token.EqualTo(GudlToken.RParen)
+            select (GudlToken.LParen, arglist);
 
         public static TokenListParser<GudlToken, GudlExpression> ApplyExpression =
             UnitExpression.Then(dot =>
-                DotOperation.Or(ApplyOperation).Many().Select(exprs =>
+                DotOperation.Or(ArglistExpression).Many().Select(exprs =>
                 {
                     GudlExpression result = dot;
 
-                    foreach ((var token, var expr) in exprs)
+                    foreach ((var token, var arglist) in exprs)
                     {
-                        result = new BinaryExpression(result, expr, token);
+                        switch (token)
+                        {
+                            case GudlToken.Dot:
+                                result = new BinaryExpression(result, arglist[0], GudlToken.Dot);
+                                break;
+                            case GudlToken.LParen:
+                                result = new ApplyExpression(result, arglist);
+                                break;
+                        }
                     }
 
                     return result;

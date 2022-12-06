@@ -66,6 +66,7 @@ namespace Xalia.Gudl
                 .Match(Character.EqualTo('+'), GudlToken.Plus)
                 .Match(Character.EqualTo('-'), GudlToken.Minus)
                 .Match(Character.EqualTo('*'), GudlToken.Mult)
+                .Match(Character.EqualTo(','), GudlToken.Comma)
                 .Match(Span.EqualTo("~/"), GudlToken.IDiv)
                 .Match(Character.EqualTo('%'), GudlToken.Modulo)
                 .Match(Span.EqualTo("=="), GudlToken.Equal)

@@ -52,9 +52,8 @@ namespace Xalia.Gudl
                 if (relationship_conditions.ContainsKey(Kind))
                 {
                     condition = And(
-                        new BinaryExpression(new IdentifierExpression(relationship_conditions[Kind]),
-                            parent_condition ?? new IdentifierExpression("true"),
-                            GudlToken.LParen),
+                        new ApplyExpression(new IdentifierExpression(relationship_conditions[Kind]),
+                            new GudlExpression[] { parent_condition ?? new IdentifierExpression("true") }),
                         condition);
                 }
                 else if (Kind == "root")
@@ -66,10 +65,9 @@ namespace Xalia.Gudl
                     {
                         condition = And(
                             condition,
-                            new BinaryExpression(
+                            new ApplyExpression(
                                 new IdentifierExpression("this_or_descendent_matches"),
-                                parent_condition,
-                                GudlToken.LParen));
+                                new GudlExpression[] { parent_condition }));
                     }
                 }
                 else

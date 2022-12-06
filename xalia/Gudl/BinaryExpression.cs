@@ -42,8 +42,6 @@ namespace Xalia.Gudl
                 case GudlToken.Equal:
                     opname = " == ";
                     break;
-                case GudlToken.LParen:
-                    return $"{Left}({Right})";
                 case GudlToken.NotEqual:
                     opname = " != ";
                     break;

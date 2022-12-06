@@ -60,8 +60,11 @@ namespace Xalia.UiDom
             return (Element, RelationshipType).GetHashCode() ^ typeof(UiDomIsRelationship).GetHashCode();
         }
 
-        protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression expr, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
+        protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression[] arglist, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+            var expr = arglist[0];
             var right_value = context.Evaluate(expr, root, depends_on);
             if (right_value is UiDomElement other && !(right_value is null))
             {

@@ -25,6 +25,8 @@ namespace Xalia.UiDom
 
         private Dictionary<string, UiDomValue> _activeDeclarations = new Dictionary<string, UiDomValue>();
 
+        private Dictionary<string, UiDomValue> _assignedProperties = new Dictionary<string, UiDomValue>();
+
         private Dictionary<GudlExpression, LinkedList<PropertyChangeNotifier>> _propertyChangeNotifiers = new Dictionary<GudlExpression, LinkedList<PropertyChangeNotifier>>();
 
         private Dictionary<(UiDomElement, GudlExpression), IDisposable> _dependencyPropertyChangeNotifiers = new Dictionary<(UiDomElement, GudlExpression), IDisposable>();
@@ -104,10 +106,9 @@ namespace Xalia.UiDom
         internal UiDomValue EvaluateRelationship(UiDomRelationshipKind kind, GudlExpression expr)
         {
             if (_relationshipWatchers.TryGetValue(
-                new BinaryExpression(
+                new ApplyExpression(
                     new IdentifierExpression(UiDomRelationship.NameFromKind(kind)),
-                    expr,
-                    GudlToken.LParen),
+                    new GudlExpression[] { expr }),
                 out var watcher))
             {
                 return watcher.Value;
@@ -138,9 +139,37 @@ namespace Xalia.UiDom
             return Evaluate(expr, Root, depends_on);
         }
 
+        public void AssignProperty(string propName, UiDomValue propValue)
+        {
+            if (propValue is UiDomUndefined)
+            {
+                if (_assignedProperties.ContainsKey(propName))
+                {
+#if DEBUG
+                    Console.WriteLine($"{this}.{propName} assigned: {propValue}");
+#endif
+                    _assignedProperties.Remove(propName);
+                    PropertyChanged(new IdentifierExpression(propName));
+                    return;
+                }
+            }
+
+            if (!_assignedProperties.TryGetValue(propName, out var oldValue) || !oldValue.Equals(propValue))
+            {
+#if DEBUG
+                    Console.WriteLine($"{this}.{propName} assigned: {propValue}");
+#endif
+                _assignedProperties[propName] = propValue;
+                PropertyChanged(propName);
+                return;
+            }
+        }
+
         public UiDomValue GetDeclaration(string property)
         {
-            if (_activeDeclarations.TryGetValue(property, out var result))
+            if (_activeDeclarations.TryGetValue(property, out var result) && !(result is UiDomUndefined))
+                return result;
+            if (_assignedProperties.TryGetValue(property, out result) && !(result is UiDomUndefined))
                 return result;
             return UiDomUndefined.Instance;
         }
@@ -258,6 +287,8 @@ namespace Xalia.UiDom
                     return UiDomBoolean.FromBool(this is UiDomRoot);
                 case "root":
                     return root;
+                case "assign":
+                    return new UiDomAssign(this);
                 case "simulate_dpad":
                     return new SimulateDpad();
                 case "index_in_parent":
@@ -276,7 +307,9 @@ namespace Xalia.UiDom
                 return result;
             }
             depends_on.Add((this, new IdentifierExpression(id)));
-            if (_activeDeclarations.TryGetValue(id, out result))
+            if (_activeDeclarations.TryGetValue(id, out result) && !(result is UiDomUndefined))
+                return result;
+            if (_assignedProperties.TryGetValue(id, out result) && !(result is UiDomUndefined))
                 return result;
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }
@@ -468,15 +501,15 @@ namespace Xalia.UiDom
             {
                 return;
             }
-            if (expression is BinaryExpression bin)
+            if (expression is ApplyExpression apply)
             {
-                if (bin.Kind == GudlToken.LParen &&
-                    bin.Left is IdentifierExpression prop)
+                if (apply.Left is IdentifierExpression prop &&
+                    apply.Arglist.Length == 1)
                 {
                     if (UiDomRelationship.Names.TryGetValue(prop.Name, out var kind))
                     {
                         _relationshipWatchers.Add(expression,
-                            new UiDomRelationshipWatcher(this, kind, bin.Right));
+                            new UiDomRelationshipWatcher(this, kind, apply.Arglist[0]));
                     }
                 }
             }

@@ -46,9 +46,12 @@ namespace Xalia.Ui
             return Evaluate(expr, root, depends_on);
         }
 
-        protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression expr,
+        protected override UiDomValue EvaluateApply(UiDomValue context, GudlExpression[] arglist,
             UiDomRoot root, [In][Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+            var expr = arglist[0];
             UiDomValue right = context.Evaluate(expr, root, depends_on);
             if (right is UiDomString st)
             {
