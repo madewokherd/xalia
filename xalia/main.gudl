@@ -360,6 +360,15 @@ root (descendent_matches(is_panel) and not root.disable_interactions) {
     action_on_TogglePanel: assign("in_panel_mode", not in_panel_mode);
 }
 
+if (targeted and root.in_panel_mode) {
+    // panel-specific controls
+    action_on_B: root.assign("in_panel_mode", false);
+    action_name_B: "Back";
+
+    action_on_A: action_on_PrimaryAction + root.assign("in_panel_mode", false);
+    action_name_A: action_name_PrimaryAction;
+}
+
 if (is_spi_element and parent.spi_role.application and spi_attributes.window_type == "dock") {
     is_panel: true;
 }
