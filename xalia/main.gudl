@@ -301,7 +301,7 @@ if (role.(desktop_frame or application)) {
     }
 }
 
-if (role.(window or frame or dialog or color_chooser or file_chooser or font_chooser))
+if (role.(window or frame or dialog or color_chooser or file_chooser or font_chooser or utility))
 {
     recurse: true;
 }
