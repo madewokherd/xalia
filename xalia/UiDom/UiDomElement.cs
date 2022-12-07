@@ -299,7 +299,11 @@ namespace Xalia.UiDom
                     }
                     return UiDomUndefined.Instance;
                 case "child_at_index":
+                    depends_on.Add((this, new IdentifierExpression("children")));
                     return new UiDomChildAtIndex(this);
+                case "child_count":
+                    depends_on.Add((this, new IdentifierExpression("children")));
+                    return new UiDomInt(Children.Count);
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))

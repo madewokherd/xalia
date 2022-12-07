@@ -101,6 +101,18 @@ if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_
     firefox_use_offscreen_menu: true;
 }
 
+// APPLICATION: xfce4-panel
+if (spi_role.filler and parent.spi_role.panel and child_count == 0
+    and ancestor_matches(spi_role.application and spi_name == "xfce4-panel")
+    and parent.interactable)
+{
+    // https://gitlab.xfce.org/xfce/xfce4-panel/-/issues/666 
+    // External plugin contents are not exposed to AT-SPI2, this is the best we can do.
+    targetable: true;
+    action_on_PrimaryAction: send_click;
+    action_name_PrimaryAction: "Click";
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
