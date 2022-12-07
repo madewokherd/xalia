@@ -183,6 +183,26 @@ namespace Xalia.Sdl
             await base.SendKey(keysym);
         }
 
+        public override Task SendMouseMotion(int x, int y)
+        {
+            if (xtest_supported)
+            {
+                XTestFakeMotionEvent(display, 0, x, y, IntPtr.Zero);
+                return Task.CompletedTask;
+            }
+            return base.SendMouseMotion(x, y);
+        }
+
+        public override Task SendMouseButton(MouseButton button, bool is_press)
+        {
+            if (xtest_supported)
+            {
+                XTestFakeButtonEvent(display, (int)button, is_press ? 1 : 0, IntPtr.Zero);
+                return Task.CompletedTask;
+            }
+            return base.SendMouseButton(button, is_press);
+        }
+
         public override void CustomizeOverlayWindow(OverlayBox box, IntPtr sdl_window)
         {
             // For some reason, this reduces flickering on X11

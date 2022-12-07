@@ -947,9 +947,6 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "uia_collapse", Collapse);
                     }
                     return UiDomUndefined.Instance;
-                case "win32_send_click":
-                    depends_on.Add((Root, new IdentifierExpression("uia_bounding_rectangle")));
-                    return new UiDomRoutineAsync(this, "win32_send_click", SendClick);
                 case "acc2_application_name":
                     depends_on.Add((this, new IdentifierExpression(id)));
                     if (application_name is null)
@@ -1002,64 +999,35 @@ namespace Xalia.Uia
             return UiDomUndefined.Instance;
         }
 
-        private async Task SendClick(UiDomRoutineAsync obj = null)
+        public override async Task<(bool, int, int)> GetClickablePoint()
         {
-            System.Drawing.Point? clickable = null;
+            var result = await base.GetClickablePoint();
+            if (result.Item1)
+                return result;
 
-            if (GetDeclaration("target_x") is UiDomInt tx &&
-                GetDeclaration("target_y") is UiDomInt ty &&
-                GetDeclaration("target_width") is UiDomInt tw &&
-                GetDeclaration("target_height") is UiDomInt th)
+            var rc = await Root.CommandThread.GetPropertyValue(ElementWrapper, Root.Automation.PropertyLibrary.Element.BoundingRectangle);
+            if (!(rc is null) && rc is System.Drawing.Rectangle r)
             {
-                clickable = new System.Drawing.Point(
-                    tx.Value + tw.Value / 2,
-                    ty.Value + th.Value / 2);
+                int x = r.Left + r.Width / 2;
+                int y = r.Right + r.Height / 2;
+                return (true, x, y);
             }
 
-            if (clickable is null)
+            try
             {
-                if (property_known.TryGetValue(Root.Automation.PropertyLibrary.Element.BoundingRectangle, out var known) && known)
+                var clickable = await Root.CommandThread.OnBackgroundThread(() =>
                 {
-                    if (property_raw_value.TryGetValue(Root.Automation.PropertyLibrary.Element.BoundingRectangle, out var val) &&
-                        val is System.Drawing.Rectangle r)
-                    {
-                        clickable = new System.Drawing.Point(r.Left + r.Width / 2, r.Top + r.Height / 2);
-                    }
-                }
+                    return ElementWrapper.AutomationElement.GetClickablePoint();
+                }, ElementWrapper);
+
+                int x = clickable.X;
+                int y = clickable.Y;
+                return (true, x, y);
             }
+            catch (NoClickablePointException) { }
+            catch (COMException) { }
 
-            if (clickable is null)
-            {
-                try
-                {
-                    clickable = await Root.CommandThread.OnBackgroundThread(() =>
-                    {
-                        return ElementWrapper.AutomationElement.GetClickablePoint();
-                    }, ElementWrapper);
-                }
-                catch (NoClickablePointException) { }
-                catch (COMException) { }
-            }
-
-            if (clickable is System.Drawing.Point p)
-            {
-                INPUT[] inputs = new INPUT[3];
-
-                p = NormalizeScreenCoordinates(p);
-
-                inputs[0].type = INPUT_MOUSE;
-                inputs[0].u.mi.dx = p.X;
-                inputs[0].u.mi.dy = p.Y;
-                inputs[0].u.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
-
-                inputs[1].type = INPUT_MOUSE;
-                inputs[1].u.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-
-                inputs[2].type = INPUT_MOUSE;
-                inputs[2].u.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-
-                SendInput(3, inputs, Marshal.SizeOf<INPUT>());
-            }
+            return (false, 0, 0);
         }
 
         private async Task MsaaDefaultAction(UiDomRoutineAsync obj)
@@ -1079,7 +1047,9 @@ namespace Xalia.Uia
             }, ElementWrapper);
 
             if (!supported)
-                await SendClick();
+            {
+                Console.WriteLine($"WARNING: msaa_do_default_action not supported on {this}");
+            }
         }
 
         private Task DoSetFocus(UiDomRoutineAsync obj)
@@ -1107,7 +1077,9 @@ namespace Xalia.Uia
             }, ElementWrapper);
 
             if (!supported)
-                await SendClick();
+            {
+                Console.WriteLine($"WARNING: uia_invoke not supported on {this}");
+            }
         }
 
         private Task Select(UiDomRoutineAsync obj)

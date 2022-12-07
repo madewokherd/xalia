@@ -448,11 +448,10 @@ namespace Xalia.Interop
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int GetSystemMetrics(int nIndex);
 
-        public static System.Drawing.Point NormalizeScreenCoordinates(System.Drawing.Point orig)
+        public static void NormalizeScreenCoordinates(ref int x, ref int y)
         {
-            return new System.Drawing.Point(
-                (int)Math.Round((double)(orig.X - GetSystemMetrics(SM_XVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CXVIRTUALSCREEN)),
-                (int)Math.Round((double)(orig.Y - GetSystemMetrics(SM_YVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CYVIRTUALSCREEN)));
+            x = (int)Math.Round((double)(x - GetSystemMetrics(SM_XVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CXVIRTUALSCREEN));
+            y = (int)Math.Round((double)(y - GetSystemMetrics(SM_YVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CYVIRTUALSCREEN));
         }
 
         [ComImport, Guid("4ce576fa-83dc-4F88-951c-9d0782b4e376")]

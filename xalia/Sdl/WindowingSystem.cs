@@ -141,6 +141,35 @@ namespace Xalia.Sdl
             throw new NotImplementedException();
         }
 
+        public enum MouseButton
+        {
+            LeftButton = 1,
+            MiddleButton,
+            RightButton,
+            ScrollUp,
+            ScrollDown,
+            ScrollLeft,
+            ScrollRight,
+            Back,
+            Forward
+        }
+
+        public virtual Task SendMouseButton(MouseButton button, bool is_press)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task SendMouseMotion(int x, int y)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual async Task SendClick(MouseButton button)
+        {
+            await SendMouseButton(button, true);
+            await SendMouseButton(button, false);
+        }
+
         public virtual int GetKeySym(string key)
         {
             return XKeyCodes.GetKeySym(key);

@@ -144,5 +144,11 @@ namespace Xalia.Interop
 
         [DllImport(XTEST_LIB)]
         public extern static int XTestFakeKeyEvent(IntPtr display, int keycode, int is_press, IntPtr delay);
+
+        [DllImport(XTEST_LIB)]
+        public extern static int XTestFakeButtonEvent(IntPtr display, int button, int is_press, IntPtr delay);
+
+        [DllImport(XTEST_LIB)]
+        public extern static int XTestFakeMotionEvent(IntPtr display, int screen, int x, int y, IntPtr delay);
     }
 }

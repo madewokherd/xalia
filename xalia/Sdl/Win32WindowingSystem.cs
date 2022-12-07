@@ -486,6 +486,45 @@ namespace Xalia.Sdl
 
             return Task.CompletedTask;
         }
+
+        public override Task SendMouseMotion(int x, int y)
+        {
+            INPUT[] inputs = new INPUT[1];
+
+            NormalizeScreenCoordinates(ref x, ref y);
+
+            inputs[0].type = INPUT_MOUSE;
+            inputs[0].u.mi.dx = x;
+            inputs[0].u.mi.dy = y;
+            inputs[0].u.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
+
+            SendInput(1, inputs, Marshal.SizeOf<INPUT>());
+            return Task.CompletedTask;
+        }
+
+        public override Task SendMouseButton(MouseButton button, bool is_press)
+        {
+            INPUT[] inputs = new INPUT[1];
+
+            inputs[0].type = INPUT_MOUSE;
+            switch (button)
+            {
+                case MouseButton.LeftButton:
+                    inputs[0].u.mi.dwFlags = is_press ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
+                    break;
+                case MouseButton.MiddleButton:
+                    inputs[0].u.mi.dwFlags = is_press ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
+                    break;
+                case MouseButton.RightButton:
+                    inputs[0].u.mi.dwFlags = is_press ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            SendInput(1, inputs, Marshal.SizeOf<INPUT>());
+            return Task.CompletedTask;
+        }
     }
 }
 #endif

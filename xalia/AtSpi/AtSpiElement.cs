@@ -1250,5 +1250,24 @@ namespace Xalia.AtSpi
 
             return UiDomUndefined.Instance;
         }
+
+        public override async Task<(bool,int,int)> GetClickablePoint()
+        {
+            var result = await base.GetClickablePoint();
+            if (result.Item1)
+                return result;
+
+            try
+            {
+                (var cx, var cy, var width, var height) = await component.GetExtentsAsync(0); // ATSPI_COORD_TYPE_SCREEN
+
+                int x = cx + width / 2;
+                int y = cy + height / 2;
+                return (true, x, y);
+            }
+            catch (DBusException) { }
+
+            return (false, 0, 0);
+        }
     }
 }

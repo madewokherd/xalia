@@ -527,8 +527,32 @@ namespace Xalia.Ui
                         return new SendKey(Windowing);
                     }
                     break;
+                case "send_click":
+                    return new UiDomRoutineAsync(element, "send_click", SendClick);
             }
             return null;
+        }
+
+        private async Task SendClick(UiDomRoutineAsync obj)
+        {
+            var position = await obj.Element.GetClickablePoint();
+
+            if (!position.Item1)
+            {
+                Console.WriteLine($"WARNING: Could not get clickable point for {obj.Element}");
+                return;
+            }
+
+            try
+            {
+                await Windowing.SendMouseMotion(position.Item2, position.Item3);
+
+                await Windowing.SendClick(WindowingSystem.MouseButton.LeftButton);
+            }
+            catch (NotImplementedException)
+            {
+                Console.WriteLine($"WARNING: Cannot send click events on the current windowing system");
+            }
         }
 
         private async Task ShowKeyboard(UiDomRoutineAsync obj)

@@ -314,6 +314,21 @@ namespace Xalia.UiDom
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }
 
+        public virtual Task<(bool, int, int)> GetClickablePoint()
+        {
+            int x, y;
+            if (GetDeclaration("target_x") is UiDomInt tx &&
+                GetDeclaration("target_y") is UiDomInt ty &&
+                GetDeclaration("target_width") is UiDomInt tw &&
+                GetDeclaration("target_height") is UiDomInt th)
+            {
+                x = tx.Value + tw.Value / 2;
+                y = ty.Value + th.Value / 2;
+                return Task.FromResult((true, x, y));
+            }
+            return Task.FromResult((false, 0, 0));
+        }
+
         private void EvaluateRules()
         {
             _updatingRules = false;
