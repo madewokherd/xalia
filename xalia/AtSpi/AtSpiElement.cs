@@ -404,6 +404,7 @@ namespace Xalia.AtSpi
             switch (e.ErrorName)
             {
                 case "org.freedesktop.DBus.Error.NoReply":
+                case "org.freedesktop.DBus.Error.UnknownObject":
                     return true;
                 default:
 #if DEBUG
