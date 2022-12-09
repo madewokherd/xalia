@@ -600,7 +600,7 @@ if (interactable) {
         action_name_Cancel: name;
     }
 
-    if (focusable and not spi_role.panel) {
+    if (focusable and not spi_role.panel and not descendent_matches(targetable)) {
         // A control being focusable is a good hint that it's something to click on
         targetable: true;
         action_on_PrimaryAction: send_click;
