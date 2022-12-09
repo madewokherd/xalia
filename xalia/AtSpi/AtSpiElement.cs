@@ -362,6 +362,60 @@ namespace Xalia.AtSpi
             base.SetAlive(value);
         }
 
+        private async Task<(string, ObjectPath)[]> GetChildList()
+        {
+            try
+            {
+                var children = await acc.GetChildrenAsync();
+
+                if (children.Length == 0)
+                {
+                    var child_count = await acc.GetChildCountAsync();
+                    if (child_count != 0)
+                    {
+                        // This happens for AtkSocket/AtkPlug
+                        // https://gitlab.gnome.org/GNOME/at-spi2-core/-/issues/98
+
+                        children = new (string, ObjectPath)[child_count];
+
+                        for (int i = 0; i < child_count; i++)
+                        {
+                            children[i] = await acc.GetChildAtIndexAsync(i);
+                        }
+                    }
+                }
+
+                return children;
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return new (string, ObjectPath)[0];
+            }
+        }
+
+        private bool IsExpectedException(DBusException e)
+        {
+#if DEBUG
+            Console.WriteLine("WARNING: DBus exception:");
+            Console.WriteLine(e);
+#endif
+            switch (e.ErrorName)
+            {
+                case "org.freedesktop.DBus.Error.NoReply":
+                    return true;
+                default:
+#if DEBUG
+                    return false;
+#else
+                    Console.WriteLine("WARNING: DBus exception ignored:");
+                    Console.WriteLine(e);
+                    return true;
+#endif
+            }
+        }
+
         private async Task WatchChildrenTask()
         {
             IDisposable children_changed_event = await object_events.WatchChildrenChangedAsync(OnChildrenChanged, Utils.OnError);
@@ -371,8 +425,8 @@ namespace Xalia.AtSpi
 
             this.children_changed_event = children_changed_event;
 
-            (string, ObjectPath)[] children = await acc.GetChildrenAsync();
-
+            (string, ObjectPath)[] children = await GetChildList();
+            
             if (children_known)
                 return;
 
@@ -399,7 +453,7 @@ namespace Xalia.AtSpi
             if (!polling_children)
                 return;
 
-            var children = await acc.GetChildrenAsync(); // ATSPI_COORD_TYPE_SCREEN
+            var children = await GetChildList();
 
             if (!polling_children)
                 return;
