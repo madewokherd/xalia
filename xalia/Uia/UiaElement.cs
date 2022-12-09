@@ -238,6 +238,9 @@ namespace Xalia.Uia
                 "controltype", "uia_control_type",
                 "enabled", "uia_enabled",
                 "is_enabled", "uia_enabled",
+                "focusable", "uia_keyboard_focusable",
+                "keyboard_focusable", "uia_keyboard_focusable",
+                "is_keyboard_focusable", "uia_keyboard_focusable",
                 "offscreen", "uia_offscreen",
                 "is_offscreen", "uia_offscreen",
                 "visible", "uia_visible",
@@ -816,8 +819,6 @@ namespace Xalia.Uia
                 case "uia_enabled":
                 case "uia_is_enabled":
                     return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
-                case "keyboard_focusable":
-                case "is_keyboard_focusable":
                 case "uia_is_keyboard_focusable":
                 case "uia_keyboard_focusable":
                     return GetProperty("uia_keyboard_focusable", Root.Automation.PropertyLibrary.Element.IsKeyboardFocusable, depends_on);
