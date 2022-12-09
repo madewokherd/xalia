@@ -448,6 +448,11 @@ if (targetable) {
     }
 }
 
+root (targeted_element) {
+    action_on_B: descendent_matches(action_on_Cancel).action_on_Cancel or send_key.esc;
+    action_name_B: descendent_matches(action_on_Cancel).action_name_Cancel or "Back";
+}
+
 // Rules that apply to controls in the active window
 if (interactable) {
     combo_box (not uia_expand_collapse_state.leaf_node) {
@@ -591,8 +596,8 @@ if (interactable) {
 
     button ((name == "Cancel" or name == "Close" or name == "No") and action_on_PrimaryAction)
     {
-        action_on_B: action_on_PrimaryAction;
-        action_name_B: name;
+        action_on_Cancel: action_on_PrimaryAction;
+        action_name_Cancel: name;
     }
 
     if (focusable and not spi_role.panel) {
