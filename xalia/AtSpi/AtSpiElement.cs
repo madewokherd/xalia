@@ -264,7 +264,17 @@ namespace Xalia.AtSpi
 
         private async Task WatchProperties()
         {
-            IDisposable property_change_event = await object_events.WatchPropertyChangeAsync(OnPropertyChange, Utils.OnError);
+            IDisposable property_change_event;
+            try
+            {
+                property_change_event = await object_events.WatchPropertyChangeAsync(OnPropertyChange, Utils.OnError);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             if (this.property_change_event != null)
                 this.property_change_event.Dispose();
             this.property_change_event = property_change_event;
@@ -419,7 +429,17 @@ namespace Xalia.AtSpi
 
         private async Task WatchChildrenTask()
         {
-            IDisposable children_changed_event = await object_events.WatchChildrenChangedAsync(OnChildrenChanged, Utils.OnError);
+            IDisposable children_changed_event;
+            try
+            {
+                children_changed_event = await object_events.WatchChildrenChangedAsync(OnChildrenChanged, Utils.OnError);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
 
             if (this.children_changed_event != null)
                 this.children_changed_event.Dispose();
@@ -629,7 +649,17 @@ namespace Xalia.AtSpi
 
         private async Task FetchRole()
         {
-            int role = (int)await acc.GetRoleAsync();
+            int role;
+            try
+            {
+                role = (int)await acc.GetRoleAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             Role = role;
             RoleKnown = true;
 #if DEBUG
@@ -643,7 +673,17 @@ namespace Xalia.AtSpi
 
         private async Task FetchName()
         {
-            string name = await acc.GetNameAsync(); ;
+            string name;
+            try
+            {
+                name = await acc.GetNameAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             Name = name;
             NameKnown = true;
 #if DEBUG
@@ -654,11 +694,30 @@ namespace Xalia.AtSpi
 
         private async Task WatchBounds()
         {
-            IDisposable bounds_changed_event = await object_events.WatchBoundsChangedAsync(OnBoundsChanged, Utils.OnError);
+            IDisposable bounds_changed_event;
+            try
+            {
+                bounds_changed_event = await object_events.WatchBoundsChangedAsync(OnBoundsChanged, Utils.OnError);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             if (this.bounds_changed_event != null)
                 this.bounds_changed_event.Dispose();
             this.bounds_changed_event = bounds_changed_event;
-            (X, Y, Width, Height) = await component.GetExtentsAsync(1); // 1 = ATSPI_COORD_TYPE_WINDOW
+            try
+            {
+                (X, Y, Width, Height) = await component.GetExtentsAsync(1); // 1 = ATSPI_COORD_TYPE_WINDOW
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             BoundsKnown = true;
 #if DEBUG
             Console.WriteLine($"{this}.spi_bounds: {X},{Y}: {Width}x{Height}");
@@ -685,11 +744,30 @@ namespace Xalia.AtSpi
 
         private async Task WatchText()
         {
-            IDisposable text_changed_event = await object_events.WatchTextChangedAsync(OnTextChanged, Utils.OnError);
+            IDisposable text_changed_event;
+            try
+            {
+                text_changed_event = await object_events.WatchTextChangedAsync(OnTextChanged, Utils.OnError);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             if (this.text_changed_event != null)
                 this.text_changed_event.Dispose();
             this.text_changed_event = text_changed_event;
-            Text = await text_iface.GetTextAsync(0, -1);
+            try
+            {
+                Text = await text_iface.GetTextAsync(0, -1);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             TextKnown = true;
 #if DEBUG
             Console.WriteLine($"{this}.spi_text: {Text}");
@@ -744,7 +822,16 @@ namespace Xalia.AtSpi
 
         private async Task FetchAttributes()
         {
-            Attributes = await acc.GetAttributesAsync();
+            try
+            {
+                Attributes = await acc.GetAttributesAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             AttributesKnown = true;
 #if DEBUG
             foreach (var kvp in Attributes)
@@ -887,8 +974,10 @@ namespace Xalia.AtSpi
                     result[i] = await action.GetNameAsync(i);
                 }
             }
-            catch (DBusException)
+            catch (DBusException e)
             {
+                if (!IsExpectedException(e))
+                    throw;
                 return;
             }
             Actions = result;
@@ -900,7 +989,16 @@ namespace Xalia.AtSpi
 
         private async Task FetchSupported()
         {
-            SupportedInterfaces = await acc.GetInterfacesAsync();
+            try
+            {
+                SupportedInterfaces = await acc.GetInterfacesAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
 #if DEBUG
             Console.WriteLine($"{this}.spi_supported: ({string.Join(",", SupportedInterfaces)})");
 #endif
@@ -909,7 +1007,16 @@ namespace Xalia.AtSpi
 
         private async Task FetchToolkitName()
         {
-            ToolkitName = await app.GetToolkitNameAsync();
+            try
+            {
+                ToolkitName = await app.GetToolkitNameAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
 #if DEBUG
             Console.WriteLine($"{this}.spi_toolkit_name: {ToolkitName}");
 #endif
@@ -920,7 +1027,17 @@ namespace Xalia.AtSpi
             if (!watching_abs_position)
                 return;
 
-            (var x, var y, var width, var height) = await component.GetExtentsAsync(0); // ATSPI_COORD_TYPE_SCREEN
+            int x, y, width, height;
+            try
+            {
+                (x, y, width, height) = await component.GetExtentsAsync(0); // ATSPI_COORD_TYPE_SCREEN
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
 
             if (!watching_abs_position)
                 return;
@@ -959,11 +1076,31 @@ namespace Xalia.AtSpi
 
         private async Task WatchStates()
         {
-            IDisposable state_changed_event = await object_events.WatchStateChangedAsync(OnStateChanged, Utils.OnError);
+            IDisposable state_changed_event;
+            try
+            {
+                state_changed_event = await object_events.WatchStateChangedAsync(OnStateChanged, Utils.OnError);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             if (this.state_changed_event != null)
                 this.state_changed_event.Dispose();
             this.state_changed_event = state_changed_event;
-            uint[] states = await acc.GetStateAsync();
+            uint[] states;
+            try
+            {
+                states = await acc.GetStateAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
             state.SetStates(states);
 #if DEBUG
             Console.WriteLine($"{this}.spi_state: {state}");
@@ -1005,7 +1142,16 @@ namespace Xalia.AtSpi
         {
             if (Parent is AtSpiElement p)
             {
-                await p.selection.SelectChildAsync(p.Children.IndexOf(this));
+                try
+                {
+                    await p.selection.SelectChildAsync(p.Children.IndexOf(this));
+                }
+                catch (DBusException e)
+                {
+                    if (!IsExpectedException(e))
+                        throw;
+                    return;
+                }
             }
         }
 
@@ -1013,18 +1159,45 @@ namespace Xalia.AtSpi
         {
             if (Parent is AtSpiElement p)
             {
-                await p.selection.DeselectChildAsync(p.Children.IndexOf(this));
+                try
+                {
+                    await p.selection.DeselectChildAsync(p.Children.IndexOf(this));
+                }
+                catch (DBusException e)
+                {
+                    if (!IsExpectedException(e))
+                        throw;
+                    return;
+                }
             }
         }
 
         private async Task ClearSelection(UiDomRoutineAsync routine)
         {
-            await selection.ClearSelectionAsync();
+            try
+            {
+                await selection.ClearSelectionAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
         }
 
         private async Task SetFocus(UiDomRoutineAsync routine)
         {
-            await component.GrabFocusAsync();
+            try
+            {
+                await component.GrabFocusAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
         }
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -1314,7 +1487,17 @@ namespace Xalia.AtSpi
 
             try
             {
-                (var cx, var cy, var width, var height) = await component.GetExtentsAsync(0); // ATSPI_COORD_TYPE_SCREEN
+                int cx, cy, width, height;
+                try
+                {
+                    (cx, cy, width, height) = await component.GetExtentsAsync(0); // ATSPI_COORD_TYPE_SCREEN
+                }
+                catch (DBusException e)
+                {
+                    if (!IsExpectedException(e))
+                        throw;
+                    return (true, 0, 0);
+                }
 
                 int x = cx + width / 2;
                 int y = cy + height / 2;
