@@ -931,6 +931,10 @@ namespace Xalia.Uia
             {
                 // Fall back on other methods
             }
+            catch (ArgumentException)
+            {
+                // Fall back on other methods
+            }
             catch (COMException)
             {
                 // Fall back on other methods
