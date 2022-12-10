@@ -86,8 +86,8 @@ namespace Xalia.AtSpi
             await result.registry.RegisterEventAsync("object:text-changed");
             await result.registry.RegisterEventAsync("object:property-change:accessible-name");
             await result.registry.RegisterEventAsync("object:property-change:accessible-role");
-            // We don't use window:activate, but Qt only sends object:state-changed:activate if we ask for this
             await result.registry.RegisterEventAsync("window:activate");
+            await result.registry.RegisterEventAsync("window:deactivate");
 
             result.DesktopFrame = new AtSpiElement(result, registryClient, "/org/a11y/atspi/accessible/root");
             result.AddChild(0, result.DesktopFrame);

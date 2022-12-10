@@ -26,6 +26,8 @@ namespace Xalia.AtSpi
         private IDisposable children_changed_event;
         private IDisposable property_change_event;
         private IDisposable state_changed_event;
+        private IDisposable window_activate_event;
+        private IDisposable window_deactivate_event;
         private IDisposable bounds_changed_event;
         private IDisposable text_changed_event;
 
@@ -65,6 +67,7 @@ namespace Xalia.AtSpi
         internal ISelection selection;
 
         internal IObject object_events;
+        internal IWindow window_events;
 
         internal static readonly string[] role_names =
         {
@@ -256,6 +259,7 @@ namespace Xalia.AtSpi
             text_iface = connection.connection.CreateProxy<IText>(service, path);
             selection = connection.connection.CreateProxy<ISelection>(service, path);
             object_events = connection.connection.CreateProxy<IObject>(service, path);
+            window_events = connection.connection.CreateProxy<IWindow>(service, path);
         }
 
         internal AtSpiElement(AtSpiConnection connection, string service, ObjectPath path) :
@@ -342,6 +346,16 @@ namespace Xalia.AtSpi
                 {
                     state_changed_event.Dispose();
                     state_changed_event = null;
+                }
+                if (window_activate_event != null)
+                {
+                    window_activate_event.Dispose();
+                    window_activate_event = null;
+                }
+                if (window_deactivate_event != null)
+                {
+                    window_deactivate_event.Dispose();
+                    window_deactivate_event = null;
                 }
                 watching_states = false;
                 if (bounds_changed_event != null)
@@ -1082,20 +1096,35 @@ namespace Xalia.AtSpi
 
         private async Task WatchStates()
         {
-            IDisposable state_changed_event;
+            IDisposable state_changed_event=null;
+            IDisposable window_activate_event=null;
+            IDisposable window_deactivate_event;
             try
             {
                 state_changed_event = await object_events.WatchStateChangedAsync(OnStateChanged, Utils.OnError);
+                // We have to watch for these because Firefox doesn't send StateChanged for "active" state
+                window_activate_event = await window_events.WatchActivateAsync(OnWindowActivate, Utils.OnError);
+                window_deactivate_event = await window_events.WatchDeactivateAsync(OnWindowDeactivate, Utils.OnError);
             }
             catch (DBusException e)
             {
+                if (!(state_changed_event is null))
+                    state_changed_event.Dispose();
+                if (!(window_activate_event is null))
+                    window_activate_event.Dispose();
                 if (!IsExpectedException(e))
                     throw;
                 return;
             }
             if (this.state_changed_event != null)
                 this.state_changed_event.Dispose();
+            if (this.window_activate_event != null)
+                this.window_activate_event.Dispose();
+            if (this.window_deactivate_event != null)
+                this.window_deactivate_event.Dispose();
             this.state_changed_event = state_changed_event;
+            this.window_activate_event = window_activate_event;
+            this.window_deactivate_event = window_deactivate_event;
             uint[] states;
             try
             {
@@ -1111,6 +1140,16 @@ namespace Xalia.AtSpi
 #if DEBUG
             Console.WriteLine($"{this}.spi_state: {state}");
 #endif
+        }
+
+        private void OnWindowActivate((string, uint, uint, object) obj)
+        {
+            OnStateChanged(("active", 1, 0, null));
+        }
+
+        private void OnWindowDeactivate((string, uint, uint, object) obj)
+        {
+            OnStateChanged(("active", 0, 0, null));
         }
 
         private void OnStateChanged((string, uint, uint, object) obj)
