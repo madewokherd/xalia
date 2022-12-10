@@ -274,11 +274,11 @@ namespace Xalia.Uia
                 "select", "uia_select",
                 "expand", "uia_expand",
                 "collapse", "uia_collapse",
-                "send_click", "win32_send_click",
                 "application_name", "acc2_application_name",
                 "application_version", "acc2_application_version",
                 "toolkit_name", "acc2_toolkit_name",
                 "toolkit_version", "acc2_toolkit_version",
+                "set_foreground_window", "win32_set_foreground_window",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -968,6 +968,12 @@ namespace Xalia.Uia
                     if (toolkit_version is null)
                         return UiDomUndefined.Instance;
                     return new UiDomString(toolkit_version);
+                case "win32_set_foreground_window":
+                    if (ElementWrapper.Hwnd != IntPtr.Zero)
+                    {
+                        return new UiDomRoutineSync(this, "win32_set_foreground_window", Win32SetForegroundWindow);
+                    }
+                    return UiDomUndefined.Instance;
             }
 
             {
@@ -998,6 +1004,11 @@ namespace Xalia.Uia
             }
 
             return UiDomUndefined.Instance;
+        }
+
+        private void Win32SetForegroundWindow(UiDomRoutineSync obj)
+        {
+            SetForegroundWindow(ElementWrapper.Hwnd);
         }
 
         public override async Task<(bool, int, int)> GetClickablePoint()

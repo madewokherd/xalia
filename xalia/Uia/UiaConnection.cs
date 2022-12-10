@@ -851,13 +851,13 @@ namespace Xalia.Uia
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }
 
-        internal string BlockingGetElementId(AutomationElement element)
+        internal string BlockingGetElementId(AutomationElement element, out IntPtr hwnd)
         {
             // hwnd/childid pair
             try
             {
                 if (element.FrameworkAutomationElement.TryGetPropertyValue<IntPtr>(
-                    Automation.PropertyLibrary.Element.NativeWindowHandle, out var hwnd))
+                    Automation.PropertyLibrary.Element.NativeWindowHandle, out hwnd))
                 {
                     int childid = 0;
 
@@ -886,6 +886,8 @@ namespace Xalia.Uia
                 // Fall back on other methods
             }
 
+            hwnd = IntPtr.Zero;
+
             // UIAutomation runtimeid
             try
             {
@@ -913,7 +915,7 @@ namespace Xalia.Uia
 
                 var acc2 = QueryIAccessible2(acc);
 
-                return $"{BlockingGetElementId(element.Parent)}-acc2-{acc2.uniqueID}";
+                return $"{BlockingGetElementId(element.Parent, out var _)}-acc2-{acc2.uniqueID}";
             }
             catch (PatternNotSupportedException)
             {

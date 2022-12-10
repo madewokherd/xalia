@@ -62,6 +62,9 @@ namespace Xalia.Interop
         public const uint SWP_NOSIZE = 0x0001;
         public const uint SWP_NOMOVE = 0x0002;
 
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool SetForegroundWindow(IntPtr hwnd);
+
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
         public delegate void WINEVENTPROC(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject,
             int idChild, int idEventThread, int dwmsEventTime);

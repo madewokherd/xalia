@@ -339,6 +339,14 @@ if (is_active_modal) {
     interactable: true;
 }
 
+window (uia_class_name == "ApplicationFrameWindow" or uia_framework_id == "XAML") {
+    application_supports_gamepad: true;
+}
+
+if (application_supports_gamepad) {
+    interactable: false;
+}
+
 // We normally should only consider the active window when searching for controls to interact with
 if (active and not root.disable_interactions and not root.active_modal and not root.in_panel_mode) {
     interactable: true;
@@ -350,15 +358,26 @@ if (is_panel and root.in_panel_mode) {
 }
 
 root (descendent_matches(is_panel) and not root.disable_interactions) {
-    action_on_TogglePanel: assign("in_panel_mode", not in_panel_mode);
+    if (descendent_matches(active and application_supports_gamepad) and not in_panel_mode) {
+        // We have to deactivate the application to not double gamepad input.
+        action_on_TogglePanel: assign("activate_on_dismiss_panel", descendent_matches(active)) +
+            assign("in_panel_mode", true) +
+            descendent_matches(is_panel).set_foreground_window;
+    }
+    if (in_panel_mode and activate_on_dismiss_panel.set_foreground_window) {
+        action_on_TogglePanel: assign("activate_on_dismiss_panel", undefined) +
+            assign("in_panel_mode", false) +
+            activate_on_dismiss_panel.set_foreground_window;
+    }
+    action_on_TogglePanel: assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", not in_panel_mode);
 }
 
-if (targeted and root.in_panel_mode) {
+root (targeted_element) {
     // panel-specific controls
-    action_on_B: root.assign("in_panel_mode", false);
+    action_on_B: action_on_TogglePanel;
     action_name_B: "Back";
 
-    action_on_A: action_on_PrimaryAction + root.assign("in_panel_mode", false);
+    action_on_A: action_on_TogglePanel + targeted_element.action_on_PrimaryAction;
     action_name_A: action_name_PrimaryAction;
 }
 

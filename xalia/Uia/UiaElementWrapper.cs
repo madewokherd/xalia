@@ -19,7 +19,8 @@ namespace Xalia.Uia
         {
             AutomationElement = ae;
             Connection = connection;
-            UniqueId = connection.BlockingGetElementId(ae);
+            UniqueId = connection.BlockingGetElementId(ae, out var hwnd);
+            Hwnd = hwnd;
             try
             {
                 if (ae.FrameworkAutomationElement.TryGetPropertyValue(
@@ -46,6 +47,8 @@ namespace Xalia.Uia
         public string UniqueId { get; }
 
         public int Pid { get; }
+
+        public IntPtr Hwnd { get; }
 
         public bool IsValid
         {
