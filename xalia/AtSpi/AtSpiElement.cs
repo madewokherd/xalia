@@ -492,15 +492,21 @@ namespace Xalia.AtSpi
                 i++;
             }
 
+            while (i < Children.Count)
+                RemoveChild(i);
+
             // Add any new children
-            for (i = 0; i < children.Length; i++)
+            i = 0;
+            foreach (var new_child in children)
             {
                 if (Children.Count <= i || !ElementIdMatches(Children[i], children[i]))
                 {
+                    // We accept duplicate elements in AT-SPI2 under the theory that we won't get infinite recursion
                     string service = children[i].Item1;
                     ObjectPath path = children[i].Item2;
                     AddChild(i, new AtSpiElement(Connection, service, path));
                 }
+                i += 1;
             }
 
             children_known = true;
