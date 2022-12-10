@@ -419,7 +419,7 @@ namespace Xalia.AtSpi
             }
         }
 
-        private bool IsExpectedException(DBusException e)
+        private bool IsExpectedException(DBusException e, params string[] extra_errors)
         {
 #if DEBUG
             Console.WriteLine("WARNING: DBus exception:");
@@ -431,6 +431,11 @@ namespace Xalia.AtSpi
                 case "org.freedesktop.DBus.Error.UnknownObject":
                     return true;
                 default:
+                    foreach (var err in extra_errors)
+                    {
+                        if (e.ErrorName == err)
+                            return true;
+                    }
 #if DEBUG
                     return false;
 #else
@@ -996,7 +1001,7 @@ namespace Xalia.AtSpi
             }
             catch (DBusException e)
             {
-                if (!IsExpectedException(e))
+                if (!IsExpectedException(e, "org.freedesktop.DBus.Error.Failed"))
                     throw;
                 return;
             }
