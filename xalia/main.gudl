@@ -361,6 +361,10 @@ if (is_spi_element and parent.spi_role.application and spi_attributes.window_typ
     is_panel: true;
 }
 
+if (is_uia_element and uia_class_name == "Shell_TrayWnd") {
+    is_panel: true;
+}
+
 if (uia_control_type.window) {
     // In UI Automation, "owned" windows (usually dialog boxes) are children of the "owner" window.
     // We don't want to try to interact with controls in these windows when the owner is the foreground window.
