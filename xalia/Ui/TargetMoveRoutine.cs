@@ -17,10 +17,8 @@ namespace Xalia.Ui
 
         public UiMain Main { get; }
 
-        public override void OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
         {
-            base.OnInput(e);
-
             if (e.JustPressed)
             {
                 InputState analog_state;
@@ -30,7 +28,7 @@ namespace Xalia.Ui
                 else if (e.PreviousState.Kind == InputStateKind.AnalogJoystick)
                     analog_state = e.PreviousState;
                 else
-                    return;
+                    return Task.CompletedTask;
 
                 if (Math.Abs((int)analog_state.XAxis) > Math.Abs((int)analog_state.YAxis))
                 {
@@ -49,6 +47,8 @@ namespace Xalia.Ui
                         Main.TargetMove(UiMain.Direction.Up, bias);
                 }
             }
+
+            return Task.CompletedTask;
         }
     }
 }

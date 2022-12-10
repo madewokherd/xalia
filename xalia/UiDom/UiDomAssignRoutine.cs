@@ -18,13 +18,13 @@ namespace Xalia.UiDom
         public string PropName { get; }
         public UiDomValue PropValue { get; }
 
-        public override void OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
         {
             if (e.JustPressed)
             {
                 Element.AssignProperty(PropName, PropValue);
-                OnCompleted(EventArgs.Empty);
             }
+            return Task.CompletedTask;
         }
 
         public override bool Equals(object obj)

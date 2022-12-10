@@ -23,13 +23,9 @@ namespace Xalia.UiDom
         public UiDomRoutine(UiDomElement element) : this(element, null) { }
         public UiDomRoutine(string name) : this(null, name) { }
 
-        public event InputSystem.ActionStateChangeEventHandler InputEvent;
-
-        public virtual void OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public virtual Task OnInput(InputSystem.ActionStateChangeEventArgs e)
         {
-            var handler = InputEvent;
-            if (handler != null)
-                InputEvent(this, e);
+            return Task.CompletedTask;
         }
 
         public override string ToString()
@@ -43,17 +39,6 @@ namespace Xalia.UiDom
                 return Name;
             }
             return base.ToString();
-        }
-
-        public event EventHandler CompletedEvent;
-
-        public virtual void OnCompleted(EventArgs e)
-        {
-            var handler = CompletedEvent;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
         }
 
         public override bool Equals(object obj)

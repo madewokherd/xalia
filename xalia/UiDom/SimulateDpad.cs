@@ -32,7 +32,7 @@ namespace Xalia.UiDom
             return new SimulateDpad(id);
         }
 
-        public override void OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
         {
             InputState released = default;
             released.Kind = InputStateKind.Released;
@@ -82,6 +82,8 @@ namespace Xalia.UiDom
                 right_sink.Dispose();
                 right_sink = null;
             }
+
+            return Task.CompletedTask;
         }
     }
 }

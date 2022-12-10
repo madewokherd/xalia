@@ -29,15 +29,15 @@ namespace Xalia.UiDom
             {
                 Utils.OnError(e);
             }
-            OnCompleted(EventArgs.Empty);
         }
 
-        public override void OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
         {
             if (e.JustPressed)
             {
                 Utils.RunTask(DoRoutine());
             }
+            return Task.CompletedTask;
         }
     }
 }

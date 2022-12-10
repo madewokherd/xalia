@@ -17,7 +17,7 @@ namespace Xalia.UiDom
             Routine = routine;
         }
 
-        public override void OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
         {
             if (e.JustPressed)
             {
@@ -29,8 +29,8 @@ namespace Xalia.UiDom
                 {
                     Utils.OnError(exc);
                 }
-                OnCompleted(EventArgs.Empty);
             }
+            return Task.CompletedTask;
         }
     }
 }

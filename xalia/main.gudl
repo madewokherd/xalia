@@ -357,7 +357,7 @@ if (is_panel and root.in_panel_mode) {
     interactable: true;
 }
 
-root (descendent_matches(is_panel) and not root.disable_interactions) {
+root (descendent_matches(is_panel) and not disable_interactions) {
     if (descendent_matches(active and application_supports_gamepad) and not in_panel_mode) {
         // We have to deactivate the application to not double gamepad input.
         action_on_TogglePanel: assign("activate_on_dismiss_panel", descendent_matches(active)) +
@@ -372,13 +372,14 @@ root (descendent_matches(is_panel) and not root.disable_interactions) {
     action_on_TogglePanel: assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", not in_panel_mode);
 }
 
-root (targeted_element) {
+root (targeted_element and in_panel_mode) {
     // panel-specific controls
     action_on_B: action_on_TogglePanel;
     action_name_B: "Back";
 
-    action_on_A: action_on_TogglePanel + targeted_element.action_on_PrimaryAction;
-    action_name_A: action_name_PrimaryAction;
+    // Do not reactivate original window, because interacting with the panel is likely to do that
+    action_on_A: targeted_element.action_on_PrimaryAction + assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", false);
+    action_name_A: targeted_element.action_name_PrimaryAction or "Select";
 }
 
 if (is_spi_element and parent.spi_role.application and spi_attributes.window_type == "dock") {
@@ -469,14 +470,11 @@ if (targetable) {
         target_width: width;
         target_height: height;
     }
-
-    if (targeted and action_on_PrimaryAction) {
-        action_on_A: action_on_PrimaryAction;
-        action_name_A: action_name_PrimaryAction;
-    }
 }
 
 root (targeted_element) {
+    action_on_A: targeted_element.action_on_PrimaryAction;
+    action_name_A: targeted_element.action_name_PrimaryAction or "Select";
     action_on_B: descendent_matches(action_on_Cancel).action_on_Cancel or send_key.esc;
     action_name_B: descendent_matches(action_on_Cancel).action_name_Cancel or "Back";
 }

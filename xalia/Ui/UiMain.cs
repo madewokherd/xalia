@@ -112,7 +112,7 @@ namespace Xalia.Ui
 #if DEBUG
                 Console.WriteLine($"Passing locked input to routine: {routine}");
 #endif
-                routine.OnInput(e);
+                Utils.RunTask(routine.OnInput(e));
 
                 if (!e.LockInput)
                 {
@@ -141,7 +141,7 @@ namespace Xalia.Ui
 #if DEBUG
                         Console.WriteLine($"Calling routine: {routine}");
 #endif
-                        routine.OnInput(e);
+                        Utils.RunTask(routine.OnInput(e));
 
                         if (e.LockInput)
                         {

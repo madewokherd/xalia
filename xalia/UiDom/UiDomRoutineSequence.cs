@@ -9,39 +9,10 @@ namespace Xalia.UiDom
 {
     internal class UiDomRoutineSequence : UiDomRoutine
     {
-        string action;
-
         public UiDomRoutineSequence(UiDomRoutine first, UiDomRoutine second)
         {
             First = first;
             Second = second;
-
-            First.CompletedEvent += First_CompletedEvent;
-            Second.CompletedEvent += Second_CompletedEvent;
-        }
-
-        private void PulseRoutine(UiDomRoutine routine)
-        {
-            InputState disconnected = new InputState();
-            InputState pulse = new InputState(InputStateKind.Pulse);
-
-            InputSystem.ActionStateChangeEventArgs e = new InputSystem.ActionStateChangeEventArgs(action, pulse, disconnected);
-
-            routine.OnInput(e);
-
-            e = new InputSystem.ActionStateChangeEventArgs(action, disconnected, pulse);
-
-            routine.OnInput(e);
-        }
-
-        private void First_CompletedEvent(object sender, EventArgs e)
-        {
-            PulseRoutine(Second);
-        }
-
-        private void Second_CompletedEvent(object sender, EventArgs e)
-        {
-            OnCompleted(e);
         }
 
         public UiDomRoutine First { get; }
@@ -66,13 +37,10 @@ namespace Xalia.UiDom
             return $"{First}+{Second}";
         }
 
-        public override void OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override async Task OnInput(InputSystem.ActionStateChangeEventArgs e)
         {
-            if (e.JustPressed)
-            {
-                action = e.Action;
-                PulseRoutine(First);
-            }
+            await First.OnInput(e);
+            await Second.OnInput(e);
         }
     }
 }
