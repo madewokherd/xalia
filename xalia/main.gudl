@@ -436,7 +436,7 @@ if (parent.offset_target_y) {
 }
 
 // Scroll panes
-scroll_pane (child_matches(scroll_bar and minimum_value != maximum_value)) {
+scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and visible)) {
     scrollable: true;
 }
 
