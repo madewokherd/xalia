@@ -56,6 +56,16 @@ namespace Xalia.AtSpi
         public int AbsWidth { get; private set; }
         public int AbsHeight { get; private set; }
 
+        public bool MinimumValueKnown { get; private set; }
+        public double MinimumValue { get; private set; }
+        private bool watching_minimum_value;
+        private CancellationTokenSource minimum_value_refresh_token;
+
+        public bool MaximumValueKnown { get; private set; }
+        public double MaximumValue { get; private set; }
+        private bool watching_maximum_value;
+        private CancellationTokenSource maximum_value_refresh_token;
+
         private bool fetching_actions;
         public string[] Actions { get; private set; }
 
@@ -65,6 +75,7 @@ namespace Xalia.AtSpi
         internal IComponent component;
         internal IText text_iface;
         internal ISelection selection;
+        internal IValue value_iface;
 
         internal IObject object_events;
         internal IWindow window_events;
@@ -258,6 +269,7 @@ namespace Xalia.AtSpi
             component = connection.connection.CreateProxy<IComponent>(service, path);
             text_iface = connection.connection.CreateProxy<IText>(service, path);
             selection = connection.connection.CreateProxy<ISelection>(service, path);
+            value_iface = connection.connection.CreateProxy<IValue>(service, path);
             object_events = connection.connection.CreateProxy<IObject>(service, path);
             window_events = connection.connection.CreateProxy<IWindow>(service, path);
         }
@@ -376,6 +388,18 @@ namespace Xalia.AtSpi
                     abs_position_refresh_token = null;
                 }
                 watching_abs_position = false;
+                if (minimum_value_refresh_token != null)
+                {
+                    minimum_value_refresh_token.Cancel();
+                    minimum_value_refresh_token = null;
+                }
+                watching_minimum_value = false;
+                if (maximum_value_refresh_token != null)
+                {
+                    maximum_value_refresh_token.Cancel();
+                    maximum_value_refresh_token = null;
+                }
+                watching_maximum_value = false;
                 if (children_poll_token != null)
                 {
                     children_poll_token.Cancel();
@@ -907,6 +931,20 @@ namespace Xalia.AtSpi
                             Utils.RunTask(RefreshAbsPos());
                         }
                         break;
+                    case "spi_minimum_value":
+                        if (!watching_minimum_value)
+                        {
+                            watching_minimum_value = true;
+                            Utils.RunTask(RefreshMinimumValue());
+                        }
+                        break;
+                    case "spi_maximum_value":
+                        if (!watching_maximum_value)
+                        {
+                            watching_maximum_value = true;
+                            Utils.RunTask(RefreshMaximumValue());
+                        }
+                        break;
                     case "spi_action":
                         if (!fetching_actions)
                         {
@@ -976,8 +1014,35 @@ namespace Xalia.AtSpi
                         {
                             watching_abs_position = false;
                             if (abs_position_refresh_token != null)
+                            {
                                 abs_position_refresh_token.Cancel();
+                                abs_position_refresh_token = null;
+                            }
                             AbsPositionKnown = false;
+                        }
+                        break;
+                    case "spi_minimum_value":
+                        if (watching_minimum_value)
+                        {
+                            watching_minimum_value = false;
+                            if (minimum_value_refresh_token != null)
+                            {
+                                minimum_value_refresh_token.Cancel();
+                                minimum_value_refresh_token = null;
+                            }
+                            MinimumValueKnown = false;
+                        }
+                        break;
+                    case "spi_maximum_value":
+                        if (watching_maximum_value)
+                        {
+                            watching_maximum_value = false;
+                            if (maximum_value_refresh_token != null)
+                            {
+                                maximum_value_refresh_token.Cancel();
+                                maximum_value_refresh_token = null;
+                            }
+                            MaximumValueKnown = false;
                         }
                         break;
                 }
@@ -1047,6 +1112,7 @@ namespace Xalia.AtSpi
 #endif
             PropertyChanged("spi_toolkit_name");
         }
+
         private async Task RefreshAbsPos()
         {
             if (!watching_abs_position)
@@ -1097,6 +1163,104 @@ namespace Xalia.AtSpi
 
             abs_position_refresh_token = null;
             Utils.RunIdle(RefreshAbsPos()); // Unsure if RunTask would accumulate stack frames forever
+        }
+
+        private async Task RefreshMinimumValue()
+        {
+            if (!watching_minimum_value)
+                return;
+
+            double result;
+            try
+            {
+                result = await value_iface.GetMinimumValueAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (!watching_minimum_value)
+                return;
+
+            if (!MinimumValueKnown || result != MinimumValue)
+            {
+                MinimumValueKnown = true;
+                MinimumValue = result;
+#if DEBUG
+                Console.WriteLine($"{this}.spi_minimum_value: ({result})");
+#endif
+                PropertyChanged("spi_minimum_value");
+            }
+
+            if (!watching_minimum_value)
+                return;
+
+            minimum_value_refresh_token = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Delay(500, minimum_value_refresh_token.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                minimum_value_refresh_token = null;
+                return;
+            }
+
+            minimum_value_refresh_token = null;
+            Utils.RunIdle(RefreshMinimumValue()); // Unsure if RunTask would accumulate stack frames forever
+        }
+
+        private async Task RefreshMaximumValue()
+        {
+            if (!watching_maximum_value)
+                return;
+
+            double result;
+            try
+            {
+                result = await value_iface.GetMaximumValueAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (!watching_maximum_value)
+                return;
+
+            if (!MaximumValueKnown || result != MaximumValue)
+            {
+                MaximumValueKnown = true;
+                MaximumValue = result;
+#if DEBUG
+                Console.WriteLine($"{this}.spi_maximum_value: ({result})");
+#endif
+                PropertyChanged("spi_maximum_value");
+            }
+
+            if (!watching_maximum_value)
+                return;
+
+            maximum_value_refresh_token = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Delay(500, maximum_value_refresh_token.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                maximum_value_refresh_token = null;
+                return;
+            }
+
+            maximum_value_refresh_token = null;
+            Utils.RunIdle(RefreshMaximumValue()); // Unsure if RunTask would accumulate stack frames forever
         }
 
         private async Task WatchStates()
@@ -1507,6 +1671,38 @@ namespace Xalia.AtSpi
                 case "is_atspi_element":
                 case "is_at_spi_element":
                     return UiDomBoolean.True;
+                case "minimum_value":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_minimum_value";
+                case "spi_minimum_value":
+                    {
+                        depends_on.Add((this, new IdentifierExpression("spi_minimum_value")));
+                        if (MinimumValueKnown)
+                        {
+                            return new UiDomDouble(MinimumValue);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
+                case "maximum_value":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_maximum_value";
+                case "spi_maximum_value":
+                    {
+                        depends_on.Add((this, new IdentifierExpression("spi_maximum_value")));
+                        if (MaximumValueKnown)
+                        {
+                            return new UiDomDouble(MaximumValue);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
             }
 
             {

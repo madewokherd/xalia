@@ -31,11 +31,16 @@ namespace Xalia.Gudl
             from s in Token.EqualTo(GudlToken.Integer)
             select (GudlExpression)new IntegerExpression(int.Parse(s.ToStringValue()));
 
+        public static TokenListParser<GudlToken, GudlExpression> DoubleExpression =
+            from s in Token.EqualTo(GudlToken.Double)
+            select (GudlExpression)new DoubleExpression(double.Parse(s.ToStringValue()));
+
         public static TokenListParser<GudlToken, GudlExpression> UnitExpression =
             ParenExpression
             .Or(IdentifierExpression)
             .Or(StringExpression)
             .Or(IntegerExpression)
+            .Or(DoubleExpression)
             .Or(Parse.Ref(() => SignExpression))
             .Or(Parse.Ref(() => NotExpression))
             .Named("expression");
@@ -126,7 +131,7 @@ namespace Xalia.Gudl
             UnaryExpression(ApplyExpression, GudlToken.Plus, GudlToken.Minus);
 
         public static TokenListParser<GudlToken, GudlExpression> ProductExpression =
-            BinaryExpression(ApplyExpression, GudlToken.Mult, GudlToken.IDiv, GudlToken.Modulo);
+            BinaryExpression(ApplyExpression, GudlToken.Mult, GudlToken.IDiv, GudlToken.Modulo, GudlToken.Div);
 
         public static TokenListParser<GudlToken, GudlExpression> SumExpression =
             BinaryExpression(ProductExpression, GudlToken.Plus, GudlToken.Minus);

@@ -99,6 +99,7 @@
     <Compile Include="AtSpi\Gazelle.AtSpi.DBus.Launcher.cs" />
     <Compile Include="Gudl\ApplyExpression.cs" />
     <Compile Include="Gudl\BinaryExpression.cs" />
+    <Compile Include="Gudl\DoubleExpression.cs" />
     <Compile Include="Gudl\GudlDeclaration.cs" />
     <Compile Include="Gudl\GudlExpression.cs" />
     <Compile Include="Gudl\GudlParser.cs" />
@@ -134,6 +135,7 @@
     <Compile Include="UiDom\UiDomAssignRoutine.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomChildAtIndex.cs" />
+    <Compile Include="UiDom\UiDomDouble.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
     <Compile Include="UiDom\UiDomInt.cs" />
     <Compile Include="UiDom\UiDomElement.cs" />

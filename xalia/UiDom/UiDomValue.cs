@@ -56,6 +56,16 @@ namespace Xalia.UiDom
             return UiDomUndefined.Instance;
         }
 
+        private UiDomDouble IntegerDiv(double left, double right)
+        {
+            return new UiDomDouble(Math.Floor(left / right));
+        }
+
+        private UiDomDouble Modulo(double left, double right)
+        {
+            return new UiDomDouble(left - (right * Math.Floor(left / right)));
+        }
+
         public UiDomValue Evaluate(GudlExpression expr, UiDomRoot root,
             [In] [Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
@@ -64,6 +74,9 @@ namespace Xalia.UiDom
 
             if (expr is IntegerExpression i)
                 return new UiDomInt(i.Value);
+
+            if (expr is DoubleExpression d)
+                return new UiDomDouble(d.Value);
 
             if (expr is IdentifierExpression id)
             {
@@ -101,6 +114,8 @@ namespace Xalia.UiDom
                             UiDomValue inner = Evaluate(un.Inner, root, depends_on);
                             if (inner is UiDomInt integer)
                                 return new UiDomInt(-integer.Value);
+                            if (inner is UiDomDouble dbl)
+                                return new UiDomDouble(-dbl.Value);
                             return UiDomUndefined.Instance;
                         }
                 }
@@ -143,13 +158,13 @@ namespace Xalia.UiDom
                         {
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
-                            return UiDomBoolean.FromBool(left.Equals(right));
+                            return UiDomBoolean.FromBool(left.ValueEquals(right));
                         }
                     case GudlToken.NotEqual:
                         {
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
-                            return UiDomBoolean.FromBool(!left.Equals(right));
+                            return UiDomBoolean.FromBool(!left.ValueEquals(right));
                         }
                     case GudlToken.And:
                         {
@@ -176,8 +191,20 @@ namespace Xalia.UiDom
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
 
-                            if (left is UiDomInt lint && right is UiDomInt rint)
-                                return new UiDomInt(lint.Value + rint.Value);
+                            if (left is UiDomInt lint)
+                            {
+                                if (right is UiDomInt rint)
+                                    return new UiDomInt(lint.Value + rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return new UiDomDouble(lint.Value + rdbl.Value);
+                            }
+                            if (left is UiDomInt ldbl)
+                            {
+                                if (right is UiDomInt rint)
+                                    return new UiDomDouble(ldbl.Value + rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return new UiDomDouble(ldbl.Value + rdbl.Value);
+                            }
                             if (left is UiDomRoutine lrou && right is UiDomRoutine rrou)
                                 return new UiDomRoutineSequence(lrou, rrou);
                             return UiDomUndefined.Instance;
@@ -187,8 +214,20 @@ namespace Xalia.UiDom
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
 
-                            if (left is UiDomInt lint && right is UiDomInt rint)
-                                return new UiDomInt(lint.Value - rint.Value);
+                            if (left is UiDomInt lint)
+                            {
+                                if (right is UiDomInt rint)
+                                    return new UiDomInt(lint.Value - rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return new UiDomDouble(lint.Value - rdbl.Value);
+                            }
+                            if (left is UiDomInt ldbl)
+                            {
+                                if (right is UiDomInt rint)
+                                    return new UiDomDouble(ldbl.Value - rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return new UiDomDouble(ldbl.Value - rdbl.Value);
+                            }
                             return UiDomUndefined.Instance;
                         }
                     case GudlToken.Mult:
@@ -196,8 +235,41 @@ namespace Xalia.UiDom
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
 
-                            if (left is UiDomInt lint && right is UiDomInt rint)
-                                return new UiDomInt(lint.Value * rint.Value);
+                            if (left is UiDomInt lint)
+                            {
+                                if (right is UiDomInt rint)
+                                    return new UiDomInt(lint.Value * rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return new UiDomDouble(lint.Value * rdbl.Value);
+                            }
+                            if (left is UiDomInt ldbl)
+                            {
+                                if (right is UiDomInt rint)
+                                    return new UiDomDouble(ldbl.Value * rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return new UiDomDouble(ldbl.Value * rdbl.Value);
+                            }
+                            return UiDomUndefined.Instance;
+                        }
+                    case GudlToken.Div:
+                        {
+                            UiDomValue left = Evaluate(bin.Left, root, depends_on);
+                            UiDomValue right = Evaluate(bin.Right, root, depends_on);
+
+                            if (left is UiDomInt lint)
+                            {
+                                if (right is UiDomInt rint)
+                                    return new UiDomDouble((double)lint.Value / rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return new UiDomDouble(lint.Value / rdbl.Value);
+                            }
+                            if (left is UiDomInt ldbl)
+                            {
+                                if (right is UiDomInt rint)
+                                    return new UiDomDouble(ldbl.Value / rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return new UiDomDouble(ldbl.Value / rdbl.Value);
+                            }
                             return UiDomUndefined.Instance;
                         }
                     case GudlToken.IDiv:
@@ -205,21 +277,32 @@ namespace Xalia.UiDom
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
 
-                            if (left is UiDomInt lint && right is UiDomInt rint)
+                            if (left is UiDomInt lint)
                             {
-                                if (rint.Value == 0)
-                                    return UiDomUndefined.Instance;
-
-                                int mod = lint.Value % rint.Value;
-                                int quotient = lint.Value / rint.Value;
-
-
-                                if (mod != 0 && ((mod > 0) != (rint.Value > 0)))
+                                if (right is UiDomInt rint)
                                 {
-                                    quotient -= 1;
-                                }
+                                    if (rint.Value == 0)
+                                        return UiDomUndefined.Instance;
 
-                                return new UiDomInt(quotient);
+                                    int mod = lint.Value % rint.Value;
+                                    int quotient = lint.Value / rint.Value;
+
+                                    if (mod != 0 && ((mod > 0) != (rint.Value > 0)))
+                                    {
+                                        quotient -= 1;
+                                    }
+
+                                    return new UiDomInt(quotient);
+                                }
+                                if (right is UiDomDouble rdbl)
+                                    return IntegerDiv((double)lint.Value, rdbl.Value);
+                            }
+                            if (left is UiDomInt ldbl)
+                            {
+                                if (right is UiDomInt rint)
+                                    return IntegerDiv(ldbl.Value, (double)rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return IntegerDiv(ldbl.Value, rdbl.Value);
                             }
                             return UiDomUndefined.Instance;
                         }
@@ -228,19 +311,31 @@ namespace Xalia.UiDom
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
 
-                            if (left is UiDomInt lint && right is UiDomInt rint)
+                            if (left is UiDomInt lint)
                             {
-                                if (rint.Value == 0)
-                                    return UiDomUndefined.Instance;
-
-                                int mod = lint.Value % rint.Value;
-
-                                if (mod != 0 && ((mod > 0) != (rint.Value > 0)))
+                                if (right is UiDomInt rint)
                                 {
-                                    mod = mod + rint.Value;
-                                }
+                                    if (rint.Value == 0)
+                                        return UiDomUndefined.Instance;
 
-                                return new UiDomInt(mod);
+                                    int mod = lint.Value % rint.Value;
+
+                                    if (mod != 0 && ((mod > 0) != (rint.Value > 0)))
+                                    {
+                                        mod = mod + rint.Value;
+                                    }
+
+                                    return new UiDomInt(mod);
+                                }
+                                if (right is UiDomDouble rdbl)
+                                    return Modulo((double)lint.Value, rdbl.Value);
+                            }
+                            if (left is UiDomInt ldbl)
+                            {
+                                if (right is UiDomInt rint)
+                                    return Modulo(ldbl.Value, (double)rint.Value);
+                                if (right is UiDomDouble rdbl)
+                                    return Modulo(ldbl.Value, rdbl.Value);
                             }
                             return UiDomUndefined.Instance;
                         }
@@ -304,6 +399,11 @@ namespace Xalia.UiDom
         {
             sign = 0;
             return false;
+        }
+
+        public virtual bool ValueEquals(UiDomValue other)
+        {
+            return Equals(other);
         }
     }
 }

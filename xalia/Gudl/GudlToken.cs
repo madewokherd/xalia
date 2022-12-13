@@ -73,6 +73,12 @@ namespace Xalia.Gudl
         String,
 
         Integer,
+
+        [Token(Example = ",")]
         Comma,
+        Double,
+
+        [Token(Example = "/")]
+        Div,
     }
 }

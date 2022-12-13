@@ -61,16 +61,6 @@ window (uia_class_name == "QQuickWindow" and uia_name == "EADesktop") {
     action_on_MenuUp: send_key.up;
     action_on_MenuDown: send_key.down;
 
-    debug_toplevel_window: root.
-        child_matches(uia_class_name == "eax::services::windowing::QmlView");
-    debug_focusable_descendent: root.
-        child_matches(uia_class_name == "eax::services::windowing::QmlView").
-        descendent_matches(not combo_box and not window and uia_keyboard_focusable);
-    debug_set_focus: root.
-        child_matches(uia_class_name == "eax::services::windowing::QmlView").
-        descendent_matches(not combo_box and not window and uia_keyboard_focusable and set_focus).
-        set_focus;
-
     // We need to focus some other control because we can't tell this kind of combo box apart from others in EA App that are always open when focused
     action_on_MenuSelect: send_key.enter + root.
         child_matches(uia_class_name == "eax::services::windowing::QmlView").
@@ -352,6 +342,10 @@ if (active and not root.disable_interactions and not root.active_modal and not r
     interactable: true;
 }
 
+if (parent.scrollable) {
+    interactable: false;
+}
+
 // Panels
 if (is_panel and root.in_panel_mode) {
     interactable: true;
@@ -439,6 +433,11 @@ if (parent.offset_target_x) {
 
 if (parent.offset_target_y) {
     offset_target_y: parent.offset_target_y;
+}
+
+// Scroll panes
+scroll_pane (child_matches(scroll_bar and minimum_value != maximum_value)) {
+    scrollable: true;
 }
 
 // Rules for setting borders of targetable elements
@@ -624,6 +623,10 @@ if (interactable) {
     {
         action_on_Cancel: action_on_PrimaryAction;
         action_name_Cancel: name;
+    }
+
+    if (scrollable) {
+        targetable: true;
     }
 
     if (focusable and not spi_role.panel and not descendent_matches(targetable)) {

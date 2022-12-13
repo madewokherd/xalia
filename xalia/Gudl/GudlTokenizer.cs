@@ -67,6 +67,7 @@ namespace Xalia.Gudl
                 .Match(Character.EqualTo('-'), GudlToken.Minus)
                 .Match(Character.EqualTo('*'), GudlToken.Mult)
                 .Match(Character.EqualTo(','), GudlToken.Comma)
+                .Match(Character.EqualTo('/'), GudlToken.Div)
                 .Match(Span.EqualTo("~/"), GudlToken.IDiv)
                 .Match(Character.EqualTo('%'), GudlToken.Modulo)
                 .Match(Span.EqualTo("=="), GudlToken.Equal)
@@ -82,6 +83,7 @@ namespace Xalia.Gudl
                 .Match(Identifier.CStyle, GudlToken.Identifier, requireDelimiters: true)
                 .Match(GudlString, GudlToken.String, requireDelimiters: true)
                 .Match(Numerics.IntegerInt32, GudlToken.Integer, requireDelimiters: true)
+                .Match(Numerics.DecimalDouble, GudlToken.Double, requireDelimiters: true)
                 .Build();
     }
 }
