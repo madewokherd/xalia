@@ -1703,6 +1703,8 @@ namespace Xalia.AtSpi
                         }
                         return UiDomUndefined.Instance;
                     }
+                case "adjust_scrollbars":
+                    return AtSpiAdjustScrollbars.Instance;
             }
 
             {

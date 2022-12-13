@@ -96,5 +96,16 @@ namespace Xalia.AtSpi
         }
 
         public AtSpiElement DesktopFrame { get; private set; }
+
+
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            switch (id)
+            {
+                case "adjust_scrollbars":
+                    return AtSpiAdjustScrollbars.Instance;
+            }
+            return base.EvaluateIdentifierCore(id, root, depends_on);
+        }
     }
 }
