@@ -90,7 +90,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AtSpi\AtSpiActionList.cs" />
-    <Compile Include="AtSpi\AtSpiAdjustScrollbars.cs" />
     <Compile Include="AtSpi\AtSpiAdjustScrollbarsRoutine.cs" />
     <Compile Include="AtSpi\AtSpiAttributes.cs" />
     <Compile Include="AtSpi\AtSpiConnection.cs" />
@@ -142,6 +141,7 @@
     <Compile Include="UiDom\UiDomInt.cs" />
     <Compile Include="UiDom\UiDomElement.cs" />
     <Compile Include="UiDom\UiDomIsRelationship.cs" />
+    <Compile Include="UiDom\UiDomMethod.cs" />
     <Compile Include="UiDom\UiDomRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />
     <Compile Include="UiDom\UiDomRoot.cs" />

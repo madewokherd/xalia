@@ -1704,7 +1704,7 @@ namespace Xalia.AtSpi
                         return UiDomUndefined.Instance;
                     }
                 case "adjust_scrollbars":
-                    return AtSpiAdjustScrollbars.Instance;
+                    return Root.EvaluateIdentifier("adjust_scrollbars", Root, depends_on);
             }
 
             {

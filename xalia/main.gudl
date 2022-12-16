@@ -443,6 +443,7 @@ scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and 
         child_matches(scroll_bar and horizontal and enabled and sensitive and showing and visible),
         child_matches(scroll_bar and vertical and enabled and sensitive and showing and visible));
 }
+debug: adjust_scrollbars;
 
 // Rules for setting borders of targetable elements
 if (targetable) {
