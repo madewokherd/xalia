@@ -107,7 +107,7 @@ namespace Xalia.AtSpi
                 if (hscroll is null && vscroll is null)
                     return UiDomUndefined.Instance;
 
-                return new AtSpiAdjustScrollbarsRoutine(hscroll, vscroll);
+                return new AtSpiAdjustScrollbars(hscroll, vscroll);
             }
             return UiDomUndefined.Instance;
         }

@@ -9,9 +9,9 @@ using Xalia.UiDom;
 
 namespace Xalia.AtSpi
 {
-    internal class AtSpiAdjustScrollbarsRoutine : UiDomRoutine
+    internal class AtSpiAdjustScrollbars : UiDomRoutine
     {
-        public AtSpiAdjustScrollbarsRoutine(AtSpiElement hscroll, AtSpiElement vscroll)
+        public AtSpiAdjustScrollbars(AtSpiElement hscroll, AtSpiElement vscroll)
         {
             HScroll = hscroll;
             VScroll = vscroll;
@@ -25,7 +25,7 @@ namespace Xalia.AtSpi
 
         public override bool Equals(object obj)
         {
-            if (obj is AtSpiAdjustScrollbarsRoutine r)
+            if (obj is AtSpiAdjustScrollbars r)
             {
                 return HScroll == r.HScroll && VScroll == r.VScroll;
             }
@@ -34,7 +34,7 @@ namespace Xalia.AtSpi
 
         public override int GetHashCode()
         {
-            return typeof(AtSpiAdjustScrollbarsRoutine).GetHashCode() ^
+            return typeof(AtSpiAdjustScrollbars).GetHashCode() ^
                 (HScroll, VScroll).GetHashCode();
         }
 
