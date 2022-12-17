@@ -331,9 +331,9 @@ namespace Xalia.Ui
 
             var old_actions = defined_actions;
 
-            foreach (var info in new_actions.Values)
+            foreach (var info in new List<ActionInfo>(new_actions.Values))
             {
-                if (old_actions.TryGetValue(info.action, out var old_info) && old_info == info)
+                if (old_actions.TryGetValue(info.action, out var old_info) && old_info.Equals(info))
                 {
                     new_actions[info.action] = old_info;
                     old_actions.Remove(info.action);
