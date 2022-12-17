@@ -8,7 +8,7 @@ using Xalia.Input;
 
 namespace Xalia.UiDom
 {
-    public class UiDomRoutine : UiDomValue
+    public abstract class UiDomRoutine : UiDomValue
     {
         public UiDomElement Element { get; }
         public string Name { get; }
@@ -23,10 +23,7 @@ namespace Xalia.UiDom
         public UiDomRoutine(UiDomElement element) : this(element, null) { }
         public UiDomRoutine(string name) : this(null, name) { }
 
-        public virtual Task OnInput(InputSystem.ActionStateChangeEventArgs e)
-        {
-            return Task.CompletedTask;
-        }
+        public abstract Task ProcessInputQueue(InputQueue queue);
 
         public override string ToString()
         {

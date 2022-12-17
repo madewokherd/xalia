@@ -37,10 +37,25 @@ namespace Xalia.UiDom
             return $"{First}+{Second}";
         }
 
-        public override async Task OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override async Task ProcessInputQueue(InputQueue queue)
         {
-            await First.OnInput(e);
-            await Second.OnInput(e);
+            InputQueue queue1 = new InputQueue(queue.Action);
+            Utils.RunTask(First.ProcessInputQueue(queue1));
+            InputQueue queue2 = new InputQueue(queue.Action);
+            Utils.RunTask(Second.ProcessInputQueue(queue2));
+            InputState state;
+            do
+            {
+                state = await queue.Dequeue();
+
+                queue1.Enqueue(state);
+                if (state.Kind != InputStateKind.Disconnected)
+                    await queue1.WaitForConsumer();
+
+                queue2.Enqueue(state);
+                if (state.Kind != InputStateKind.Disconnected)
+                    await queue2.WaitForConsumer();
+            } while (state.Kind != InputStateKind.Disconnected);
         }
     }
 }

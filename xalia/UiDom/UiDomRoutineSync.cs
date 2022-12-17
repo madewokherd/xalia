@@ -17,20 +17,25 @@ namespace Xalia.UiDom
             Routine = routine;
         }
 
-        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override async Task ProcessInputQueue(InputQueue queue)
         {
-            if (e.JustPressed)
+            InputState prev_state = new InputState(InputStateKind.Disconnected), state;
+            do
             {
-                try
+                state = await queue.Dequeue();
+                if (state.JustPressed(prev_state))
                 {
-                    Routine(this);
+                    try
+                    {
+                        Routine(this);
+                    }
+                    catch (Exception exc)
+                    {
+                        Utils.OnError(exc);
+                    }
                 }
-                catch (Exception exc)
-                {
-                    Utils.OnError(exc);
-                }
-            }
-            return Task.CompletedTask;
+                prev_state = state;
+            } while (state.Kind != InputStateKind.Disconnected);
         }
     }
 }

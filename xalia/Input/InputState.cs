@@ -108,5 +108,17 @@ namespace Xalia.Input
                 throw new NotImplementedException(); // Hopefully the compiler will warn about missed enum values?
             }
         }
+
+        public bool JustPressed(InputState previous_state)
+        {
+            if (Kind == InputStateKind.Pulse)
+                return true;
+            if (previous_state.Kind == InputStateKind.Disconnected)
+                // If a button was *already pressed* when first connected, it wasn't "just pressed".
+                return false;
+            if (Kind == InputStateKind.Repeat)
+                return true;
+            return Pressed && !previous_state.Pressed;
+        }
     }
 }

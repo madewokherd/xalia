@@ -114,6 +114,7 @@
     <Compile Include="Gudl\UnaryExpression.cs" />
     <Compile Include="Input\InputBackend.cs" />
     <Compile Include="Input\InputMapping.cs" />
+    <Compile Include="Input\InputQueue.cs" />
     <Compile Include="Input\InputState.cs" />
     <Compile Include="Input\InputSystem.cs" />
     <Compile Include="Input\VirtualInputBackend.cs" />

@@ -13,11 +13,6 @@ namespace Xalia.UiDom
     {
         public string DpadName { get; }
 
-        VirtualInputSink up_sink;
-        VirtualInputSink down_sink;
-        VirtualInputSink left_sink;
-        VirtualInputSink right_sink;
-
         const int PRESSED_THRESHOLD = 10000;
 
         public SimulateDpad(string name) : base($"simulate_dpad.{name}")
@@ -32,58 +27,70 @@ namespace Xalia.UiDom
             return new SimulateDpad(id);
         }
 
-        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override async Task ProcessInputQueue(InputQueue queue)
         {
-            InputState released = default;
-            released.Kind = InputStateKind.Released;
+            var up_sink = InputSystem.Instance.CreateVirtualInput($"{DpadName}_up");
+            var down_sink = InputSystem.Instance.CreateVirtualInput($"{DpadName}_down");
+            var left_sink = InputSystem.Instance.CreateVirtualInput($"{DpadName}_left");
+            var right_sink = InputSystem.Instance.CreateVirtualInput($"{DpadName}_right");
 
-            InputState pressed = default;
-            pressed.Kind = InputStateKind.Pressed;
+            bool up = false, down = false, left = false, right = false;
 
-            if (e.State.Pressed)
+            InputState released = new InputState(InputStateKind.Released);
+            InputState pressed = new InputState(InputStateKind.Pressed);
+
+            InputState state;
+            do
             {
-                if (up_sink is null)
-                {
-                    up_sink = InputSystem.Instance.CreateVirtualInput($"{DpadName}_up");
-                    down_sink = InputSystem.Instance.CreateVirtualInput($"{DpadName}_down");
-                    left_sink = InputSystem.Instance.CreateVirtualInput($"{DpadName}_left");
-                    right_sink = InputSystem.Instance.CreateVirtualInput($"{DpadName}_right");
+                state = await queue.Dequeue();
 
-                    up_sink.SetInputState(released);
-                    down_sink.SetInputState(released);
-                    left_sink.SetInputState(released);
-                    right_sink.SetInputState(released);
-                }
-
-                if (e.State.Kind == InputStateKind.AnalogJoystick)
+                if (state.Kind == InputStateKind.AnalogJoystick)
                 {
-                    bool up_pressed = e.State.YAxis < -PRESSED_THRESHOLD;
-                    bool down_pressed = e.State.YAxis > PRESSED_THRESHOLD;
-                    bool left_pressed = e.State.XAxis < -PRESSED_THRESHOLD;
-                    bool right_pressed = e.State.XAxis > PRESSED_THRESHOLD;
+                    bool up_pressed = state.YAxis < -PRESSED_THRESHOLD;
+                    bool down_pressed = state.YAxis > PRESSED_THRESHOLD;
+                    bool left_pressed = state.XAxis < -PRESSED_THRESHOLD;
+                    bool right_pressed = state.XAxis > PRESSED_THRESHOLD;
 
                     up_sink.SetInputState(up_pressed ? pressed : released);
                     down_sink.SetInputState(down_pressed ? pressed : released);
                     left_sink.SetInputState(left_pressed ? pressed : released);
                     right_sink.SetInputState(right_pressed ? pressed : released);
+
+                    up = up_pressed;
+                    down = down_pressed;
+                    left = left_pressed;
+                    right = right_pressed;
                 }
+                else if (state.Kind == InputStateKind.Pulse ||
+                    state.Kind == InputStateKind.Repeat)
+                {
+                    if (up)
+                    {
+                        up_sink.SetInputState(state);
+                        up_sink.SetInputState(pressed);
+                    }
+                    if (down)
+                    {
+                        down_sink.SetInputState(state);
+                        down_sink.SetInputState(pressed);
+                    }
+                    if (left)
+                    {
+                        left_sink.SetInputState(state);
+                        left_sink.SetInputState(pressed);
+                    }
+                    if (right)
+                    {
+                        right_sink.SetInputState(state);
+                        right_sink.SetInputState(pressed);
+                    }
+                }
+            } while (state.Kind != InputStateKind.Disconnected);
 
-                e.LockInput = true;
-            }
-            else if (!(up_sink is null))
-            {
-                // FIXME: if the input we get is released but not Disconnected, the dpad shouldn't be Disconnected either
-                up_sink.Dispose();
-                up_sink = null;
-                down_sink.Dispose();
-                down_sink = null;
-                left_sink.Dispose();
-                left_sink = null;
-                right_sink.Dispose();
-                right_sink = null;
-            }
-
-            return Task.CompletedTask;
+            up_sink.Dispose();
+            down_sink.Dispose();
+            left_sink.Dispose();
+            right_sink.Dispose();
         }
     }
 }

@@ -23,7 +23,7 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
         combo_box {
             recurse: false; // this can get all the list items which is time-consuming
 
-            action_on_PrimaryAction: send_click; // The "Profile Visibility" combo box does not open when invoked
+            primary_action: send_click; // The "Profile Visibility" combo box does not open when invoked
 
             if (uia_focused and not root.child_matches(uia_class_name == "QQuickWindow" and uia_name == "EADesktop")) {
                 root
@@ -32,12 +32,12 @@ window (uia_class_name == "eax::services::windowing::QmlView") {
                 }
 
                 in_menu_navigation: true;
-                action_on_MenuUp: send_key.up;
-                action_on_MenuDown: send_key.down;
-                action_on_MenuSelect: send_key.enter;
+                menu_up_action: send_key.up;
+                menu_down_action: send_key.down;
+                menu_select_action: send_key.enter;
                 // We can't dismiss these with any key other than enter.
-                action_on_MenuBack: send_key.enter;
-                action_on_MenuClose: send_key.enter;
+                menu_back_action: send_key.enter;
+                menu_close_action: send_key.enter;
             }
         }
 
@@ -58,19 +58,19 @@ window (uia_class_name == "QQuickWindow" and uia_name == "EADesktop") {
     // The "Profile Visibility" combo box creates a window like this
 
     in_menu_navigation: true;
-    action_on_MenuUp: send_key.up;
-    action_on_MenuDown: send_key.down;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
 
     // We need to focus some other control because we can't tell this kind of combo box apart from others in EA App that are always open when focused
-    action_on_MenuSelect: send_key.enter + root.
+    menu_select_action: send_key.enter + root.
         child_matches(uia_class_name == "eax::services::windowing::QmlView").
         descendent_matches(not combo_box and not window and uia_keyboard_focusable and set_focus).
         set_focus;
-    action_on_MenuBack: send_key.enter + root.
+    menu_back_action: send_key.enter + root.
         child_matches(uia_class_name == "eax::services::windowing::QmlView").
         descendent_matches(not combo_box and not window and uia_keyboard_focusable and set_focus).
         set_focus;
-    action_on_MenuClose: send_key.enter + root.
+    menu_close_action: send_key.enter + root.
         child_matches(uia_class_name == "eax::services::windowing::QmlView").
         descendent_matches(not combo_box and not window and uia_keyboard_focusable and set_focus).
         set_focus;
@@ -104,22 +104,22 @@ if (spi_attributes.xalia_ignore)
     stop: true;
 }
 
-if (in_menu_navigation) {
-    root {
-        disable_interactions: true;
-    }
+root (descendent_matches(in_menu_navigation)) {
+    disable_interactions: true;
+
+    current_menu: descendent_matches(in_menu_navigation);
 
     action_on_left_stick: simulate_dpad;
-    action_on_dpad_left: action_on_MenuLeft;
-    action_on_dpad_right: action_on_MenuRight;
-    action_on_dpad_down: action_on_MenuDown;
-    action_on_dpad_up: action_on_MenuUp;
-    action_on_A: action_on_MenuSelect;
-    action_name_A: action_name_MenuSelect or "Select";
-    action_on_B: action_on_MenuBack;
-    action_name_B: action_name_MenuBack or "Back";
-    action_on_start: action_on_MenuClose;
-    action_name_start: action_name_MenuClose or "Close Menu";
+    action_on_dpad_left: descendent_matches(in_menu_navigation).menu_left_action;
+    action_on_dpad_right: descendent_matches(in_menu_navigation).menu_right_action;
+    action_on_dpad_down: descendent_matches(in_menu_navigation).menu_down_action;
+    action_on_dpad_up: descendent_matches(in_menu_navigation).menu_up_action;
+    action_on_A: descendent_matches(in_menu_navigation).menu_select_action;
+    action_name_A: descendent_matches(in_menu_navigation).menu_select_name or "Select";
+    action_on_B: descendent_matches(in_menu_navigation).menu_back_action;
+    action_name_B: descendent_matches(in_menu_navigation).menu_back_name or "Back";
+    action_on_start: descendent_matches(in_menu_navigation).menu_close_action;
+    action_name_start: descendent_matches(in_menu_navigation).menu_close_name or "Close Menu";
 }
 
 // If a menu is open, we shouldn't try to interact with anything else.
@@ -132,15 +132,15 @@ menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_b
     if (not child_matches(spi_role.menu and spi_state.selected and child_matches(spi_state.selected)))
     {
         // Use keyboard interaction for this if possible, it's probably less janky than going through AT-SPI
-        action_on_MenuUp: send_key.up or
+        menu_up_action: send_key.up or
             child_matches(spi_state.selected).previous_sibling_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
             last_child_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
-        action_on_MenuDown: send_key.down or
+        menu_down_action: send_key.down or
             child_matches(spi_state.selected).next_sibling_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
             first_child_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
 
         // Open a menu if possible, otherwise go to the "next" menu
-        action_on_MenuRight: send_key.right or
+        menu_right_action: send_key.right or
             child_matches(spi_state.selected and spi_role.menu).spi_action.click or
             ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
                 next_sibling_matches(sensitive and visible and showing) or
@@ -148,21 +148,21 @@ menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_b
             ).spi_action.click;
         // We can't really hide a menu, but we can deselect its child which (based on the
         // logic above) will mean we no longer treat it as open, and will hide its children.
-        action_on_MenuLeft: send_key.left or
+        menu_left_action: send_key.left or
             (parent.spi_role.menu and spi_clear_selection) or
             ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
                 previous_sibling_matches(sensitive and visible and showing) or
                 last_sibling_matches(sensitive and visible and showing)
             ).spi_action.click;
-        action_on_MenuSelect: send_key.enter or child_matches(spi_state.selected).click;
+        menu_select_action: send_key.enter or child_matches(spi_state.selected).click;
         if (parent.spi_role.menu)
         {
-            action_on_MenuBack: send_key.left or spi_clear_selection;
+            menu_back_action: send_key.left or spi_clear_selection;
         }
-        action_on_MenuBack: send_key.escape or
+        menu_back_action: send_key.escape or
             (parent.spi_role.(menu or menu_bar) and spi_deselect) or 
             root.this_or_descendent_matches(spi_role.combo_box and child_matches(spi_role.menu and spi_state.showing)).spi_action.press;
-        action_on_MenuClose: send_key.escape or
+        menu_close_action: send_key.escape or
             this_or_ancestor_matches(parent.spi_role.menu_bar).spi_deselect or
             root.this_or_descendent_matches(spi_role.combo_box and child_matches(spi_role.menu and spi_state.showing)).spi_action.press;
     }
@@ -174,21 +174,21 @@ combo_box (child_matches(spi_role.list and (spi_state.focused or child_matches(s
     in_menu_navigation: true;
 
     // We can't manipulate the menu through AT-SPI, we have to use the keyboard
-    action_on_MenuUp: send_key.up;
-    action_on_MenuDown: send_key.down;
-    action_on_MenuSelect: send_key.enter;
-    action_on_MenuBack: send_key.esc or spi_action.Press;
-    action_on_MenuClose: send_key.esc or spi_action.Press;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc or spi_action.Press;
+    menu_close_action: send_key.esc or spi_action.Press;
 }
 
 combo_box (uia_expand_collapse_state.expanded) {
     in_menu_navigation: true;
 
-    action_on_MenuUp: send_key.up;
-    action_on_MenuDown: send_key.down;
-    action_on_MenuSelect: send_key.enter;
-    action_on_MenuBack: uia_collapse or send_key.esc;
-    action_on_MenuClose: uia_collapse or send_key.esc;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_select_action: send_key.enter;
+    menu_back_action: uia_collapse or send_key.esc;
+    menu_close_action: uia_collapse or send_key.esc;
 }
 
 // Qt/AT-SPI2 menus
@@ -197,13 +197,13 @@ popup_menu (spi_state.showing)
     in_menu_navigation: true;
 
     // We can't manipulate the menu through AT-SPI, we have to use the keyboard
-    action_on_MenuUp: send_key.up;
-    action_on_MenuDown: send_key.down;
-    action_on_MenuLeft: send_key.left;
-    action_on_MenuRight: send_key.right;
-    action_on_MenuSelect: send_key.enter;
-    action_on_MenuBack: send_key.esc or parent.spi_action.ShowMenu;
-    action_on_MenuClose: send_key.esc or parent.spi_action.ShowMenu;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_left_action: send_key.left;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc or parent.spi_action.ShowMenu;
+    menu_close_action: send_key.esc or parent.spi_action.ShowMenu;
 }
 
 // UI Automation menubars
@@ -212,13 +212,13 @@ root (win32_active_element.uia_class_name == "#32768")
     // Active menu, this doesn't normally happen and suggests Alt to dismiss may not work if the normal menu loop isn't used
     in_menu_navigation: true;
 
-    action_on_MenuUp: send_key.up;
-    action_on_MenuDown: send_key.down;
-    action_on_MenuLeft: send_key.left;
-    action_on_MenuRight: send_key.right;
-    action_on_MenuSelect: send_key.enter;
-	action_on_MenuBack: send_key.esc;
-	action_on_MenuClose: send_key.esc;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_left_action: send_key.left;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
+	menu_back_action: send_key.esc;
+	menu_close_action: send_key.esc;
 }
 
 root (uia_menu_mode or uia_in_menu or
@@ -226,17 +226,17 @@ root (uia_menu_mode or uia_in_menu or
 {
     in_menu_navigation: true;
 
-    action_on_MenuUp: send_key.up;
-    action_on_MenuDown: send_key.down;
-    action_on_MenuLeft: send_key.left;
-    action_on_MenuRight: send_key.right;
-    action_on_MenuSelect: send_key.enter;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_left_action: send_key.left;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
     // On Windows, pressing Escape hides the menu but stays in "menu mode", so we must use Alt to dismiss
     if (uia_in_submenu) {
-        action_on_MenuBack: send_key.esc;
+        menu_back_action: send_key.esc;
     }
-    action_on_MenuBack: send_key.alt;
-    action_on_MenuClose: send_key.alt;
+    menu_back_action: send_key.alt;
+    menu_close_action: send_key.alt;
 }
 
 // Controls for targeting elements
@@ -249,7 +249,7 @@ root
         action_on_dpad_left: target_move_left;
         action_on_dpad_right: target_move_right;
         action_on_left_stick: target_move;
-        action_on_back: action_on_TogglePanel;
+        action_on_back: toggle_panel_action;
     }
     action_repeat_delay_dpad_up: 500;
     action_repeat_delay_dpad_down: 500;
@@ -354,26 +354,26 @@ if (is_panel and root.in_panel_mode) {
 root (descendent_matches(is_panel) and not disable_interactions) {
     if (descendent_matches(active and application_supports_gamepad) and not in_panel_mode) {
         // We have to deactivate the application to not double gamepad input.
-        action_on_TogglePanel: assign("activate_on_dismiss_panel", descendent_matches(active)) +
+        toggle_panel_action: assign("activate_on_dismiss_panel", descendent_matches(active)) +
             assign("in_panel_mode", true) +
             descendent_matches(is_panel).set_foreground_window;
     }
     if (in_panel_mode and activate_on_dismiss_panel.set_foreground_window) {
-        action_on_TogglePanel: assign("activate_on_dismiss_panel", undefined) +
+        toggle_panel_action: assign("activate_on_dismiss_panel", undefined) +
             assign("in_panel_mode", false) +
             activate_on_dismiss_panel.set_foreground_window;
     }
-    action_on_TogglePanel: assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", not in_panel_mode);
+    toggle_panel_action: assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", not in_panel_mode);
 }
 
 root (targeted_element and in_panel_mode) {
     // panel-specific controls
-    action_on_B: action_on_TogglePanel;
+    action_on_B: toggle_panel_action;
     action_name_B: "Back";
 
     // Do not reactivate original window, because interacting with the panel is likely to do that
-    action_on_A: targeted_element.action_on_PrimaryAction + assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", false);
-    action_name_A: targeted_element.action_name_PrimaryAction or "Select";
+    action_on_A: targeted_element.primary_action + assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", false);
+    action_name_A: targeted_element.primary_action_name or "Select";
 }
 
 if (is_spi_element and parent.spi_role.application and spi_attributes.window_type == "dock") {
@@ -439,11 +439,10 @@ if (parent.offset_target_y) {
 scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and visible)) {
     scrollable: true;
 
-    action_on_ScrollView: adjust_scrollbars(
+    scroll_view_action: adjust_scrollbars(
         child_matches(scroll_bar and horizontal and enabled and sensitive and showing and visible),
         child_matches(scroll_bar and vertical and enabled and sensitive and showing and visible));
 }
-debug: adjust_scrollbars;
 
 // Rules for setting borders of targetable elements
 if (targetable) {
@@ -477,10 +476,21 @@ if (targetable) {
 }
 
 root (targeted_element) {
-    action_on_A: targeted_element.action_on_PrimaryAction;
-    action_name_A: targeted_element.action_name_PrimaryAction or "Select";
-    action_on_B: descendent_matches(action_on_Cancel).action_on_Cancel or send_key.esc;
-    action_name_B: descendent_matches(action_on_Cancel).action_name_Cancel or "Back";
+    action_on_A: targeted_element.primary_action;
+    action_name_A: targeted_element.primary_action_name or "Select";
+    action_on_B: descendent_matches(cancel_action).cancel_action or send_key.esc;
+    action_name_B: descendent_matches(cancel_action).cancel_action_name or "Back";
+    action_on_Y: targeted_element.secondary_action;
+    action_name_Y: targeted_element.secondary_action_name;
+    action_on_right_stick: targeted_element.scroll_view_action or targeted_element.adjust_value_action;
+    action_name_right_stick: targeted_element.scroll_view_action_name or targeted_element.adjust_value_action_name or "Scroll";
+    action_on_RB: descendent_matches(tab_right_action).tab_right_action;
+    action_name_RB: descendent_matches(tab_right_action).tab_right_action_name or "Tab Right";
+    action_on_LB: descendent_matches(tab_left_action).tab_left_action;
+    action_name_RB: descendent_matches(tab_left_action).tab_left_action_name or "Tab left";
+    action_on_start: descendent_matches(open_menu_action).open_menu_action or descendent_matches(confirm_action).confirm_action;
+    action_name_start: descendent_matches(open_menu_action) and (descendent_matches(open_menu_action).open_menu_action_name or "Open Menu") or
+        descendent_matches(confirm_action) and (descendent_matches(confirm_action).confirm_action_name or "Accept");
 }
 
 // Rules that apply to controls in the active window
@@ -488,19 +498,22 @@ if (interactable) {
     combo_box (not uia_expand_collapse_state.leaf_node) {
         targetable: true;
 
-        action_on_PrimaryAction: spi_action.(press or Press) or uia_expand or uia_invoke or msaa_do_default_action;
-        action_name_PrimaryAction: "Select";
+        primary_action: spi_action.(press or Press) or uia_expand or uia_invoke or msaa_do_default_action;
+        primary_action_name: "Select";
+
+        if (child_matches(text_box)) {
+            secondary_action: child_matches(text_box).set_focus+show_keyboard;
+            secondary_action_name: "Show Keyboard";
+        }
+
+        adjust_value_action: simulate_dpad("rs");
+        adjust_value_action_name: "Adjust";
 
         if (targeted) {
-            child (text_box) {
-                action_on_Y: set_focus+show_keyboard;
-                action_name_Y: "Show Keyboard";
+            root {
+                on_action_rs_up: targeted_element.set_focus+send_key.up;
+                on_action_rs_down: targeted_element.set_focus+send_key.down;
             }
-
-            action_on_right_stick: simulate_dpad("rs");
-            action_name_right_stick: "Scroll";
-            action_on_rs_up: set_focus+send_key.up;
-            action_on_rs_down: set_focus+send_key.down;
         }
     }
 
@@ -508,8 +521,8 @@ if (interactable) {
     if (is_spi_element and menu) {
         targetable: true;
 
-        action_on_PrimaryAction: spi_action.click;
-        action_name_PrimaryAction: "Click";
+        primary_action: spi_action.click;
+        primary_action_name: "Click";
     }
 
     // Qt/AT-SPI2 does its menu bars this way
@@ -517,8 +530,8 @@ if (interactable) {
     {
         targetable: true;
 
-        action_on_PrimaryAction: spi_action.ShowMenu;
-        action_name_PrimaryAction: "Click";
+        primary_action: spi_action.ShowMenu;
+        primary_action_name: "Click";
     }
 
     // UI Automation menu
@@ -526,54 +539,54 @@ if (interactable) {
     {
         targetable: true;
 
-        action_on_PrimaryAction: uia_invoke or msaa_do_default_action;
-        action_name_PrimaryAction: "Click";
+        primary_action: uia_invoke or msaa_do_default_action;
+        primary_action_name: "Click";
     }
 
     page_tab {
         targetable: true;
-        action_on_PrimaryAction: spi_action.Press or select;
-        action_name_PrimaryAction: "Select Tab";
+        primary_action: spi_action.Press or select;
+        primary_action_name: "Select Tab";
     }
 
     if ((spi_role.button or spi_role.radio_button) and spi_action.(click or Press or Toggle)) {
         targetable: true;
-        action_on_PrimaryAction: spi_action.(click or Press or Toggle);
-        action_name_PrimaryAction: "Click";
+        primary_action: spi_action.(click or Press or Toggle);
+        primary_action_name: "Click";
     }
 
     if (spi_role.toggle_button) {
         // In theory, we can click these with spi_action, but applications tend to expect an event
         targetable: true;
-        action_on_PrimaryAction: send_click;
-        action_name_PrimaryAction: "Click";
+        primary_action: send_click;
+        primary_action_name: "Click";
     }
 
     if (uia_control_type.(button or radio_button or hyperlink)) {
         targetable: true;
         if (manual_buttons)  {
-			action_on_PrimaryAction: send_click;
+			primary_action: send_click;
         }
-        action_on_PrimaryAction: uia_invoke or msaa_do_default_action or send_click;
-        action_name_PrimaryAction: "Click";
+        primary_action: uia_invoke or msaa_do_default_action or send_click;
+        primary_action_name: "Click";
     }
 
     check_box (manual_checkboxes) {
         targetable: true;
-        action_on_PrimaryAction: send_click;
-        action_name_PrimaryAction: "Toggle";
+        primary_action: send_click;
+        primary_action_name: "Toggle";
     }
 
     check_box (spi_action.(click or Toggle or Press)) {
         targetable: true;
-        action_on_PrimaryAction: spi_action.(click or Toggle or Press);
-        action_name_PrimaryAction: "Toggle";
+        primary_action: spi_action.(click or Toggle or Press);
+        primary_action_name: "Toggle";
     }
 
     if (uia_control_type.check_box) {
         targetable: true;
-        action_on_PrimaryAction: uia_invoke or msaa_do_default_action;
-        action_name_PrimaryAction: "Toggle";
+        primary_action: uia_invoke or msaa_do_default_action;
+        primary_action_name: "Toggle";
     }
 
     if ((is_spi_element and spi_role.text) or (is_uia_element and (uia_control_type.edit or
@@ -581,10 +594,10 @@ if (interactable) {
         targetable: true;
 		if (is_uia_element and acc2_toolkit_name == "Qt" and ancestor_matches(uia_control_type.document)) {
 			// set_focus doesn't seem to work for Qt web views
-			action_on_PrimaryAction: send_click+show_keyboard;
+			primary_action: send_click+show_keyboard;
 		}
-		action_on_PrimaryAction: set_focus+show_keyboard;
-		action_name_PrimaryAction: "Show Keyboard";
+		primary_action: set_focus+show_keyboard;
+		primary_action_name: "Show Keyboard";
     }
 
     // Tab bar navigation
@@ -604,45 +617,40 @@ if (interactable) {
     }
 
     page_tab (previous_sibling_matches(interactable).(page_tab and selected)) {
-        action_on_RB: action_on_PrimaryAction;
-        action_name_RB: spi_name;
+        tab_right_action: primary_action;
+        tab_right_action_name: spi_name;
     }
     page_tab (next_sibling_matches(interactable).(page_tab and selected)) {
-        action_on_LB: action_on_PrimaryAction;
-        action_name_LB: spi_name;
+        tab_left_action: primary_action;
+        tab_left_action_name: spi_name;
     }
 
-    menu_bar (child_matches(action_on_PrimaryAction))
+    menu_bar (child_matches(primary_action))
     {
-        action_on_start: child_matches(action_on_PrimaryAction).action_on_PrimaryAction;
-        action_name_start: "Open Menu";
+        open_menu_action: child_matches(primary_action).primary_action;
+        open_menu_action_name: "Open Menu";
     }
 
-    button ((name == "OK" or name == "Run" or name == "Play" or name == "PLAY" or name == "Yes") and action_on_PrimaryAction)
+    button ((name == "OK" or name == "Run" or name == "Play" or name == "PLAY" or name == "Yes") and primary_action)
     {
-        action_on_start: action_on_PrimaryAction;
-        action_name_start: name;
+        accept_action: primary_action;
+        accept_action_name: name;
     }
 
-    button ((name == "Cancel" or name == "Close" or name == "No") and action_on_PrimaryAction)
+    button ((name == "Cancel" or name == "Close" or name == "No") and primary_action)
     {
-        action_on_Cancel: action_on_PrimaryAction;
-        action_name_Cancel: name;
+        cancel_action: primary_action;
+        cancel_action_name: name;
     }
 
     if (scrollable) {
         targetable: true;
-
-        if (targeted) {
-            action_on_right_stick: action_on_ScrollView; // FIXME: do not hard-code button
-            action_repeat_interval_right_stick: 16;
-        }
     }
 
     if (focusable and not spi_role.panel and not descendent_matches(targetable)) {
         // A control being focusable is a good hint that it's something to click on
         targetable: true;
-        action_on_PrimaryAction: send_click;
-        action_name_PrimaryAction: "Click";
+        primary_action: send_click;
+        primary_action_name: "Click";
     }
 }

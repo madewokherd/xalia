@@ -45,83 +45,88 @@ namespace Xalia.AtSpi
             return $"adjust_scrollbars({h}, {v})";
         }
 
-        public override async Task OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override async Task ProcessInputQueue(InputQueue queue)
         {
-            if (e.JustPressed)
+            InputState prev_state = new InputState(InputStateKind.Disconnected), state;
+            do
             {
-                InputState analog_state;
-
-                if (e.State.Kind == InputStateKind.AnalogJoystick)
-                    analog_state = e.State;
-                else if (e.PreviousState.Kind == InputStateKind.AnalogJoystick)
-                    analog_state = e.PreviousState;
-                else
-                    return;
-
-                double xofs = analog_state.XAxis * xscale;
-                double yofs = analog_state.YAxis * yscale;
-
-                if (!(HScroll is null))
+                state = await queue.Dequeue();
+                if (state.JustPressed(prev_state))
                 {
-                    if (xofs > 0)
-                    {
-                        var maximum_value = await HScroll.value_iface.GetMaximumValueAsync();
-
-                        var current_value = await HScroll.value_iface.GetCurrentValueAsync();
-
-                        var new_value = current_value + xofs;
-
-                        if (new_value > maximum_value)
-                            new_value = maximum_value;
-
-                        if (new_value != current_value)
-                            await HScroll.value_iface.SetCurrentValueAsync(new_value);
-                    }
-                    else if (xofs < 0)
-                    {
-                        var minimum_value = await HScroll.value_iface.GetMinimumValueAsync();
-
-                        var current_value = await HScroll.value_iface.GetCurrentValueAsync();
-
-                        var new_value = current_value + xofs;
-
-                        if (new_value < minimum_value)
-                            new_value = minimum_value;
-
-                        if (new_value != current_value)
-                            await HScroll.value_iface.SetCurrentValueAsync(new_value);
-                    }
+                    if (state.Kind == InputStateKind.AnalogJoystick)
+                        await DoAdjustment(state);
+                    else if (prev_state.Kind == InputStateKind.AnalogJoystick)
+                        await DoAdjustment(prev_state);
                 }
-                if (!(VScroll is null))
+                prev_state = state;
+            } while (state.Kind != InputStateKind.Disconnected);
+        }
+
+        private async Task DoAdjustment(InputState state)
+        {
+            double xofs = state.XAxis * xscale;
+            double yofs = state.YAxis * yscale;
+
+            if (!(HScroll is null))
+            {
+                if (xofs > 0)
                 {
-                    if (yofs > 0)
-                    {
-                        var maximum_value = await VScroll.value_iface.GetMaximumValueAsync();
+                    var maximum_value = await HScroll.value_iface.GetMaximumValueAsync();
 
-                        var current_value = await VScroll.value_iface.GetCurrentValueAsync();
+                    var current_value = await HScroll.value_iface.GetCurrentValueAsync();
 
-                        var new_value = current_value + yofs;
+                    var new_value = current_value + xofs;
 
-                        if (new_value > maximum_value)
-                            new_value = maximum_value;
+                    if (new_value > maximum_value)
+                        new_value = maximum_value;
 
-                        if (new_value != current_value)
-                            await VScroll.value_iface.SetCurrentValueAsync(new_value);
-                    }
-                    else if (yofs < 0)
-                    {
-                        var minimum_value = await VScroll.value_iface.GetMinimumValueAsync();
+                    if (new_value != current_value)
+                        await HScroll.value_iface.SetCurrentValueAsync(new_value);
+                }
+                else if (xofs < 0)
+                {
+                    var minimum_value = await HScroll.value_iface.GetMinimumValueAsync();
 
-                        var current_value = await VScroll.value_iface.GetCurrentValueAsync();
+                    var current_value = await HScroll.value_iface.GetCurrentValueAsync();
 
-                        var new_value = current_value + yofs;
+                    var new_value = current_value + xofs;
 
-                        if (new_value < minimum_value)
-                            new_value = minimum_value;
+                    if (new_value < minimum_value)
+                        new_value = minimum_value;
 
-                        if (new_value != current_value)
-                            await VScroll.value_iface.SetCurrentValueAsync(new_value);
-                    }
+                    if (new_value != current_value)
+                        await HScroll.value_iface.SetCurrentValueAsync(new_value);
+                }
+            }
+            if (!(VScroll is null))
+            {
+                if (yofs > 0)
+                {
+                    var maximum_value = await VScroll.value_iface.GetMaximumValueAsync();
+
+                    var current_value = await VScroll.value_iface.GetCurrentValueAsync();
+
+                    var new_value = current_value + yofs;
+
+                    if (new_value > maximum_value)
+                        new_value = maximum_value;
+
+                    if (new_value != current_value)
+                        await VScroll.value_iface.SetCurrentValueAsync(new_value);
+                }
+                else if (yofs < 0)
+                {
+                    var minimum_value = await VScroll.value_iface.GetMinimumValueAsync();
+
+                    var current_value = await VScroll.value_iface.GetCurrentValueAsync();
+
+                    var new_value = current_value + yofs;
+
+                    if (new_value < minimum_value)
+                        new_value = minimum_value;
+
+                    if (new_value != current_value)
+                        await VScroll.value_iface.SetCurrentValueAsync(new_value);
                 }
             }
         }

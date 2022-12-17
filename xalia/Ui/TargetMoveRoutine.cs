@@ -17,38 +17,41 @@ namespace Xalia.Ui
 
         public UiMain Main { get; }
 
-        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override async Task ProcessInputQueue(InputQueue queue)
         {
-            if (e.JustPressed)
+            InputState prev_state = new InputState(InputStateKind.Disconnected), state;
+            do
             {
-                InputState analog_state;
-
-                if (e.State.Kind == InputStateKind.AnalogJoystick)
-                    analog_state = e.State;
-                else if (e.PreviousState.Kind == InputStateKind.AnalogJoystick)
-                    analog_state = e.PreviousState;
-                else
-                    return Task.CompletedTask;
-
-                if (Math.Abs((int)analog_state.XAxis) > Math.Abs((int)analog_state.YAxis))
+                state = await queue.Dequeue();
+                if (state.JustPressed(prev_state))
                 {
-                    double bias = analog_state.YAxis / Math.Abs((double)analog_state.XAxis);
-                    if (analog_state.XAxis > 0)
-                        Main.TargetMove(UiMain.Direction.Right, bias);
-                    else
-                        Main.TargetMove(UiMain.Direction.Left, bias);
+                    if (state.Kind == InputStateKind.AnalogJoystick)
+                        DoMove(state);
+                    else if (prev_state.Kind == InputStateKind.AnalogJoystick)
+                        DoMove(prev_state);
                 }
+                prev_state = state;
+            } while (state.Kind != InputStateKind.Disconnected);
+        }
+
+        private void DoMove(InputState state)
+        {
+            if (Math.Abs((int)state.XAxis) > Math.Abs((int)state.YAxis))
+            {
+                double bias = state.YAxis / Math.Abs((double)state.XAxis);
+                if (state.XAxis > 0)
+                    Main.TargetMove(UiMain.Direction.Right, bias);
                 else
-                {
-                    double bias = analog_state.XAxis / Math.Abs((double)analog_state.YAxis);
-                    if (analog_state.YAxis > 0)
-                        Main.TargetMove(UiMain.Direction.Down, bias);
-                    else
-                        Main.TargetMove(UiMain.Direction.Up, bias);
-                }
+                    Main.TargetMove(UiMain.Direction.Left, bias);
             }
-
-            return Task.CompletedTask;
+            else
+            {
+                double bias = state.XAxis / Math.Abs((double)state.YAxis);
+                if (state.YAxis > 0)
+                    Main.TargetMove(UiMain.Direction.Down, bias);
+                else
+                    Main.TargetMove(UiMain.Direction.Up, bias);
+            }
         }
     }
 }

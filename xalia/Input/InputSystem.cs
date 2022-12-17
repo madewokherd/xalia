@@ -43,26 +43,7 @@ namespace Xalia.Input
             public string Action { get; }
             public InputState State { get; }
             public InputState PreviousState { get; }
-            public bool JustPressed
-            {
-                get
-                {
-                    if (State.Kind == InputStateKind.Pulse)
-                        return true;
-                    if (PreviousState.Kind == InputStateKind.Disconnected)
-                        // If a button was *already pressed* when first connected, it wasn't "just pressed".
-                        return false;
-                    if (State.Kind == InputStateKind.Repeat)
-                        return true;
-                    return State.Pressed && !PreviousState.Pressed;
-                }
-            }
-            public bool JustReleased => !State.Pressed && PreviousState.Pressed;
-
-            // Set LockInput to true to receive further events.
-            // This only applies to events from UiDomRoutine.
-            // Events from InputSystem are controlled by WatchAction/UnwatchAction.
-            public bool LockInput { get; set; }
+            public bool JustPressed => State.JustPressed(PreviousState);
         }
 
         public delegate void ActionStateChangeEventHandler(object sender, ActionStateChangeEventArgs e);

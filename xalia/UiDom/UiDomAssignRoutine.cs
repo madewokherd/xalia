@@ -18,13 +18,16 @@ namespace Xalia.UiDom
         public string PropName { get; }
         public UiDomValue PropValue { get; }
 
-        public override Task OnInput(InputSystem.ActionStateChangeEventArgs e)
+        public override async Task ProcessInputQueue(InputQueue queue)
         {
-            if (e.JustPressed)
+            InputState prev_state = new InputState(InputStateKind.Disconnected), state;
+            do
             {
-                Element.AssignProperty(PropName, PropValue);
-            }
-            return Task.CompletedTask;
+                state = await queue.Dequeue();
+                if (state.JustPressed(prev_state))
+                    Element.AssignProperty(PropName, PropValue);
+                prev_state = state;
+            } while (state.Kind != InputStateKind.Disconnected);
         }
 
         public override bool Equals(object obj)
