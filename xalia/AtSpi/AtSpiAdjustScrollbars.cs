@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Xalia.AtSpi.DBus;
@@ -20,8 +22,9 @@ namespace Xalia.AtSpi
         public AtSpiElement HScroll { get; }
         public AtSpiElement VScroll { get; }
 
-        private static readonly double xscale = 100.0 / 3 / 32767;
-        private static readonly double yscale = 100.0 / 3 / 32767;
+        private static readonly double xscale = 100.0 / 6 / 32767;
+        private static readonly double yscale = 100.0 / 6 / 32767;
+        private static readonly long delay_ticks = 10000000 / 120;
 
         public override bool Equals(object obj)
         {
@@ -47,25 +50,55 @@ namespace Xalia.AtSpi
 
         public override async Task ProcessInputQueue(InputQueue queue)
         {
+            var stopwatch = new Stopwatch();
             InputState prev_state = new InputState(InputStateKind.Disconnected), state;
-            do
+            long last_repeat = 0;
+            while (true)
             {
                 state = await queue.Dequeue();
-                if (state.JustPressed(prev_state))
+                if (state.Kind == InputStateKind.Disconnected)
+                    break;
+                if ((state.Kind == InputStateKind.Pulse || state.Kind == InputStateKind.Repeat) &&
+                    prev_state.Kind == InputStateKind.AnalogJoystick)
                 {
-                    if (state.Kind == InputStateKind.AnalogJoystick)
-                        await DoAdjustment(state);
-                    else if (prev_state.Kind == InputStateKind.AnalogJoystick)
-                        await DoAdjustment(prev_state);
+                    await DoAdjustment(prev_state, 1);
+                    if (stopwatch.IsRunning)
+                        stopwatch.Reset();
+                }
+                else if (state.Kind == InputStateKind.AnalogJoystick && state.Intensity >= 1000)
+                {
+                    if (!stopwatch.IsRunning)
+                    {
+                        stopwatch.Start();
+                        last_repeat = 0;
+                        await DoAdjustment(state, 1);
+                    }
+                    while (queue.IsEmpty)
+                    {
+                        var elapsed_ticks = stopwatch.ElapsedTicks - last_repeat;
+                        if (elapsed_ticks < delay_ticks)
+                        {
+                            await Task.WhenAny(queue.WaitForInput(), Task.Delay(new TimeSpan(delay_ticks - elapsed_ticks)));
+                            continue;
+                        }
+                        long num_steps = elapsed_ticks / delay_ticks;
+
+                        await DoAdjustment(state, Math.Min(num_steps, 60));
+                        last_repeat += delay_ticks * num_steps;
+                    }
+                }
+                else
+                {
+                    stopwatch.Reset();
                 }
                 prev_state = state;
-            } while (state.Kind != InputStateKind.Disconnected);
+            }
         }
 
-        private async Task DoAdjustment(InputState state)
+        private async Task DoAdjustment(InputState state, long multiplier)
         {
-            double xofs = state.XAxis * xscale;
-            double yofs = state.YAxis * yscale;
+            double xofs = state.XAxis * xscale * multiplier;
+            double yofs = state.YAxis * yscale * multiplier;
 
             if (!(HScroll is null))
             {

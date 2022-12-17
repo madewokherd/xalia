@@ -83,6 +83,8 @@ namespace Xalia.Input
         {
             if (states.Count != 0)
                 return Task.CompletedTask;
+            if (!input_exhausted_task.Task.IsCompleted)
+                input_exhausted_task.SetResult(true);
             return input_ready_task.Task;
         }
 
