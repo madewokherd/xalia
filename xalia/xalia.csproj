@@ -145,6 +145,7 @@
     <Compile Include="UiDom\UiDomMethod.cs" />
     <Compile Include="UiDom\UiDomRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />
+    <Compile Include="UiDom\UiDomRepeatAction.cs" />
     <Compile Include="UiDom\UiDomRoot.cs" />
     <Compile Include="UiDom\UiDomRoutine.cs" />
     <Compile Include="UiDom\UiDomRoutineSequence.cs" />

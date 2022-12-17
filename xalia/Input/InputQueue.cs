@@ -78,5 +78,20 @@ namespace Xalia.Input
         {
             return input_exhausted_task.Task;
         }
+
+        public Task WaitForInput()
+        {
+            if (states.Count != 0)
+                return Task.CompletedTask;
+            return input_ready_task.Task;
+        }
+
+        public bool IsEmpty
+        {
+            get
+            {
+                return states.Count == 0;
+            }
+        }
     }
 }

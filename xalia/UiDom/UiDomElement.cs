@@ -304,6 +304,8 @@ namespace Xalia.UiDom
                 case "child_count":
                     depends_on.Add((this, new IdentifierExpression("children")));
                     return new UiDomInt(Children.Count);
+                case "repeat_action":
+                    return UiDomRepeatAction.GetMethod();
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))

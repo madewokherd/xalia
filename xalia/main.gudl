@@ -104,16 +104,21 @@ if (spi_attributes.xalia_ignore)
     stop: true;
 }
 
+root {
+    repeat_initial_delay: 500;
+    repeat_delay: 100;
+}
+
 root (descendent_matches(in_menu_navigation)) {
     disable_interactions: true;
 
     current_menu: descendent_matches(in_menu_navigation);
 
     action_on_left_stick: simulate_dpad;
-    action_on_dpad_left: descendent_matches(in_menu_navigation).menu_left_action;
-    action_on_dpad_right: descendent_matches(in_menu_navigation).menu_right_action;
-    action_on_dpad_down: descendent_matches(in_menu_navigation).menu_down_action;
-    action_on_dpad_up: descendent_matches(in_menu_navigation).menu_up_action;
+    action_on_dpad_left: repeat_action(descendent_matches(in_menu_navigation).menu_left_action, repeat_initial_delay, repeat_delay);
+    action_on_dpad_right: repeat_action(descendent_matches(in_menu_navigation).menu_right_action, repeat_initial_delay, repeat_delay);
+    action_on_dpad_down: repeat_action(descendent_matches(in_menu_navigation).menu_down_action, repeat_initial_delay, repeat_delay);
+    action_on_dpad_up: repeat_action(descendent_matches(in_menu_navigation).menu_up_action, repeat_initial_delay, repeat_delay);
     action_on_A: descendent_matches(in_menu_navigation).menu_select_action;
     action_name_A: descendent_matches(in_menu_navigation).menu_select_name or "Select";
     action_on_B: descendent_matches(in_menu_navigation).menu_back_action;
@@ -244,23 +249,13 @@ root
 {
     if (not disable_interactions)
     {
-        action_on_dpad_up: target_move_up;
-        action_on_dpad_down: target_move_down;
-        action_on_dpad_left: target_move_left;
-        action_on_dpad_right: target_move_right;
-        action_on_left_stick: target_move;
+        action_on_dpad_up: repeat_action(target_move_up, repeat_initial_delay, repeat_delay);
+        action_on_dpad_down: repeat_action(target_move_down, repeat_initial_delay, repeat_delay);
+        action_on_dpad_left: repeat_action(target_move_left, repeat_initial_delay, repeat_delay);
+        action_on_dpad_right: repeat_action(target_move_right, repeat_initial_delay, repeat_delay);
+        action_on_left_stick: repeat_action(target_move, repeat_initial_delay, repeat_delay);
         action_on_back: toggle_panel_action;
     }
-    action_repeat_delay_dpad_up: 500;
-    action_repeat_delay_dpad_down: 500;
-    action_repeat_delay_dpad_left: 500;
-    action_repeat_delay_dpad_right: 500;
-    action_repeat_delay_left_stick: 500;
-    action_repeat_interval_dpad_up: 100;
-    action_repeat_interval_dpad_down: 100;
-    action_repeat_interval_dpad_left: 100;
-    action_repeat_interval_dpad_right: 100;
-    action_repeat_interval_left_stick: 100;
 }
 
 // Combo boxes contain subcontrols we don't want to directly navigate to
@@ -511,8 +506,8 @@ if (interactable) {
 
         if (targeted) {
             root {
-                on_action_rs_up: targeted_element.set_focus+send_key.up;
-                on_action_rs_down: targeted_element.set_focus+send_key.down;
+                on_action_rs_up: repeat_action(targeted_element.set_focus+send_key.up, repeat_initial_delay, repeat_delay);
+                on_action_rs_down: repeat_action(targeted_element.set_focus+send_key.down, repeat_initial_delay, repeat_delay);
             }
         }
     }
