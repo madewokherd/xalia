@@ -134,7 +134,6 @@
     <Compile Include="UiDom\IUiDomApplication.cs" />
     <Compile Include="UiDom\SimulateDpad.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
-    <Compile Include="UiDom\UiDomChildAtIndex.cs" />
     <Compile Include="UiDom\UiDomDouble.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
     <Compile Include="UiDom\UiDomInt.cs" />

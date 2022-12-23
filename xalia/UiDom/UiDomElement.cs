@@ -298,8 +298,7 @@ namespace Xalia.UiDom
                     }
                     return UiDomUndefined.Instance;
                 case "child_at_index":
-                    depends_on.Add((this, new IdentifierExpression("children")));
-                    return new UiDomChildAtIndex(this);
+                    return new UiDomMethod(this, "child_at_index", ChildAtIndexFn);
                 case "child_count":
                     depends_on.Add((this, new IdentifierExpression("children")));
                     return new UiDomInt(Children.Count);
@@ -317,6 +316,23 @@ namespace Xalia.UiDom
             if (_assignedProperties.TryGetValue(id, out result) && !(result is UiDomUndefined))
                 return result;
             return base.EvaluateIdentifierCore(id, root, depends_on);
+        }
+
+        private UiDomValue ChildAtIndexFn(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+            var expr = arglist[0];
+            UiDomValue right = context.Evaluate(expr, root, depends_on);
+            if (right is UiDomInt i)
+            {
+                depends_on.Add((this, new IdentifierExpression("children")));
+                if (i.Value >= 0 && i.Value < Children.Count)
+                {
+                    return Children[i.Value];
+                }
+            }
+            return UiDomUndefined.Instance;
         }
 
         private UiDomValue AssignFn(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
