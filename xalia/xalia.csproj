@@ -143,6 +143,7 @@
     <Compile Include="UiDom\UiDomElement.cs" />
     <Compile Include="UiDom\UiDomIsRelationship.cs" />
     <Compile Include="UiDom\UiDomMethod.cs" />
+    <Compile Include="UiDom\UiDomRoutinePress.cs" />
     <Compile Include="UiDom\UiDomRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />
     <Compile Include="UiDom\UiDomRepeatAction.cs" />

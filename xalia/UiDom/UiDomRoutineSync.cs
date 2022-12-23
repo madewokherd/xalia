@@ -7,7 +7,7 @@ using Xalia.Input;
 
 namespace Xalia.UiDom
 {
-    public class UiDomRoutineSync : UiDomRoutine
+    public class UiDomRoutineSync : UiDomRoutinePress
     {
         public Action<UiDomRoutineSync> Routine { get; }
 
@@ -17,25 +17,17 @@ namespace Xalia.UiDom
             Routine = routine;
         }
 
-        public override async Task ProcessInputQueue(InputQueue queue)
+        public override Task OnPress()
         {
-            InputState prev_state = new InputState(InputStateKind.Disconnected), state;
-            do
+            try
             {
-                state = await queue.Dequeue();
-                if (state.JustPressed(prev_state))
-                {
-                    try
-                    {
-                        Routine(this);
-                    }
-                    catch (Exception exc)
-                    {
-                        Utils.OnError(exc);
-                    }
-                }
-                prev_state = state;
-            } while (state.Kind != InputStateKind.Disconnected);
+                Routine(this);
+            }
+            catch (Exception e)
+            {
+                Utils.OnError(e);
+            }
+            return Task.CompletedTask;
         }
     }
 }

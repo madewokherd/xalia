@@ -1,0 +1,33 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Xalia.Input;
+
+namespace Xalia.UiDom
+{
+    public abstract class UiDomRoutinePress : UiDomRoutine
+    {
+        public UiDomRoutinePress() : base() { }
+        public UiDomRoutinePress(UiDomElement element) : base(element) { }
+        public UiDomRoutinePress(string name) : base(name) { }
+        public UiDomRoutinePress(UiDomElement element, string name) : base(element, name) { }
+
+        public abstract Task OnPress();
+
+        public override async Task ProcessInputQueue(InputQueue queue)
+        {
+            InputState prev_state = new InputState(InputStateKind.Disconnected), state;
+            do
+            {
+                state = await queue.Dequeue();
+                if (state.JustPressed(prev_state))
+                {
+                    await OnPress();
+                }
+                prev_state = state;
+            } while (state.Kind != InputStateKind.Disconnected);
+        }
+    }
+}
