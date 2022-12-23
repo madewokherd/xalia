@@ -11,11 +11,17 @@ namespace Xalia.UiDom
     {
         public Action<UiDomRoutineSync> Routine { get; }
 
-        public UiDomRoutineSync(UiDomElement element, string name,
-            Action<UiDomRoutineSync> routine) : base(element, name)
+        public UiDomRoutineSync(UiDomElement element, string name, UiDomValue[] arglist,
+            Action<UiDomRoutineSync> routine) : base(element, name, arglist)
         {
             Routine = routine;
         }
+
+        public UiDomRoutineSync(Action<UiDomRoutineSync> routine) : this(null, null, null, routine) { }
+        public UiDomRoutineSync(UiDomElement element, Action<UiDomRoutineSync> routine) : this(element, null, null, routine) { }
+        public UiDomRoutineSync(string name, Action<UiDomRoutineSync> routine) : this(null, name, null, routine) { }
+        public UiDomRoutineSync(UiDomElement element, string name, Action<UiDomRoutineSync> routine) : this(element, name, null, routine) { }
+        public UiDomRoutineSync(string name, UiDomValue[] arglist, Action<UiDomRoutineSync> routine) : this(null, name, arglist, routine) { }
 
         public override Task OnPress()
         {

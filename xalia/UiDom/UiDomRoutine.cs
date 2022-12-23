@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,30 +13,47 @@ namespace Xalia.UiDom
     {
         public UiDomElement Element { get; }
         public string Name { get; }
+        public UiDomValue[] Arglist { get; }
 
-        public UiDomRoutine(UiDomElement element, string name)
+        public UiDomRoutine(UiDomElement element, string name, UiDomValue[] arglist)
         {
             Element = element;
             Name = name;
+            Arglist = arglist;
         }
 
-        public UiDomRoutine() : this(null, null) { }
-        public UiDomRoutine(UiDomElement element) : this(element, null) { }
-        public UiDomRoutine(string name) : this(null, name) { }
+        public UiDomRoutine() : this(null, null, null) { }
+        public UiDomRoutine(UiDomElement element) : this(element, null, null) { }
+        public UiDomRoutine(string name) : this(null, name, null) { }
+        public UiDomRoutine(UiDomElement element, string name) : this(element, name, null) { }
+        public UiDomRoutine(string name, UiDomValue[] arglist) : this(null, name, arglist) { }
 
         public abstract Task ProcessInputQueue(InputQueue queue);
 
         public override string ToString()
         {
+            var sb = new StringBuilder();
+            if (Element != null)
+            {
+                sb.Append(Element.ToString());
+                sb.Append('.');
+            }
             if (Name != null)
             {
-                if (Element != null)
-                {
-                    return $"{Element}.{Name}";
-                }
-                return Name;
+                sb.Append(Name);
             }
-            return base.ToString();
+            if (Arglist != null)
+            {
+                sb.Append('(');
+                for (int i = 0; i < Arglist.Length; i++)
+                {
+                    sb.Append(Arglist[i].ToString());
+                    if (i != Arglist.Length - 1)
+                        sb.Append(", ");
+                }
+                sb.Append(')');
+            }
+            return sb.ToString();
         }
 
         public override bool Equals(object obj)
@@ -51,7 +69,9 @@ namespace Xalia.UiDom
 
         public override int GetHashCode()
         {
-            return (Element, Name).GetHashCode() ^ typeof(UiDomRoutine).GetHashCode();
+            return (Element, Name,
+                Arglist != null ? 0 : StructuralComparisons.StructuralEqualityComparer.GetHashCode(Arglist)
+                ).GetHashCode() ^ typeof(UiDomRoutine).GetHashCode();
         }
     }
 }

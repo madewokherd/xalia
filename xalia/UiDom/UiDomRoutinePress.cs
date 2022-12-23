@@ -13,6 +13,8 @@ namespace Xalia.UiDom
         public UiDomRoutinePress(UiDomElement element) : base(element) { }
         public UiDomRoutinePress(string name) : base(name) { }
         public UiDomRoutinePress(UiDomElement element, string name) : base(element, name) { }
+        public UiDomRoutinePress(string name, UiDomValue[] arglist) : base(name, arglist) { }
+        public UiDomRoutinePress(UiDomElement element, string name, UiDomValue[] arglist) : base(element, name, arglist) { }
 
         public abstract Task OnPress();
 

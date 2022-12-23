@@ -133,8 +133,6 @@
     <Compile Include="Uia\UiaElementWrapper.cs" />
     <Compile Include="UiDom\IUiDomApplication.cs" />
     <Compile Include="UiDom\SimulateDpad.cs" />
-    <Compile Include="UiDom\UiDomAssign.cs" />
-    <Compile Include="UiDom\UiDomAssignRoutine.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomChildAtIndex.cs" />
     <Compile Include="UiDom\UiDomDouble.cs" />

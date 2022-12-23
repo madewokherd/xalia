@@ -4,7 +4,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-
 using Xalia.Gudl;
 
 namespace Xalia.UiDom
@@ -288,7 +287,7 @@ namespace Xalia.UiDom
                 case "root":
                     return root;
                 case "assign":
-                    return new UiDomAssign(this);
+                    return new UiDomMethod(this, "assign", AssignFn);
                 case "simulate_dpad":
                     return new SimulateDpad();
                 case "index_in_parent":
@@ -318,6 +317,30 @@ namespace Xalia.UiDom
             if (_assignedProperties.TryGetValue(id, out result) && !(result is UiDomUndefined))
                 return result;
             return base.EvaluateIdentifierCore(id, root, depends_on);
+        }
+
+        private UiDomValue AssignFn(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 2)
+                return UiDomUndefined.Instance;
+
+            var name = context.Evaluate(arglist[0], root, depends_on);
+
+            if (!(name is UiDomString st))
+            {
+                return UiDomUndefined.Instance;
+            }
+
+            var value = context.Evaluate(arglist[1], root, depends_on);
+
+            UiDomValue[] values = new UiDomValue[] { name, value };
+
+            return new UiDomRoutineSync(this, "assign", values, DoAssign);
+        }
+
+        private static void DoAssign(UiDomRoutineSync obj)
+        {
+            obj.Element.AssignProperty(((UiDomString)obj.Arglist[0]).Value, obj.Arglist[1]);
         }
 
         public virtual Task<(bool, int, int)> GetClickablePoint()
