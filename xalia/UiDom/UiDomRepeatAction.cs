@@ -13,14 +13,18 @@ namespace Xalia.UiDom
 {
     public class UiDomRepeatAction : UiDomRoutine
     {
-        public UiDomRepeatAction(UiDomRoutine action, TimeSpan initial_delay, TimeSpan repeat_delay)
+        public UiDomRepeatAction(UiDomValue context, UiDomRoot root, GudlExpression action_expression, TimeSpan initial_delay, TimeSpan repeat_delay)
         {
-            Action = action;
+            Context = context;
+            Root = root;
+            ActionExpression = action_expression;
             InitialDelay = initial_delay;
             RepeatDelay = repeat_delay;
         }
 
-        public UiDomRoutine Action { get; }
+        public UiDomValue Context { get; }
+        public UiDomRoot Root { get; }
+        public GudlExpression ActionExpression { get; }
         public TimeSpan InitialDelay { get; }
         public TimeSpan RepeatDelay { get; }
 
@@ -34,7 +38,8 @@ namespace Xalia.UiDom
             if (arglist.Length < 2)
                 return UiDomUndefined.Instance;
 
-            UiDomRoutine action = context.Evaluate(arglist[0], root, depends_on) as UiDomRoutine;
+            GudlExpression action_expr = arglist[0];
+            UiDomRoutine action = context.Evaluate(action_expr, root, depends_on) as UiDomRoutine;
             if (action is null)
                 return UiDomUndefined.Instance;
 
@@ -82,7 +87,7 @@ namespace Xalia.UiDom
             else
                 repeat_delay_ts = initial_delay_ts;
 
-            return new UiDomRepeatAction(action, initial_delay_ts, repeat_delay_ts);
+            return new UiDomRepeatAction(context, root, action_expr, initial_delay_ts, repeat_delay_ts);
         }
 
         public override bool Equals(object obj)
@@ -90,70 +95,103 @@ namespace Xalia.UiDom
             if (ReferenceEquals(this, obj))
                 return true;
             if (obj is UiDomRepeatAction r)
-                return Action.Equals(r.Action) && InitialDelay == r.InitialDelay && RepeatDelay == r.RepeatDelay;
+                return ActionExpression.Equals(r.ActionExpression) && InitialDelay == r.InitialDelay && RepeatDelay == r.RepeatDelay;
             return false;
         }
 
         public override int GetHashCode()
         {
-            return typeof(UiDomRepeatAction).GetHashCode() ^ (Action, InitialDelay, RepeatDelay).GetHashCode();
+            return typeof(UiDomRepeatAction).GetHashCode() ^ (Context, ActionExpression, InitialDelay, RepeatDelay).GetHashCode();
         }
 
         public override async Task ProcessInputQueue(InputQueue queue)
         {
             Stopwatch stopwatch = new Stopwatch();
             bool is_initial = true;
-            InputQueue inner_queue = new InputQueue(queue.Action);
-            Utils.RunTask(Action.ProcessInputQueue(inner_queue));
-            InputState prev_state = new InputState(InputStateKind.Disconnected);
-            while (true) {
-                InputState state = await queue.Dequeue();
-                inner_queue.Enqueue(state);
-                if (state.Kind == InputStateKind.Disconnected)
+            using (var watcher = new ExpressionWatcher(Context, Root, ActionExpression))
+            {
+                InputQueue inner_queue = null;
+                UiDomRoutine action = null;
+                InputState prev_state = new InputState(InputStateKind.Disconnected);
+                InputState state = new InputState(InputStateKind.Disconnected);
+                while (true)
                 {
-                    break;
-                }
-                if (state.JustPressed(prev_state))
-                {
-                    stopwatch.Restart();
-                    is_initial = true;
-                }
-                if (state.Pressed)
-                {
-                    if (stopwatch.IsRunning)
+                    if (stopwatch.IsRunning && !state.Pressed)
                     {
-                        while (queue.IsEmpty)
+                        stopwatch.Reset();
+                    }
+                    if (state.Kind != InputStateKind.Disconnected)
+                    {
+                        var new_action = watcher.CurrentValue as UiDomRoutine;
+                        if (new_action is null)
                         {
-                            long remaining_delay = (is_initial ? InitialDelay : RepeatDelay).Ticks -
-                                stopwatch.ElapsedTicks;
-                            if (remaining_delay <= 0)
+                            if (!(action is null))
                             {
-                                stopwatch.Restart();
-                                is_initial = false;
-                                await inner_queue.WaitForConsumer();
-                                inner_queue.Enqueue(new InputState(InputStateKind.Repeat));
-                                inner_queue.Enqueue(state);
+                                inner_queue.Enqueue(new InputState(InputStateKind.Disconnected));
+                                action = null;
+                                inner_queue = null;
                                 continue;
                             }
-                            await Task.WhenAny(queue.WaitForInput(), Task.Delay(new TimeSpan(remaining_delay)));
+                        }
+                        else if (!new_action.Equals(action))
+                        {
+                            if (!(action is null))
+                            {
+                                inner_queue.Enqueue(new InputState(InputStateKind.Disconnected));
+                                action = null;
+                                inner_queue = null;
+                            }
+                            inner_queue = new InputQueue(queue.Action);
+                            action = new_action;
+                            Utils.RunTask(action.ProcessInputQueue(inner_queue));
+                            inner_queue.Enqueue(state);
+                            continue;
                         }
                     }
+                    if (!queue.IsEmpty || state.Kind == InputStateKind.Disconnected)
+                    {
+                        prev_state = state;
+                        state = await queue.Dequeue();
+                        if (!(inner_queue is null))
+                            inner_queue.Enqueue(state);
+                        if (state.Kind == InputStateKind.Disconnected)
+                        {
+                            break;
+                        }
+                        if (state.JustPressed(prev_state))
+                        {
+                            stopwatch.Restart();
+                            is_initial = true;
+                        }
+                        continue;
+                    }
+                    if (stopwatch.IsRunning && state.Pressed)
+                    {
+                        long remaining_delay = (is_initial ? InitialDelay : RepeatDelay).Ticks -
+                                stopwatch.ElapsedTicks;
+                        if (remaining_delay <= 0)
+                        {
+                            stopwatch.Restart();
+                            is_initial = false;
+                            if (!(inner_queue is null))
+                            {
+                                inner_queue.Enqueue(new InputState(InputStateKind.Repeat));
+                                inner_queue.Enqueue(state);
+                                await inner_queue.WaitForConsumer();
+                            }
+                            continue;
+                        }
+                        await Task.WhenAny(queue.WaitForInput(), watcher.WaitChanged(), Task.Delay(new TimeSpan(remaining_delay)));
+                        continue;
+                    }
+                    await Task.WhenAny(queue.WaitForInput(), watcher.WaitChanged());
                 }
-                else
-                {
-                    is_initial = true;
-                    stopwatch.Reset();
-                }
-
-                await inner_queue.WaitForConsumer();
-
-                prev_state = state;
             }
         }
 
         public override string ToString()
         {
-            return $"repeat_action({Action}, {InitialDelay.Ticks / 10000.0}, {RepeatDelay.Ticks / 10000.0})";
+            return $"{Context}.(repeat_action({ActionExpression}, {InitialDelay.Ticks / 10000.0}, {RepeatDelay.Ticks / 10000.0}))";
         }
     }
 }
