@@ -31,5 +31,10 @@ namespace Xalia.UiDom
         {
             Application.ElementDied(element);
         }
+
+        public override string ToString()
+        {
+            return "root";
+        }
     }
 }
