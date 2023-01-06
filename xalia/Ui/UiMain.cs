@@ -76,7 +76,7 @@ namespace Xalia.Ui
         private void OnActionStateChangeEvent(object sender, InputSystem.ActionStateChangeEventArgs e)
         {
 #if DEBUG
-            Console.WriteLine($"Got input: {e.Action} {e.PreviousState} => {e.State}");
+            Console.WriteLine($"Got input: {e.Action} {e.State}");
 #endif
             if (defined_actions.TryGetValue(e.Action, out var info))
             {

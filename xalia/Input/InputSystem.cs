@@ -34,16 +34,13 @@ namespace Xalia.Input
 
         public class ActionStateChangeEventArgs : EventArgs
         {
-            public ActionStateChangeEventArgs(string action, InputState state, InputState previousState)
+            public ActionStateChangeEventArgs(string action, InputState state)
             {
                 Action = action;
                 State = state;
-                PreviousState = previousState;
             }
             public string Action { get; }
             public InputState State { get; }
-            public InputState PreviousState { get; }
-            public bool JustPressed => State.JustPressed(PreviousState);
         }
 
         public delegate void ActionStateChangeEventHandler(object sender, ActionStateChangeEventArgs e);
@@ -89,7 +86,7 @@ namespace Xalia.Input
                         var handler = ActionStateChangeEvent;
                         if (handler != null)
                         {
-                            var args = new ActionStateChangeEventArgs(action, new_state, old_state);
+                            var args = new ActionStateChangeEventArgs(action, new_state);
                             handler(this, args);
                         }
                     }
@@ -99,7 +96,7 @@ namespace Xalia.Input
                         var handler = ActionStateChangeEvent;
                         if (handler != null)
                         {
-                            var args = new ActionStateChangeEventArgs(action, disconnected_state, new_state);
+                            var args = new ActionStateChangeEventArgs(action, disconnected_state);
                             handler(this, args);
                         }
                     }                     
@@ -132,7 +129,7 @@ namespace Xalia.Input
                 {
                     InputState new_state = default;
                     new_state.Kind = InputStateKind.Disconnected;
-                    var args = new ActionStateChangeEventArgs(action, old_state, new_state);
+                    var args = new ActionStateChangeEventArgs(action, new_state);
                     handler(this, args);
                 }
             }
