@@ -101,7 +101,6 @@ namespace Xalia.Input
                     case InputStateKind.Released:
                         return false;
                     case InputStateKind.AnalogButton:
-                        return XAxis == 32767;
                     case InputStateKind.AnalogJoystick:
                         return Intensity >= 10000; // arbitrary cutoff
                 }
