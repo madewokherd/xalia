@@ -158,45 +158,52 @@ menu (child_matches(spi_state.showing) and (not parent.spi_role.(menu or combo_b
 {
     in_menu_navigation: true;
 
-    // Find the deepest menu that is showing and has an item selected, or
-    // the top-level menu if there is no item selected.
-    if (not child_matches(spi_role.menu and spi_state.selected and child_matches(spi_state.selected)))
-    {
-        // Use keyboard interaction for this if possible, it's probably less janky than going through AT-SPI
-        menu_up_action: send_key.up or
-            child_matches(spi_state.selected).previous_sibling_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
-            last_child_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
-        menu_down_action: send_key.down or
-            child_matches(spi_state.selected).next_sibling_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
-            first_child_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
+    if (descendent_matches(in_menu_navigation)) {
+        // Use actions from inner-most menu
 
-        // Open a menu if possible, otherwise go to the "next" menu
-        menu_right_action: send_key.right or
-            child_matches(spi_state.selected and spi_role.menu).spi_action.click or
-            ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
-                next_sibling_matches(sensitive and visible and showing) or
-                first_sibling_matches(sensitive and visible and showing)
-            ).spi_action.click;
-        // We can't really hide a menu, but we can deselect its child which (based on the
-        // logic above) will mean we no longer treat it as open, and will hide its children.
-        menu_left_action: send_key.left or
-            (parent.spi_role.menu and spi_clear_selection) or
-            ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
-                previous_sibling_matches(sensitive and visible and showing) or
-                last_sibling_matches(sensitive and visible and showing)
-            ).spi_action.click;
-        menu_select_action: send_key.enter or child_matches(spi_state.selected).click;
-        if (parent.spi_role.menu)
-        {
-            menu_back_action: send_key.left or spi_clear_selection;
-        }
-        menu_back_action: send_key.escape or
-            (parent.spi_role.(menu or menu_bar) and spi_deselect) or 
-            root.this_or_descendent_matches(spi_role.combo_box and child_matches(spi_role.menu and spi_state.showing)).spi_action.press;
-        menu_close_action: send_key.escape or
-            this_or_ancestor_matches(parent.spi_role.menu_bar).spi_deselect or
-            root.this_or_descendent_matches(spi_role.combo_box and child_matches(spi_role.menu and spi_state.showing)).spi_action.press;
+        menu_up_action: descendent_matches(in_menu_navigation).menu_up_action;
+        menu_down_action: descendent_matches(in_menu_navigation).menu_down_action;
+        menu_right_action: descendent_matches(in_menu_navigation).menu_right_action;
+        menu_left_action: descendent_matches(in_menu_navigation).menu_left_action;
+        menu_select_action: descendent_matches(in_menu_navigation).menu_select_action;
+        menu_back_action: descendent_matches(in_menu_navigation).menu_back_action;
+        menu_close_action: descendent_matches(in_menu_navigation).menu_close_action;
     }
+
+    // Use keyboard interaction for this if possible, it's probably less janky than going through AT-SPI
+    menu_up_action: send_key.up or
+        child_matches(spi_state.selected).previous_sibling_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
+        last_child_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
+    menu_down_action: send_key.down or
+        child_matches(spi_state.selected).next_sibling_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select or
+        first_child_matches(spi_state.(sensitive and visible and showing) and spi_role.(menu or menu_item or check_menu_item or radio_menu_item)).spi_select;
+
+    // Open a menu if possible, otherwise go to the "next" menu
+    menu_right_action: send_key.right or
+        child_matches(spi_state.selected and spi_role.menu).spi_action.click or
+        ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
+            next_sibling_matches(sensitive and visible and showing) or
+            first_sibling_matches(sensitive and visible and showing)
+        ).spi_action.click;
+    // We can't really hide a menu, but we can deselect its child which (based on the
+    // logic above) will mean we no longer treat it as open, and will hide its children.
+    menu_left_action: send_key.left or
+        (parent.spi_role.menu and spi_clear_selection) or
+        ancestor_matches(spi_role.menu_bar).child_matches(spi_state.selected).(
+            previous_sibling_matches(sensitive and visible and showing) or
+            last_sibling_matches(sensitive and visible and showing)
+        ).spi_action.click;
+    menu_select_action: send_key.enter or child_matches(spi_state.selected).click;
+    if (parent.spi_role.menu)
+    {
+        menu_back_action: send_key.left or spi_clear_selection;
+    }
+    menu_back_action: send_key.escape or
+        (parent.spi_role.(menu or menu_bar) and spi_deselect) or 
+        root.this_or_descendent_matches(spi_role.combo_box and child_matches(spi_role.menu and spi_state.showing)).spi_action.press;
+    menu_close_action: send_key.escape or
+        this_or_ancestor_matches(parent.spi_role.menu_bar).spi_deselect or
+        root.this_or_descendent_matches(spi_role.combo_box and child_matches(spi_role.menu and spi_state.showing)).spi_action.press;
 }
 
 // Qt combo boxes contain lists, not menus like in Gtk
