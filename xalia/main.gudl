@@ -515,14 +515,11 @@ if (interactable) {
             secondary_action_name: "Show Keyboard";
         }
 
-        adjust_value_action: simulate_dpad("rs");
-        adjust_value_action_name: "Adjust";
+        adjust_value_action: map_directions(undefined, adjust_value_down, adjust_value_up, undefined);
 
         if (targeted) {
-            root {
-                on_action_rs_up: repeat_action(targeted_element.set_focus+send_key.up, repeat_initial_delay, repeat_delay);
-                on_action_rs_down: repeat_action(targeted_element.set_focus+send_key.down, repeat_initial_delay, repeat_delay);
-            }
+            adjust_value_down: repeat_action(set_focus+send_key.down, repeat_initial_delay, repeat_delay);
+            adjust_value_up: repeat_action(set_focus+send_key.up, repeat_initial_delay, repeat_delay);
         }
     }
 
