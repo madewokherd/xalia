@@ -409,11 +409,13 @@ namespace Xalia.Ui
                     break;
                 case "send_click":
                     return new UiDomRoutineAsync(element, "send_click", SendClick);
+                case "send_right_click":
+                    return new UiDomRoutineAsync(element, "send_right_click", SendRightClick);
             }
             return null;
         }
 
-        private async Task SendClick(UiDomRoutineAsync obj)
+        private async Task SendClick(UiDomRoutineAsync obj, WindowingSystem.MouseButton button)
         {
             var position = await obj.Element.GetClickablePoint();
 
@@ -427,12 +429,22 @@ namespace Xalia.Ui
             {
                 await Windowing.SendMouseMotion(position.Item2, position.Item3);
 
-                await Windowing.SendClick(WindowingSystem.MouseButton.LeftButton);
+                await Windowing.SendClick(button);
             }
             catch (NotImplementedException)
             {
                 Console.WriteLine($"WARNING: Cannot send click events on the current windowing system");
             }
+        }
+
+        private Task SendClick(UiDomRoutineAsync obj)
+        {
+            return SendClick(obj, WindowingSystem.MouseButton.LeftButton);
+        }
+
+        private Task SendRightClick(UiDomRoutineAsync obj)
+        {
+            return SendClick(obj, WindowingSystem.MouseButton.RightButton);
         }
 
         private async Task ShowKeyboard(UiDomRoutineAsync obj)

@@ -20,8 +20,8 @@ root {
         cancel_action or
         (targeted_element and send_key.esc);
     action_on_X: target_secondary_action;
-    action_on_Y: target_context_menu or // not implemented yet
-        targeted_element.send_right_click; // not implemented yet
+    action_on_Y: target_context_menu_action or
+        targeted_element.send_right_click;
     action_on_start: menu_close_action or
         menu_open_action or
         confirm_action or
@@ -505,6 +505,7 @@ root {
 root (targeted_element) {
     target_primary_action: targeted_element.primary_action;
     target_secondary_action: targeted_element.secondary_action;
+    target_context_menu_action: targeted_element.context_menu_action;
     target_scroll_view_action: targeted_element.scroll_view_action;
     target_adjust_value_action: targeted_element.adjust_value_action;
 }
@@ -663,5 +664,9 @@ if (interactable) {
     if (focusable and not spi_role.panel and not descendent_matches(targetable)) {
         // A control being focusable is a good hint that it's something to click on
         targetable: true;
+    }
+
+    if (spi_action.menu) {
+        context_menu_action: spi_action.show_menu;
     }
 }
