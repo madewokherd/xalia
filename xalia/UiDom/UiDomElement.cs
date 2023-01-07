@@ -288,8 +288,6 @@ namespace Xalia.UiDom
                     return root;
                 case "assign":
                     return new UiDomMethod(this, "assign", AssignFn);
-                case "simulate_dpad":
-                    return new SimulateDpad();
                 case "index_in_parent":
                     if (!(Parent is null))
                     {

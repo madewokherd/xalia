@@ -133,7 +133,6 @@
     <Compile Include="Uia\UiaElementWrapper.cs" />
     <Compile Include="UiDom\ExpressionWatcher.cs" />
     <Compile Include="UiDom\IUiDomApplication.cs" />
-    <Compile Include="UiDom\SimulateDpad.cs" />
     <Compile Include="UiDom\UiDomBoolean.cs" />
     <Compile Include="UiDom\UiDomDoAction.cs" />
     <Compile Include="UiDom\UiDomDoActionRoutine.cs" />
