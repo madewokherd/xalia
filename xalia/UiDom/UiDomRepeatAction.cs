@@ -141,7 +141,7 @@ namespace Xalia.UiDom
                                 action = null;
                                 inner_queue = null;
                             }
-                            inner_queue = new InputQueue(queue.Action);
+                            inner_queue = new InputQueue();
                             action = new_action;
                             Utils.RunTask(action.ProcessInputQueue(inner_queue));
                             inner_queue.Enqueue(state);

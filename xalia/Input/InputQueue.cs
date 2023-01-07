@@ -13,12 +13,9 @@ namespace Xalia.Input
         private TaskCompletionSource<bool> input_ready_task = new TaskCompletionSource<bool>();
         private TaskCompletionSource<bool> input_exhausted_task = new TaskCompletionSource<bool>();
 
-        public InputQueue(string action)
+        public InputQueue()
         {
-            Action = action;
         }
-
-        public string Action { get; }
 
         private InputState DequeueInternal()
         {

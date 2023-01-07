@@ -88,7 +88,7 @@ namespace Xalia.Ui
 #if DEBUG
                     Console.WriteLine($"Passing input to routine: {info.routine}");
 #endif
-                    info.queue = new InputQueue(e.Action);
+                    info.queue = new InputQueue();
                     info.queue.Enqueue(e.State);
 
                     Utils.RunTask(info.routine.ProcessInputQueue(info.queue));
@@ -364,7 +364,7 @@ namespace Xalia.Ui
                     var current_state = InputSystem.Instance.PollAction(info.action);
                     if (current_state.Kind != InputStateKind.Disconnected)
                     {
-                        info.queue = new InputQueue(info.action);
+                        info.queue = new InputQueue();
                         info.queue.Enqueue(current_state);
 
                         Utils.RunTask(info.routine.ProcessInputQueue(info.queue));

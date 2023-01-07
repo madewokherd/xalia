@@ -150,7 +150,7 @@ namespace Xalia.UiDom
                                     inner_queues[i] = null;
                                 }
                                 actions[i] = new_action;
-                                inner_queues[i] = new InputQueue(queue.Action);
+                                inner_queues[i] = new InputQueue();
                                 var inner_state = new InputState(InputStateKind.AnalogButton);
                                 inner_state.XAxis = current_intensities[i];
                                 inner_queues[i].Enqueue(inner_state);

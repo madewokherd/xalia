@@ -39,9 +39,9 @@ namespace Xalia.UiDom
 
         public override async Task ProcessInputQueue(InputQueue queue)
         {
-            InputQueue queue1 = new InputQueue(queue.Action);
+            InputQueue queue1 = new InputQueue();
             Utils.RunTask(First.ProcessInputQueue(queue1));
-            InputQueue queue2 = new InputQueue(queue.Action);
+            InputQueue queue2 = new InputQueue();
             Utils.RunTask(Second.ProcessInputQueue(queue2));
             InputState state;
             do
