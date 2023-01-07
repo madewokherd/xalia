@@ -1,5 +1,38 @@
 ﻿/* Default UI description, language subject to change as it develops */
 
+// Control configuration
+root {
+    repeat_initial_delay: 500;
+    repeat_delay: 100;
+
+    action_on_left_stick: repeat_action(menu_move_action or target_move, repeat_initial_delay, repeat_delay);
+    action_on_dpad_left: repeat_action(menu_left_action or target_move_left, repeat_initial_delay, repeat_delay);
+    action_on_dpad_down: repeat_action(menu_down_action or target_move_down, repeat_initial_delay, repeat_delay);
+    action_on_dpad_up: repeat_action(menu_up_action or target_move_up, repeat_initial_delay, repeat_delay);
+    action_on_dpad_right: repeat_action(menu_right_action or target_move_right, repeat_initial_delay, repeat_delay);
+    action_on_A: menu_select_action or
+        (target_primary_action + exit_panel_action) or
+        target_primary_action or
+        (targeted_element.send_click + exit_panel_action) or
+        targeted_element.send_click;
+    action_on_B: menu_back_action or
+        exit_panel_action or
+        cancel_action or
+        (targeted_element and send_key.esc);
+    action_on_X: target_secondary_action;
+    action_on_Y: target_context_menu or // not implemented yet
+        targeted_element.send_right_click; // not implemented yet
+    action_on_start: menu_close_action or
+        menu_open_action or
+        confirm_action or
+        (targeted_element and send_key.enter);
+    action_on_back: (not disable_interactions and toggle_panel_action);
+    action_on_right_stick: target_scroll_view_action or
+        target_adjust_value_action;
+    action_on_LB: tab_left_action;
+    action_on_RB: tab_right_action;
+}
+
 // Application-specific behaviors:
 
 // APPLICATION: EA App
@@ -104,30 +137,20 @@ if (spi_attributes.xalia_ignore)
     stop: true;
 }
 
-root {
-    repeat_initial_delay: 500;
-    repeat_delay: 100;
-}
-
 root (descendent_matches(in_menu_navigation)) {
     disable_interactions: true;
 
     current_menu: descendent_matches(in_menu_navigation);
 
-    action_on_left_stick: repeat_action(
-        descendent_matches(in_menu_navigation).(map_directions(menu_left_action, menu_down_action, menu_up_action, menu_right_action)),
-        repeat_initial_delay, repeat_delay
-    );
-    action_on_dpad_left: repeat_action(descendent_matches(in_menu_navigation).menu_left_action, repeat_initial_delay, repeat_delay);
-    action_on_dpad_right: repeat_action(descendent_matches(in_menu_navigation).menu_right_action, repeat_initial_delay, repeat_delay);
-    action_on_dpad_down: repeat_action(descendent_matches(in_menu_navigation).menu_down_action, repeat_initial_delay, repeat_delay);
-    action_on_dpad_up: repeat_action(descendent_matches(in_menu_navigation).menu_up_action, repeat_initial_delay, repeat_delay);
-    action_on_A: descendent_matches(in_menu_navigation).menu_select_action;
-    action_name_A: descendent_matches(in_menu_navigation).menu_select_name or "Select";
-    action_on_B: descendent_matches(in_menu_navigation).menu_back_action;
-    action_name_B: descendent_matches(in_menu_navigation).menu_back_name or "Back";
-    action_on_start: descendent_matches(in_menu_navigation).menu_close_action;
-    action_name_start: descendent_matches(in_menu_navigation).menu_close_name or "Close Menu";
+    menu_move_action: descendent_matches(in_menu_navigation).(map_directions(menu_left_action, menu_down_action, menu_up_action, menu_right_action));
+
+    menu_left_action: descendent_matches(in_menu_navigation).menu_left_action;
+    menu_down_action: descendent_matches(in_menu_navigation).menu_down_action;
+    menu_up_action: descendent_matches(in_menu_navigation).menu_up_action;
+    menu_right_action: descendent_matches(in_menu_navigation).menu_right_action;
+    menu_select_action: descendent_matches(in_menu_navigation).menu_select_action;
+    menu_back_action: descendent_matches(in_menu_navigation).menu_back_action;
+    menu_close_action: descendent_matches(in_menu_navigation).menu_close_action;
 }
 
 // If a menu is open, we shouldn't try to interact with anything else.
@@ -247,20 +270,6 @@ root (uia_menu_mode or uia_in_menu or
     menu_close_action: send_key.alt;
 }
 
-// Controls for targeting elements
-root
-{
-    if (not disable_interactions)
-    {
-        action_on_dpad_up: repeat_action(target_move_up, repeat_initial_delay, repeat_delay);
-        action_on_dpad_down: repeat_action(target_move_down, repeat_initial_delay, repeat_delay);
-        action_on_dpad_left: repeat_action(target_move_left, repeat_initial_delay, repeat_delay);
-        action_on_dpad_right: repeat_action(target_move_right, repeat_initial_delay, repeat_delay);
-        action_on_left_stick: repeat_action(target_move, repeat_initial_delay, repeat_delay);
-        action_on_back: toggle_panel_action;
-    }
-}
-
 // Combo boxes contain subcontrols we don't want to directly navigate to
 if (parent.combo_box and not uia_expand_collapse_state.leaf_node)
 {
@@ -364,13 +373,18 @@ root (descendent_matches(is_panel) and not disable_interactions) {
     toggle_panel_action: assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", not in_panel_mode);
 }
 
-root (targeted_element and in_panel_mode) {
-    // panel-specific controls
-    action_on_B: toggle_panel_action;
-    action_name_B: "Back";
+root (not in_panel_mode)
+{
+    enter_panel_action: toggle_panel_action;
+}
 
+root (in_panel_mode) {
+    exit_panel_action: toggle_panel_action;
+}
+
+root (targeted_element and in_panel_mode) {
     // Do not reactivate original window, because interacting with the panel is likely to do that
-    action_on_A: targeted_element.primary_action + assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", false);
+    target_select_action: targeted_element.primary_action + assign("activate_on_dismiss_panel", undefined) + assign("in_panel_mode", false);
     action_name_A: targeted_element.primary_action_name or "Select";
 }
 
@@ -473,22 +487,19 @@ if (targetable) {
     }
 }
 
+root {
+    cancel_action: descendent_matches(cancel_action).cancel_action;
+    tab_left_action: descendent_matches(tab_left_action).tab_left_action;
+    tab_right_action: descendent_matches(tab_right_action).tab_right_action;
+    menu_open_action: descendent_matches(menu_open_action).menu_open_action;
+    confirm_action: descendent_matches(confirm_action).confirm_action;
+}
+
 root (targeted_element) {
-    action_on_A: targeted_element.primary_action;
-    action_name_A: targeted_element.primary_action_name or "Select";
-    action_on_B: descendent_matches(cancel_action).cancel_action or send_key.esc;
-    action_name_B: descendent_matches(cancel_action).cancel_action_name or "Back";
-    action_on_Y: targeted_element.secondary_action;
-    action_name_Y: targeted_element.secondary_action_name;
-    action_on_right_stick: targeted_element.scroll_view_action or targeted_element.adjust_value_action;
-    action_name_right_stick: targeted_element.scroll_view_action_name or targeted_element.adjust_value_action_name or "Scroll";
-    action_on_RB: descendent_matches(tab_right_action).tab_right_action;
-    action_name_RB: descendent_matches(tab_right_action).tab_right_action_name or "Tab Right";
-    action_on_LB: descendent_matches(tab_left_action).tab_left_action;
-    action_name_RB: descendent_matches(tab_left_action).tab_left_action_name or "Tab left";
-    action_on_start: descendent_matches(open_menu_action).open_menu_action or descendent_matches(confirm_action).confirm_action;
-    action_name_start: descendent_matches(open_menu_action) and (descendent_matches(open_menu_action).open_menu_action_name or "Open Menu") or
-        descendent_matches(confirm_action) and (descendent_matches(confirm_action).confirm_action_name or "Accept");
+    target_primary_action: targeted_element.primary_action;
+    target_secondary_action: targeted_element.secondary_action;
+    target_scroll_view_action: targeted_element.scroll_view_action;
+    target_adjust_value_action: targeted_element.adjust_value_action;
 }
 
 // Rules that apply to controls in the active window
@@ -615,29 +626,29 @@ if (interactable) {
     }
 
     page_tab (previous_sibling_matches(interactable).(page_tab and selected)) {
-        tab_right_action: primary_action;
+        tab_right_action: primary_action or send_click;
         tab_right_action_name: spi_name;
     }
     page_tab (next_sibling_matches(interactable).(page_tab and selected)) {
-        tab_left_action: primary_action;
+        tab_left_action: primary_action or send_click;
         tab_left_action_name: spi_name;
     }
 
     menu_bar (child_matches(primary_action))
     {
-        open_menu_action: child_matches(primary_action).primary_action;
-        open_menu_action_name: "Open Menu";
+        menu_open_action: child_matches(primary_action).primary_action;
+        menu_open_action_name: "Open Menu";
     }
 
-    button ((name == "OK" or name == "Run" or name == "Play" or name == "PLAY" or name == "Yes") and primary_action)
+    button (name == "OK" or name == "Run" or name == "Play" or name == "PLAY" or name == "Yes")
     {
-        accept_action: primary_action;
+        accept_action: primary_action or send_click;
         accept_action_name: name;
     }
 
-    button ((name == "Cancel" or name == "Close" or name == "No") and primary_action)
+    button (name == "Cancel" or name == "Close" or name == "No")
     {
-        cancel_action: primary_action;
+        cancel_action: primary_action or send_click;
         cancel_action_name: name;
     }
 
@@ -648,7 +659,5 @@ if (interactable) {
     if (focusable and not spi_role.panel and not descendent_matches(targetable)) {
         // A control being focusable is a good hint that it's something to click on
         targetable: true;
-        primary_action: send_click;
-        primary_action_name: "Click";
     }
 }
