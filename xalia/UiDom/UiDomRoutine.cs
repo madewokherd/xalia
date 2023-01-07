@@ -58,11 +58,23 @@ namespace Xalia.UiDom
 
         public override bool Equals(object obj)
         {
-            // Assumes that any 2 routines on the same element with the same name are identical.
+            // Assumes that any 2 routines on the same element, name, and arguments are identical.
             // We should maintain that constraint for debugging purposes anyway.
             if (obj is UiDomRoutine rou)
             {
-                return Element == rou.Element && Name == rou.Name;
+                if (Element != rou.Element || Name != rou.Name)
+                    return false;
+                if ((Arglist is null) != (rou.Arglist is null))
+                    return false;
+                if (!(Arglist is null))
+                {
+                    if (Arglist.Length != rou.Arglist.Length)
+                        return false;
+                    for (int i = 0; i < Arglist.Length; i++)
+                        if (!Arglist[i].Equals(rou.Arglist[i]))
+                            return false;
+                }
+                return true;
             }
             return false;
         }
