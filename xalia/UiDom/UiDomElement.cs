@@ -306,6 +306,8 @@ namespace Xalia.UiDom
                     return UiDomRepeatAction.GetMethod();
                 case "do_action":
                     return UiDomDoAction.Instance;
+                case "map_directions":
+                    return new UiDomMethod("map_directions", UiDomMapDirections.ApplyFn);
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))

@@ -114,7 +114,10 @@ root (descendent_matches(in_menu_navigation)) {
 
     current_menu: descendent_matches(in_menu_navigation);
 
-    action_on_left_stick: simulate_dpad;
+    action_on_left_stick: repeat_action(
+        descendent_matches(in_menu_navigation).(map_directions(menu_left_action, menu_down_action, menu_up_action, menu_right_action)),
+        repeat_initial_delay, repeat_delay
+    );
     action_on_dpad_left: repeat_action(descendent_matches(in_menu_navigation).menu_left_action, repeat_initial_delay, repeat_delay);
     action_on_dpad_right: repeat_action(descendent_matches(in_menu_navigation).menu_right_action, repeat_initial_delay, repeat_delay);
     action_on_dpad_down: repeat_action(descendent_matches(in_menu_navigation).menu_down_action, repeat_initial_delay, repeat_delay);
