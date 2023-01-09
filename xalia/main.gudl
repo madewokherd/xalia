@@ -337,25 +337,30 @@ list (parent.spi_role.combo_box and spi_application.toolkit_name == "Qt")
     recurse: true;
 }
 
-root (descendent_matches(is_active_modal)) {
-    active_modal: descendent_matches(is_active_modal);
-}
-
-if (is_active_modal) {
-    interactable: true;
-}
-
 window (uia_class_name == "ApplicationFrameWindow" or uia_framework_id == "XAML") {
     application_supports_gamepad: true;
 }
 
 if (application_supports_gamepad) {
     interactable: false;
+    toplevel_interactable: false;
+}
+
+if (toplevel_interactable or is_active_modal) {
+    deepest_modal: descendent_matches(is_active_modal).deepest_modal or this;
+}
+
+if (toplevel_interactable and not root.disable_interactions and deepest_modal == this) {
+    interactable: true;
+}
+
+if (is_active_modal and not root.disable_interactions and ancestor_matches(toplevel_interactable).deepest_modal == this) {
+    interactable: true;
 }
 
 // We normally should only consider the active window when searching for controls to interact with
-if (active and not root.disable_interactions and not root.active_modal and not root.in_panel_mode) {
-    interactable: true;
+if (active and not root.in_panel_mode) {
+    toplevel_interactable: true;
 }
 
 // recursive navigation
@@ -368,17 +373,7 @@ if (parent.(can_descend and not is_current_view)) {
 }
 
 if (can_descend) {
-    if (root.descendent_matches(is_current_view)) {
-        descend_action: this.assign("is_current_view", true) +
-            root.assign("ascend_action",
-                this.assign("is_current_view", false) +
-                root.descendent_matches(is_current_view).assign("is_current_view", true) +
-                root.assign("ascend_action", root.ascend_action));
-    }
-    descend_action: this.assign("is_current_view", true) +
-        root.assign("ascend_action",
-            this.assign("is_current_view", false) +
-            root.assign("ascend_action", undefined));
+    descend_action: this.assign("is_current_view", true);
 }
 
 if (is_current_view) {
@@ -386,14 +381,15 @@ if (is_current_view) {
     targetable: false;
 }
 
-root (descendent_matches(is_current_view)) {
-    current_view: descendent_matches(is_current_view);
-    scroll_current_view_action: descendent_matches(is_current_view).scroll_view_action;
+root {
+    current_view: descendent_matches(toplevel_interactable and deepest_modal.is_current_view).deepest_modal;
+    scroll_current_view_action: current_view.scroll_view_action;
+    ascend_action: current_view.assign("is_current_view", false);
 }
 
 // Panels
 if (is_panel and root.in_panel_mode) {
-    interactable: true;
+    toplevel_interactable: true;
 }
 
 root (descendent_matches(is_panel) and not disable_interactions) {
