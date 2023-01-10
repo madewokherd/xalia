@@ -1119,32 +1119,46 @@ namespace Xalia.AtSpi
             if (!watching_abs_position)
                 return;
 
-            int x, y, width, height;
+            int x=0, y=0, width=0, height=0;
+            bool known = false;
             try
             {
                 (x, y, width, height) = await component.GetExtentsAsync(0); // ATSPI_COORD_TYPE_SCREEN
+                known = x != int.MinValue && y != int.MinValue; // GTK uses this for controls outside a scrollable pane
             }
             catch (DBusException e)
             {
                 if (!IsExpectedException(e))
                     throw;
-                return;
+                known = false;
             }
 
             if (!watching_abs_position)
                 return;
 
-            if (!AbsPositionKnown || x != AbsX || y != AbsY || width != AbsWidth || height != AbsHeight)
+            if (known)
             {
-                AbsPositionKnown = true;
-                AbsX = x;
-                AbsY = y;
-                AbsWidth = width;
-                AbsHeight = height;
+                if (!AbsPositionKnown || x != AbsX || y != AbsY || width != AbsWidth || height != AbsHeight)
+                {
+                    AbsPositionKnown = true;
+                    AbsX = x;
+                    AbsY = y;
+                    AbsWidth = width;
+                    AbsHeight = height;
 #if DEBUG
-                Console.WriteLine($"{this}.spi_abs_pos: ({x},{y},{width},{height})");
+                    Console.WriteLine($"{this}.spi_abs_pos: ({x},{y},{width},{height})");
 #endif
-                PropertyChanged("spi_abs_pos");
+                    PropertyChanged("spi_abs_pos");
+                }
+            }
+            else
+            {
+                if (AbsPositionKnown)
+                {
+                    AbsPositionKnown = false;
+                    Console.WriteLine($"{this}.spi_abs_pos: undefined");
+                    PropertyChanged("spi_abs_pos");
+                }
             }
 
             if (!watching_abs_position)
