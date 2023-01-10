@@ -20,6 +20,8 @@ namespace Xalia.Ui
         private OverlayBox target_box;
         private Dictionary<UiDomElement, (int, int, int, int)> targetable_elements = new Dictionary<UiDomElement, (int, int, int, int)>();
 
+        private OverlayBox current_view_box;
+
         class ActionInfo
         {
             public string action;
@@ -60,6 +62,10 @@ namespace Xalia.Ui
 
             target_box = Windowing.CreateOverlayBox();
             target_box.SetColor(224, 255, 255, 255);
+
+            current_view_box = Windowing.CreateOverlayBox();
+            current_view_box.SetColor(224, 255, 255, 255);
+            current_view_box.Thickness = 7;
             
             InputSystem.Instance.ActionStateChangeEvent += OnActionStateChangeEvent;
         }
@@ -119,7 +125,26 @@ namespace Xalia.Ui
             if (e.Equals(Root))
             {
                 UpdateActions();
+
+                CurrentView = e.GetDeclaration("current_view") as UiDomElement;
             }
+
+            if (e.Equals(CurrentView))
+            {
+                UpdateCurrentViewBox();
+            }
+        }
+
+        private void UpdateCurrentViewBox()
+        {
+            if (!(CurrentView is null) &&
+                TryGetBoundsDeclarations(CurrentView, "scroll_pane", out var bounds))
+            {
+                current_view_box.SetBounds(bounds.Item1, bounds.Item2, bounds.Item3, bounds.Item4);
+                current_view_box.Show();
+            }
+            else
+                current_view_box.Hide();
         }
 
         private UiDomElement _targetedElement;
@@ -769,6 +794,24 @@ namespace Xalia.Ui
                 }
 
                 ancestor = ancestor.Parent;
+            }
+        }
+
+        private UiDomElement _currentView;
+        private UiDomElement CurrentView
+        {
+            get
+            {
+                return _currentView;
+            }
+            set
+            {
+                if (_currentView != value)
+                {
+                    _currentView = value;
+
+                    UpdateCurrentViewBox();
+                }
             }
         }
     }
