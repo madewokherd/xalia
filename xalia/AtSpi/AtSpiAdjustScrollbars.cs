@@ -61,7 +61,7 @@ namespace Xalia.AtSpi
                 if ((state.Kind == InputStateKind.Pulse || state.Kind == InputStateKind.Repeat) &&
                     prev_state.Kind == InputStateKind.AnalogJoystick)
                 {
-                    await DoAdjustment(prev_state, 1);
+                    await DoAdjustment(prev_state, xscale, yscale);
                     if (stopwatch.IsRunning)
                         stopwatch.Reset();
                 }
@@ -71,7 +71,7 @@ namespace Xalia.AtSpi
                     {
                         stopwatch.Start();
                         last_repeat = 0;
-                        await DoAdjustment(state, 1);
+                        await DoAdjustment(state, xscale, yscale);
                     }
                     while (queue.IsEmpty)
                     {
@@ -83,9 +83,13 @@ namespace Xalia.AtSpi
                         }
                         long num_steps = elapsed_ticks / delay_ticks;
 
-                        await DoAdjustment(state, Math.Min(num_steps, 60));
+                        await DoAdjustment(state, Math.Min(num_steps, 60) * xscale, Math.Min(num_steps, 60) * yscale);
                         last_repeat += delay_ticks * num_steps;
                     }
+                }
+                else if (state.Kind == InputStateKind.PixelDelta && state.Intensity > 0)
+                {
+                    await DoAdjustment(state, 1, 1);
                 }
                 else
                 {
@@ -95,10 +99,10 @@ namespace Xalia.AtSpi
             }
         }
 
-        private async Task DoAdjustment(InputState state, long multiplier)
+        private async Task DoAdjustment(InputState state, double xmult, double ymult)
         {
-            double xofs = state.XAxis * xscale * multiplier;
-            double yofs = state.YAxis * yscale * multiplier;
+            double xofs = state.XAxis * xmult;
+            double yofs = state.YAxis * ymult;
 
             if (!(HScroll is null))
             {

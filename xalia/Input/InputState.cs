@@ -14,7 +14,8 @@ namespace Xalia.Input
         Repeat,
         Pulse, // Indicates input source that can only send an "activate" event, not track state
         AnalogJoystick, // XAxis and YAxis range from -32768 to 32767
-        AnalogButton // XAxis ranges from 0 to 32767
+        AnalogButton, // XAxis ranges from 0 to 32767
+        PixelDelta, // Mouse movement
     }
 
     public struct InputState
@@ -40,28 +41,44 @@ namespace Xalia.Input
                 return a;
             if (b.Kind == InputStateKind.Repeat)
                 return b;
+            if (a.Kind == InputStateKind.PixelDelta && a.Intensity > 0)
+                return a;
+            if (b.Kind == InputStateKind.PixelDelta && b.Intensity > 0)
+                return b;
             if (a.Kind == InputStateKind.Pressed)
                 return a;
             if (b.Kind == InputStateKind.Pressed)
                 return b;
-            if (a.Kind == InputStateKind.AnalogJoystick && (b.Kind != InputStateKind.AnalogJoystick || b.Intensity < a.Intensity))
+            if (a.IsAnalog && (!b.IsAnalog || b.Intensity < a.Intensity))
                 return a;
-            if (b.Kind == InputStateKind.AnalogJoystick)
-                return b;
-            if (a.Kind == InputStateKind.AnalogButton && (b.Kind != InputStateKind.AnalogButton || b.Intensity < a.Intensity))
-                return a;
-            if (b.Kind == InputStateKind.AnalogButton)
+            if (b.IsAnalog)
                 return b;
             if (a.Kind == InputStateKind.Released)
                 return a;
             if (b.Kind == InputStateKind.Released)
                 return b;
-            return a;
+            return a; // Disconnected
         }
 
         public override string ToString()
         {
-            return $"InputState kind={Kind}";
+            string extra;
+            switch (Kind)
+            {
+                case InputStateKind.AnalogJoystick:
+                    extra = $" xaxis={XAxis}, yaxis={YAxis}";
+                    break;
+                case InputStateKind.AnalogButton:
+                    extra = $" intensity={XAxis}";
+                    break;
+                case InputStateKind.PixelDelta:
+                    extra = $" dx={XAxis} dy={YAxis}";
+                    break;
+                default:
+                    extra = "";
+                    break;
+            }
+            return $"InputState kind={Kind}{extra}";
         }
 
         public ushort Intensity
@@ -79,6 +96,7 @@ namespace Xalia.Input
                     case InputStateKind.Released:
                         return 0;
                     case InputStateKind.AnalogJoystick:
+                    case InputStateKind.PixelDelta:
                         return (ushort)Math.Min(Math.Sqrt((int)XAxis * XAxis + (int)YAxis * YAxis), 32767);
                     case InputStateKind.AnalogButton:
                         return (ushort)XAxis;
@@ -103,6 +121,8 @@ namespace Xalia.Input
                     case InputStateKind.AnalogButton:
                     case InputStateKind.AnalogJoystick:
                         return Intensity >= 10000; // arbitrary cutoff
+                    case InputStateKind.PixelDelta:
+                        return Intensity > 0;
                 }
                 throw new NotImplementedException(); // Hopefully the compiler will warn about missed enum values?
             }
@@ -115,9 +135,27 @@ namespace Xalia.Input
             if (previous_state.Kind == InputStateKind.Disconnected)
                 // If a button was *already pressed* when first connected, it wasn't "just pressed".
                 return false;
+            if (Kind == InputStateKind.PixelDelta)
+                return false; // translating this to button presses requires more than just 1 snapshot
             if (Kind == InputStateKind.Repeat)
                 return true;
             return Pressed && !previous_state.Pressed;
+        }
+
+        public bool IsAnalog
+        {
+            get
+            {
+                switch (Kind)
+                {
+                    case InputStateKind.AnalogJoystick:
+                    case InputStateKind.AnalogButton:
+                    case InputStateKind.PixelDelta:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
         }
     }
 }

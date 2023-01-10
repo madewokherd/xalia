@@ -487,9 +487,25 @@ if (parent.offset_target_y) {
 scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and visible)) {
     scrollable: true;
 
-    scroll_view_action: adjust_scrollbars(
-        child_matches(scroll_bar and horizontal and enabled and sensitive and showing and visible),
-        child_matches(scroll_bar and vertical and enabled and sensitive and showing and visible));
+    hscroll: child_matches(scroll_bar and horizontal and enabled and sensitive and showing and visible);
+    vscroll: child_matches(scroll_bar and vertical and enabled and sensitive and showing and visible);
+
+    scroll_view_action: adjust_scrollbars(hscroll, vscroll);
+
+    if (is_current_view and ancestor_matches(toplevel_interactable).deepest_modal == this) {
+        // Do this lazily so we're not polling positions of all scroll panes
+        scroll_target_margin: 10; // FIXME: Scale based on DPI?
+
+        scroll_pane_x: x;
+        scroll_pane_y: y;
+        scroll_pane_width: width;
+        scroll_pane_height: height;
+
+        scroll_view_x: x;
+        scroll_view_y: y;
+        scroll_view_width: width - (vscroll.width or 0);
+        scroll_view_height: height - (hscroll.height or 0);
+    }
 }
 
 // Rules for setting borders of targetable elements

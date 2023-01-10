@@ -156,18 +156,23 @@ namespace Xalia.Ui
             }
         }
 
-        private bool TryGetTargetBoundsDeclarations(UiDomElement element, out (int, int, int, int) bounds)
+        private bool TryGetBoundsDeclarations(UiDomElement element, string prefix, out (int, int, int, int) bounds)
         {
-            if (element.GetDeclaration("target_x") is UiDomInt xint &&
-                element.GetDeclaration("target_y") is UiDomInt yint &&
-                element.GetDeclaration("target_width") is UiDomInt wint &&
-                element.GetDeclaration("target_height") is UiDomInt hint)
+            if (element.GetDeclaration($"{prefix}_x") is UiDomInt xint &&
+                element.GetDeclaration($"{prefix}_y") is UiDomInt yint &&
+                element.GetDeclaration($"{prefix}_width") is UiDomInt wint &&
+                element.GetDeclaration($"{prefix}_height") is UiDomInt hint)
             {
                 bounds = (xint.Value, yint.Value, wint.Value, hint.Value);
                 return true;
             }
             bounds = default;
             return false;
+        }
+
+        private bool TryGetTargetBoundsDeclarations(UiDomElement element, out (int, int, int, int) bounds)
+        {
+            return TryGetBoundsDeclarations(element, "target", out bounds);
         }
 
         private void UpdateTargetableElement(UiDomElement element)
@@ -607,6 +612,8 @@ namespace Xalia.Ui
                 return;
 
             TargetedElement = best_element;
+
+            ScrollIntoView(TargetedElement);
         }
 
         private void TargetMoveUp(UiDomRoutineSync obj)
@@ -652,6 +659,69 @@ namespace Xalia.Ui
             // TODO: Animate this if previous_target is not null
             target_box.SetBounds(bounds.Item1, bounds.Item2, bounds.Item3, bounds.Item4);
             target_box.Show();
+        }
+
+        private void ScrollIntoView(UiDomElement targetedElement)
+        {
+            if (!TryGetElementTargetBounds(targetedElement, out var bounds))
+                return;
+
+            UiDomElement ancestor = targetedElement.Parent;
+
+            while (!(ancestor is null))
+            {
+                if (ancestor.GetDeclaration("scroll_target_margin") is UiDomInt margin_int &&
+                    ancestor.GetDeclaration("scroll_view_action") is UiDomRoutine routine &&
+                    TryGetBoundsDeclarations(ancestor, "scroll_view", out var scroll_view_bounds))
+                {
+                    int margin = margin_int.Value;
+                    var padded_bounds = (
+                        bounds.Item1 - margin,
+                        bounds.Item2 - margin,
+                        bounds.Item3 + margin * 2,
+                        bounds.Item4 + margin * 2);
+                    int xofs, yofs;
+
+                    if (padded_bounds.Item3 > scroll_view_bounds.Item3)
+                        // target bounds do not fully fit in view, not sure how to handle this.
+                        xofs = 0;
+                    else if (padded_bounds.Item1 + padded_bounds.Item3 > scroll_view_bounds.Item1 + scroll_view_bounds.Item3)
+                        xofs = (padded_bounds.Item1 + padded_bounds.Item3) -
+                            (scroll_view_bounds.Item1 + scroll_view_bounds.Item3);
+                    else if (padded_bounds.Item1 < scroll_view_bounds.Item1)
+                        xofs = padded_bounds.Item1 - scroll_view_bounds.Item1;
+                    else
+                        xofs = 0;
+
+                    if (padded_bounds.Item4 > scroll_view_bounds.Item4)
+                        // target bounds do not fully fit in view, not sure how to handle this.
+                        yofs = 0;
+                    else if (padded_bounds.Item2 + padded_bounds.Item4 > scroll_view_bounds.Item2 + scroll_view_bounds.Item4)
+                        yofs = (padded_bounds.Item2 + padded_bounds.Item4) -
+                            (scroll_view_bounds.Item2 + scroll_view_bounds.Item4);
+                    else if (padded_bounds.Item2 < scroll_view_bounds.Item2)
+                        yofs = padded_bounds.Item2 - scroll_view_bounds.Item2;
+                    else
+                        yofs = 0;
+
+                    if (xofs != 0 || yofs != 0)
+                    {
+                        InputState st = new InputState(InputStateKind.PixelDelta);
+                        st.XAxis = (short)xofs;
+                        st.YAxis = (short)yofs;
+
+                        InputQueue queue = new InputQueue();
+                        queue.Enqueue(st);
+                        queue.Enqueue(new InputState(InputStateKind.Disconnected));
+
+                        Utils.RunTask(routine.ProcessInputQueue(queue));
+                    }
+
+                    break;
+                }
+
+                ancestor = ancestor.Parent;
+            }
         }
     }
 }

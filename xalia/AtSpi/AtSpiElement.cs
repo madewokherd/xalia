@@ -1571,7 +1571,7 @@ namespace Xalia.AtSpi
                         if (!value.Equals(UiDomUndefined.Instance))
                             return value;
                     }
-                    goto case "spi_height";
+                    goto case "spi_abs_height";
                 case "spi_abs_height":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPositionKnown)
