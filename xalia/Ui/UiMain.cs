@@ -609,7 +609,11 @@ namespace Xalia.Ui
             }
 
             if (best_element is null)
+            {
+                ScrollAncestor(TargetedElement, direction);
+
                 return;
+            }
 
             TargetedElement = best_element;
 
@@ -716,6 +720,50 @@ namespace Xalia.Ui
 
                         Utils.RunTask(routine.ProcessInputQueue(queue));
                     }
+
+                    break;
+                }
+
+                ancestor = ancestor.Parent;
+            }
+        }
+
+        private void ScrollAncestor(UiDomElement targetedElement, Direction direction)
+        {
+            UiDomElement ancestor = targetedElement.Parent;
+
+            while (!(ancestor is null))
+            {
+                if (ancestor.GetDeclaration("scroll_view_action") is UiDomRoutine routine &&
+                    TryGetBoundsDeclarations(ancestor, "scroll_view", out var scroll_view_bounds))
+                {
+                    int xofs=0, yofs=0;
+
+                    switch (direction)
+                    { // FIXME: Arbitrarily scrolling by 1/5 of the view
+                        case Direction.Left:
+                            xofs = -(scroll_view_bounds.Item3 / 5);
+                            break;
+                        case Direction.Down:
+                            yofs = scroll_view_bounds.Item4 / 5;
+                            break;
+                        case Direction.Up:
+                            yofs = -(scroll_view_bounds.Item4 / 5);
+                            break;
+                        case Direction.Right:
+                            xofs = scroll_view_bounds.Item3 / 5;
+                            break;
+                    }
+
+                    InputState st = new InputState(InputStateKind.PixelDelta);
+                    st.XAxis = (short)xofs;
+                    st.YAxis = (short)yofs;
+
+                    InputQueue queue = new InputQueue();
+                    queue.Enqueue(st);
+                    queue.Enqueue(new InputState(InputStateKind.Disconnected));
+
+                    Utils.RunTask(routine.ProcessInputQueue(queue));
 
                     break;
                 }
