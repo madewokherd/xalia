@@ -441,6 +441,8 @@ namespace Xalia.Ui
                     return new UiDomRoutineAsync(element, "send_click", SendClick);
                 case "send_right_click":
                     return new UiDomRoutineAsync(element, "send_right_click", SendRightClick);
+                case "send_scroll":
+                    return new SendScroll(element, Windowing);
             }
             return null;
         }

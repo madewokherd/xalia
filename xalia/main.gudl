@@ -30,7 +30,8 @@ root {
     action_on_back: (not disable_interactions and toggle_panel_action);
     action_on_right_stick: target_scroll_view_action or
         target_adjust_value_action or
-        scroll_current_view_action;
+        scroll_current_view_action or
+        targeted_element.send_scroll;
     action_on_LB: tab_left_action;
     action_on_RB: tab_right_action;
 }

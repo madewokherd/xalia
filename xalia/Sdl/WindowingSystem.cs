@@ -16,6 +16,11 @@ namespace Xalia.Sdl
 
         static WindowingSystem _instance;
 
+        // We have to quantize scrolling because X11
+        private int xscroll_remainder = 0;
+        private int yscroll_remainder = 0;
+        private const int scroll_step = 60;
+
         private static WindowingSystem Create()
         {
             var driver = SDL_GetCurrentVideoDriver();
@@ -168,6 +173,33 @@ namespace Xalia.Sdl
         {
             await SendMouseButton(button, true);
             await SendMouseButton(button, false);
+        }
+
+        public virtual async Task SendScroll(int xdelta, int ydelta)
+        {
+            xscroll_remainder += xdelta;
+            yscroll_remainder += ydelta;
+
+            while (xscroll_remainder <= -scroll_step)
+            {
+                xscroll_remainder += scroll_step;
+                await SendClick(MouseButton.ScrollLeft);
+            }
+            while (xscroll_remainder >= scroll_step)
+            {
+                xscroll_remainder -= scroll_step;
+                await SendClick(MouseButton.ScrollRight);
+            }
+            while (yscroll_remainder <= -scroll_step)
+            {
+                yscroll_remainder += scroll_step;
+                await SendClick(MouseButton.ScrollUp);
+            }
+            while (yscroll_remainder >= scroll_step)
+            {
+                yscroll_remainder -= scroll_step;
+                await SendClick(MouseButton.ScrollDown);
+            }
         }
 
         public virtual int GetKeySym(string key)
