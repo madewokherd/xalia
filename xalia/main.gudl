@@ -127,6 +127,17 @@ if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_
     firefox_use_offscreen_menu: true;
 }
 
+// APPLICATION: plasmashell
+
+// TODO: 5.27 should have the panel identifiable by ID
+
+application (name == "plasmashell") {
+    // awful heuristic for now
+    child (not child_matches(layered_pane)) {
+        is_panel: true;
+    }
+}
+
 // APPLICATION: Windows taskbar
 if (is_uia_element and uia_class_name == "Shell_TrayWnd") {
     manual_buttons: true;
