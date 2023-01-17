@@ -496,7 +496,7 @@ namespace Xalia.Sdl
             inputs[0].type = INPUT_MOUSE;
             inputs[0].u.mi.dx = x;
             inputs[0].u.mi.dy = y;
-            inputs[0].u.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
+            inputs[0].u.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK;
 
             SendInput(1, inputs, Marshal.SizeOf<INPUT>());
             return Task.CompletedTask;
