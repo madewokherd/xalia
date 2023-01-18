@@ -635,14 +635,6 @@ if (interactable) {
         }
     }
 
-    // Direct control interaction
-    if (is_spi_element and menu) {
-        targetable: true;
-
-        primary_action: spi_action.click;
-        primary_action_name: "Click";
-    }
-
     // Qt/AT-SPI2 does its menu bars this way
     menu_item (parent.spi_role.menu_bar and spi_action.ShowMenu)
     {
@@ -667,19 +659,6 @@ if (interactable) {
         primary_action_name: "Select Tab";
     }
 
-    if ((spi_role.button or spi_role.radio_button) and spi_action.(click or Press or Toggle)) {
-        targetable: true;
-        primary_action: spi_action.(click or Press or Toggle);
-        primary_action_name: "Click";
-    }
-
-    if (spi_role.toggle_button) {
-        // In theory, we can click these with spi_action, but applications tend to expect an event
-        targetable: true;
-        primary_action: send_click;
-        primary_action_name: "Click";
-    }
-
     if (uia_control_type.(button or radio_button or hyperlink)) {
         targetable: true;
         if (manual_buttons)  {
@@ -692,12 +671,6 @@ if (interactable) {
     check_box (manual_checkboxes) {
         targetable: true;
         primary_action: send_click;
-        primary_action_name: "Toggle";
-    }
-
-    check_box (spi_action.(click or Toggle or Press)) {
-        targetable: true;
-        primary_action: spi_action.(click or Toggle or Press);
         primary_action_name: "Toggle";
     }
 
@@ -771,10 +744,14 @@ if (interactable) {
     }
 
     if (spi_action.menu) {
-        context_menu_action: spi_action.show_menu;
+        context_menu_action: spi_action.menu;
     }
 
     if (can_descend) {
         primary_action: descend_action;
+    }
+
+    if (spi_action.(click or Press or activate or toggle or Toggle)) {
+        primary_action: spi_action.(click or Press or activate or toggle or Toggle);
     }
 }
