@@ -368,7 +368,8 @@ if (role.(filler or internal_frame or panel or html_container or
               viewport or embedded or document_frame or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list or menu_bar or menu or
-              combo_box or menu_item or pane or group or document or tree_table)) {
+              combo_box or menu_item or pane or group or document or tree_table or
+              toggle_button)) {
     recurse: true;
 }
 
@@ -571,6 +572,13 @@ scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and 
 if (targetable) {
     // "special" rules would go here
 
+    toggle_button (expandable) {
+        // Adjust size so we don't overlap descendents
+        if (first_child.(showing and abs_y)) {
+            target_height: first_child.abs_y - abs_y;
+        }
+    }
+
     if (is_spi_element) {
         // AT-SPI2 makes it practically impossible to monitor a control's position without polling. We get
         // no notification of window movement. Calling GetExtents with ATSPI_COORD_TYPE_PARENT consistently
@@ -732,6 +740,11 @@ if (interactable) {
     {
         cancel_action: primary_action or send_click;
         cancel_action_name: name;
+    }
+
+    toggle_button (expandable) {
+        // Expander controls may have descendents that are also targetable
+        targetable: true;
     }
 
     if (scrollable) {
