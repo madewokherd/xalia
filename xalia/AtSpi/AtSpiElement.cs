@@ -443,7 +443,7 @@ namespace Xalia.AtSpi
             }
         }
 
-        private bool IsExpectedException(DBusException e, params string[] extra_errors)
+        public static bool IsExpectedException(DBusException e, params string[] extra_errors)
         {
 #if DEBUG
             Console.WriteLine("WARNING: DBus exception:");

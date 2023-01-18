@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Tmds.DBus;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
@@ -33,7 +34,16 @@ namespace Xalia.AtSpi
                         Element, $"spi_action.{id}",
                         async (UiDomRoutineAsync obj) =>
                         {
-                            await Element.action.DoActionAsync(i);
+                            try
+                            {
+                                await Element.action.DoActionAsync(i);
+                            }
+                            catch (DBusException e)
+                            {
+                                if (!AtSpiElement.IsExpectedException(e))
+                                    throw;
+                                return;
+                            }
                         });
                 }
             }
