@@ -499,7 +499,7 @@ if (uia_control_type.window) {
 // a control through the mouse and keyboard, so normally we should only consider those. AT-SPI may
 // let us do things with other controls, but it might be confusing or break applications.
 if (is_spi_element and spi_state.enabled and spi_state.sensitive and
-    (spi_state.showing or spi_application.toolkit_name == "gtk") and // GTK doesn't reliably update showing state of child controls when a scrollable pane is scrolled
+    (spi_state.showing or (spi_application.toolkit_name == "gtk" and not parent.page_tab)) and // GTK doesn't reliably update showing state of child controls when a scrollable pane is scrolled
         // https://gitlab.gnome.org/GNOME/gtk/-/issues/5511
     (spi_state.visible or spi_application.toolkit_name == "Qt") and // Qt doesn't reliably set visible for some reason (or notify about it?)
     parent.interactable) {
