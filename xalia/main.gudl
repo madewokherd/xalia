@@ -5,23 +5,27 @@ root {
     repeat_initial_delay: 500;
     repeat_delay: 100;
 
-    action_on_left_stick: repeat_action(menu_move_action or target_move, repeat_initial_delay, repeat_delay);
-    action_on_dpad_left: repeat_action(menu_left_action or target_move_left, repeat_initial_delay, repeat_delay);
-    action_on_dpad_down: repeat_action(menu_down_action or target_move_down, repeat_initial_delay, repeat_delay);
-    action_on_dpad_up: repeat_action(menu_up_action or target_move_up, repeat_initial_delay, repeat_delay);
-    action_on_dpad_right: repeat_action(menu_right_action or target_move_right, repeat_initial_delay, repeat_delay);
+    action_on_left_stick: repeat_action(menu_move_action or list_move_action or target_move, repeat_initial_delay, repeat_delay);
+    action_on_dpad_left: repeat_action(menu_left_action or list_left_action or target_move_left, repeat_initial_delay, repeat_delay);
+    action_on_dpad_down: repeat_action(menu_down_action or list_down_action or target_move_down, repeat_initial_delay, repeat_delay);
+    action_on_dpad_up: repeat_action(menu_up_action or list_up_action or target_move_up, repeat_initial_delay, repeat_delay);
+    action_on_dpad_right: repeat_action(menu_right_action or list_right_action or target_move_right, repeat_initial_delay, repeat_delay);
     action_on_A: menu_select_action or
+        list_primary_action or
         (target_primary_action + exit_panel_action) or
         target_primary_action or
         (targeted_element.send_click + exit_panel_action) or
         targeted_element.send_click;
     action_on_B: menu_back_action or
+        list_close_action or
         ascend_action or
         exit_panel_action or
         cancel_action or
         (targeted_element and send_key.esc);
-    action_on_X: target_secondary_action;
-    action_on_Y: target_context_menu_action or
+    action_on_X: list_secondary_action or
+        target_secondary_action;
+    action_on_Y: list_context_menu_action or
+        target_context_menu_action or
         targeted_element.send_right_click;
     action_on_start: menu_close_action or
         menu_open_action or
@@ -150,6 +154,8 @@ if (spi_attributes.xalia_ignore)
     recurse: false;
     stop: true;
 }
+
+// Menus
 
 root (descendent_matches(in_menu_navigation)) {
     disable_interactions: true;
@@ -302,6 +308,44 @@ if (parent.menu)
 {
     interactable: false;
 }
+
+// Lists and tables
+
+root (descendent_matches(in_list_navigation)) {
+    current_list: descendent_matches(in_list_navigation);
+
+    list_move_action: descendent_matches(in_list_navigation).(map_directions(list_left_action, list_down_action, list_up_action, list_right_action));
+
+    list_left_action: descendent_matches(in_list_navigation).list_left_action;
+    list_down_action: descendent_matches(in_list_navigation).list_down_action;
+    list_up_action: descendent_matches(in_list_navigation).list_up_action;
+    list_right_action: descendent_matches(in_list_navigation).list_right_action;
+
+    list_primary_action: descendent_matches(in_list_navigation).list_primary_action;
+    list_secondary_action: descendent_matches(in_list_navigation).list_secondary_action;
+    list_context_menu_action: descendent_matches(in_list_navigation).list_context_menu_action;
+    list_close_action: descendent_matches(in_list_navigation).list_close_action;
+}
+
+if (tree_table and parent.is_current_view and root.current_view == parent) {
+    in_list_navigation: true;
+
+    list_left_action: set_focus + send_key.left;
+    list_down_action: set_focus + send_key.down;
+    list_up_action: set_focus + send_key.up;
+    list_right_action: set_focus + send_key.right;
+
+    list_primary_action: descendent_matches(selected).spi_action.activate or set_focus + send_key.enter;
+    list_secondary_action: descendent_matches(selected).spi_action("expand or contract") or (set_focus + send_key.space);
+    list_context_menu_action: descendent_matches(selected).send_right_click;
+    list_close_action: root.ascend_action;
+
+    child {
+        interactable: false; // FIXME: This hides the "targeting" box, but we should instead hide it when no target_move action is bound.
+    }
+}
+
+// Top-level objects
 
 if (role.(desktop_frame or application)) {
     recurse: true;
