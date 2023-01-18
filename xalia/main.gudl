@@ -371,7 +371,9 @@ if (is_active_modal and not root.disable_interactions and ancestor_matches(tople
 }
 
 // We normally should only consider the active window when searching for controls to interact with
-if (active and not root.in_panel_mode) {
+if (active and
+    (window or parent.(spi_role.application or is_root)) and // regular controls can be active
+    not root.in_panel_mode) {
     toplevel_interactable: true;
     recurse: true;
 }
