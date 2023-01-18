@@ -324,7 +324,7 @@ if (role.(filler or internal_frame or panel or html_container or
               viewport or embedded or document_frame or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list or menu_bar or menu or
-              combo_box or menu_item or pane or group or document)) {
+              combo_box or menu_item or pane or group or document or tree_table)) {
     recurse: true;
 }
 
