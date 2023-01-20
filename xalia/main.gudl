@@ -583,6 +583,18 @@ if (targetable) {
         }
     }
 
+    split_pane (horizontal and child_count == 2) {
+        // Adjust size to be only the split
+        target_x: first_child.(x + width);
+        target_width: width - first_child.width - last_child.width;
+    }
+
+    split_pane (vertical and child_count == 2) {
+        // Adjust size to be only the split
+        target_y: first_child.(y + height);
+        target_height: height - first_child.height - last_child.height;
+    }
+
     if (is_spi_element) {
         // AT-SPI2 makes it practically impossible to monitor a control's position without polling. We get
         // no notification of window movement. Calling GetExtents with ATSPI_COORD_TYPE_PARENT consistently
@@ -647,13 +659,13 @@ if (interactable) {
         }
     }
 
-    slider (vertical) {
+    if ((scroll_bar or slider or split_pane) and vertical) {
         targetable: true;
 
         adjust_value_action: adjust_scrollbars(undefined, this);
     }
 
-    slider (horizontal) {
+    if ((scroll_bar or slider or split_pane) and horizontal) {
         targetable: true;
 
         adjust_value_action: adjust_scrollbars(this, undefined);
