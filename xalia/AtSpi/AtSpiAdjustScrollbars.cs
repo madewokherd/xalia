@@ -5,6 +5,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Diagnostics;
+using Tmds.DBus;
 using Xalia.AtSpi.DBus;
 using Xalia.Input;
 using Xalia.UiDom;
@@ -22,8 +24,8 @@ namespace Xalia.AtSpi
         public AtSpiElement HScroll { get; }
         public AtSpiElement VScroll { get; }
 
-        private static readonly double xscale = 100.0 / 6 / 32767;
-        private static readonly double yscale = 100.0 / 6 / 32767;
+        private static readonly double xscale = 1.0 / 3 / 32767;
+        private static readonly double yscale = 1.0 / 3 / 32767;
         private static readonly long delay_ticks = 10000000 / 120;
 
         public override bool Equals(object obj)
@@ -53,6 +55,44 @@ namespace Xalia.AtSpi
             var stopwatch = new Stopwatch();
             InputState prev_state = new InputState(InputStateKind.Disconnected), state;
             long last_repeat = 0;
+            double xinc, yinc;
+            double loc_xscale, loc_yscale;
+
+            if (HScroll is null)
+                xinc = 0;
+            else
+            {
+                try
+                {
+                    xinc = await HScroll.value_iface.GetMinimumIncrementAsync();
+                }
+                catch (DBusException e)
+                {
+                    if (!AtSpiElement.IsExpectedException(e))
+                        throw;
+                    xinc = 50;
+                }
+            }
+
+            if (VScroll is null)
+                yinc = 0;
+            else
+            {
+                try
+                {
+                    yinc = await VScroll.value_iface.GetMinimumIncrementAsync();
+                }
+                catch (DBusException e)
+                {
+                    if (!AtSpiElement.IsExpectedException(e))
+                        throw;
+                    yinc = 50;
+                }
+            }
+
+            loc_xscale = xinc * xscale;
+            loc_yscale = yinc * yscale;
+
             while (true)
             {
                 state = await queue.Dequeue();
@@ -61,7 +101,7 @@ namespace Xalia.AtSpi
                 if ((state.Kind == InputStateKind.Pulse || state.Kind == InputStateKind.Repeat) &&
                     prev_state.Kind == InputStateKind.AnalogJoystick)
                 {
-                    await DoAdjustment(prev_state, xscale, yscale);
+                    await DoAdjustment(prev_state, loc_xscale, loc_yscale);
                     if (stopwatch.IsRunning)
                         stopwatch.Reset();
                 }
@@ -71,7 +111,7 @@ namespace Xalia.AtSpi
                     {
                         stopwatch.Start();
                         last_repeat = 0;
-                        await DoAdjustment(state, xscale, yscale);
+                        await DoAdjustment(state, loc_xscale, loc_yscale);
                     }
                     while (queue.IsEmpty)
                     {
@@ -83,7 +123,7 @@ namespace Xalia.AtSpi
                         }
                         long num_steps = elapsed_ticks / delay_ticks;
 
-                        await DoAdjustment(state, Math.Min(num_steps, 60) * xscale, Math.Min(num_steps, 60) * yscale);
+                        await DoAdjustment(state, Math.Min(num_steps, 60) * loc_xscale, Math.Min(num_steps, 60) * loc_yscale);
                         last_repeat += delay_ticks * num_steps;
                     }
                 }
