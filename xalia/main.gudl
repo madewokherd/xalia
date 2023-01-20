@@ -578,7 +578,7 @@ if (targetable) {
 
     toggle_button (expandable) {
         // Adjust size so we don't overlap descendents
-        if (first_child.(showing and abs_y)) {
+        if (first_child.(showing and abs_y) and first_child.abs_y > y) {
             target_height: first_child.abs_y - abs_y;
         }
     }
