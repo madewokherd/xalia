@@ -65,6 +65,10 @@ namespace Xalia.AtSpi
                 try
                 {
                     xinc = await HScroll.value_iface.GetMinimumIncrementAsync();
+                    if (xinc == 0)
+                    {
+                        xinc = 25;
+                    }
                 }
                 catch (DBusException e)
                 {
@@ -81,6 +85,10 @@ namespace Xalia.AtSpi
                 try
                 {
                     yinc = await VScroll.value_iface.GetMinimumIncrementAsync();
+                    if (yinc == 0)
+                    {
+                        yinc = 25;
+                    }
                 }
                 catch (DBusException e)
                 {
