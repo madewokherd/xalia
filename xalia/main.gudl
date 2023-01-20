@@ -327,7 +327,7 @@ root (descendent_matches(in_list_navigation)) {
     list_close_action: descendent_matches(in_list_navigation).list_close_action;
 }
 
-if ((tree_table or list_box) and
+if ((table or tree_table or list_box) and
     ((parent.is_current_view and root.current_view == parent) or
      (parent.viewport and parent.parent.is_current_view and root.current_view == parent.parent))) {
     // GTK list
@@ -339,7 +339,7 @@ if ((tree_table or list_box) and
     list_up_action: set_focus + send_key.up;
     list_right_action: set_focus + send_key.right;
 
-    list_primary_action: descendent_matches(selected).spi_action.activate or set_focus + send_key.enter;
+    list_primary_action: set_focus + send_key.enter;
     list_secondary_action: descendent_matches(selected).spi_action("expand or contract") or (set_focus + send_key.space);
     list_context_menu_action: descendent_matches(selected).send_right_click;
     list_close_action: root.ascend_action;
@@ -368,7 +368,7 @@ if (role.(window or frame or dialog or alert or color_chooser or file_chooser or
 // List children of containers
 if (role.(filler or internal_frame or panel or html_container or
               layered_pane or option_pane or root_pane or scroll_pane or
-              split_pane or table or table_cell or toolbar or
+              split_pane or table_cell or toolbar or
               viewport or embedded or document_frame or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list or menu_bar or menu or
@@ -378,8 +378,13 @@ if (role.(filler or internal_frame or panel or html_container or
 }
 
 // Avoid recursing into scrollable list boxes because they might be big
-list_box (not scrollable) {
+if ((list_box or table) and not scrollable) {
     recurse: true;
+}
+
+table (toolkit_name == "gtk") {
+    // GTK tables do not send update events for children
+    poll_children: true;
 }
 
 if (is_uia_element and uia_control_type == undefined and msaa_role.(border or client)) {
@@ -808,6 +813,11 @@ if (interactable) {
 
     if (can_descend) {
         primary_action: descend_action;
+    }
+
+    table_cell (ancestor_matches(file_chooser)) {
+        // GTK file chooser does not respond to "activate" on table cells
+        primary_action: send_click;
     }
 
     if (spi_action.(click or Press or activate or toggle or Toggle)) {
