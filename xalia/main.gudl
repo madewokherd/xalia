@@ -147,6 +147,12 @@ if (is_uia_element and uia_class_name == "Shell_TrayWnd") {
     manual_buttons: true;
 }
 
+// APPLICATION: VLC
+layered_pane (spi_application.name == "vlc") {
+    // Buttons along the top of preferences window are checkboxes that do not update the UI on Toggle
+    manual_checkboxes: true;
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
