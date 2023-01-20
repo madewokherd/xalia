@@ -188,7 +188,8 @@ namespace Xalia.Ui
                 element.GetDeclaration($"{prefix}_width") is UiDomInt wint &&
                 element.GetDeclaration($"{prefix}_height") is UiDomInt hint)
             {
-                bounds = (xint.Value, yint.Value, wint.Value, hint.Value);
+                bounds = (xint.Value, yint.Value,
+                    wint.Value > 0 ? wint.Value : 1, hint.Value > 0 ? hint.Value : 1);
                 return true;
             }
             bounds = default;
