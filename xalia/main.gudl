@@ -671,6 +671,14 @@ if (interactable) {
         adjust_value_action: adjust_scrollbars(this, undefined);
     }
 
+    spin_button {
+        targetable: true;
+
+        primary_action: set_focus+show_keyboard;
+
+        adjust_value_action: adjust_scrollbars(this, undefined);
+    }
+
     // GTK menus
     menu (is_spi_element) {
         targetable: true;
