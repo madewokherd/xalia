@@ -327,7 +327,11 @@ root (descendent_matches(in_list_navigation)) {
     list_close_action: descendent_matches(in_list_navigation).list_close_action;
 }
 
-if (tree_table and parent.is_current_view and root.current_view == parent) {
+if ((tree_table or list_box) and
+    ((parent.is_current_view and root.current_view == parent) or
+     (parent.viewport and parent.parent.is_current_view and root.current_view == parent.parent))) {
+    // GTK list
+
     in_list_navigation: true;
 
     list_left_action: set_focus + send_key.left;
