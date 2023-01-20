@@ -377,6 +377,11 @@ if (role.(filler or internal_frame or panel or html_container or
     recurse: true;
 }
 
+// Avoid recursing into scrollable list boxes because they might be big
+list_box (not scrollable) {
+    recurse: true;
+}
+
 if (is_uia_element and uia_control_type == undefined and msaa_role.(border or client)) {
     // Origin client has a lot of elements like this
     recurse: true;
