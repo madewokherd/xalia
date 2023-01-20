@@ -643,6 +643,18 @@ if (interactable) {
         }
     }
 
+    slider (vertical) {
+        targetable: true;
+
+        adjust_value_action: adjust_scrollbars(undefined, this);
+    }
+
+    slider (horizontal) {
+        targetable: true;
+
+        adjust_value_action: adjust_scrollbars(this, undefined);
+    }
+
     // Qt/AT-SPI2 does its menu bars this way
     menu_item (parent.spi_role.menu_bar and spi_action.ShowMenu)
     {
