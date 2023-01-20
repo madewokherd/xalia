@@ -655,6 +655,11 @@ if (interactable) {
         adjust_value_action: adjust_scrollbars(this, undefined);
     }
 
+    // GTK menus
+    menu (is_spi_element) {
+        targetable: true;
+    }
+
     // Qt/AT-SPI2 does its menu bars this way
     menu_item (parent.spi_role.menu_bar and spi_action.ShowMenu)
     {
