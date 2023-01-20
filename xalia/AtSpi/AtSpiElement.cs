@@ -453,6 +453,7 @@ namespace Xalia.AtSpi
             {
                 case "org.freedesktop.DBus.Error.NoReply":
                 case "org.freedesktop.DBus.Error.UnknownObject":
+                case "org.freedesktop.DBus.Error.UnknownInterface":
                 case "org.freedesktop.DBus.Error.ServiceUnknown":
                     return true;
                 default:

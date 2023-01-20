@@ -559,6 +559,7 @@ if (parent.offset_target_y) {
 
 // Scroll panes
 scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and visible)) {
+    // GTK scrollable pane
     scrollable: true;
 
     hscroll: child_matches(scroll_bar and horizontal and enabled and sensitive and showing and visible);
@@ -579,6 +580,36 @@ scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and 
         scroll_view_y: y;
         scroll_view_width: width - (vscroll.width or 0);
         scroll_view_height: height - (hscroll.height or 0);
+    }
+}
+
+filler ((child_count == 2 or child_count == 3) and
+        first_child.(filler and child_count == 1 and first_child.filler) and
+        child_at_index(1).(filler and child_count == 1 and first_child.scroll_bar) and
+        last_child.(filler and child_count == 1 and first_child.scroll_bar))
+{
+    // Qt scrollable pane
+    scrollable: true;
+
+    // horizontal and vertical states are not set
+    hscroll: child_matches(first_child.scrollbar and x == parent.x).first_child;
+    vscroll: child_matches(first_child.scrollbar and y == parent.y).first_child;
+
+    scroll_view_action: adjust_scrollbars(hscroll, vscroll);
+
+    if (is_current_view and ancestor_matches(toplevel_interactable).deepest_modal == this) {
+        // Do this lazily so we're not polling positions of all scroll panes
+        scroll_target_margin: 10; // FIXME: Scale based on DPI?
+
+        scroll_pane_x: x;
+        scroll_pane_y: y;
+        scroll_pane_width: width;
+        scroll_pane_height: height;
+
+        scroll_view_x: x;
+        scroll_view_y: y;
+        scroll_view_width: first_child.width;
+        scroll_view_height: first_child.height;
     }
 }
 

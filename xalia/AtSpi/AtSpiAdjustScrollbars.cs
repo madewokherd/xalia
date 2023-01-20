@@ -152,67 +152,83 @@ namespace Xalia.AtSpi
             double xofs = state.XAxis * xmult;
             double yofs = state.YAxis * ymult;
 
-            if (!(HScroll is null))
+            try
             {
-                if (xofs > 0)
+                if (!(HScroll is null))
                 {
-                    var maximum_value = await HScroll.value_iface.GetMaximumValueAsync();
+                    if (xofs > 0)
+                    {
+                        var maximum_value = await HScroll.value_iface.GetMaximumValueAsync();
 
-                    var current_value = await HScroll.value_iface.GetCurrentValueAsync();
+                        var current_value = await HScroll.value_iface.GetCurrentValueAsync();
 
-                    var new_value = current_value + xofs;
+                        var new_value = current_value + xofs;
 
-                    if (new_value > maximum_value)
-                        new_value = maximum_value;
+                        if (new_value > maximum_value)
+                            new_value = maximum_value;
 
-                    if (new_value != current_value)
-                        await HScroll.value_iface.SetCurrentValueAsync(new_value);
-                }
-                else if (xofs < 0)
-                {
-                    var minimum_value = await HScroll.value_iface.GetMinimumValueAsync();
+                        if (new_value != current_value)
+                            await HScroll.value_iface.SetCurrentValueAsync(new_value);
+                    }
+                    else if (xofs < 0)
+                    {
+                        var minimum_value = await HScroll.value_iface.GetMinimumValueAsync();
 
-                    var current_value = await HScroll.value_iface.GetCurrentValueAsync();
+                        var current_value = await HScroll.value_iface.GetCurrentValueAsync();
 
-                    var new_value = current_value + xofs;
+                        var new_value = current_value + xofs;
 
-                    if (new_value < minimum_value)
-                        new_value = minimum_value;
+                        if (new_value < minimum_value)
+                            new_value = minimum_value;
 
-                    if (new_value != current_value)
-                        await HScroll.value_iface.SetCurrentValueAsync(new_value);
+                        if (new_value != current_value)
+                            await HScroll.value_iface.SetCurrentValueAsync(new_value);
+                    }
                 }
             }
-            if (!(VScroll is null))
+            catch (DBusException e)
             {
-                if (yofs > 0)
+                if (!AtSpiElement.IsExpectedException(e))
+                    throw;
+            }
+            try
+            {
+                if (!(VScroll is null))
                 {
-                    var maximum_value = await VScroll.value_iface.GetMaximumValueAsync();
+                    if (yofs > 0)
+                    {
+                        var maximum_value = await VScroll.value_iface.GetMaximumValueAsync();
 
-                    var current_value = await VScroll.value_iface.GetCurrentValueAsync();
+                        var current_value = await VScroll.value_iface.GetCurrentValueAsync();
 
-                    var new_value = current_value + yofs;
+                        var new_value = current_value + yofs;
 
-                    if (new_value > maximum_value)
-                        new_value = maximum_value;
+                        if (new_value > maximum_value)
+                            new_value = maximum_value;
 
-                    if (new_value != current_value)
-                        await VScroll.value_iface.SetCurrentValueAsync(new_value);
+                        if (new_value != current_value)
+                            await VScroll.value_iface.SetCurrentValueAsync(new_value);
+                    }
+                    else if (yofs < 0)
+                    {
+                        var minimum_value = await VScroll.value_iface.GetMinimumValueAsync();
+
+                        var current_value = await VScroll.value_iface.GetCurrentValueAsync();
+
+                        var new_value = current_value + yofs;
+
+                        if (new_value < minimum_value)
+                            new_value = minimum_value;
+
+                        if (new_value != current_value)
+                            await VScroll.value_iface.SetCurrentValueAsync(new_value);
+                    }
                 }
-                else if (yofs < 0)
-                {
-                    var minimum_value = await VScroll.value_iface.GetMinimumValueAsync();
-
-                    var current_value = await VScroll.value_iface.GetCurrentValueAsync();
-
-                    var new_value = current_value + yofs;
-
-                    if (new_value < minimum_value)
-                        new_value = minimum_value;
-
-                    if (new_value != current_value)
-                        await VScroll.value_iface.SetCurrentValueAsync(new_value);
-                }
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiElement.IsExpectedException(e))
+                    throw;
             }
         }
     }
