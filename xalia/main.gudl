@@ -379,12 +379,7 @@ if (role.(filler or internal_frame or panel or html_container or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list or menu_bar or menu or
               combo_box or menu_item or pane or group or document or tree_table or
-              toggle_button)) {
-    recurse: true;
-}
-
-// Avoid recursing into scrollable list boxes because they might be big
-if ((list_box or table) and not scrollable) {
+              toggle_button or list_box or table)) {
     recurse: true;
 }
 
@@ -443,10 +438,7 @@ if (active and
     recurse: true;
 }
 
-// recursive navigation
-if (scrollable) {
-    can_descend: true;
-}
+// Recursive navigation
 
 if (parent.(can_descend and not is_current_view)) {
     interactable: false;
@@ -573,9 +565,9 @@ scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and 
 
     scroll_view_action: adjust_scrollbars(hscroll, vscroll);
 
-    if (is_current_view and ancestor_matches(toplevel_interactable).deepest_modal == this) {
+    if (interactable) {
         // Do this lazily so we're not polling positions of all scroll panes
-        scroll_target_margin: 10; // FIXME: Scale based on DPI?
+        scroll_target_margin: 0;
 
         scroll_pane_x: x;
         scroll_pane_y: y;
@@ -835,7 +827,7 @@ if (interactable) {
         targetable: true;
     }
 
-    if (scrollable) {
+    if (can_descend) {
         targetable: true;
     }
 
