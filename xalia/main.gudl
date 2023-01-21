@@ -384,7 +384,7 @@ if (role.(filler or internal_frame or panel or html_container or
     recurse: true;
 }
 
-table (toolkit_name == "gtk") {
+if (spi_role.(table or tree_table) and  toolkit_name == "gtk") {
     // GTK tables do not send update events for children
     poll_children: true;
 }
@@ -827,6 +827,23 @@ if (interactable) {
     toggle_button (expandable) {
         // Expander controls may have descendents that are also targetable
         targetable: true;
+    }
+
+    table_cell (parent.table_cell) {
+        // Table cells in GTK can have child table cells that intersect the scrollbar
+        // This is a problem for target navigation as it leads to up/down moving from list items to scrollbar
+
+        targetable: false;
+    }
+
+    table_cell (targetable) {
+        if (expandable and spi_action("expand or contract")) {
+            secondary_action: spi_action("expand or contract");
+        }
+
+        // Actions on table cells don't always do anything
+        primary_action: send_click;
+        secondary_action: send_click + send_click;
     }
 
     if (can_descend) {
