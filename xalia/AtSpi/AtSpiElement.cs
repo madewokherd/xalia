@@ -231,6 +231,10 @@ namespace Xalia.AtSpi
         private bool fetching_toolkit_name;
         private bool fetching_attributes;
 
+        public double MinimumIncrement { get; private set; }
+        public bool MinimumIncrementKnown { get; private set; }
+        private bool fetching_minimum_increment;
+
         static AtSpiElement()
         {
             name_to_role = new Dictionary<string, int>();
@@ -354,6 +358,8 @@ namespace Xalia.AtSpi
                 fetching_role = false;
                 NameKnown = false;
                 fetching_name = false;
+                MinimumIncrementKnown = false;
+                fetching_minimum_increment = false;
                 if (state_changed_event != null)
                 {
                     state_changed_event.Dispose();
@@ -698,6 +704,24 @@ namespace Xalia.AtSpi
             base.PropertiesChanged(changed_properties);
         }
 
+        private async Task FetchMinimumIncrement()
+        {
+            double val;
+            try
+            {
+                val = (int)await value_iface.GetMinimumIncrementAsync();
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+            MinimumIncrement = val;
+            MinimumIncrementKnown = true;
+            PropertyChanged("spi_minimum_increment");
+        }
+
         private async Task FetchRole()
         {
             int role;
@@ -945,6 +969,13 @@ namespace Xalia.AtSpi
                         {
                             watching_maximum_value = true;
                             Utils.RunTask(RefreshMaximumValue());
+                        }
+                        break;
+                    case "spi_minimum_increment":
+                        if (!fetching_minimum_increment)
+                        {
+                            fetching_minimum_increment = true;
+                            Utils.RunTask(FetchMinimumIncrement());
                         }
                         break;
                     case "spi_action":
@@ -1719,8 +1750,22 @@ namespace Xalia.AtSpi
                         }
                         return UiDomUndefined.Instance;
                     }
+                case "minimum_increment":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                    }
+                    goto case "spi_minimum_increment";
+                case "spi_minimum_increment":
+                    depends_on.Add((this, new IdentifierExpression("spi_minimum_increment")));
+                    if (MinimumIncrementKnown)
+                        return new UiDomDouble(MinimumIncrement);
+                    return UiDomUndefined.Instance;
                 case "adjust_scrollbars":
                     return Root.EvaluateIdentifier("adjust_scrollbars", Root, depends_on);
+                case "adjust_value":
+                    return new UiDomMethod(this, "adjust_value", AdjustValueMethod);
             }
 
             {
@@ -1741,6 +1786,57 @@ namespace Xalia.AtSpi
             }
 
             return UiDomUndefined.Instance;
+        }
+
+        private static UiDomValue AdjustValueMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+
+            var increment_value = context.Evaluate(arglist[0], root, depends_on);
+
+            if (!increment_value.TryToDouble(out var unused))
+                return UiDomUndefined.Instance;
+
+            return new UiDomRoutineAsync(method.Element, "adjust_value", new UiDomValue[] { increment_value }, AdjustValueRoutine);
+        }
+
+        private static async Task AdjustValueRoutine(UiDomRoutineAsync obj)
+        {
+            var element = obj.Element as AtSpiElement;
+
+            var value_iface = element.value_iface;
+
+            // AdjustValueMethod already verified that this succeeds
+            obj.Arglist[0].TryToDouble(out var increment);
+
+            try
+            {
+                var current_value = await value_iface.GetCurrentValueAsync();
+
+                var new_value = current_value + increment;
+
+                if (increment < 0)
+                {
+                    var minimum = await value_iface.GetMinimumValueAsync();
+
+                    if (new_value < minimum)
+                        new_value = minimum;
+                }
+                else
+                {
+                    var maximum = await value_iface.GetMaximumValueAsync();
+
+                    if (new_value > maximum)
+                        new_value = maximum;
+                }
+
+                await value_iface.SetCurrentValueAsync(new_value);
+            }
+            catch (DBusException e) {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
 
         public override async Task<(bool,int,int)> GetClickablePoint()

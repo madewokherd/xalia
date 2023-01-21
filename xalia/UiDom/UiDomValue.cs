@@ -105,7 +105,7 @@ namespace Xalia.UiDom
                     case GudlToken.Plus:
                         {
                             UiDomValue inner = Evaluate(un.Inner, root, depends_on);
-                            if (inner is UiDomInt)
+                            if (inner is UiDomInt || inner is UiDomDouble)
                                 return inner;
                             return UiDomUndefined.Instance;
                         }
@@ -393,6 +393,12 @@ namespace Xalia.UiDom
         public virtual bool ToBool()
         {
             return true;
+        }
+
+        public virtual bool TryToDouble(out double val)
+        {
+            val = 0.0;
+            return false;
         }
 
         public virtual bool Compare(UiDomValue other, out int sign)

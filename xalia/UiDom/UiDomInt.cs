@@ -34,6 +34,12 @@ namespace Xalia.UiDom
             return Value != 0;
         }
 
+        public override bool TryToDouble(out double val)
+        {
+            val = Value;
+            return true;
+        }
+
         public override string ToString()
         {
             return Value.ToString();
