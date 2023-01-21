@@ -139,7 +139,8 @@ namespace Xalia.Ui
         private void UpdateCurrentViewBox()
         {
             if (!(CurrentView is null) &&
-                TryGetBoundsDeclarations(CurrentView, "scroll_pane", out var bounds))
+                (TryGetBoundsDeclarations(CurrentView, "scroll_pane", out var bounds) ||
+                 TryGetBoundsDeclarations(CurrentView, "target", out bounds)))
             {
                 current_view_box.SetBounds(bounds.Item1, bounds.Item2, bounds.Item3, bounds.Item4);
                 current_view_box.Show();

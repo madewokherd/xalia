@@ -5,7 +5,7 @@ root {
     repeat_initial_delay: 500;
     repeat_delay: 100;
 
-    action_on_left_stick: repeat_action(menu_move_action or list_move_action or target_move, repeat_initial_delay, repeat_delay);
+    action_on_left_stick: repeat_action(menu_move_action or list_move_action or adjust_current_view_action or target_move, repeat_initial_delay, repeat_delay);
     action_on_dpad_left: repeat_action(menu_left_action or list_left_action or target_move_left, repeat_initial_delay, repeat_delay);
     action_on_dpad_down: repeat_action(menu_down_action or list_down_action or target_move_down, repeat_initial_delay, repeat_delay);
     action_on_dpad_up: repeat_action(menu_up_action or list_up_action or target_move_up, repeat_initial_delay, repeat_delay);
@@ -36,6 +36,7 @@ root {
         target_adjust_value_action or
         scroll_current_view_action or
         scroll_targeted_view_action or
+        adjust_current_view_action or
         targeted_element.send_scroll;
     action_on_LB: tab_left_action;
     action_on_RB: tab_right_action;
@@ -445,9 +446,7 @@ if (parent.(can_descend and not is_current_view)) {
     interactable: false;
 }
 
-if (can_descend) {
-    descend_action: this.assign("is_current_view", true);
-}
+descend_action: this.assign("is_current_view", true);
 
 if (is_current_view) {
     is_active_modal: true;
@@ -457,6 +456,7 @@ if (is_current_view) {
 root {
     current_view: descendent_matches(toplevel_interactable and deepest_modal.is_current_view).deepest_modal;
     scroll_current_view_action: current_view.scroll_view_action;
+    adjust_current_view_action: current_view.adjust_value_action;
     ascend_action: current_view.assign("is_current_view", false);
 }
 
@@ -613,7 +613,7 @@ filler ((child_count == 2 or child_count == 3) and
 }
 
 // Rules for setting borders of targetable elements
-if (targetable) {
+if (targetable or is_current_view) {
     // "special" rules would go here
 
     toggle_button (expandable) {
@@ -870,5 +870,9 @@ if (interactable) {
 
     if (spi_action.(click or Press or activate or toggle or Toggle)) {
         primary_action: spi_action.(click or Press or activate or toggle or Toggle);
+    }
+
+    if (adjust_value_action) {
+        primary_action: descend_action;
     }
 }
