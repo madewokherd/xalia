@@ -35,6 +35,7 @@ root {
     action_on_right_stick: target_scroll_view_action or
         target_adjust_value_action or
         scroll_current_view_action or
+        scroll_targeted_view_action or
         targeted_element.send_scroll;
     action_on_LB: tab_left_action;
     action_on_RB: tab_right_action;
@@ -675,6 +676,7 @@ root (targeted_element) {
     target_context_menu_action: targeted_element.context_menu_action;
     target_scroll_view_action: targeted_element.scroll_view_action;
     target_adjust_value_action: targeted_element.adjust_value_action;
+    scroll_targeted_view_action: targeted_element.ancestor_matches(scrollable).scroll_view_action;
 }
 
 // Rules that apply to controls in the active window
