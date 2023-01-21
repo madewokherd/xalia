@@ -671,7 +671,10 @@ namespace Xalia.Ui
 
             if (best_element is null)
             {
-                ScrollAncestor(TargetedElement, direction);
+                if (ScrollAncestor(TargetedElement, direction))
+                    return;
+
+                AdjustValue(TargetedElement, direction);
 
                 return;
             }
@@ -679,6 +682,39 @@ namespace Xalia.Ui
             TargetedElement = best_element;
 
             ScrollIntoView(TargetedElement);
+        }
+
+        private bool AdjustValue(UiDomElement targetedElement, Direction direction)
+        {
+            string routine_name;
+
+            switch (direction)
+            {
+                case Direction.Left:
+                    routine_name = "adjust_value_left_action";
+                    break;
+                case Direction.Down:
+                    routine_name = "adjust_value_down_action";
+                    break;
+                case Direction.Up:
+                    routine_name = "adjust_value_up_action";
+                    break;
+                case Direction.Right:
+                    routine_name = "adjust_value_right_action";
+                    break;
+                default:
+                    return false;
+            }
+
+            var routine = targetedElement.GetDeclaration(routine_name) as UiDomRoutine;
+
+            if (!(routine is null))
+            {
+                routine.Pulse();
+                return true;
+            }
+
+            return false;
         }
 
         private void TargetMoveUp(UiDomRoutineSync obj)
@@ -789,7 +825,7 @@ namespace Xalia.Ui
             }
         }
 
-        private void ScrollAncestor(UiDomElement targetedElement, Direction direction)
+        private bool ScrollAncestor(UiDomElement targetedElement, Direction direction)
         {
             UiDomElement ancestor = targetedElement.Parent;
 
@@ -826,11 +862,12 @@ namespace Xalia.Ui
 
                     Utils.RunTask(routine.ProcessInputQueue(queue));
 
-                    break;
+                    return true;
                 }
 
                 ancestor = ancestor.Parent;
             }
+            return false;
         }
 
         private UiDomElement _currentView;

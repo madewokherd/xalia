@@ -85,5 +85,13 @@ namespace Xalia.UiDom
                 Arglist != null ? 0 : StructuralComparisons.StructuralEqualityComparer.GetHashCode(Arglist)
                 ).GetHashCode() ^ typeof(UiDomRoutine).GetHashCode();
         }
+
+        public void Pulse()
+        {
+            var queue = new InputQueue();
+            queue.Enqueue(new InputState(InputStateKind.Pulse));
+            queue.Enqueue(new InputState(InputStateKind.Disconnected));
+            Utils.RunTask(ProcessInputQueue(queue));
+        }
     }
 }
