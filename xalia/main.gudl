@@ -596,9 +596,9 @@ filler ((child_count == 2 or child_count == 3) and
 
     scroll_view_action: adjust_scrollbars(hscroll, vscroll);
 
-    if (is_current_view and ancestor_matches(toplevel_interactable).deepest_modal == this) {
+    if (interactable) {
         // Do this lazily so we're not polling positions of all scroll panes
-        scroll_target_margin: 10; // FIXME: Scale based on DPI?
+        scroll_target_margin: 0;
 
         scroll_pane_x: x;
         scroll_pane_y: y;

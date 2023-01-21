@@ -9,6 +9,7 @@ using Xalia.Input;
 using Xalia.UiDom;
 using Xalia.Sdl;
 using System.Runtime.InteropServices;
+using System.Security.Permissions;
 
 namespace Xalia.Ui
 {
@@ -198,7 +199,38 @@ namespace Xalia.Ui
 
         private bool TryGetTargetBoundsDeclarations(UiDomElement element, out (int, int, int, int) bounds)
         {
-            return TryGetBoundsDeclarations(element, "target", out bounds);
+            if (TryGetBoundsDeclarations(element, "target", out bounds))
+            {
+                // Make sure this is in range of all ancestor views
+
+                var parent = element.Parent;
+
+                while (!(parent is null))
+                {
+                    if (TryGetBoundsDeclarations(parent, "scroll_view", out var ancestor_bounds))
+                    {
+                        if (!BoundsIntersect(bounds, ancestor_bounds))
+                            return false;
+                    }
+
+                    parent = parent.Parent;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private static bool BoundsIntersect((int, int, int, int) bounds, (int, int, int, int) ancestor_bounds)
+        {
+            if (ancestor_bounds.Item1 + ancestor_bounds.Item3 < bounds.Item1)
+                return false;
+            if (ancestor_bounds.Item2 > bounds.Item2 + bounds.Item4)
+                return false;
+            if (ancestor_bounds.Item2 + ancestor_bounds.Item4 < bounds.Item2)
+                return false;
+            if (ancestor_bounds.Item1 > bounds.Item1 + bounds.Item3)
+                return false;
+            return true;
         }
 
         private void UpdateTargetableElement(UiDomElement element)
