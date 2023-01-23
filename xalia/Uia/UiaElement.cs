@@ -693,6 +693,12 @@ namespace Xalia.Uia
             {
                 return null;
             }
+            catch (COMException e)
+            {
+                if (e.ErrorCode == unchecked((int)0x80004005)) // E_FAIL
+                    return null;
+                throw;
+            }
 
             return (IAccessibleApplication)Marshal.GetTypedObjectForIUnknown(pIAA, typeof(IAccessibleApplication));
         }
