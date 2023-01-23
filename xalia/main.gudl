@@ -144,6 +144,16 @@ application (name == "plasmashell") {
     }
 }
 
+// APPLICATION: Skyrim Launcher
+image (is_uia_element and interactable and parent.(window and win32_process_name == "SkyrimLauncher") and
+    automation_id != "103") {
+    targetable: true;
+    primary_action: send_click;
+    if (automation_id == "1004") { // Play button
+        accept_action: primary_action;
+    }
+}
+
 // APPLICATION: Windows taskbar
 if (is_uia_element and uia_class_name == "Shell_TrayWnd") {
     manual_buttons: true;

@@ -58,6 +58,7 @@ namespace Xalia.Uia
                 eventprocdelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
 
             RegisterPropertyMapping("uia_control_type", Automation.PropertyLibrary.Element.ControlType);
+            RegisterPropertyMapping("uia_automation_id", Automation.PropertyLibrary.Element.AutomationId);
             RegisterPropertyMapping("uia_class_name", Automation.PropertyLibrary.Element.ClassName);
             RegisterPropertyMapping("uia_enabled", Automation.PropertyLibrary.Element.IsEnabled);
             RegisterPropertyMapping("uia_keyboard_focusable", Automation.PropertyLibrary.Element.IsKeyboardFocusable);

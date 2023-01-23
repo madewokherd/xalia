@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -53,6 +54,8 @@ namespace Xalia.Uia
                 return ElementWrapper.Connection;
             }
         }
+
+        public string ProcessName { get; private set; }
 
         Dictionary<PropertyId, bool> fetching_property = new Dictionary<PropertyId, bool>();
         Dictionary<PropertyId, bool> property_known = new Dictionary<PropertyId, bool>();
@@ -236,6 +239,7 @@ namespace Xalia.Uia
                 "role", "uia_control_type",
                 "control_type", "uia_control_type",
                 "controltype", "uia_control_type",
+                "automation_id", "uia_automation_id",
                 "enabled", "uia_enabled",
                 "is_enabled", "uia_enabled",
                 "focusable", "uia_keyboard_focusable",
@@ -274,11 +278,12 @@ namespace Xalia.Uia
                 "select", "uia_select",
                 "expand", "uia_expand",
                 "collapse", "uia_collapse",
-                "application_name", "acc2_application_name",
                 "application_version", "acc2_application_version",
                 "toolkit_name", "acc2_toolkit_name",
                 "toolkit_version", "acc2_toolkit_version",
                 "set_foreground_window", "win32_set_foreground_window",
+                "application_name", "win32_process_name",
+                "process_name", "win32_process_name",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -822,6 +827,8 @@ namespace Xalia.Uia
                 case "uia_controltype":
                 case "uia_control_type":
                     return GetProperty("uia_control_type", Root.Automation.PropertyLibrary.Element.ControlType, depends_on);
+                case "uia_automation_id":
+                    return GetProperty("uia_automation_id", Root.Automation.PropertyLibrary.Element.AutomationId, depends_on);
                 case "uia_enabled":
                 case "uia_is_enabled":
                     return GetProperty("uia_enabled", Root.Automation.PropertyLibrary.Element.IsEnabled, depends_on);
@@ -978,6 +985,17 @@ namespace Xalia.Uia
                     if (ElementWrapper.Hwnd != IntPtr.Zero)
                     {
                         return new UiDomRoutineSync(this, "win32_set_foreground_window", Win32SetForegroundWindow);
+                    }
+                    return UiDomUndefined.Instance;
+                case "win32_process_name":
+                    if (ElementWrapper.Pid != 0)
+                    {
+                        if (ProcessName is null)
+                        {
+                            var process = Process.GetProcessById(ElementWrapper.Pid);
+                            ProcessName = process.ProcessName;
+                        }
+                        return new UiDomString(ProcessName);
                     }
                     return UiDomUndefined.Instance;
             }
