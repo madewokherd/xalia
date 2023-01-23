@@ -150,7 +150,7 @@ image (is_uia_element and interactable and parent.(window and win32_process_name
     targetable: true;
     primary_action: send_click;
     if (automation_id == "1004") { // Play button
-        accept_action: primary_action;
+        confirm_action: primary_action;
     }
 }
 
@@ -849,8 +849,8 @@ if (interactable) {
 
     button (name == "OK" or name == "Run" or name == "Play" or name == "PLAY" or name == "Yes")
     {
-        accept_action: primary_action or send_click;
-        accept_action_name: name;
+        confirm_action: primary_action or send_click;
+        confirm_action_name: name;
     }
 
     button (name == "Cancel" or name == "Close" or name == "No")
