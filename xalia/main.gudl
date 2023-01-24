@@ -885,7 +885,11 @@ if (interactable) {
         targetable: true;
     }
 
-    if (focusable and not spi_role.panel and not descendent_matches(targetable)) {
+    if (group or panel or frame) {
+        targetable: false;
+    }
+
+    if (focusable and not descendent_matches(targetable)) {
         // A control being focusable is a good hint that it's something to click on
         targetable: true;
     }
