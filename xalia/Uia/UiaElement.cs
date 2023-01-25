@@ -261,6 +261,7 @@ namespace Xalia.Uia
                 "name", "uia_name",
                 "class_name", "uia_class_name",
                 "expand_collapse_state", "uia_expand_collapse_state",
+                "orientation", "uia_orientation",
                 "framework_id", "uia_framework_id",
                 "frameworkid", "uia_framework_id",
                 "focused", "uia_focused",
@@ -515,6 +516,10 @@ namespace Xalia.Uia
             {
                 value = (ExpandCollapseState)ecsi;
             }
+            else if (name == "uia_orientation" && value is int ori)
+            {
+                value = (OrientationType)ori;
+            }
             else if (name == "uia_control_type" && value is int cti)
             {
                 value = (ControlType)cti;
@@ -569,6 +574,24 @@ namespace Xalia.Uia
                         break;
                     case ExpandCollapseState.LeafNode:
                         new_value = new UiDomEnum(new[] { "leaf_node" });
+                        break;
+                    default:
+                        new_value = UiDomUndefined.Instance;
+                        break;
+                }
+            }
+            else if (value is OrientationType or)
+            {
+                switch (or)
+                {
+                    case OrientationType.None:
+                        new_value = new UiDomEnum(new[] { "none" });
+                        break;
+                    case OrientationType.Horizontal:
+                        new_value = new UiDomEnum(new[] { "horizontal" });
+                        break;
+                    case OrientationType.Vertical:
+                        new_value = new UiDomEnum(new[] { "vertical" });
                         break;
                     default:
                         new_value = UiDomUndefined.Instance;
@@ -885,6 +908,32 @@ namespace Xalia.Uia
                     return GetProperty("uia_class_name", Root.Automation.PropertyLibrary.Element.ClassName, depends_on);
                 case "uia_expand_collapse_state":
                     return GetProperty("uia_expand_collapse_state", Root.Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, depends_on);
+                case "uia_orientation":
+                    return GetProperty("uia_orientation", Root.Automation.PropertyLibrary.Element.Orientation, depends_on);
+                case "horizontal":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                        var orientation = GetRawProperty("uia_orientation", Root.Automation.PropertyLibrary.Element.Orientation, depends_on);
+                        if (orientation is OrientationType ore)
+                        {
+                            return UiDomBoolean.FromBool(ore == OrientationType.Horizontal);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
+                case "vertical":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                        var orientation = GetRawProperty("uia_orientation", Root.Automation.PropertyLibrary.Element.Orientation, depends_on);
+                        if (orientation is OrientationType ore)
+                        {
+                            return UiDomBoolean.FromBool(ore == OrientationType.Vertical);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
                 case "uia_framework_id":
                     return GetProperty("uia_framework_id", Root.Automation.PropertyLibrary.Element.FrameworkId, depends_on);
                 case "msaa_role":
