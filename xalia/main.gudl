@@ -732,7 +732,7 @@ if (interactable) {
         }
     }
 
-    if (spi_role.(scroll_bar or slider) and not spi_role.(vertical or horizontal)) {
+    if ((scroll_bar or slider) and not (vertical or horizontal)) {
         // Qt doesn't set these states
         vertical: height > width;
         horizontal: width > height;
