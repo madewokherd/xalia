@@ -525,6 +525,28 @@ namespace Xalia.Sdl
             SendInput(1, inputs, Marshal.SizeOf<INPUT>());
             return Task.CompletedTask;
         }
+
+        public override Task SendScroll(int xdelta, int ydelta)
+        {
+            INPUT[] inputs = new INPUT[2];
+            int i = 0;
+            if (xdelta != 0)
+            {
+                inputs[i].type = INPUT_MOUSE;
+                inputs[i].u.mi.mouseData = xdelta;
+                inputs[i].u.mi.dwFlags = MOUSEEVENTF_HWHEEL;
+                i++;
+            }
+            if (ydelta != 0)
+            {
+                inputs[i].type = INPUT_MOUSE;
+                inputs[i].u.mi.mouseData = -ydelta;
+                inputs[i].u.mi.dwFlags = MOUSEEVENTF_WHEEL;
+                i++;
+            }
+            SendInput(i, inputs, Marshal.SizeOf<INPUT>());
+            return Task.CompletedTask;
+        }
     }
 }
 #endif
