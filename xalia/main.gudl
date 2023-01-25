@@ -267,6 +267,18 @@ combo_box (uia_expand_collapse_state.expanded) {
     menu_close_action: uia_collapse or send_key.esc;
 }
 
+// Win32 Combo list boxes
+if (parent.is_root and uia_control_type.list and uia_class_name == "ComboLBox"
+    and visible and enabled) {
+    in_menu_navigation: true;
+
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc;
+    menu_close_action: send_key.esc;
+}
+
 // Qt/AT-SPI2 menus
 popup_menu (spi_state.showing)
 {
