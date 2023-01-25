@@ -1010,6 +1010,13 @@ namespace Xalia.Uia
                         return new UiDomRoutineAsync(this, "uia_collapse", Collapse);
                     }
                     return UiDomUndefined.Instance;
+                case "uia_adjust_scroll_container":
+                    depends_on.Add((this, new IdentifierExpression("uia_supported_patterns")));
+                    if (!(supported_patterns is null) && supported_patterns.Contains(Root.Automation.PatternLibrary.ScrollPattern))
+                    {
+                        return new UiaAdjustScrollContainer(this);
+                    }
+                    return UiDomUndefined.Instance;
                 case "acc2_application_name":
                     depends_on.Add((this, new IdentifierExpression(id)));
                     if (application_name is null)

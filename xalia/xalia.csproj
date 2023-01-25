@@ -127,6 +127,7 @@
     <Compile Include="Sdl\Win32WindowingSystem.cs" />
     <Compile Include="Sdl\X11WindowingSystem.cs" />
     <Compile Include="Sdl\XdgWindowingSystem.cs" />
+    <Compile Include="Uia\UiaAdjustScrollContainer.cs" />
     <Compile Include="Uia\UiaCommandThread.cs" />
     <Compile Include="Uia\UiaConnection.cs" />
     <Compile Include="Uia\UiaElement.cs" />

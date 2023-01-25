@@ -638,6 +638,25 @@ filler ((child_count == 2 or child_count == 3) and
     }
 }
 
+if (uia_adjust_scroll_container) {
+    scrollable: true;
+    scroll_view_action: uia_adjust_scroll_container;
+
+    if (interactable) {
+        scroll_target_margin: 0;
+
+        scroll_pane_x: x;
+        scroll_pane_y: y;
+        scroll_pane_width: width;
+        scroll_pane_height: height;
+
+        scroll_view_x: x;
+        scroll_view_y: y;
+        scroll_view_width: width - (child_matches(scroll_bar and vertical).width or 0);
+        scroll_view_height: height - (child_matches(scroll_bar and horizontal).height or 0);
+    }
+}
+
 // Rules for setting borders of targetable elements
 if (targetable or is_current_view) {
     // "special" rules would go here
