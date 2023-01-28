@@ -1762,8 +1762,6 @@ namespace Xalia.AtSpi
                     if (MinimumIncrementKnown)
                         return new UiDomDouble(MinimumIncrement);
                     return UiDomUndefined.Instance;
-                case "adjust_scrollbars":
-                    return Root.EvaluateIdentifier("adjust_scrollbars", Root, depends_on);
                 case "adjust_value":
                     return new UiDomMethod(this, "adjust_value", AdjustValueMethod);
             }
@@ -1866,6 +1864,58 @@ namespace Xalia.AtSpi
             catch (DBusException) { }
 
             return (false, 0, 0);
+        }
+
+        public override async Task<double> GetMinimumIncrement()
+        {
+            try
+            {
+                var result = await value_iface.GetMinimumIncrementAsync();
+                if (result != 0)
+                    return result;
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
+            return await base.GetMinimumIncrement();
+        }
+
+        public override async Task OffsetValue(double ofs)
+        {
+            if (ofs == 0)
+                return;
+
+            try
+            {
+                var current_value = await value_iface.GetCurrentValueAsync();
+
+                var new_value = current_value + ofs;
+
+                if (ofs > 0)
+                {
+                    var maximum_value = await value_iface.GetMaximumValueAsync();
+
+                    if (new_value > maximum_value)
+                        new_value = maximum_value;
+                }
+                else
+                {
+                    var minimum_value = await value_iface.GetMinimumValueAsync();
+
+                    if (new_value < minimum_value)
+                        new_value = minimum_value;
+                }
+
+                if (new_value != current_value)
+                    await value_iface.SetCurrentValueAsync(new_value);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
     }
 }

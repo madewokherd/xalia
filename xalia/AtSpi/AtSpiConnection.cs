@@ -96,30 +96,5 @@ namespace Xalia.AtSpi
         }
 
         public AtSpiElement DesktopFrame { get; private set; }
-
-        private static UiDomValue AdjustScrollbarsMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
-        {
-            if (arglist.Length >= 2)
-            {
-                var hscroll = context.Evaluate(arglist[0], root, depends_on) as AtSpiElement;
-                var vscroll = context.Evaluate(arglist[1], root, depends_on) as AtSpiElement;
-
-                if (hscroll is null && vscroll is null)
-                    return UiDomUndefined.Instance;
-
-                return new AtSpiAdjustScrollbars(hscroll, vscroll);
-            }
-            return UiDomUndefined.Instance;
-        }
-
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
-        {
-            switch (id)
-            {
-                case "adjust_scrollbars":
-                    return new UiDomMethod("adjust_scrollbars", AdjustScrollbarsMethod);
-            }
-            return base.EvaluateIdentifierCore(id, root, depends_on);
-        }
     }
 }

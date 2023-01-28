@@ -90,7 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AtSpi\AtSpiActionList.cs" />
-    <Compile Include="AtSpi\AtSpiAdjustScrollbars.cs" />
+    <Compile Include="UiDom\UiDomAdjustScrollbars.cs" />
     <Compile Include="AtSpi\AtSpiAttributes.cs" />
     <Compile Include="AtSpi\AtSpiConnection.cs" />
     <Compile Include="AtSpi\AtSpiElement.cs" />

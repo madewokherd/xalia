@@ -688,9 +688,46 @@ namespace Xalia.Uia
 
         private async Task FetchSupportedPatterns()
         {
-            supported_patterns = await Root.CommandThread.GetSupportedPatterns(ElementWrapper);
+            try
+            {
+                supported_patterns = await Root.CommandThread.GetSupportedPatterns(ElementWrapper);
 
-            PropertyChanged("uia_supported_patterns");
+                PropertyChanged("uia_supported_patterns");
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
+        }
+
+        private bool IsExpectedException(Exception e)
+        {
+#if DEBUG
+            Console.WriteLine("WARNING: Exception:");
+            Console.WriteLine(e);
+#endif
+            if (e is PatternNotSupportedException)
+            {
+                return true;
+            }
+            if (e is COMException com)
+            {
+                switch (com.ErrorCode)
+                {
+                    case unchecked((int)0x80040005): // E_FAIL
+                    case unchecked((int)0x80040201): // EVENT_E_ALL_SUBSCRIBERS_FAILED
+                    case unchecked((int)0x80131505): // UIA_E_TIMEOUT
+                        return true;
+                }
+            }
+#if DEBUG
+            return false;
+#else
+            Console.WriteLine("WARNING: Exception ignored:");
+            Console.WriteLine(e);
+            return true;
+#endif
         }
 
         private IAccessibleApplication QueryAccessibleApplicationBackground()
@@ -713,17 +750,13 @@ namespace Xalia.Uia
 
                 pIAA = sp.QueryService(ref iid, ref iid);
             }
-            catch (PatternNotSupportedException)
-            {
-                return null;
-            }
             catch (InvalidCastException) // E_NOINTERFACE
             {
                 return null;
             }
-            catch (COMException e)
+            catch (Exception e)
             {
-                if (e.ErrorCode == unchecked((int)0x80004005)) // E_FAIL
+                if (IsExpectedException(e))
                     return null;
                 throw;
             }
@@ -1117,7 +1150,11 @@ namespace Xalia.Uia
                 return (true, x, y);
             }
             catch (NoClickablePointException) { }
-            catch (COMException) { }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
 
             return (false, 0, 0);
         }
@@ -1128,10 +1165,12 @@ namespace Xalia.Uia
             {
                 try
                 {
-                ElementWrapper.AutomationElement.Patterns.LegacyIAccessible.Pattern.DoDefaultAction();
+                    ElementWrapper.AutomationElement.Patterns.LegacyIAccessible.Pattern.DoDefaultAction();
                 }
-                catch (PatternNotSupportedException)
+                catch (Exception e)
                 {
+                    if (!IsExpectedException(e))
+                        throw;
                     return false;
                 }
 
@@ -1160,9 +1199,10 @@ namespace Xalia.Uia
                 {
                     ElementWrapper.AutomationElement.Patterns.Invoke.Pattern.Invoke();
                 }
-                catch (PatternNotSupportedException)
+                catch (Exception e)
                 {
-                    return false;
+                    if (!IsExpectedException(e))
+                        throw;
                 }
 
                 return true;
@@ -1182,9 +1222,10 @@ namespace Xalia.Uia
                 {
                     ElementWrapper.AutomationElement.Patterns.SelectionItem.Pattern.Select();
                 }
-                catch (PatternNotSupportedException)
+                catch (Exception e)
                 {
-                    Console.WriteLine($"WARNING: uia_select failed for {DebugId}");
+                    if (!IsExpectedException(e))
+                        throw;
                 }
             }, ElementWrapper);
         }
@@ -1197,9 +1238,10 @@ namespace Xalia.Uia
                 {
                     ElementWrapper.AutomationElement.Patterns.ExpandCollapse.Pattern.Expand();
                 }
-                catch (PatternNotSupportedException)
+                catch (Exception e)
                 {
-                    Console.WriteLine($"WARNING: uia_expand failed for {DebugId}");
+                    if (!IsExpectedException(e))
+                        throw;
                 }
             }, ElementWrapper);
         }
@@ -1212,11 +1254,70 @@ namespace Xalia.Uia
                 {
                     ElementWrapper.AutomationElement.Patterns.ExpandCollapse.Pattern.Collapse();
                 }
-                catch (PatternNotSupportedException)
+                catch (Exception e)
                 {
-                    Console.WriteLine($"WARNING: uia_collapse failed for {DebugId}");
+                    if (!IsExpectedException(e))
+                        throw;
                 }
             }, ElementWrapper);
+        }
+
+        public override async Task<double> GetMinimumIncrement()
+        {
+            try
+            {
+                var result = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    var range = ElementWrapper.AutomationElement.Patterns.RangeValue.Pattern;
+                    return Math.Max(range.SmallChange, range.LargeChange / 10);
+                }, ElementWrapper.Pid);
+                if (result != 0)
+                    return result;
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
+            return await base.GetMinimumIncrement();
+        }
+
+        public override async Task OffsetValue(double ofs)
+        {
+            try
+            {
+                await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    var range = ElementWrapper.AutomationElement.Patterns.RangeValue.Pattern;
+
+                    var current_value = range.Value;
+
+                    var new_value = current_value + ofs;
+
+                    if (ofs > 0)
+                    {
+                        var maximum_value = range.Maximum;
+
+                        if (new_value > maximum_value)
+                            new_value = maximum_value;
+                    }
+                    else
+                    {
+                        var minimum_value = range.Minimum;
+
+                        if (new_value < minimum_value)
+                            new_value = minimum_value;
+                    }
+
+                    if (new_value != current_value)
+                        range.SetValue(new_value);
+                }, ElementWrapper.Pid);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
     }
 }

@@ -154,15 +154,27 @@ image (is_uia_element and interactable and parent.(window and win32_process_name
     }
 }
 
+// APPLICATION: VLC
+layered_pane (spi_application.name == "vlc") {
+    // Buttons along the top of preferences window are checkboxes that do not update the UI on Toggle
+    manual_checkboxes: true;
+}
+
 // APPLICATION: Windows taskbar
 if (is_uia_element and uia_class_name == "Shell_TrayWnd") {
     manual_buttons: true;
 }
 
-// APPLICATION: VLC
-layered_pane (spi_application.name == "vlc") {
-    // Buttons along the top of preferences window are checkboxes that do not update the UI on Toggle
-    manual_checkboxes: true;
+// APPLICATION: Windows terminal
+if (class_name == "TermControl") {
+    recurse: true;
+
+    if (interactable) {
+        targetable: true;
+        primary_action: set_focus + show_keyboard;
+        target_width: scroll_view_width;
+        target_height: scroll_view_height;
+    }
 }
 
 // General behaviors:
@@ -538,7 +550,7 @@ if (uia_control_type.window) {
 // We'd need an unbroken chain of enabled/visible controls from the active window to interact with
 // a control through the mouse and keyboard, so normally we should only consider those. AT-SPI may
 // let us do things with other controls, but it might be confusing or break applications.
-if (is_spi_element and spi_state.enabled and spi_state.sensitive and
+if (is_spi_element and spi_state.enabled and spi_state.sensitive and not stop_interactable and
     (spi_state.showing or (spi_application.toolkit_name == "gtk" and not parent.page_tab)) and // GTK doesn't reliably update showing state of child controls when a scrollable pane is scrolled
         // https://gitlab.gnome.org/GNOME/gtk/-/issues/5511
     (spi_state.visible or spi_application.toolkit_name == "Qt") and // Qt doesn't reliably set visible for some reason (or notify about it?)
@@ -554,7 +566,7 @@ if (is_spi_element and spi_state.enabled and spi_state.sensitive and
     interactable: true;
 }
 
-if (is_uia_element and parent.interactable and enabled and
+if (is_uia_element and parent.interactable and enabled and not stop_interactable and
     (not offscreen or (toolkit == "Qt" and ancestor_matches(uia_control_type.document)))) { // Qt web views can have offscreen client controls with visible children
     interactable: true;
 }
@@ -586,6 +598,7 @@ if (parent.offset_target_y) {
 scroll_pane (child_matches(scroll_bar and enabled and sensitive and showing and visible)) {
     // GTK scrollable pane
     scrollable: true;
+    no_scrollable_fallback: true;
 
     hscroll: child_matches(scroll_bar and horizontal and enabled and sensitive and showing and visible);
     vscroll: child_matches(scroll_bar and vertical and enabled and sensitive and showing and visible);
@@ -615,6 +628,7 @@ filler ((child_count == 2 or child_count == 3) and
 {
     // Qt scrollable pane
     scrollable: true;
+    no_scrollable_fallback: true;
 
     // horizontal and vertical states are not set
     hscroll: child_matches(first_child.scrollbar and x == parent.x).first_child;
@@ -640,6 +654,7 @@ filler ((child_count == 2 or child_count == 3) and
 
 if (uia_adjust_scroll_container) {
     scrollable: true;
+    no_scrollable_fallback: true;
     scroll_view_action: uia_adjust_scroll_container;
 
     if (interactable) {
@@ -655,6 +670,31 @@ if (uia_adjust_scroll_container) {
         scroll_view_width: width - (child_matches(scroll_bar and vertical).width or 0);
         scroll_view_height: height - (child_matches(scroll_bar and horizontal).height or 0);
     }
+}
+
+if (not no_scrollable_fallback and interactable and child_count != 0 and
+    child_matches(scroll_bar and interactable and (
+        (horizontal and y + height - parent.(y + height) > -5) or
+        (vertical and x + width - parent.(x + width) > -5)))) {
+    // Fallback: Element has scrollbars close to edge
+    scrollable: true;
+    
+    hscroll: child_matches(scroll_bar and interactable and horizontal and y + height - parent.(y + height) > -5);
+    vscroll: child_matches(scroll_bar and interactable and vertical and x + width - parent.(x + width) > -5);
+
+    scroll_view_action: adjust_scrollbars(hscroll, vscroll);
+
+    scroll_target_margin: 0;
+
+    scroll_pane_x: x;
+    scroll_pane_y: y;
+    scroll_pane_width: width;
+    scroll_pane_height: height;
+
+    scroll_view_x: x;
+    scroll_view_y: y;
+    scroll_view_width: width - (vscroll.width or 0);
+    scroll_view_height: height - (hscroll.height or 0);
 }
 
 // Rules for setting borders of targetable elements
@@ -751,7 +791,7 @@ if (interactable) {
         }
     }
 
-    if ((scroll_bar or slider) and not (vertical or horizontal)) {
+    if ((scroll_bar or slider) and not (spi_state.(vertical or horizontal) or uia_orientation)) {
         // Qt doesn't set these states
         vertical: height > width;
         horizontal: width > height;
