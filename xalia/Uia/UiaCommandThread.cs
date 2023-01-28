@@ -173,16 +173,6 @@ namespace Xalia.Uia
             }, element);
         }
 
-        public async Task<UiaElementWrapper> GetFocusedElement(UiaConnection connection)
-        {
-            return await OnBackgroundThread(() =>
-            {
-                var result = connection.Automation.FocusedElement();
-
-                return connection.WrapElement(result);
-            }, 0);
-        }
-
         public async Task<PatternId[]> GetSupportedPatterns(UiaElementWrapper element)
         {
             return await OnBackgroundThread(() =>

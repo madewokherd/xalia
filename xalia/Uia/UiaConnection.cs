@@ -485,7 +485,23 @@ namespace Xalia.Uia
 
         private async Task UpdateFocusedElement()
         {
-            FocusedElement = await CommandThread.GetFocusedElement(this);
+            UiaElementWrapper wrapper;
+            try
+            {
+                wrapper = await CommandThread.OnBackgroundThread(() =>
+                {
+                    var result = Automation.FocusedElement();
+                    return WrapElement(result);
+                });
+            }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+                wrapper = default;
+            }
+
+            FocusedElement = wrapper;
         }
 
         private async Task PollFocusedElement()

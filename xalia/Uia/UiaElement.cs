@@ -701,7 +701,7 @@ namespace Xalia.Uia
             }
         }
 
-        private bool IsExpectedException(Exception e)
+        internal static bool IsExpectedException(Exception e)
         {
 #if DEBUG
             Console.WriteLine("WARNING: Exception:");
@@ -715,7 +715,7 @@ namespace Xalia.Uia
             {
                 switch (com.ErrorCode)
                 {
-                    case unchecked((int)0x80040005): // E_FAIL
+                    case unchecked((int)0x80004005): // E_FAIL
                     case unchecked((int)0x80040201): // EVENT_E_ALL_SUBSCRIBERS_FAILED
                     case unchecked((int)0x80131505): // UIA_E_TIMEOUT
                         return true;
@@ -754,6 +754,10 @@ namespace Xalia.Uia
             {
                 return null;
             }
+            catch (ArgumentException)
+            {
+                return null;
+            }
             catch (Exception e)
             {
                 if (IsExpectedException(e))
@@ -766,34 +770,66 @@ namespace Xalia.Uia
 
         private async Task FetchApplicationName()
         {
-            application_name = await Root.CommandThread.OnBackgroundThread(() =>
+            try
             {
-                return QueryAccessibleApplicationBackground()?.appName;
-            }, ElementWrapper);
+                application_name = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return QueryAccessibleApplicationBackground()?.appName;
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
 
         private async Task FetchApplicationVersion()
         {
-            application_version = await Root.CommandThread.OnBackgroundThread(() =>
+            try
             {
-                return QueryAccessibleApplicationBackground()?.appVersion;
-            }, ElementWrapper);
+                application_version = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return QueryAccessibleApplicationBackground()?.appVersion;
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
 
         private async Task FetchToolkitName()
         {
-            toolkit_name = await Root.CommandThread.OnBackgroundThread(() =>
+            try
             {
-                return QueryAccessibleApplicationBackground()?.toolkitName;
-            }, ElementWrapper);
+                toolkit_name = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return QueryAccessibleApplicationBackground()?.toolkitName;
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
 
         private async Task FetchToolkitVersion()
         {
-            toolkit_version = await Root.CommandThread.OnBackgroundThread(() =>
+            try
             {
-                return QueryAccessibleApplicationBackground()?.toolkitVersion;
-            }, ElementWrapper);
+                toolkit_version = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return QueryAccessibleApplicationBackground()?.toolkitVersion;
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
 
         protected override void SetAlive(bool value)

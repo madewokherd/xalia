@@ -177,10 +177,6 @@ if (class_name == "TermControl") {
     }
 }
 
-if ((class_name == "DRAG_BAR_WINDOW_CLASS" or automation_id == "TitleBar") and win32_process_name == "WindowsTerminal") {
-    interactable: false;
-}
-
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
@@ -355,6 +351,22 @@ if (parent.menu)
     interactable: false;
 }
 
+// Workaround for Windows title bar controls
+if (class_name == "DRAG_BAR_WINDOW_CLASS") {
+    interactable: false;
+}
+
+if (class_name == "TITLE_BAR_SCAFFOLDING_WINDOW_CLASS") {
+    interactable: false;
+}
+
+title_bar (automation_id == "TitleBar") {
+    if (parent.(interactable and not stop_interactable)) {
+        // For some reason the standard Win32 titlebar is offscreen
+        interactable: true;
+    }
+}
+
 // Lists and tables
 
 root (descendent_matches(in_list_navigation)) {
@@ -414,7 +426,7 @@ if (role.(filler or internal_frame or panel or html_container or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list or menu_bar or menu or
               combo_box or menu_item or pane or group or document or tree_table or
-              toggle_button or list_box or list or table)) {
+              toggle_button or list_box or list or table or title_bar)) {
     recurse: true;
 }
 
@@ -554,7 +566,7 @@ if (uia_control_type.window) {
 // We'd need an unbroken chain of enabled/visible controls from the active window to interact with
 // a control through the mouse and keyboard, so normally we should only consider those. AT-SPI may
 // let us do things with other controls, but it might be confusing or break applications.
-if (is_spi_element and spi_state.enabled and spi_state.sensitive and not stop_interactable and
+if (is_spi_element and spi_state.enabled and spi_state.sensitive and not parent.stop_interactable and
     (spi_state.showing or (spi_application.toolkit_name == "gtk" and not parent.page_tab)) and // GTK doesn't reliably update showing state of child controls when a scrollable pane is scrolled
         // https://gitlab.gnome.org/GNOME/gtk/-/issues/5511
     (spi_state.visible or spi_application.toolkit_name == "Qt") and // Qt doesn't reliably set visible for some reason (or notify about it?)
@@ -570,7 +582,7 @@ if (is_spi_element and spi_state.enabled and spi_state.sensitive and not stop_in
     interactable: true;
 }
 
-if (is_uia_element and parent.interactable and enabled and not stop_interactable and
+if (is_uia_element and parent.interactable and enabled and not parent.stop_interactable and
     (not offscreen or (toolkit == "Qt" and ancestor_matches(uia_control_type.document)))) { // Qt web views can have offscreen client controls with visible children
     interactable: true;
 }
