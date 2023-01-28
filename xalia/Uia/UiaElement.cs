@@ -977,6 +977,30 @@ namespace Xalia.Uia
                     return GetProperty("uia_class_name", Root.Automation.PropertyLibrary.Element.ClassName, depends_on);
                 case "uia_expand_collapse_state":
                     return GetProperty("uia_expand_collapse_state", Root.Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, depends_on);
+                case "collapsed":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                        var st = GetRawProperty("uia_expand_collapse_state", Root.Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, depends_on);
+                        if (st is ExpandCollapseState ecs)
+                        {
+                            return UiDomBoolean.FromBool(ecs == ExpandCollapseState.Collapsed);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
+                case "expanded":
+                    {
+                        var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                        if (!value.Equals(UiDomUndefined.Instance))
+                            return value;
+                        var st = GetRawProperty("uia_expand_collapse_state", Root.Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, depends_on);
+                        if (st is ExpandCollapseState ecs)
+                        {
+                            return UiDomBoolean.FromBool(ecs == ExpandCollapseState.Expanded);
+                        }
+                        return UiDomUndefined.Instance;
+                    }
                 case "uia_orientation":
                     return GetProperty("uia_orientation", Root.Automation.PropertyLibrary.Element.Orientation, depends_on);
                 case "horizontal":

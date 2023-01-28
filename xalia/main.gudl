@@ -367,6 +367,11 @@ title_bar (automation_id == "TitleBar") {
     }
 }
 
+if (class_name == "CtryNotifySink") {
+    // Seen in Windows Explorer, seems to be some useless blob related to cross-toolkit embedding
+    interactable: false;
+}
+
 // Lists and tables
 
 root (descendent_matches(in_list_navigation)) {
@@ -426,7 +431,12 @@ if (role.(filler or internal_frame or panel or html_container or
               section or page or form or table_row or document_web or grouping
               or info_bar or page_tab or page_tab_list or menu_bar or menu or
               combo_box or menu_item or pane or group or document or tree_table or
-              toggle_button or list_box or list or table or title_bar)) {
+              toggle_button or list_box or list or table or title_bar or
+              tree)) {
+    recurse: true;
+}
+
+tree_item (expanded) {
     recurse: true;
 }
 

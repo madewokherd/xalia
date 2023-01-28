@@ -246,6 +246,9 @@ namespace Xalia.Interop
         {
             IServiceProvider sp = (IServiceProvider)acc;
 
+            if (sp is null)
+                return null;
+
             Guid service_id = IID_IAccessible;
             Guid iid = IID_IAccessible2;
 
