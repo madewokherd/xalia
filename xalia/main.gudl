@@ -678,6 +678,33 @@ filler ((child_count == 2 or child_count == 3) and
     }
 }
 
+if (uia_adjust_scroll_container and framework_id == "Win32" and
+    child_matches(scroll_bar and (automation_id == "NonClientVerticalScrollBar" or automation_id == "NonClientHorizontalScrollBar")))
+{
+    // UI Automation does a poor job of exposing these. We want to use adjust_scrollbars which will use Win32 directly.
+    scrollable: true;
+    no_scrollable_fallback: true;
+
+    hscroll: child_matches(scroll_bar and automation_id == "NonClientHorizontalScrollBar");
+    vscroll: child_matches(scroll_bar and automation_id == "NonClientVerticalScrollBar");
+
+    scroll_view_action: adjust_scrollbars(hscroll, vscroll);
+
+    if (interactable) {
+        scroll_target_margin: 0;
+
+        scroll_pane_x: x;
+        scroll_pane_y: y;
+        scroll_pane_width: width;
+        scroll_pane_height: height;
+
+        scroll_view_x: x;
+        scroll_view_y: y;
+        scroll_view_width: width - (vscroll.width or 0);
+        scroll_view_height: height - (hscroll.height or 0);
+    }
+}
+
 if (uia_adjust_scroll_container) {
     scrollable: true;
     no_scrollable_fallback: true;

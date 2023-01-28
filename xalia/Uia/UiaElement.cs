@@ -75,9 +75,10 @@ namespace Xalia.Uia
         Dictionary<PropertyId, bool> polling_property = new Dictionary<PropertyId, bool>(0);
         Dictionary<PropertyId, CancellationTokenSource> property_poll_token = new Dictionary<PropertyId, CancellationTokenSource>(0);
 
+        private double offset_remainder;
+
         string application_name, application_version, toolkit_name, toolkit_version;
         bool fetching_application_name, fetching_application_version, fetching_toolkit_name, fetching_toolkit_version;
-
         internal static readonly string[] control_type_names =
         {
             "unknown",
@@ -1322,12 +1323,65 @@ namespace Xalia.Uia
             }, ElementWrapper);
         }
 
+        private bool GetScrollInfoBackground(int flags, out IntPtr hwnd, out int which, out SCROLLINFO info)
+        {
+            hwnd = default;
+            which = default;
+            info = default;
+            if (ElementWrapper.Hwnd != IntPtr.Zero)
+            {
+                hwnd = ElementWrapper.Hwnd;
+                which = SB_CTL;
+            }
+            else if (Parent is UiaElement pue && pue.ElementWrapper.Hwnd != IntPtr.Zero)
+            {
+                hwnd = pue.ElementWrapper.Hwnd;
+                string automation_id;
+                try
+                {
+                    automation_id = ElementWrapper.AutomationElement.AutomationId;
+                }
+                catch (Exception e)
+                {
+                    if (!IsExpectedException(e))
+                        throw;
+                    return false;
+                }
+                switch (automation_id)
+                {
+                    case "NonClientHorizontalScrollBar":
+                        which = SB_HORZ;
+                        break;
+                    case "NonClientVerticalScrollBar":
+                        which = SB_VERT;
+                        break;
+                    default:
+                        return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+
+            info.cbSize = Marshal.SizeOf<SCROLLINFO>();
+            info.fMask = flags;
+            return GetScrollInfo(hwnd, which, ref info);
+        }
+
         public override async Task<double> GetMinimumIncrement()
         {
             try
             {
                 var result = await Root.CommandThread.OnBackgroundThread(() =>
                 {
+                    // Try Win32 first
+
+                    if (GetScrollInfoBackground(SIF_PAGE, out var unused, out var unused2, out var info))
+                    {
+                        return Math.Max(1.0, info.nPage / 10.0);
+                    }
+
                     var range = ElementWrapper.AutomationElement.Patterns.RangeValue.Pattern;
                     return Math.Max(range.SmallChange, range.LargeChange / 10);
                 }, ElementWrapper.Pid);
@@ -1348,6 +1402,65 @@ namespace Xalia.Uia
             {
                 await Root.CommandThread.OnBackgroundThread(() =>
                 {
+                    // Try Win32 first
+                    if (GetScrollInfoBackground(SIF_POS|SIF_PAGE|SIF_RANGE, out var hwnd, out var which, out var info))
+                    {
+                        var scroll_current = info.nPos;
+
+                        var scroll_new = scroll_current + ofs + offset_remainder;
+
+                        int max;
+                        if (info.nPage == 0)
+                            max = info.nMax;
+                        else
+                            max = info.nMax - info.nPage + 1;
+
+                        if (scroll_new > max)
+                            scroll_new = max;
+                        else if (scroll_new < info.nMin)
+                            scroll_new = info.nMin;
+
+                        int scroll_new_int = (int)Math.Round(scroll_new);
+
+                        if (scroll_new_int != scroll_current)
+                        {
+                            info.fMask = SIF_POS;
+                            info.nPos = scroll_new_int;
+                            SetScrollInfo(hwnd, which, ref info, true);
+
+                            // We have to also send a WM_HSCROLL or WM_VSCROLL for the app to notice
+                            int msg;
+                            IntPtr ctrl_hwnd, msg_hwnd;
+                            switch (which)
+                            {
+                                case SB_CTL:
+                                    msg = ((int)GetWindowLong(hwnd, GWL_STYLE) & SBS_VERT) == SBS_VERT ? WM_VSCROLL : WM_HSCROLL;
+                                    ctrl_hwnd = hwnd;
+                                    msg_hwnd = GetAncestor(ctrl_hwnd, GA_PARENT);
+                                    break;
+                                case SB_HORZ:
+                                    msg = WM_HSCROLL;
+                                    ctrl_hwnd = IntPtr.Zero;
+                                    msg_hwnd = hwnd;
+                                    break;
+                                case SB_VERT:
+                                    msg = WM_VSCROLL;
+                                    ctrl_hwnd = IntPtr.Zero;
+                                    msg_hwnd = hwnd;
+                                    break;
+                                default:
+                                    throw new InvalidOperationException();
+                            }
+
+                            SendMessageW(msg_hwnd, msg, MAKEWPARAM(SB_THUMBTRACK, (ushort)scroll_new_int), ctrl_hwnd);
+                            SendMessageW(msg_hwnd, msg, MAKEWPARAM(SB_THUMBPOSITION, (ushort)scroll_new_int), ctrl_hwnd);
+                            SendMessageW(msg_hwnd, msg, MAKEWPARAM(SB_ENDSCROLL, 0), ctrl_hwnd);
+                        }
+
+                        offset_remainder = scroll_new - scroll_new_int;
+                        return;
+                    }
+
                     var range = ElementWrapper.AutomationElement.Patterns.RangeValue.Pattern;
 
                     var current_value = range.Value;

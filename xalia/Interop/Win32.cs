@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -459,6 +460,64 @@ namespace Xalia.Interop
             x = (int)Math.Round((double)(x - GetSystemMetrics(SM_XVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CXVIRTUALSCREEN));
             y = (int)Math.Round((double)(y - GetSystemMetrics(SM_YVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CYVIRTUALSCREEN));
         }
+
+        public const int WM_HSCROLL = 0x114;
+        public const int WM_VSCROLL = 0x115;
+
+        public const int SB_LINEUP = 0;
+        public const int SB_LINELEFT = 0;
+        public const int SB_LINEDOWN = 1;
+        public const int SB_LINERIGHT = 1;
+        public const int SB_PAGEUP = 2;
+        public const int SB_PAGELEFT = 2;
+        public const int SB_PAGEDOWN = 3;
+        public const int SB_PAGERIGHT = 3;
+        public const int SB_THUMBPOSITION = 4;
+        public const int SB_THUMBTRACK = 5;
+        public const int SB_TOP = 6;
+        public const int SB_LEFT = 6;
+        public const int SB_BOTTOM = 7;
+        public const int SB_RIGHT = 7;
+        public const int SB_ENDSCROLL = 8;
+
+        public const int SBS_VERT = 0x1;
+
+        public static IntPtr MAKEWPARAM(ushort low, ushort high)
+        {
+            return new IntPtr((high << 16) | low);
+        }
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public extern static IntPtr SendMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+        public const int SIF_RANGE = 0x1;
+        public const int SIF_PAGE = 0x2;
+        public const int SIF_POS = 0x4;
+        public const int SIF_DISABLENOSCROLL = 0x8;
+        public const int SIF_TRACKPOS = 0x10;
+        public const int SIF_ALL = SIF_RANGE|SIF_PAGE|SIF_POS|SIF_TRACKPOS;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SCROLLINFO
+        {
+            public int cbSize;
+            public int fMask;
+            public int nMin;
+            public int nMax;
+            public int nPage;
+            public int nPos;
+            public int nTrackPos;
+        }
+
+        public const int SB_HORZ = 0;
+        public const int SB_VERT = 1;
+        public const int SB_CTL = 2;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public extern static bool GetScrollInfo(IntPtr hwnd, int nBar, ref SCROLLINFO si);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public extern static int SetScrollInfo(IntPtr hwnd, int nBar, ref SCROLLINFO lpsi, bool redraw);
 
         [ComImport, Guid("4ce576fa-83dc-4F88-951c-9d0782b4e376")]
         public class UIHostNoLaunch
