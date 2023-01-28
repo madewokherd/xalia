@@ -177,6 +177,10 @@ if (class_name == "TermControl") {
     }
 }
 
+if ((class_name == "DRAG_BAR_WINDOW_CLASS" or automation_id == "TitleBar") and win32_process_name == "WindowsTerminal") {
+    interactable: false;
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
