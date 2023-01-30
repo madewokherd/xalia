@@ -308,6 +308,8 @@ namespace Xalia.UiDom
                     return new UiDomMethod("map_directions", UiDomMapDirections.ApplyFn);
                 case "adjust_scrollbars":
                     return new UiDomMethod("adjust_scrollbars", AdjustScrollbarsMethod);
+                case "radial_deadzone":
+                    return new UiDomMethod("radial_deadzone", UiDomRadialDeadzone.ApplyFn);
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))

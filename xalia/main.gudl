@@ -4,12 +4,38 @@
 root {
     repeat_initial_delay: 500;
     repeat_delay: 100;
+    deadzone: 0.2;
 
-    action_on_left_stick: repeat_action(menu_move_action or list_move_action or adjust_current_view_action or target_move, repeat_initial_delay, repeat_delay);
-    action_on_dpad_left: repeat_action(menu_left_action or list_left_action or adjust_current_view_left_action or target_move_left, repeat_initial_delay, repeat_delay);
-    action_on_dpad_down: repeat_action(menu_down_action or list_down_action or adjust_current_view_down_action or target_move_down, repeat_initial_delay, repeat_delay);
-    action_on_dpad_up: repeat_action(menu_up_action or list_up_action or adjust_current_view_up_action or target_move_up, repeat_initial_delay, repeat_delay);
-    action_on_dpad_right: repeat_action(menu_right_action or list_right_action or adjust_current_view_right_action or target_move_right, repeat_initial_delay, repeat_delay);
+    action_on_left_stick: repeat_action(
+        menu_move_action or
+        list_move_action or
+        radial_deadzone(adjust_current_view_action, deadzone) or
+        target_move,
+        repeat_initial_delay, repeat_delay);
+    action_on_dpad_left: repeat_action(
+        menu_left_action or
+        list_left_action or
+        adjust_current_view_left_action or
+        target_move_left,
+        repeat_initial_delay, repeat_delay);
+    action_on_dpad_down: repeat_action(
+        menu_down_action or
+        list_down_action or
+        adjust_current_view_down_action or
+        target_move_down,
+        repeat_initial_delay, repeat_delay);
+    action_on_dpad_up: repeat_action(
+        menu_up_action or
+        list_up_action or
+        adjust_current_view_up_action or
+        target_move_up,
+        repeat_initial_delay, repeat_delay);
+    action_on_dpad_right: repeat_action(
+        menu_right_action or
+        list_right_action or
+        adjust_current_view_right_action or
+        target_move_right,
+        repeat_initial_delay, repeat_delay);
     action_on_A: menu_select_action or
         list_primary_action or
         (target_primary_action + exit_panel_action) or
@@ -32,12 +58,14 @@ root {
         confirm_action or
         (targeted_element and send_key.enter);
     action_on_back: (not disable_interactions and toggle_panel_action);
-    action_on_right_stick: target_scroll_view_action or
+    action_on_right_stick: radial_deadzone(
+        target_scroll_view_action or
         target_adjust_value_action or
         scroll_current_view_action or
         scroll_targeted_view_action or
         adjust_current_view_action or
-        targeted_element.send_scroll;
+        targeted_element.send_scroll,
+        deadzone);
     action_on_LB: tab_left_action;
     action_on_RB: tab_right_action;
 }

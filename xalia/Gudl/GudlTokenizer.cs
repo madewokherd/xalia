@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using Superpower;
+using Superpower.Model;
 using Superpower.Parsers;
 using Superpower.Tokenizers;
 
@@ -51,6 +53,12 @@ namespace Xalia.Gudl
             from close in Character.EqualTo('"')
             select new string(content);
 
+        public static TextParser<double> GudlDouble =
+            from whole in Numerics.Integer
+            from dot in Character.EqualTo('.')
+            from dec in Numerics.Integer.OptionalOrDefault(TextSpan.Empty)
+            select double.Parse($"{whole}.{dec}");
+
         public static Tokenizer<GudlToken> Instance =
             new TokenizerBuilder<GudlToken>()
                 .Ignore(Span.WhiteSpace)
@@ -82,8 +90,8 @@ namespace Xalia.Gudl
                 .Match(Span.EqualTo("or"), GudlToken.Or, requireDelimiters: true)
                 .Match(Identifier.CStyle, GudlToken.Identifier, requireDelimiters: true)
                 .Match(GudlString, GudlToken.String, requireDelimiters: true)
+                .Match(GudlDouble, GudlToken.Double, requireDelimiters: true)
                 .Match(Numerics.IntegerInt32, GudlToken.Integer, requireDelimiters: true)
-                .Match(Numerics.DecimalDouble, GudlToken.Double, requireDelimiters: true)
                 .Build();
     }
 }
