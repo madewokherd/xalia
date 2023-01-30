@@ -162,13 +162,31 @@ if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_
 }
 
 if (framework_id == "Gecko") {
-    if (uia_control_type == undefined and visible and enabled) {
-        recurse: true;
+    if (uia_control_type == undefined) {
+        poll_uia_offscreen: true;
+        if (interactable) {
+            recurse: true;
+            poll_children: true;
+            targetable: false;
+        }
     }
 
     if (combo_box and parent.(tool_bar and automation_id == "nav-bar")) {
         // Navigation box shows up as combo box but expand does nothing
         primary_action: send_click + show_keyboard;
+    }
+
+    if (button and parent.(tool_bar and automation_id == "TabsToolbar")) {
+        // This is actually in the title bar, so ignore the close button
+        cancel_action: undefined;
+    }
+
+    page_tab {
+        primary_action: msaa_do_default_action;
+    }
+
+    if (control_type.list_item and interactable) {
+        recurse: true;
     }
 }
 
@@ -884,7 +902,7 @@ if (interactable) {
         primary_action_name: "Select";
 
         if (child_matches(text_box)) {
-            secondary_action: child_matches(text_box).set_focus+show_keyboard;
+            secondary_action: child_matches(text_box).(focusable and set_focus or send_click)+show_keyboard;
             secondary_action_name: "Show Keyboard";
         }
 
@@ -925,7 +943,7 @@ if (interactable) {
     spin_button {
         targetable: true;
 
-        primary_action: set_focus+show_keyboard;
+        primary_action: (focusable and set_focus or send_click)+show_keyboard;
 
         adjust_value_action: adjust_scrollbars(this, undefined);
 
@@ -990,7 +1008,7 @@ if (interactable) {
 			// set_focus doesn't seem to work for Qt web views
 			primary_action: send_click+show_keyboard;
 		}
-		primary_action: set_focus+show_keyboard;
+		primary_action: (focusable and set_focus or send_click)+show_keyboard;
 		primary_action_name: "Show Keyboard";
     }
 
@@ -1031,7 +1049,7 @@ if (interactable) {
         confirm_action_name: name;
     }
 
-    button (name == "Cancel" or name == "Close" or name == "No")
+    button (name == "Cancel" or (name == "Close" and not parent.title_bar) or name == "No")
     {
         cancel_action: primary_action or send_click;
         cancel_action_name: name;
