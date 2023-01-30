@@ -717,7 +717,9 @@ namespace Xalia.Uia
                 switch (com.ErrorCode)
                 {
                     case unchecked((int)0x80004005): // E_FAIL
+                    case unchecked((int)0x80010108): // RPC_E_DISCONNECTED
                     case unchecked((int)0x80040201): // EVENT_E_ALL_SUBSCRIBERS_FAILED
+                    case unchecked((int)0x800706BA): // RPC_E_SERVER_UNAVAILABLE
                     case unchecked((int)0x80131505): // UIA_E_TIMEOUT
                         return true;
                 }
