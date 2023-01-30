@@ -706,17 +706,32 @@ filler ((child_count == 2 or child_count == 3) and
     }
 }
 
+scroll_bar (automation_id == "NonClientVerticalScrollBar" or automation_id == "NonClientHorizontalScrollBar" or
+    class_name == "ScrollBar") {
+    // standard win32 scrollbars seem to work best by invoking the thumb buttons, so we need to see the buttons
+    recurse: true;
+    stop_interactable: true;
+
+    if (child_matches(automation_id == "UpButton") and child_matches(automation_id == "DownButton")) {
+        is_win32_scroll_bar: true;
+        up_action: child_matches(automation_id == "UpButton").uia_invoke;
+        down_action: child_matches(automation_id == "DownButton").uia_invoke;
+    }
+}
+
 if (uia_adjust_scroll_container and framework_id == "Win32" and
-    child_matches(scroll_bar and (automation_id == "NonClientVerticalScrollBar" or automation_id == "NonClientHorizontalScrollBar")))
+    child_matches(is_win32_scroll_bar and (automation_id == "NonClientVerticalScrollBar" or automation_id == "NonClientHorizontalScrollBar")))
 {
-    // UI Automation does a poor job of exposing these. We want to use adjust_scrollbars which will use Win32 directly.
+    // UI Automation does a poor job with standard scrollbars, use Win32 thumb buttons instead.
     scrollable: true;
     no_scrollable_fallback: true;
 
     hscroll: child_matches(scroll_bar and automation_id == "NonClientHorizontalScrollBar");
     vscroll: child_matches(scroll_bar and automation_id == "NonClientVerticalScrollBar");
 
-    scroll_view_action: adjust_scrollbars(hscroll, vscroll);
+    scroll_view_action: repeat_action(
+        map_directions(hscroll.up_action, vscroll.down_action, vscroll.up_action, hscroll.down_action),
+        100);
 
     if (interactable) {
         scroll_target_margin: 0;

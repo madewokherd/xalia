@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Resources;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Navigation;
@@ -21,6 +22,8 @@ namespace Xalia.UiDom
         public UiDomValue Context { get; }
         public UiDomRoot Root { get; }
         public GudlExpression[] ActionExpressions { get; }
+
+        const int pixel_activation_threshold = 120;
 
         internal static UiDomValue ApplyFn(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
@@ -67,6 +70,7 @@ namespace Xalia.UiDom
         {
             ExpressionWatcher[] watchers = new ExpressionWatcher[4];
             InputQueue[] inner_queues = new InputQueue[4];
+            int delta_x_remainder = 0, delta_y_remainder = 0;
 
             try
             {
@@ -108,6 +112,38 @@ namespace Xalia.UiDom
                                     current_intensities = new_intensities;
                                     break;
                                 }
+                            case InputStateKind.PixelDelta:
+                                delta_x_remainder += state.XAxis;
+                                delta_y_remainder += state.YAxis;
+
+                                while (delta_x_remainder <= -pixel_activation_threshold)
+                                {
+                                    delta_x_remainder += pixel_activation_threshold;
+                                    if (!(inner_queues[0] is null))
+                                        inner_queues[0].Enqueue(new InputState(InputStateKind.Pulse));
+                                }
+
+                                while (delta_y_remainder >= pixel_activation_threshold)
+                                {
+                                    delta_y_remainder -= pixel_activation_threshold;
+                                    if (!(inner_queues[1] is null))
+                                        inner_queues[1].Enqueue(new InputState(InputStateKind.Pulse));
+                                }
+
+                                while (delta_y_remainder <= -pixel_activation_threshold)
+                                {
+                                    delta_y_remainder += pixel_activation_threshold;
+                                    if (!(inner_queues[2] is null))
+                                        inner_queues[2].Enqueue(new InputState(InputStateKind.Pulse));
+                                }
+
+                                while (delta_x_remainder >= pixel_activation_threshold)
+                                {
+                                    delta_x_remainder -= pixel_activation_threshold;
+                                    if (!(inner_queues[3] is null))
+                                        inner_queues[3].Enqueue(new InputState(InputStateKind.Pulse));
+                                }
+                                break;
                             case InputStateKind.Repeat:
                             case InputStateKind.Pulse:
                                 {
