@@ -708,7 +708,7 @@ namespace Xalia.Uia
             Console.WriteLine("WARNING: Exception:");
             Console.WriteLine(e);
 #endif
-            if (e is PatternNotSupportedException)
+            if (e is FlaUI.Core.Exceptions.NotSupportedException)
             {
                 return true;
             }

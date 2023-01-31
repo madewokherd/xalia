@@ -163,12 +163,17 @@ if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_
 
 if (framework_id == "Gecko") {
     recurse: interactable; // multiple processes messes up our process queue system and web pages can be too many/variable
+    manual_buttons: true;
     if (uia_control_type == undefined) {
         poll_uia_offscreen: true;
         if (interactable) {
             poll_children: true;
             targetable: false;
         }
+    }
+
+    if (targetable) {
+        poll_uia_bounding_rectangle: true;
     }
 
     if (combo_box and parent.(tool_bar and automation_id == "nav-bar")) {
@@ -184,6 +189,17 @@ if (framework_id == "Gecko") {
     page_tab {
         primary_action: msaa_do_default_action;
     }
+}
+
+menu (class_name == "MozillaDropShadowWindowClass") {
+    in_menu_navigation: true;
+    menu_left_action: send_key.left;
+    menu_down_action: send_key.down;
+    menu_up_action: send_key.up;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc;
+    menu_close_action: send_key.esc;
 }
 
 // APPLICATION: GVIM
