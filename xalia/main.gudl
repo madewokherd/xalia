@@ -162,10 +162,10 @@ if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_
 }
 
 if (framework_id == "Gecko") {
+    recurse: interactable; // multiple processes messes up our process queue system and web pages can be too many/variable
     if (uia_control_type == undefined) {
         poll_uia_offscreen: true;
         if (interactable) {
-            recurse: true;
             poll_children: true;
             targetable: false;
         }
@@ -184,9 +184,23 @@ if (framework_id == "Gecko") {
     page_tab {
         primary_action: msaa_do_default_action;
     }
+}
 
-    if (control_type.list_item and interactable) {
-        recurse: true;
+// APPLICATION: GVIM
+
+if (win32_process_name == "gvim") {
+    scroll_bar (horizontal) {
+        adjust_value_action: adjust_scrollbars(this, undefined);
+    }
+    scroll_bar (vertical) {
+        adjust_value_action: adjust_scrollbars(undefined, this);
+    }
+    if (class_name == "Vim") {
+        scrollable: true;
+        scroll_view_action: adjust_scrollbars(
+            child_matches(scroll_bar and horizontal),
+            child_matches(scroll_bar and vertical)
+        );
     }
 }
 
@@ -751,16 +765,14 @@ scroll_bar (automation_id == "NonClientVerticalScrollBar" or automation_id == "N
 if (uia_adjust_scroll_container and framework_id == "Win32" and
     child_matches(is_win32_scroll_bar and (automation_id == "NonClientVerticalScrollBar" or automation_id == "NonClientHorizontalScrollBar")))
 {
-    // UI Automation does a poor job with standard scrollbars, use Win32 thumb buttons instead.
+    // UI Automation does a poor job with standard scrollbars, use scroll wheel instead.
     scrollable: true;
     no_scrollable_fallback: true;
 
     hscroll: child_matches(scroll_bar and automation_id == "NonClientHorizontalScrollBar");
     vscroll: child_matches(scroll_bar and automation_id == "NonClientVerticalScrollBar");
 
-    scroll_view_action: repeat_action(
-        map_directions(hscroll.up_action, vscroll.down_action, vscroll.up_action, hscroll.down_action),
-        100);
+    scroll_view_action: send_scroll;
 
     if (interactable) {
         scroll_target_margin: 0;
@@ -807,6 +819,9 @@ if (not no_scrollable_fallback and interactable and child_count != 0 and
     hscroll: child_matches(scroll_bar and interactable and horizontal and y + height - parent.(y + height) > -5);
     vscroll: child_matches(scroll_bar and interactable and vertical and x + width - parent.(x + width) > -5);
 
+    if (hscroll.is_win32_scroll_bar or vscroll.is_win32_scroll_bar) {
+        scroll_view_action: send_scroll;
+    }
     scroll_view_action: adjust_scrollbars(hscroll, vscroll);
 
     scroll_target_margin: 0;
@@ -920,6 +935,10 @@ if (interactable) {
         // Qt doesn't set these states
         vertical: height > width;
         horizontal: width > height;
+    }
+
+    scroll_bar (is_win32_scroll_bar) {
+        adjust_value_action: send_scroll;
     }
 
     if ((scroll_bar or slider or split_pane) and vertical) {
