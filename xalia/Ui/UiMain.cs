@@ -284,10 +284,12 @@ namespace Xalia.Ui
             while (!(element is null))
             {
                 result.Push(element);
+                if (element is UiDomRoot)
+                    return result;
                 element = element.Parent;
             }
 
-            return result;
+            return null;
         }
 
         private async Task SelectAnyTarget()
@@ -302,6 +304,11 @@ namespace Xalia.Ui
             UiDomElement best_element = null;
             foreach (var candidate_element in targetable_elements.Keys)
             {
+                Stack<UiDomElement> candidate_ancestors = GetAncestors(candidate_element);
+
+                if (candidate_ancestors is null)
+                    continue;
+
                 if (best_element is null)
                 {
                     best_element = candidate_element;
@@ -332,7 +339,6 @@ namespace Xalia.Ui
 
                 // Choose the first element in the tree, prefer children to ancestors
                 Stack<UiDomElement> best_ancestors = GetAncestors(best_element);
-                Stack<UiDomElement> candidate_ancestors = GetAncestors(candidate_element);
 
                 while (true)
                 {
