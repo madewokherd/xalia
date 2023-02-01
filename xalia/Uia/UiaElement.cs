@@ -712,6 +712,10 @@ namespace Xalia.Uia
             {
                 return true;
             }
+            if (e is InvalidOperationException)
+            {
+                return true;
+            }
             if (e is COMException com)
             {
                 switch (com.ErrorCode)
@@ -931,6 +935,8 @@ namespace Xalia.Uia
                 case "uia_is_keyboard_focusable":
                 case "uia_keyboard_focusable":
                     return GetProperty("uia_keyboard_focusable", Root.Automation.PropertyLibrary.Element.IsKeyboardFocusable, depends_on);
+                case "uia_has_keyboard_focus":
+                    return GetProperty("uia_has_keyboard_focus", Root.Automation.PropertyLibrary.Element.HasKeyboardFocus, depends_on);
                 case "uia_offscreen":
                 case "uia_is_offscreen":
                     return GetProperty("uia_offscreen", Root.Automation.PropertyLibrary.Element.IsOffscreen, depends_on);
@@ -1035,6 +1041,8 @@ namespace Xalia.Uia
                     return GetProperty("uia_framework_id", Root.Automation.PropertyLibrary.Element.FrameworkId, depends_on);
                 case "msaa_role":
                     return GetProperty("msaa_role", Root.Automation.PropertyLibrary.LegacyIAccessible.Role, depends_on);
+                case "aria_role":
+                    return GetProperty("aria_role", Root.Automation.PropertyLibrary.Element.AriaRole, depends_on);
                 case "uia_focused":
                     depends_on.Add((this, new IdentifierExpression("uia_focused")));
                     return UiDomBoolean.FromBool(ElementWrapper.Equals(Root.FocusedElement));

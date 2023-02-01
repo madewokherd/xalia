@@ -62,6 +62,7 @@ namespace Xalia.Uia
             RegisterPropertyMapping("uia_class_name", Automation.PropertyLibrary.Element.ClassName);
             RegisterPropertyMapping("uia_enabled", Automation.PropertyLibrary.Element.IsEnabled);
             RegisterPropertyMapping("uia_keyboard_focusable", Automation.PropertyLibrary.Element.IsKeyboardFocusable);
+            RegisterPropertyMapping("uia_has_keyboard_focus", Automation.PropertyLibrary.Element.HasKeyboardFocus);
             RegisterPropertyMapping("uia_bounding_rectangle", Automation.PropertyLibrary.Element.BoundingRectangle);
             RegisterPropertyMapping("uia_name", Automation.PropertyLibrary.Element.Name);
             RegisterPropertyMapping("uia_offscreen", Automation.PropertyLibrary.Element.IsOffscreen);
@@ -70,6 +71,7 @@ namespace Xalia.Uia
             RegisterPropertyMapping("uia_orientation", Automation.PropertyLibrary.Element.Orientation);
             RegisterPropertyMapping("uia_framework_id", Automation.PropertyLibrary.Element.FrameworkId);
             RegisterPropertyMapping("msaa_role", Automation.PropertyLibrary.LegacyIAccessible.Role);
+            RegisterPropertyMapping("aria_role", Automation.PropertyLibrary.Element.AriaRole);
 
             await CommandThread.OnBackgroundThread(() =>
             {

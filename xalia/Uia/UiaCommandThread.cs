@@ -137,13 +137,11 @@ namespace Xalia.Uia
                 {
                     return element.AutomationElement.FrameworkAutomationElement.GetPropertyValue(propid);
                 }
-                catch (COMException)
+                catch (Exception e)
                 {
-                    return null;
-                }
-                catch (PropertyNotSupportedException)
-                {
-                    return null;
+                    if (UiaElement.IsExpectedException(e))
+                        return null;
+                    throw;
                 }
             }, element);
         }
@@ -157,9 +155,11 @@ namespace Xalia.Uia
                 {
                     elements = element.AutomationElement.FindAllChildren();
                 }
-                catch (COMException)
+                catch (Exception e)
                 {
-                    return new UiaElementWrapper[0];
+                    if (UiaElement.IsExpectedException(e))
+                        return new UiaElementWrapper[0];
+                    throw;
                 }
 
                 var result = new UiaElementWrapper[elements.Length];

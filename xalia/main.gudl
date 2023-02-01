@@ -161,18 +161,43 @@ if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_
     firefox_use_offscreen_menu: true;
 }
 
-if (framework_id == "Gecko") {
-    recurse: interactable; // multiple processes messes up our process queue system and web pages can be too many/variable
+if (this_or_ancestor_matches(window).(framework_id == "Gecko")) {
+    recurse: interactable and not stop_interactable; // multiple processes messes up our process queue system and web pages can be too many/variable
     manual_buttons: true;
-    if (uia_control_type == undefined) {
-        poll_uia_offscreen: true;
-        if (interactable) {
-            poll_children: true;
-            targetable: false;
-        }
+
+    if (edit or text) {
+        stop_interactable: true;
     }
 
-    if (targetable) {
+    if (link or button or toggle_button) {
+        stop_interactable: true;
+        targetable: true;
+    }
+
+    edit (not (focusable or aria_role or name == "Search") and ancestor_matches(document)) {
+        // Seemingly all text blocks have the edit role
+        targetable: false;
+    }
+
+    if (ancestor_matches(interactable and document)) {
+        interactable: true;
+        poll_uia_offscreen: targetable or focusable;
+    }
+
+    if (focusable and not visible) {
+        stop_interactable: true;
+    }
+
+    if (uia_control_type == undefined) {
+        poll_uia_offscreen: true;
+        targetable: false;
+    }
+
+    if (recurse) {
+        poll_children: true;
+    }
+
+    if (targetable and visible) {
         poll_uia_bounding_rectangle: true;
     }
 
@@ -188,6 +213,10 @@ if (framework_id == "Gecko") {
 
     page_tab {
         primary_action: msaa_do_default_action;
+    }
+
+    text {
+        targetable: false;
     }
 }
 
@@ -427,9 +456,9 @@ root (uia_menu_mode or uia_in_menu or
 }
 
 // Combo boxes contain subcontrols we don't want to directly navigate to
-if (parent.combo_box and not uia_expand_collapse_state.leaf_node)
+if (combo_box and not uia_expand_collapse_state.leaf_node)
 {
-    interactable: false;
+    stop_interactable: false;
 }
 
 // We have a separate mechanism for interacting with menus
