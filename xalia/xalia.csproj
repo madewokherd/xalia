@@ -90,6 +90,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AtSpi\AtSpiActionList.cs" />
+    <Compile Include="Uia\Win32\Win32Element.cs" />
+    <Compile Include="Uia\Win32\Win32Trackbar.cs" />
     <Compile Include="UiDom\UiDomAdjustScrollbars.cs" />
     <Compile Include="AtSpi\AtSpiAttributes.cs" />
     <Compile Include="AtSpi\AtSpiConnection.cs" />

@@ -713,6 +713,10 @@ if (is_uia_element and parent.interactable and enabled and not parent.stop_inter
     interactable: true;
 }
 
+if (is_win32_element and parent.interactable and enabled and visible and not parent.stop_interactable) {
+    interactable: true;
+}
+
 // manual_buttons hack
 if (parent.manual_buttons) {
     manual_buttons: true;
@@ -734,6 +738,12 @@ if (parent.offset_target_x) {
 
 if (parent.offset_target_y) {
     offset_target_y: parent.offset_target_y;
+}
+
+// Special win32 controls
+if (class_name == "msctls_trackbar32" and interactable) {
+    win32_use_trackbar: true;
+    targetable: false;
 }
 
 // Scroll panes
@@ -924,7 +934,7 @@ if (targetable or is_current_view) {
         target_height: spi_abs_height;
     }
 
-    if (is_uia_element) {
+    if (is_uia_element or is_win32_element) {
         target_x: x + (offset_target_x or 0);
         target_y: y + (offset_target_y or 0);
         target_width: width;
@@ -976,7 +986,7 @@ if (interactable) {
         }
     }
 
-    if ((scroll_bar or slider) and not (spi_state.(vertical or horizontal) or uia_orientation)) {
+    if ((scroll_bar or slider) and not (is_win32_element or spi_state.(vertical or horizontal) or uia_orientation)) {
         // Qt doesn't set these states
         vertical: height > width;
         horizontal: width > height;

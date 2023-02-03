@@ -91,27 +91,36 @@ namespace Xalia.Uia
             }
 
             return await Element.Root.CommandThread.OnBackgroundThread(() => {
-                var scroll = Element.ElementWrapper.AutomationElement.Patterns.Scroll.Pattern;
-
-                double xpercent = scroll.HorizontalScrollPercent;
-                if (xpercent != -1) // UIA_ScrollPatternNoScroll
+                try
                 {
-                    xpercent += xadjustment / scroll.HorizontalViewSize * 100;
-                    xpercent = Math.Min(Math.Max(xpercent, 0), 100);
-                }
+                    var scroll = Element.ElementWrapper.AutomationElement.Patterns.Scroll.Pattern;
 
-                double ypercent = scroll.VerticalScrollPercent;
-                if (ypercent != -1) // UIA_ScrollPatternNoScroll
+                    double xpercent = scroll.HorizontalScrollPercent;
+                    if (xpercent != -1) // UIA_ScrollPatternNoScroll
+                    {
+                        xpercent += xadjustment / scroll.HorizontalViewSize * 100;
+                        xpercent = Math.Min(Math.Max(xpercent, 0), 100);
+                    }
+
+                    double ypercent = scroll.VerticalScrollPercent;
+                    if (ypercent != -1) // UIA_ScrollPatternNoScroll
+                    {
+                        ypercent += yadjustment / scroll.VerticalViewSize * 100;
+                        ypercent = Math.Min(Math.Max(ypercent, 0), 100);
+                    }
+
+                    scroll.SetScrollPercent(xpercent, ypercent);
+
+                    return (
+                        xpercent == -1 ? 0 : xremainder,
+                        ypercent == -1 ? 0 : yremainder);
+                }
+                catch (Exception e)
                 {
-                    ypercent += yadjustment / scroll.VerticalViewSize * 100;
-                    ypercent = Math.Min(Math.Max(ypercent, 0), 100);
+                    if (!UiaElement.IsExpectedException(e))
+                        throw;
+                    return (0, 0);
                 }
-
-                scroll.SetScrollPercent(xpercent, ypercent);
-
-                return (
-                    xpercent == -1 ? 0 : xremainder,
-                    ypercent == -1 ? 0 : yremainder);
             }, Element.ElementWrapper.Pid);
         }
     }

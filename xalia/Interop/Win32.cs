@@ -53,6 +53,7 @@ namespace Xalia.Interop
         public const int GWL_EXSTYLE = -20;
 
         public const int WS_VISIBLE = 0x10000000;
+        public const int WS_DISABLED = -0x80000000;
 
         public const int WS_EX_NOACTIVATE = 0x08000000;
         public const int WS_EX_TOPMOST = 0x00000008;
@@ -62,6 +63,9 @@ namespace Xalia.Interop
         public const uint SWP_NOACTIVATE = 0x0010;
         public const uint SWP_NOSIZE = 0x0001;
         public const uint SWP_NOMOVE = 0x0002;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern bool SetForegroundWindow(IntPtr hwnd);
@@ -463,6 +467,7 @@ namespace Xalia.Interop
 
         public const int WM_HSCROLL = 0x114;
         public const int WM_VSCROLL = 0x115;
+        public const int WM_USER = 0x400;
 
         public const int SB_LINEUP = 0;
         public const int SB_LINELEFT = 0;
@@ -489,6 +494,44 @@ namespace Xalia.Interop
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr SendMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        public delegate void SendAsyncProc(IntPtr hwnd, int msg, IntPtr userdata, IntPtr lresult);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public extern static bool SendMessageCallbackW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam, SendAsyncProc lpResultCallBack, IntPtr dwData);
+
+        private class SendMessageAsyncCallback
+        {
+            public SendMessageAsyncCallback()
+            {
+                source = new TaskCompletionSource<IntPtr>();
+                gchandle = (IntPtr)GCHandle.Alloc(this);
+            }
+
+            public TaskCompletionSource<IntPtr> source;
+            public IntPtr gchandle;
+
+            public static void callback(IntPtr hwnd, int msg, IntPtr userdata, IntPtr lresult)
+            {
+                var handle = GCHandle.FromIntPtr(userdata);
+
+                var instance = (SendMessageAsyncCallback)handle.Target;
+
+                instance.source.SetResult(lresult);
+
+                handle.Free();
+            }
+
+            public static SendAsyncProc callback_fn = new SendAsyncProc(callback);
+        }
+
+        public static Task<IntPtr> SendMessageAsync(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam)
+        {
+            var callback = new SendMessageAsyncCallback();
+            SendMessageCallbackW(hwnd, msg, wparam, lparam, SendMessageAsyncCallback.callback_fn, callback.gchandle);
+            return callback.source.Task;
+        }
 
         public const int SIF_RANGE = 0x1;
         public const int SIF_PAGE = 0x2;
@@ -542,6 +585,20 @@ namespace Xalia.Interop
 
             return info.info.win.window;
         }
+
+        // Trackbar
+        public const int TBS_VERT = 0x00000002;
+
+        public const int TBM_GETPOS = WM_USER;
+        public const int TBM_GETRANGEMIN = WM_USER + 1;
+        public const int TBM_GETRANGEMAX = WM_USER + 2;
+        public const int TBM_SETPOS = WM_USER + 5;
+        public const int TBM_GETLINESIZE = WM_USER + 23;
+        public const int TBM_SETPOSNOTIFY = WM_USER + 34;
+
+        public const int TB_THUMBPOSITION = 4;
+        public const int TB_THUMBTRACK = 5;
+        public const int TB_ENDTRACK = 8;
     }
 }
 #endif

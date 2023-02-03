@@ -407,6 +407,10 @@ namespace Xalia.Uia
                 {
                     return UiaElementWrapper.InvalidElement;
                 }
+                catch (ArgumentException)
+                {
+                    return UiaElementWrapper.InvalidElement;
+                }
                 catch (ElementNotAvailableException)
                 {
                     return UiaElementWrapper.InvalidElement;

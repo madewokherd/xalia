@@ -15,6 +15,7 @@ using FlaUI.Core.Exceptions;
 using FlaUI.Core.Identifiers;
 using FlaUI.Core.WindowsAPI;
 using Xalia.Gudl;
+using Xalia.Uia.Win32;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
 using INPUT = Xalia.Interop.Win32.INPUT;
@@ -328,7 +329,7 @@ namespace Xalia.Uia
             }
 
             // Remove any remaining missing children
-            while (i < Children.Count)
+            while (i < Children.Count && Children[i] is UiaElement)
                 RemoveChild(i);
 
             // Add any new children
@@ -387,6 +388,26 @@ namespace Xalia.Uia
             Utils.RunTask(RefreshChildren());
         }
 
+        internal void UnwatchChildren()
+        {
+            if (!watching_children)
+                return;
+#if DEBUG
+            Console.WriteLine("UnwatchChildren for {0}", DebugId);
+#endif
+            watching_children = false;
+            if (children_poll_token != null)
+            {
+                children_poll_token.Cancel();
+                children_poll_token = null;
+            }
+            for (int i=Children.Count; i>=0; i--)
+            {
+                if (Children[i] is UiaElement)
+                    RemoveChild(i);
+            }
+        }
+
         private async Task PollProperty(string name, PropertyId propid)
         {
             if (!polling_property.TryGetValue(propid, out bool polling) || !polling)
@@ -438,6 +459,51 @@ namespace Xalia.Uia
         {
             if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.ToBool())
                 WatchChildren();
+            else
+                UnwatchChildren();
+
+            if (ElementWrapper.Hwnd != IntPtr.Zero)
+            {
+                int win32_element = -1, win32_trackbar = -1;
+
+                for (int i = 0; i < Children.Count; i++)
+                {
+                    if (Children[i] is Win32Trackbar)
+                        win32_trackbar = i;
+                    else if (Children[i] is Win32Element)
+                        win32_element = i;
+                }
+
+                if (all_declarations.TryGetValue("win32_use_element", out var use_element) && use_element.ToBool())
+                {
+                    if (win32_element == -1)
+                    {
+                        AddChild(Children.Count, new Win32Element(ElementWrapper.Hwnd, Root));
+                    }
+                }
+                else
+                {
+                    if (win32_element != -1)
+                    {
+                        RemoveChild(win32_element);
+                    }
+                }
+
+                if (all_declarations.TryGetValue("win32_use_trackbar", out var use_trackbar) && use_trackbar.ToBool())
+                {
+                    if (win32_trackbar == -1)
+                    {
+                        AddChild(Children.Count, new Win32Trackbar(ElementWrapper.Hwnd, Root));
+                    }
+                }
+                else
+                {
+                    if (win32_trackbar != -1)
+                    {
+                        RemoveChild(win32_trackbar);
+                    }
+                }
+            }
 
             if (all_declarations.TryGetValue("poll_children", out var poll_children) && poll_children.ToBool())
             {
@@ -1153,8 +1219,8 @@ namespace Xalia.Uia
                     {
                         if (ProcessName is null)
                         {
-                            var process = Process.GetProcessById(ElementWrapper.Pid);
-                            ProcessName = process.ProcessName;
+                            using (var process = Process.GetProcessById(ElementWrapper.Pid))
+                                ProcessName = process.ProcessName;
                         }
                         return new UiDomString(ProcessName);
                     }

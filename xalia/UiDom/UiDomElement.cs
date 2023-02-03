@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 
@@ -35,6 +36,9 @@ namespace Xalia.UiDom
         private Dictionary<GudlExpression, UiDomRelationshipWatcher> _relationshipWatchers = new Dictionary<GudlExpression, UiDomRelationshipWatcher>();
         private bool disposing;
 
+        private Dictionary<GudlExpression, bool> polling_properties = new Dictionary<GudlExpression, bool>();
+        private Dictionary<GudlExpression, CancellationTokenSource> polling_refresh_tokens = new Dictionary<GudlExpression, CancellationTokenSource>();
+
         protected virtual void SetAlive(bool value)
         {
             if (IsAlive != value)
@@ -58,6 +62,13 @@ namespace Xalia.UiDom
                         depNotifier.Dispose();
                     }
                     _dependencyPropertyChangeNotifiers.Clear();
+                    foreach (var token in polling_refresh_tokens)
+                    {
+                        if (!(token.Value is null))
+                            token.Value.Cancel(); 
+                    }
+                    polling_refresh_tokens.Clear();
+                    polling_properties.Clear();
                     _updatingRules = false;
                     while (Children.Count != 0)
                     {
@@ -645,6 +656,56 @@ namespace Xalia.UiDom
         public virtual Task OffsetValue(double ofs)
         {
             return Task.CompletedTask;
+        }
+
+        public void PollProperty(GudlExpression expression, Func<Task> refresh_function, int default_interval)
+        {
+            if (!polling_properties.TryGetValue(expression, out var polling) || !polling)
+            {
+                polling_properties[expression] = true;
+                Utils.RunTask(DoPollProperty(expression, refresh_function, default_interval));
+            }
+        }
+
+        private async Task DoPollProperty(GudlExpression expression, Func<Task> refresh_function, int default_interval)
+        {
+            if (!polling_properties.TryGetValue(expression, out bool polling) || !polling)
+                return;
+
+            await refresh_function();
+
+            if (!polling_properties.TryGetValue(expression, out polling) || !polling)
+                return;
+
+            var token = new CancellationTokenSource();
+
+            polling_refresh_tokens[expression] = token;
+
+            try
+            {
+                await Task.Delay(default_interval);
+            }
+            catch (TaskCanceledException)
+            {
+                polling_refresh_tokens[expression] = null;
+                return;
+            }
+
+            polling_refresh_tokens[expression] = null;
+            Utils.RunTask(DoPollProperty(expression, refresh_function, default_interval));
+        }
+
+        public void EndPollProperty(GudlExpression expression)
+        {
+            if (polling_properties.TryGetValue(expression, out var polling) && polling)
+            {
+                polling_properties[expression] = false;
+                if (polling_refresh_tokens.TryGetValue(expression, out var token) && !(token is null))
+                {
+                    token.Cancel();
+                    polling_refresh_tokens[expression] = null;
+                }
+            }
         }
     }
 }
