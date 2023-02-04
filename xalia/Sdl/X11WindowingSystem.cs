@@ -202,13 +202,5 @@ namespace Xalia.Sdl
             }
             return base.SendMouseButton(button, is_press);
         }
-
-        public override void CustomizeOverlayWindow(OverlayBox box, IntPtr sdl_window)
-        {
-            // For some reason, this reduces flickering on X11
-            box.HideWhenResizing = true;
-
-            base.CustomizeOverlayWindow(box, sdl_window);
-        }
     }
 }
