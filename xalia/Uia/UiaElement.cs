@@ -401,7 +401,7 @@ namespace Xalia.Uia
                 children_poll_token.Cancel();
                 children_poll_token = null;
             }
-            for (int i=Children.Count; i>=0; i--)
+            for (int i = Children.Count - 1; i >= 0; i--)
             {
                 if (Children[i] is UiaElement)
                     RemoveChild(i);
