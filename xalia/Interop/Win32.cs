@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Windows.Forms.VisualStyles;
 using Interop.UIAutomationClient;
 
 using static SDL2.SDL;
@@ -17,6 +17,45 @@ namespace Xalia.Interop
     {
         const string USER_LIB = "user32";
         const string OLEACC_LIB = "oleacc";
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate IntPtr WNDPROC(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct WNDCLASSEXW
+        {
+            public int cbSize;
+            public int style;
+            public WNDPROC lpfnWndProc;
+            public int cbClsExtra;
+            public int cbWndExtra;
+            public IntPtr hInstance;
+            public IntPtr hIcon;
+            public IntPtr hCursor;
+            public IntPtr hbrBackground;
+            public string lpszMenuName;
+            public string lpszClassName;
+            public IntPtr hIconSm;
+        }
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        public extern static IntPtr RegisterWindowClassExW([In]ref WNDCLASSEXW wndclassex);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode, SetLastError = true)]
+        public extern static IntPtr CreateWindowExW(int dwExStyle, IntPtr lpClassName, string lpWindowName,
+            int x, int y, int width, int height, int dwStyle,
+            IntPtr hwndParent, IntPtr hMenu, IntPtr hInstance, IntPtr lpParam);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        public static extern bool DestroyWindow(IntPtr hWnd);
+
+        public const int SW_HIDE = 0;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        public extern static IntPtr DefWindowProcW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
         public extern static IntPtr GetWindowLongPtrW(IntPtr hwnd, int index);
@@ -53,10 +92,13 @@ namespace Xalia.Interop
         public const int GWL_EXSTYLE = -20;
 
         public const int WS_VISIBLE = 0x10000000;
-        public const int WS_DISABLED = -0x80000000;
+        public const int WS_DISABLED = 0x08000000;
+        public const int WS_POPUP = -0x80000000;
 
-        public const int WS_EX_NOACTIVATE = 0x08000000;
         public const int WS_EX_TOPMOST = 0x00000008;
+        public const int WS_EX_CONTROLPARENT = 0x00010000;
+        public const int WS_EX_LAYERED = 0x00080000;
+        public const int WS_EX_NOACTIVATE = 0x08000000;
 
         public static readonly IntPtr HWND_TOPMOST = (IntPtr)(-1);
 
@@ -444,6 +486,11 @@ namespace Xalia.Interop
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int SendInput(int cInputs, INPUT[] pInputs, int cbSize);
+
+        public const int IDC_ARROW = 32512;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr LoadCursorW(IntPtr hInstance, IntPtr lpCursorName);
 
         public static bool WindowIsVisible(IntPtr hwnd)
         {
