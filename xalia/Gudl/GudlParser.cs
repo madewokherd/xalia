@@ -153,9 +153,10 @@ namespace Xalia.Gudl
 
         public static TokenListParser<GudlToken, GudlDeclaration> DeclarationStatement =
             from name in NameExpression.Named("declaration")
-            from expr in Token.EqualTo(GudlToken.Colon).Message("expected ':', '(', or '{'").IgnoreThen(Expression)
+            from colon in Token.EqualTo(GudlToken.Colon).Message("expected ':', '(', or '{'")
+            from expr in Expression
             from _ in Token.EqualTo(GudlToken.Semicolon)
-            select new GudlDeclaration(name, expr);
+            select new GudlDeclaration(name, expr, colon.Position);
 
         public static TokenListParser<GudlToken, GudlStatement[]> DeclarationBlock =
             (from start in Token.EqualTo(GudlToken.LBrace)

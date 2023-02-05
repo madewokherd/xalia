@@ -371,9 +371,8 @@ namespace Xalia.Uia
 
         internal void OnChildrenChanged(StructureChangeType arg2, int[] arg3)
         {
-#if DEBUG
-            Console.WriteLine("OnChildrenChanged for {0}", DebugId);
-#endif
+            if (MatchesDebugCondition())
+                Console.WriteLine("OnChildrenChanged for {0}", DebugId);
             UpdateChildren();
         }
 
@@ -381,9 +380,8 @@ namespace Xalia.Uia
         {
             if (watching_children)
                 return;
-#if DEBUG
-            Console.WriteLine("WatchChildren for {0}", DebugId);
-#endif
+            if (MatchesDebugCondition())
+                Console.WriteLine("WatchChildren for {0}", DebugId);
             watching_children = true;
             Utils.RunTask(RefreshChildren());
         }
@@ -392,9 +390,8 @@ namespace Xalia.Uia
         {
             if (!watching_children)
                 return;
-#if DEBUG
-            Console.WriteLine("UnwatchChildren for {0}", DebugId);
-#endif
+            if (MatchesDebugCondition())
+                Console.WriteLine("UnwatchChildren for {0}", DebugId);
             watching_children = false;
             if (children_poll_token != null)
             {
@@ -455,9 +452,9 @@ namespace Xalia.Uia
             Utils.RunIdle(PollChildren()); // Unsure if RunTask would accumulate stack frames forever
         }
 
-        protected override void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
+        protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
-            if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.ToBool())
+            if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.Item2.ToBool())
                 WatchChildren();
             else
                 UnwatchChildren();
@@ -474,7 +471,7 @@ namespace Xalia.Uia
                         win32_element = i;
                 }
 
-                if (all_declarations.TryGetValue("win32_use_element", out var use_element) && use_element.ToBool())
+                if (all_declarations.TryGetValue("win32_use_element", out var use_element) && use_element.Item2.ToBool())
                 {
                     if (win32_element == -1)
                     {
@@ -489,7 +486,7 @@ namespace Xalia.Uia
                     }
                 }
 
-                if (all_declarations.TryGetValue("win32_use_trackbar", out var use_trackbar) && use_trackbar.ToBool())
+                if (all_declarations.TryGetValue("win32_use_trackbar", out var use_trackbar) && use_trackbar.Item2.ToBool())
                 {
                     if (win32_trackbar == -1)
                     {
@@ -505,7 +502,7 @@ namespace Xalia.Uia
                 }
             }
 
-            if (all_declarations.TryGetValue("poll_children", out var poll_children) && poll_children.ToBool())
+            if (watching_children && all_declarations.TryGetValue("poll_children", out var poll_children) && poll_children.Item2.ToBool())
             {
                 if (!polling_children)
                 {
@@ -528,7 +525,7 @@ namespace Xalia.Uia
 
             foreach (var kvp in all_declarations)
             {
-                if (!kvp.Key.StartsWith("poll_") || !kvp.Value.ToBool())
+                if (!kvp.Key.StartsWith("poll_") || !kvp.Value.Item2.ToBool())
                     continue;
 
                 var prop_name = kvp.Key.Substring(5);
@@ -554,7 +551,7 @@ namespace Xalia.Uia
                     continue;
 
                 if (all_declarations.TryGetValue("poll_"+prop_name, out var polling) &&
-                    polling.ToBool())
+                    polling.Item2.ToBool())
                     // still being polled
                     continue;
 
@@ -679,9 +676,8 @@ namespace Xalia.Uia
             property_known[propid] = true;
             if (!old_value.Equals(new_value))
             {
-#if DEBUG
-                Console.WriteLine($"{DebugId}.{name}: {new_value}");
-#endif
+                if (MatchesDebugCondition())
+                    Console.WriteLine($"{DebugId}.{name}: {new_value}");
                 property_value[propid] = new_value;
                 property_raw_value[propid] = value;
                 PropertyChanged(name);
@@ -768,11 +764,16 @@ namespace Xalia.Uia
             }
         }
 
+        static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
+
         internal static bool IsExpectedException(Exception e)
         {
 #if DEBUG
-            Console.WriteLine("WARNING: Exception:");
-            Console.WriteLine(e);
+            if (DebugExceptions)
+            {
+                Console.WriteLine("WARNING: Exception:");
+                Console.WriteLine(e);
+            }
 #endif
             if (e is FlaUI.Core.Exceptions.NotSupportedException)
             {
@@ -798,8 +799,11 @@ namespace Xalia.Uia
 #if DEBUG
             return false;
 #else
-            Console.WriteLine("WARNING: Exception ignored:");
-            Console.WriteLine(e);
+            if (DebugExceptions)
+            {
+                Console.WriteLine("WARNING: Exception ignored:");
+                Console.WriteLine(e);
+            }
             return true;
 #endif
         }
@@ -1255,6 +1259,37 @@ namespace Xalia.Uia
             }
 
             return UiDomUndefined.Instance;
+        }
+
+        protected override void DumpProperties()
+        {
+            foreach (var kvp in property_known)
+            {
+                if (kvp.Value && property_value.TryGetValue(kvp.Key, out var val))
+                {
+                    Console.WriteLine($"  {Root.properties_to_name[kvp.Key]}: {val}");
+                }
+            }
+            if (ElementWrapper.Equals(Root.FocusedElement))
+                Console.WriteLine($"  uia_focused: true");
+            if (ElementWrapper.Equals(Root.ForegroundElement))
+                Console.WriteLine($"  msaa_foreground: true");
+            if (ElementWrapper.Equals(Root.ActiveElement))
+                Console.WriteLine($"  win32_active: true");
+            if (!(supported_patterns is null))
+                foreach (var patternid in supported_patterns)
+                    Console.WriteLine($"  supported pattern: {patternid.Name}");
+            if (!(application_name is null))
+                Console.WriteLine($"  acc2_application_name: {application_name}");
+            if (!(application_version is null))
+                Console.WriteLine($"  acc2_application_verion: {application_version}");
+            if (!(toolkit_name is null))
+                Console.WriteLine($"  acc2_toolkit_name: {toolkit_name}");
+            if (!(toolkit_version is null))
+                Console.WriteLine($"  acc2_toolkit_version: {toolkit_version}");
+            if (!(ProcessName is null))
+                Console.WriteLine($"  win32_process_name: {ProcessName}");
+            base.DumpProperties();
         }
 
         private void Win32SetForegroundWindow(UiDomRoutineSync obj)

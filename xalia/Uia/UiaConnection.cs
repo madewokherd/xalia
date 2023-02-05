@@ -533,9 +533,9 @@ namespace Xalia.Uia
             Utils.RunIdle(PollFocusedElement());
         }
 
-        protected override void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
+        protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
-            bool poll_focus = all_declarations.TryGetValue("poll_focus", out var ui_dom_poll_focus) && ui_dom_poll_focus.ToBool();
+            bool poll_focus = all_declarations.TryGetValue("poll_focus", out var ui_dom_poll_focus) && ui_dom_poll_focus.Item2.ToBool();
 
             if (poll_focus != polling_focus)
             {
@@ -716,9 +716,8 @@ namespace Xalia.Uia
                     return;
                 }
 
-#if DEBUG
-                Console.WriteLine($"Focus changed to {value.UniqueId}");
-#endif
+                if (MatchesDebugCondition())
+                    Console.WriteLine($"Focus changed to {value.UniqueId}");
 
                 focused_element = value;
 
@@ -750,9 +749,8 @@ namespace Xalia.Uia
                     return;
                 }
 
-#if DEBUG
-                Console.WriteLine($"Foreground window changed to {value.UniqueId}");
-#endif
+                if (MatchesDebugCondition())
+                    Console.WriteLine($"Foreground window changed to {value.UniqueId}");
 
                 foreground_element = value;
 
@@ -784,9 +782,8 @@ namespace Xalia.Uia
                     return;
                 }
 
-#if DEBUG
-                Console.WriteLine($"Active window changed to {value.UniqueId}");
-#endif
+                if (MatchesDebugCondition())
+                    Console.WriteLine($"Active window changed to {value.UniqueId}");
 
                 active_element = value;
 
@@ -866,13 +863,36 @@ namespace Xalia.Uia
                 case "in_menu":
                 case "uia_in_menu":
                     depends_on.Add((Root, new IdentifierExpression("uia_in_menu")));
-                    return UiDomBoolean.FromBool(UiaInSubmenu);
+                    return UiDomBoolean.FromBool(UiaInMenu);
                 case "in_submenu":
                 case "uia_in_submenu":
                     depends_on.Add((Root, new IdentifierExpression("uia_in_submenu")));
                     return UiDomBoolean.FromBool(UiaInSubmenu);
             }
             return base.EvaluateIdentifierCore(id, root, depends_on);
+        }
+
+        protected override void DumpProperties()
+        {
+            var focused = LookupAutomationElement(focused_element);
+            if (!(focused is null))
+                Console.WriteLine($"  uia_focused_element: {focused}");
+            var foreground = LookupAutomationElement(foreground_element);
+            if (!(foreground is null))
+                Console.WriteLine($"  msaa_foreground_element: {foreground}");
+            var active = LookupAutomationElement(active_element);
+            if (!(active is null))
+                Console.WriteLine($"  win32_active_element: {active}");
+            if (UiaMenuMode)
+                Console.WriteLine($"  uia_menu_mode: true");
+            var opened_menu = LookupAutomationElement(UiaOpenedMenu);
+            if (!(opened_menu is null))
+                Console.WriteLine($"  uia_opened_menu: {opened_menu}");
+            if (UiaInMenu)
+                Console.WriteLine($"  uia_in_menu: true");
+            if (UiaInSubmenu)
+                Console.WriteLine($"  uia_in_submenu: true");
+            base.DumpProperties();
         }
 
         internal string BlockingGetElementId(AutomationElement element, out IntPtr hwnd)

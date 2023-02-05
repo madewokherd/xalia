@@ -80,11 +80,13 @@ namespace Xalia.Ui
             Root = root;
         }
 
+        static bool DebugInput = !(Environment.GetEnvironmentVariable("XALIA_DEBUG_INPUT") is null &&
+            Environment.GetEnvironmentVariable("XALIA_DEBUG_INPUT") != "0");
+
         private void OnActionStateChangeEvent(object sender, InputSystem.ActionStateChangeEventArgs e)
         {
-#if DEBUG
-            Console.WriteLine($"Got input: {e.Action} {e.State}");
-#endif
+            if (DebugInput)
+                Console.WriteLine($"Got input: {e.Action} {e.State}");
             if (defined_actions.TryGetValue(e.Action, out var info))
             {
                 if (info.queue is null)
@@ -92,9 +94,8 @@ namespace Xalia.Ui
                     if (e.State.Kind is InputStateKind.Disconnected)
                         return;
 
-#if DEBUG
-                    Console.WriteLine($"Passing input to routine: {info.routine}");
-#endif
+                    if (DebugInput)
+                        Console.WriteLine($"Passing input to routine: {info.routine}");
                     info.queue = new InputQueue();
                     info.queue.Enqueue(e.State);
 
@@ -102,9 +103,8 @@ namespace Xalia.Ui
                 }
                 else
                 {
-#if DEBUG
-                    Console.WriteLine($"Passing input to routine: {info.routine}");
-#endif
+                    if (DebugInput)
+                        Console.WriteLine($"Passing input to routine: {info.routine}");
                     info.queue.Enqueue(e.State);
                     if (e.State.Kind is InputStateKind.Disconnected)
                     {
@@ -169,9 +169,10 @@ namespace Xalia.Ui
                         target_sequence_counter++;
                     }
 
-#if DEBUG
-                    Console.WriteLine($"targeted_element: {_targetedElement}");
-#endif
+                    if (Root.MatchesDebugCondition() ||
+                        (!(previous is null) && previous.MatchesDebugCondition()) ||
+                        (!(_targetedElement is null) && _targetedElement.MatchesDebugCondition()))
+                        Console.WriteLine($"targeted_element: {_targetedElement}");
 
                     Root.PropertyChanged("targeted_element");
                     if (!(_targetedElement is null))
@@ -409,17 +410,15 @@ namespace Xalia.Ui
                     old_actions.Remove(info.action);
                     continue;
                 }
-#if DEBUG
-                Console.WriteLine($"action {info.action} defined as {info.routine}");
-#endif
+                if (DebugInput)
+                    Console.WriteLine($"action {info.action} defined as {info.routine}");
             }
             defined_actions = new_actions;
 
             foreach (var info in old_actions.Values)
             {
-#if DEBUG
-                Console.WriteLine($"action {info.action} is no longer {info.routine}");
-#endif
+                if (DebugInput)
+                    Console.WriteLine($"action {info.action} is no longer {info.routine}");
                 if (!(info.queue is null))
                     info.queue.Enqueue(new InputState(InputStateKind.Disconnected));
                 if (!new_actions.ContainsKey(info.action))
@@ -485,6 +484,14 @@ namespace Xalia.Ui
                     return new SendScroll(element, Windowing);
             }
             return null;
+        }
+
+        public void DumpElementProperties(UiDomElement element)
+        {
+            if (element is UiDomRoot)
+                Console.WriteLine($"  targeted_element: {TargetedElement}");
+            if (TargetedElement == element)
+                Console.WriteLine("  targeted: true");
         }
 
         private async Task SendClick(UiDomRoutineAsync obj, WindowingSystem.MouseButton button)

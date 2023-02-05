@@ -23,7 +23,7 @@ namespace Xalia.UiDom
 
         public IReadOnlyCollection<string> Declarations => _activeDeclarations.Keys;
 
-        private Dictionary<string, UiDomValue> _activeDeclarations = new Dictionary<string, UiDomValue>();
+        private Dictionary<string, (GudlDeclaration, UiDomValue)> _activeDeclarations = new Dictionary<string, (GudlDeclaration, UiDomValue)>();
 
         private Dictionary<string, UiDomValue> _assignedProperties = new Dictionary<string, UiDomValue>();
 
@@ -97,9 +97,8 @@ namespace Xalia.UiDom
 
         protected void AddChild(int index, UiDomElement child)
         {
-#if DEBUG
-            Console.WriteLine("Child {0} added to {1} at index {2}", child.DebugId, DebugId, index);
-#endif
+            if (MatchesDebugCondition())
+                Console.WriteLine("Child {0} added to {1} at index {2}", child.DebugId, DebugId, index);
             if (child.Parent != null)
                 throw new InvalidOperationException(string.Format("Attempted to add child {0} to {1} but it already has a parent of {2}", child.DebugId, DebugId, child.Parent.DebugId));
             child.Parent = this;
@@ -129,9 +128,8 @@ namespace Xalia.UiDom
         protected void RemoveChild(int index)
         {
             var child = Children[index];
-#if DEBUG
-            Console.WriteLine("Child {0} removed from {1}", child.DebugId, DebugId);
-#endif
+            if (MatchesDebugCondition())
+                Console.WriteLine("Child {0} removed from {1}", child.DebugId, DebugId);
             Children.RemoveAt(index);
             child.Parent = null;
             child.SetAlive(false);
@@ -155,9 +153,8 @@ namespace Xalia.UiDom
             {
                 if (_assignedProperties.ContainsKey(propName))
                 {
-#if DEBUG
-                    Console.WriteLine($"{this}.{propName} assigned: {propValue}");
-#endif
+                    if (MatchesDebugCondition())
+                        Console.WriteLine($"{this}.{propName} assigned: {propValue}");
                     _assignedProperties.Remove(propName);
                     PropertyChanged(new IdentifierExpression(propName));
                     return;
@@ -166,9 +163,8 @@ namespace Xalia.UiDom
 
             if (!_assignedProperties.TryGetValue(propName, out var oldValue) || !oldValue.Equals(propValue))
             {
-#if DEBUG
+                if (MatchesDebugCondition())
                     Console.WriteLine($"{this}.{propName} assigned: {propValue}");
-#endif
                 _assignedProperties[propName] = propValue;
                 PropertyChanged(propName);
                 return;
@@ -177,9 +173,9 @@ namespace Xalia.UiDom
 
         public UiDomValue GetDeclaration(string property)
         {
-            if (_activeDeclarations.TryGetValue(property, out var result) && !(result is UiDomUndefined))
-                return result;
-            if (_assignedProperties.TryGetValue(property, out result) && !(result is UiDomUndefined))
+            if (_activeDeclarations.TryGetValue(property, out var decl) && !(decl.Item2 is UiDomUndefined))
+                return decl.Item2;
+            if (_assignedProperties.TryGetValue(property, out var result) && !(result is UiDomUndefined))
                 return result;
             return UiDomUndefined.Instance;
         }
@@ -328,8 +324,8 @@ namespace Xalia.UiDom
                 return result;
             }
             depends_on.Add((this, new IdentifierExpression(id)));
-            if (_activeDeclarations.TryGetValue(id, out result) && !(result is UiDomUndefined))
-                return result;
+            if (_activeDeclarations.TryGetValue(id, out var decl) && !(decl.Item2 is UiDomUndefined))
+                return decl.Item2;
             if (_assignedProperties.TryGetValue(id, out result) && !(result is UiDomUndefined))
                 return result;
             return base.EvaluateIdentifierCore(id, root, depends_on);
@@ -391,17 +387,33 @@ namespace Xalia.UiDom
             return Task.FromResult((false, 0, 0));
         }
 
+        static GudlExpression debugCondition;
+
+        public bool MatchesDebugCondition()
+        {
+            if (debugCondition is null)
+            {
+                string conditionStr = Environment.GetEnvironmentVariable("XALIA_DEBUG");
+                if (conditionStr is null)
+                {
+                    debugCondition = new IdentifierExpression("false");
+                }
+                else
+                {
+                    debugCondition = GudlParser.ParseExpression(conditionStr);
+                }
+            }
+            return Evaluate(debugCondition, new HashSet<(UiDomElement, GudlExpression)>()).ToBool();
+        }
+
         private void EvaluateRules()
         {
             _updatingRules = false;
             if (!IsAlive)
                 return;
-            var activeDeclarations = new Dictionary<string, UiDomValue>();
+            var activeDeclarations = new Dictionary<string, (GudlDeclaration, UiDomValue)>();
             bool stop = false;
             var depends_on = new HashSet<(UiDomElement, GudlExpression)>();
-#if DEBUG
-            Console.WriteLine($"rule evaluation for {this}");
-#endif
             foreach ((GudlExpression expr, GudlDeclaration[] declaraions) in Root.Rules)
             {
                 if (!(expr is null))
@@ -410,16 +422,7 @@ namespace Xalia.UiDom
 
                     if (!condition.ToBool())
                         continue;
-#if DEBUG
-                    Console.WriteLine($"  matched condition {expr}");
-#endif
                 }
-#if DEBUG
-                else
-                {
-                    Console.WriteLine("  applying unconditional declarations");
-                }
-#endif
 
                 foreach (var decl in declaraions)
                 {
@@ -430,14 +433,10 @@ namespace Xalia.UiDom
 
                     UiDomValue value = Evaluate(decl.Value, depends_on);
 
-#if DEBUG
-                    Console.WriteLine($"  {decl.Property}: {value}");
-#endif
-
                     if (decl.Property == "stop" && value.ToBool())
                         stop = true;
 
-                    activeDeclarations[decl.Property] = value;
+                    activeDeclarations[decl.Property] = (decl, value);
                 }
 
                 if (stop)
@@ -447,9 +446,50 @@ namespace Xalia.UiDom
             DeclarationsChanged(activeDeclarations, depends_on);
 
             Root?.RaiseElementDeclarationsChangedEvent(this);
+
+            if (MatchesDebugCondition())
+            {
+                Console.WriteLine($"properties for {DebugId}:");
+                DumpProperties();
+            }
         }
 
-        protected virtual void DeclarationsChanged(Dictionary<string, UiDomValue> all_declarations,
+        protected virtual void DumpProperties()
+        {
+            if (!(Parent is null))
+            {
+                Console.WriteLine($"  parent: {Parent.DebugId}");
+                Console.WriteLine($"  index_in_parent: {Parent.Children.IndexOf(this)}");
+            }
+            for (int i = 0; i < Children.Count; i++)
+            {
+                Console.WriteLine($"  child_at_index({i}): {Children[i].DebugId}");
+            }
+            foreach (var kvp in _relationshipWatchers)
+            {
+                if (!(kvp.Value.Value is UiDomUndefined))
+                {
+                    Console.WriteLine($"  {kvp.Key}: {kvp.Value.Value}");
+                }
+            }
+            Root.Application.DumpElementProperties(this);
+            foreach (var kvp in _activeDeclarations)
+            {
+                if (!(kvp.Value.Item2 is UiDomUndefined))
+                {
+                    Console.WriteLine($"  {kvp.Key}: {kvp.Value.Item2} [{kvp.Value.Item1.Position}]");
+                }
+            }
+            foreach (var kvp in _assignedProperties)
+            {
+                if (!(kvp.Value is UiDomUndefined))
+                {
+                    Console.WriteLine($"  {kvp.Key}: {kvp.Value} [assigned]");
+                }
+            }
+        }
+
+        protected virtual void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations,
             HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
             HashSet<GudlExpression> changed = new HashSet<GudlExpression>();
@@ -503,9 +543,8 @@ namespace Xalia.UiDom
             {
                 _updatingRules = true;
                 Utils.RunIdle(EvaluateRules);
-#if DEBUG
-                Console.WriteLine($"queued rule evaluation for {this} because {element}.{property} changed");
-#endif
+                if (MatchesDebugCondition())
+                    Console.WriteLine($"queued rule evaluation for {this} because {element}.{property} changed");
             }
         }
 

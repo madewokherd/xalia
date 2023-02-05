@@ -144,6 +144,26 @@ namespace Xalia.Uia.Win32
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }
 
+        protected override void DumpProperties()
+        {
+            if (!(ProcessName is null))
+                Console.WriteLine($"  win32_process_name: {ProcessName}");
+            if (WindowRectKnown)
+            {
+                Console.WriteLine($"  win32_x: {X}");
+                Console.WriteLine($"  win32_y: {Y}");
+                Console.WriteLine($"  win32_width: {Width}");
+                Console.WriteLine($"  win32_height: {Height}");
+            }
+            if (WindowStyleKnown)
+            {
+                Console.WriteLine($"  win32_style: 0x{WindowStyle:X}");
+                Console.WriteLine($"  win32_visible: {(WindowStyle & WS_VISIBLE) == WS_VISIBLE}");
+                Console.WriteLine($"  win32_enabled: {(WindowStyle & WS_DISABLED) == 0}");
+            }
+            base.DumpProperties();
+        }
+
         private void Win32SetForegroundWindow(UiDomRoutineSync obj)
         {
             SetForegroundWindow(Hwnd);
@@ -161,12 +181,13 @@ namespace Xalia.Uia.Win32
                 WindowRectKnown = new_rect_known;
                 WindowRect = new_rect;
 
-#if DEBUG
-                if (WindowRectKnown)
-                    Console.WriteLine($"{DebugId}.win32_rect: {X},{Y} {Width}x{Height}");
-                else
-                    Console.WriteLine($"{DebugId}.win32_rect: undefined");
-#endif
+                if (MatchesDebugCondition())
+                {
+                    if (WindowRectKnown)
+                        Console.WriteLine($"{DebugId}.win32_rect: {X},{Y} {Width}x{Height}");
+                    else
+                        Console.WriteLine($"{DebugId}.win32_rect: undefined");
+                }
 
                 PropertyChanged("win32_rect");
             }
@@ -183,9 +204,8 @@ namespace Xalia.Uia.Win32
                 WindowStyle = new_style;
                 WindowStyleKnown = true;
 
-#if DEBUG
-                Console.WriteLine($"{DebugId}.win32_style: {new_style:x}");
-#endif
+                if (MatchesDebugCondition())
+                    Console.WriteLine($"{DebugId}.win32_style: {new_style:x}");
 
                 PropertyChanged("win32_style");
             }

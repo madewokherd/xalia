@@ -64,6 +64,16 @@ namespace Xalia.Uia.Win32
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }
 
+        protected override void DumpProperties()
+        {
+            if (WindowStyleKnown)
+            {
+                Console.WriteLine($"  win32_vertical: {(WindowStyle & TBS_VERT) == TBS_VERT}");
+                Console.WriteLine($"  win32_horizontal: {(WindowStyle & TBS_VERT) == 0}");
+            }
+            base.DumpProperties();
+        }
+
         public override async Task<double> GetMinimumIncrement()
         {
             var result = (int)await SendMessageAsync(Hwnd, TBM_GETLINESIZE, IntPtr.Zero, IntPtr.Zero);
