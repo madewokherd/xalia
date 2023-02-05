@@ -575,7 +575,7 @@ namespace Xalia.AtSpi
 
             try
             {
-                await Task.Delay(500, children_poll_token.Token);
+                await Task.Delay(2000, children_poll_token.Token);
             }
             catch (TaskCanceledException)
             {

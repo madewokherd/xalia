@@ -444,7 +444,7 @@ namespace Xalia.Uia
 
             try
             {
-                await Task.Delay(500, children_poll_token.Token);
+                await Task.Delay(2000, children_poll_token.Token);
             }
             catch (TaskCanceledException)
             {
@@ -453,7 +453,7 @@ namespace Xalia.Uia
             }
 
             children_poll_token = null;
-            Utils.RunIdle(PollChildren()); // Unsure if RunTask would accumulate stack frames forever
+            Utils.RunTask(PollChildren());
         }
 
         protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
