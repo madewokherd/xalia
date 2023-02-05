@@ -313,7 +313,11 @@ namespace Xalia.Uia
             var children = await Root.CommandThread.GetChildren(ElementWrapper);
 
             if (!watching_children)
+            {
+                refreshing_children = false;
+                inflight_structure_changed = false;
                 return;
+            }
 
             // First remove any existing children that are missing or out of order
             int i = 0;
