@@ -421,7 +421,7 @@ namespace Xalia.Uia
 
             try
             {
-                await Task.Delay(200, poll_token.Token);
+                await Task.Delay(2000, poll_token.Token);
             }
             catch (TaskCanceledException)
             {
@@ -1320,7 +1320,7 @@ namespace Xalia.Uia
                 var clickable = await Root.CommandThread.OnBackgroundThread(() =>
                 {
                     return ElementWrapper.AutomationElement.GetClickablePoint();
-                }, ElementWrapper);
+                }, ElementWrapper.Pid+1);
 
                 int x = clickable.X;
                 int y = clickable.Y;
@@ -1352,7 +1352,7 @@ namespace Xalia.Uia
                 }
 
                 return true;
-            }, ElementWrapper);
+            }, ElementWrapper.Pid+1);
 
             if (!supported)
             {
@@ -1365,7 +1365,7 @@ namespace Xalia.Uia
             return Root.CommandThread.OnBackgroundThread(() =>
             {
                 ElementWrapper.AutomationElement.Focus();
-            }, ElementWrapper);
+            }, ElementWrapper.Pid+1);
         }
 
         private async Task Invoke(UiDomRoutineAsync obj)
@@ -1383,7 +1383,7 @@ namespace Xalia.Uia
                 }
 
                 return true;
-            }, ElementWrapper);
+            }, ElementWrapper.Pid+1);
 
             if (!supported)
             {
@@ -1404,7 +1404,7 @@ namespace Xalia.Uia
                     if (!IsExpectedException(e))
                         throw;
                 }
-            }, ElementWrapper);
+            }, ElementWrapper.Pid+1);
         }
 
         private Task Expand(UiDomRoutineAsync obj)
@@ -1420,7 +1420,7 @@ namespace Xalia.Uia
                     if (!IsExpectedException(e))
                         throw;
                 }
-            }, ElementWrapper);
+            }, ElementWrapper.Pid+1);
         }
 
         private Task Collapse(UiDomRoutineAsync obj)
@@ -1436,7 +1436,7 @@ namespace Xalia.Uia
                     if (!IsExpectedException(e))
                         throw;
                 }
-            }, ElementWrapper);
+            }, ElementWrapper.Pid+1);
         }
 
         private bool GetScrollInfoBackground(int flags, out IntPtr hwnd, out int which, out SCROLLINFO info)
@@ -1500,7 +1500,7 @@ namespace Xalia.Uia
 
                     var range = ElementWrapper.AutomationElement.Patterns.RangeValue.Pattern;
                     return Math.Max(range.SmallChange, range.LargeChange / 10);
-                }, ElementWrapper.Pid);
+                }, ElementWrapper.Pid+1);
                 if (result != 0)
                     return result;
             }
@@ -1600,7 +1600,7 @@ namespace Xalia.Uia
 
                     if (new_value != current_value)
                         range.SetValue(new_value);
-                }, ElementWrapper.Pid);
+                }, ElementWrapper.Pid+1);
             }
             catch (Exception e)
             {
