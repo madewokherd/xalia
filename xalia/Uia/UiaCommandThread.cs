@@ -21,56 +21,57 @@ namespace Xalia.Uia
             public Action Action;
         }
 
-        Dictionary<int, ConcurrentQueue<CommandThreadRequest>> pid_command_queue = new Dictionary<int, ConcurrentQueue<CommandThreadRequest>>();
+        class CommandQueue
+        {
+            public int pid;
+            public ConcurrentQueue<CommandThreadRequest> requests = new ConcurrentQueue<CommandThreadRequest>();
+            public long locked;
+        }
 
-        Dictionary<int, SpinLock> pid_worker_lock = new Dictionary<int, SpinLock>();
+        Dictionary<int, CommandQueue> pid_queues = new Dictionary<int, CommandQueue>();
 
-        ConcurrentQueue<(int, ConcurrentQueue<CommandThreadRequest>, SpinLock)> worker_pid_queue = new ConcurrentQueue<(int, ConcurrentQueue<CommandThreadRequest>, SpinLock)>();
+        ConcurrentQueue<CommandQueue> overall_queue = new ConcurrentQueue<CommandQueue>();
 
-        Semaphore worker_pid_queue_sem; // Upper bound on the number of threads that should be woken to process current requests.
+        AutoResetEvent tasks_available;
 
-        Thread thread;
-
-        const int num_threads = 5;
+        long threads_waiting = 0;
 
         internal UiaCommandThread()
         {
-            worker_pid_queue_sem = new Semaphore(0, num_threads);
-            for (int i = 0; i < num_threads; i++)
-            {
-                thread = new Thread(ThreadProc);
-                thread.SetApartmentState(ApartmentState.MTA);
-                thread.Start();
-            }
+            tasks_available = new AutoResetEvent(false);
+        }
+
+        private void CreateNewThread(CommandQueue queue)
+        {
+            var thread = new Thread(ThreadProc);
+            thread.SetApartmentState(ApartmentState.MTA);
+            thread.Start(queue);
         }
 
         private void QueueRequest(CommandThreadRequest request, int pid)
         {
-            ConcurrentQueue<CommandThreadRequest> command_queue;
-            if (!pid_command_queue.TryGetValue(pid, out command_queue))
+            if (!pid_queues.TryGetValue(pid, out var queue))
             {
-                command_queue = new ConcurrentQueue<CommandThreadRequest>();
-                pid_command_queue[pid] = command_queue;
+                queue = new CommandQueue();
+                queue.pid = pid;
+                pid_queues[pid] = queue;
             }
 
-            SpinLock sl;
-            if (!pid_worker_lock.TryGetValue(pid, out sl))
-            {
-                sl = new SpinLock(true);
-                pid_worker_lock[pid] = sl;
-            }
+            queue.requests.Enqueue(request);
 
-            command_queue.Enqueue(request);
-
-            if (!sl.IsHeld)
+            if (Interlocked.Read(ref queue.locked) == 0)
             {
-                worker_pid_queue.Enqueue((pid, command_queue, sl));
-                try
+                bool lock_taken = false;
+                if (Interlocked.Read(ref threads_waiting) == 0)
                 {
-                    worker_pid_queue_sem.Release();
+                    lock_taken = Interlocked.CompareExchange(ref queue.locked, 1, 0) == 0;
+                    if (lock_taken)
+                        CreateNewThread(queue);
                 }
-                catch (SemaphoreFullException) {
-                    // All threads are busy. This is Fine.
+                if (!lock_taken)
+                {
+                    overall_queue.Enqueue(queue);
+                    tasks_available.Set();
                 }
             }
         }
@@ -181,30 +182,43 @@ namespace Xalia.Uia
             }, element);
         }
 
-        private void ThreadProc()
+        private void ThreadProc(object initial_info)
         {
-            while (true)
+            var queue = (CommandQueue)initial_info;
+            // We start with the lock held
+            bool lock_held = true;
+            while (TryProcessQueue(queue, lock_held))
             {
-                (int, ConcurrentQueue<CommandThreadRequest>, SpinLock) pid_queue_info;
-                while (worker_pid_queue.TryDequeue(out pid_queue_info))
+                // All work is done in TryProcessQueue
+                lock_held = false;
+            }
+            try
+            {
+                while (true)
                 {
-                    while (TryProcessQueue(pid_queue_info))
+                    while (overall_queue.TryDequeue(out queue))
                     {
-                        // All work is done in TryProcessQueue
+                        while (TryProcessQueue(queue, false))
+                        {
+                            // All work is done in TryProcessQueue
+                        }
                     }
+                    Interlocked.Increment(ref threads_waiting);
+                    tasks_available.WaitOne();
+                    Interlocked.Decrement(ref threads_waiting);
                 }
-                worker_pid_queue_sem.WaitOne();
+            }
+            catch (Exception e)
+            {
+                Utils.OnError(e);
             }
         }
 
-        private bool TryProcessQueue((int, ConcurrentQueue<CommandThreadRequest>, SpinLock) pid_queue_info)
+        private bool TryProcessQueue(CommandQueue queue, bool lock_held)
         {
-            var queue = pid_queue_info.Item2;
-            var spinlock = pid_queue_info.Item3;
-
             // It's important that we check this while the lock is not held.
             // See the comment at the end for why this is necessary.
-            if (queue.IsEmpty)
+            if (!lock_held && queue.requests.IsEmpty)
                 // Nothing to do.
                 return false;
 
@@ -212,12 +226,15 @@ namespace Xalia.Uia
 
             try
             {
-                spinlock.TryEnter(ref lock_taken);
+                if (lock_held)
+                    lock_taken = true;
+                else
+                    lock_taken = Interlocked.CompareExchange(ref queue.locked, 1, 0) == 0;
 
                 if (!lock_taken)
                     return false;
 
-                while (queue.TryDequeue(out var request))
+                while (queue.requests.TryDequeue(out var request))
                 {
                     request.Action();
                 }
@@ -225,13 +242,13 @@ namespace Xalia.Uia
             finally
             {
                 if (lock_taken)
-                    spinlock.Exit();
+                    Interlocked.Exchange(ref queue.locked, 0);
             }
 
             /* It's possible that the main thread added a request to the queue after
-             * we called TryDequeue but before we called spinlock.Exit. If this happened,
+             * we called TryDequeue but before we unset locked. If this happened,
              * the queue is no longer empty, but no other thread will be woken up to
-             * serve the request, and there is no new entry in worker_pid_queue. We
+             * serve the request, and there is no new entry in requests. We
              * must recheck the queue while the lock is not held to account for this case.*/
             return true;
         }
