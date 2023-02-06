@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Automation;
 using Xalia.Gudl;
 using Xalia.Input;
 
@@ -36,20 +37,20 @@ namespace Xalia.UiDom
             return new UiDomRadialDeadzone(routine, deadzone);
         }
 
-        private static double NormalizeAxis(short axis)
+        private static double ToEdgeDistance(short axis)
         {
             if (axis > 0)
-                return axis / 32767.0;
+                return 1.0-(axis / 32767.0);
             else
-                return axis / 32768.0;
+                return -1.0-(axis / 32768.0);
         }
 
-        private static short ToAxisValue(double normalized)
+        private static short FromEdgeDistance(double axis)
         {
-            if (normalized > 0)
-                return (short)Math.Round(normalized * 32767.0);
+            if (axis > 0.0)
+                return (short)Math.Round((1.0 - axis) * 32767.0);
             else
-                return (short)Math.Round(normalized * 32768.0);
+                return (short)Math.Round((-1.0 - axis) * 32768.0);
         }
 
         public override async Task ProcessInputQueue(InputQueue queue)
@@ -64,9 +65,10 @@ namespace Xalia.UiDom
 
                 if (state.Kind is InputStateKind.AnalogJoystick)
                 {
-                    double x = NormalizeAxis(state.XAxis);
-                    double y = NormalizeAxis(state.YAxis);
-                    double intensity = Math.Sqrt((x * x) + (y * y));
+                    double xedge = ToEdgeDistance(state.XAxis);
+                    double yedge = ToEdgeDistance(state.YAxis);
+                    double edge_distance = Math.Min(Math.Abs(xedge), Math.Abs(yedge));
+                    double intensity = 1.0 - edge_distance;
 
                     if (intensity <= Deadzone)
                     {
@@ -75,14 +77,16 @@ namespace Xalia.UiDom
                     }
                     else
                     {
-                        double multiplier = (intensity - Deadzone) / (1.0 - Deadzone) / intensity;
-                        state.XAxis = ToAxisValue(x * multiplier);
-                        state.YAxis = ToAxisValue(y * multiplier);
+                        double new_edge_distance = edge_distance / (1.0 - Deadzone);
+                        double multiplier = (1.0 - new_edge_distance) / (1.0 - edge_distance);
+                        state.XAxis = (short)Math.Round(state.XAxis * multiplier);
+                        state.YAxis = (short)Math.Round(state.YAxis * multiplier);
                     }
                 }
                 else if (state.Kind is InputStateKind.AnalogButton)
                 {
-                    double intensity = NormalizeAxis(state.XAxis);
+                    double edge_distance = ToEdgeDistance(state.Intensity);
+                    double intensity = 1.0 - edge_distance;
 
                     if (intensity <= Deadzone)
                     {
@@ -90,7 +94,7 @@ namespace Xalia.UiDom
                     }
                     else
                     {
-                        state.XAxis = ToAxisValue((intensity - Deadzone) / (1.0 - Deadzone));
+                        state.XAxis = FromEdgeDistance(edge_distance / (1.0 - Deadzone));
                     }
                 }
                 inner_queue.Enqueue(state);
