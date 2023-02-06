@@ -51,7 +51,7 @@ namespace Xalia.Gudl
             for (int i=0; i < Arglist.Length; i++)
             {
                 result.Append(Arglist[i]);
-                if (i > 0 && i < Arglist.Length - 1)
+                if (i < Arglist.Length - 1)
                     result.Append(", ");
             }
             result.Append(")");
