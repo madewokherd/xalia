@@ -90,11 +90,13 @@ namespace Xalia.Uia.Win32
 
             double new_pos = current_pos + remainder + ofs;
 
-            int new_pos_int = (int)Math.Round(new_pos);
+            int pos_ofs = (int)Math.Truncate(new_pos - current_pos);
+
+            int new_pos_int = current_pos + pos_ofs;
 
             if (new_pos_int != current_pos)
             {
-                if (ofs < 0)
+                if (pos_ofs < 0)
                 {
                     int min = (int)await SendMessageAsync(Hwnd, TBM_GETRANGEMIN, IntPtr.Zero, IntPtr.Zero);
 
