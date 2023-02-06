@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Resources;
 using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Windows.Navigation;
 using Xalia.Gudl;
 using Xalia.Input;
 

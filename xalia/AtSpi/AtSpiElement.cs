@@ -1,15 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Tmds.DBus;
-
-using Xalia.UiDom;
 using Xalia.AtSpi.DBus;
 using Xalia.Gudl;
-using System.Runtime.InteropServices;
-using System.Collections.Generic;
-using System.Linq;
+using Xalia.UiDom;
 
 namespace Xalia.AtSpi
 {

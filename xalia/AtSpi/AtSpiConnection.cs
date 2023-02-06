@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Tmds.DBus;
-
 using Xalia.AtSpi.DBus;
 using Xalia.Gudl;
 using Xalia.Sdl;

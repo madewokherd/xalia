@@ -1,24 +1,18 @@
-﻿using System;
+﻿using FlaUI.Core.Definitions;
+using FlaUI.Core.Exceptions;
+using FlaUI.Core.Identifiers;
+using FlaUI.Core.WindowsAPI;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
-using FlaUI.Core;
-using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Definitions;
-using FlaUI.Core.EventHandlers;
-using FlaUI.Core.Exceptions;
-using FlaUI.Core.Identifiers;
-using FlaUI.Core.WindowsAPI;
 using Xalia.Gudl;
 using Xalia.Uia.Win32;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
-using INPUT = Xalia.Interop.Win32.INPUT;
 using IServiceProvider = Xalia.Interop.Win32.IServiceProvider;
 
 namespace Xalia.Uia

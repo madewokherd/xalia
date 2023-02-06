@@ -1,10 +1,8 @@
-﻿using System;
-using System.Linq;
-
-using Superpower;
+﻿using Superpower;
 using Superpower.Model;
 using Superpower.Parsers;
 using Superpower.Tokenizers;
+using System.Linq;
 
 namespace Xalia.Gudl
 {

@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Diagnostics;
-using Tmds.DBus;
-using Xalia.AtSpi.DBus;
 using Xalia.Input;
 
 namespace Xalia.UiDom

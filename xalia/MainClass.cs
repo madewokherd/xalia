@@ -4,7 +4,6 @@ using System.Reflection;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
-using System.Threading;
 using System.Threading.Tasks;
 
 using Xalia.AtSpi;

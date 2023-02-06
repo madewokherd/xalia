@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Xalia.Gudl
+﻿namespace Xalia.Gudl
 {
     public class BinaryExpression : GudlExpression
     {

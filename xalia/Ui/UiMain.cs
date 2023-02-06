@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Drawing;
 using System.Collections.Generic;
-using System.Threading;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-
 using Xalia.Gudl;
 using Xalia.Input;
-using Xalia.UiDom;
 using Xalia.Sdl;
-using System.Runtime.InteropServices;
-using System.Security.Permissions;
+using Xalia.UiDom;
 
 namespace Xalia.Ui
 {

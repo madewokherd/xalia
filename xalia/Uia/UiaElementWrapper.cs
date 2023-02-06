@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using FlaUI.Core.AutomationElements;
+using System;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-
-using FlaUI.Core.AutomationElements;
 
 namespace Xalia.Uia
 {

@@ -1,14 +1,10 @@
 ﻿#if WINDOWS
+using Interop.UIAutomationClient;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms.VisualStyles;
-using Interop.UIAutomationClient;
-
 using static SDL2.SDL;
 
 namespace Xalia.Interop
