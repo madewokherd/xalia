@@ -162,43 +162,11 @@ if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_
 }
 
 if (process_name == "firefox") {
-    recurse: interactable and not stop_interactable; // multiple processes messes up our process queue system and web pages can be too many/variable
     manual_buttons: true;
-
-    if (edit or text) {
-        stop_interactable: true;
-    }
-
-    if (hyperlink or button or toggle_button) {
-        stop_interactable: true;
-        targetable: true;
-    }
-
-    edit (not (focusable or aria_role or name == "Search") and ancestor_matches(document)) {
-        // Seemingly all text blocks have the edit role
-        targetable: false;
-    }
-
-    if (ancestor_matches(interactable and document)) {
-        interactable: true;
-        poll_uia_offscreen: targetable or focusable;
-    }
-
-    if (focusable and not visible) {
-        stop_interactable: true;
-    }
 
     if (uia_control_type == undefined) {
         poll_uia_offscreen: true;
         targetable: false;
-    }
-
-    if (recurse) {
-        poll_children: true;
-    }
-
-    if (targetable and visible) {
-        poll_uia_bounding_rectangle: true;
     }
 
     if (combo_box and parent.(tool_bar and automation_id == "nav-bar")) {
@@ -213,10 +181,6 @@ if (process_name == "firefox") {
 
     page_tab {
         primary_action: msaa_do_default_action;
-    }
-
-    text {
-        targetable: false;
     }
 }
 
