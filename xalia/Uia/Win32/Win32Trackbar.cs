@@ -19,6 +19,8 @@ namespace Xalia.Uia.Win32
             string[] aliases = {
                 "vertical", "win32_vertical",
                 "horizontal", "win32_horizontal",
+                "minimum_increment", "win32_line_size",
+                "line_size", "win32_line_size",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -28,6 +30,9 @@ namespace Xalia.Uia.Win32
         }
 
         private static readonly Dictionary<string, string> property_aliases;
+
+        private bool LineSizeKnown;
+        private int LineSize;
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
@@ -57,6 +62,11 @@ namespace Xalia.Uia.Win32
                     if (WindowStyleKnown)
                         return UiDomBoolean.FromBool((WindowStyle & TBS_VERT) == 0);
                     return UiDomUndefined.Instance;
+                case "win32_line_size":
+                    depends_on.Add((this, new IdentifierExpression("win32_line_size")));
+                    if (LineSizeKnown)
+                        return new UiDomInt(LineSize);
+                    return UiDomUndefined.Instance;
             }
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }
@@ -69,6 +79,43 @@ namespace Xalia.Uia.Win32
                 Console.WriteLine($"  win32_horizontal: {(WindowStyle & TBS_VERT) == 0}");
             }
             base.DumpProperties();
+        }
+
+        protected override void WatchProperty(GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_line_size":
+                        PollProperty(expression, RefreshLineSize, 2000);
+                        break;
+                }
+            }
+            base.WatchProperty(expression);
+        }
+
+        protected override void UnwatchProperty(GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_line_size":
+                        EndPollProperty(expression);
+                        break;
+                }
+            }
+            base.UnwatchProperty(expression);
+        }
+
+        private async Task RefreshLineSize()
+        {
+            var result = (int)await SendMessageAsync(Hwnd, TBM_GETLINESIZE, IntPtr.Zero, IntPtr.Zero);
+            if (result == 0)
+                result = 1;
+            LineSizeKnown = true;
+            LineSize = 1;
         }
 
         public override async Task<double> GetMinimumIncrement()

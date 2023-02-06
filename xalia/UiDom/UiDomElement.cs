@@ -313,6 +313,8 @@ namespace Xalia.UiDom
                     return new UiDomMethod("map_directions", UiDomMapDirections.ApplyFn);
                 case "adjust_scrollbars":
                     return new UiDomMethod("adjust_scrollbars", AdjustScrollbarsMethod);
+                case "adjust_value":
+                    return new UiDomMethod("adjust_value", AdjustValueMethod);
                 case "radial_deadzone":
                     return new UiDomMethod("radial_deadzone", UiDomRadialDeadzone.ApplyFn);
             }
@@ -327,6 +329,20 @@ namespace Xalia.UiDom
             if (_assignedProperties.TryGetValue(id, out result) && !(result is UiDomUndefined))
                 return result;
             return base.EvaluateIdentifierCore(id, root, depends_on);
+        }
+
+        private UiDomValue AdjustValueMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length < 1)
+                return UiDomUndefined.Instance;
+            if (!Evaluate(arglist[0], depends_on).TryToDouble(out var offset))
+                return UiDomUndefined.Instance;
+            return new UiDomRoutineAsync(this, "adjust_value", new UiDomValue[] {new UiDomDouble(offset)}, AdjustValueRoutine);
+        }
+
+        private static async Task AdjustValueRoutine(UiDomRoutineAsync obj)
+        {
+            await obj.Element.OffsetValue(((UiDomDouble)obj.Arglist[0]).Value);
         }
 
         private UiDomValue ChildAtIndexFn(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
