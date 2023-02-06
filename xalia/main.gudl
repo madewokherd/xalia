@@ -705,7 +705,7 @@ if (parent.offset_target_y) {
 }
 
 // Special win32 controls
-if (class_name == "msctls_trackbar32" and interactable) {
+if (class_name == "msctls_trackbar32" and ancestor_matches(toplevel_interactable)) {
     win32_use_trackbar: true;
     targetable: false;
 }
