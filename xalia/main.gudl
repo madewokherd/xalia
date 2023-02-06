@@ -161,7 +161,7 @@ if (uia_control_type.(tool_bar or menu_bar or menu_item) and parent.firefox_use_
     firefox_use_offscreen_menu: true;
 }
 
-if (this_or_ancestor_matches(window).(framework_id == "Gecko")) {
+if (process_name == "firefox") {
     recurse: interactable and not stop_interactable; // multiple processes messes up our process queue system and web pages can be too many/variable
     manual_buttons: true;
 
@@ -169,7 +169,7 @@ if (this_or_ancestor_matches(window).(framework_id == "Gecko")) {
         stop_interactable: true;
     }
 
-    if (link or button or toggle_button) {
+    if (hyperlink or button or toggle_button) {
         stop_interactable: true;
         targetable: true;
     }
