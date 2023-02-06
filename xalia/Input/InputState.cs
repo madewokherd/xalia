@@ -81,7 +81,7 @@ namespace Xalia.Input
             return $"InputState kind={Kind}{extra}";
         }
 
-        public ushort Intensity
+        public short Intensity
         {
             get
             {
@@ -97,9 +97,9 @@ namespace Xalia.Input
                         return 0;
                     case InputStateKind.AnalogJoystick:
                     case InputStateKind.PixelDelta:
-                        return (ushort)Math.Min(Math.Sqrt((int)XAxis * XAxis + (int)YAxis * YAxis), 32767);
+                        return (short)Math.Min(Math.Max(Math.Abs((int)XAxis), Math.Abs((int)YAxis)), 32767);
                     case InputStateKind.AnalogButton:
-                        return (ushort)XAxis;
+                        return XAxis;
                 }
                 throw new NotImplementedException(); // Hopefully the compiler will warn about missed enum values?
             }
