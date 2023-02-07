@@ -126,7 +126,7 @@ namespace Xalia.UiDom
         protected void RemoveChild(int index)
         {
             var child = Children[index];
-            if (MatchesDebugCondition())
+            if (MatchesDebugCondition() || child.MatchesDebugCondition())
                 Console.WriteLine("Child {0} removed from {1}", child.DebugId, DebugId);
             Children.RemoveAt(index);
             child.Parent = null;
@@ -663,10 +663,16 @@ namespace Xalia.UiDom
             PropertyChanged(new IdentifierExpression(identifier));
         }
 
+        protected internal void PropertyChanged(string identifier, object val)
+        {
+            if (MatchesDebugCondition())
+                Console.WriteLine($"{this}.{identifier}: {val}");
+            PropertyChanged(identifier);
+        }
+
         protected internal void PropertyChanged(GudlExpression property)
         {
-            HashSet<GudlExpression> properties = new HashSet<GudlExpression>();
-            properties.Add(property);
+            HashSet<GudlExpression> properties = new HashSet<GudlExpression> { property };
             PropertiesChanged(properties);
         }
 

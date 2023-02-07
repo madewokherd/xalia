@@ -492,6 +492,32 @@ if ((table or tree_table or list_box) and
     }
 }
 
+// Special win32 controls
+if (class_name == "SysListView32") {
+    win32_use_listview: ancestor_matches(toplevel_interactable);
+    targetable: false;
+    recurse: false;
+    scrollable: false;
+}
+
+if (is_win32_listview) {
+    if (recurse) {
+        if (recurse_all or view.(icon or small_icon) or count_per_page == 0 or count_per_page >= item_count) {
+            win32_child_item_start: 0;
+            win32_child_item_count: item_count;
+        }
+        win32_child_item_start: top_index;
+        win32_child_item_count: count_per_page;
+    }
+}
+
+if (is_win32_listview_item) {
+    x: win32_selectbounds_x + parent.x;
+    y: win32_selectbounds_y + parent.y;
+    width: win32_selectbounds_width;
+    height: win32_selectbounds_height;
+}
+
 // Top-level objects
 
 if (role.(desktop_frame or application)) {
@@ -677,7 +703,7 @@ if (is_uia_element and parent.interactable and enabled and not parent.stop_inter
     interactable: true;
 }
 
-if (is_win32_element and parent.interactable and enabled and visible and not parent.stop_interactable) {
+if ((is_win32_element or is_win32_subelement) and parent.interactable and enabled and visible and not parent.stop_interactable) {
     interactable: true;
 }
 
@@ -704,9 +730,8 @@ if (parent.offset_target_y) {
     offset_target_y: parent.offset_target_y;
 }
 
-// Special win32 controls
 if (class_name == "msctls_trackbar32" and ancestor_matches(toplevel_interactable)) {
-    win32_use_trackbar: true;
+    win32_use_trackbar: ancestor_matches(toplevel_interactable);
     targetable: false;
 }
 
@@ -898,7 +923,7 @@ if (targetable or is_current_view) {
         target_height: spi_abs_height;
     }
 
-    if (is_uia_element or is_win32_element) {
+    if (is_uia_element or is_win32_element or is_win32_subelement) {
         target_x: x + (offset_target_x or 0);
         target_y: y + (offset_target_y or 0);
         target_width: width;
@@ -1105,7 +1130,11 @@ if (interactable) {
         targetable: false;
     }
 
-    if ((table_cell or list_item) and targetable) {
+    if (is_win32_listview_item) {
+        targetable: true;
+    }
+
+    if ((table_cell or table_row or list_item) and targetable) {
         if (expandable and spi_action("expand or contract")) {
             secondary_action: spi_action("expand or contract");
         }

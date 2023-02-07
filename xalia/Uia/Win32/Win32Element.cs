@@ -173,7 +173,7 @@ namespace Xalia.Uia.Win32
             new_rect_known = GetWindowRect(Hwnd, out new_rect);
 
             if (new_rect_known != WindowRectKnown ||
-                (new_rect_known && new_rect.Equals(WindowRect)))
+                (new_rect_known && !new_rect.Equals(WindowRect)))
             {
                 WindowRectKnown = new_rect_known;
                 WindowRect = new_rect;
@@ -233,8 +233,12 @@ namespace Xalia.Uia.Win32
                 switch (id.Name)
                 {
                     case "win32_rect":
+                        EndPollProperty(expression);
+                        WindowRectKnown = false;
+                        break;
                     case "win32_style":
                         EndPollProperty(expression);
+                        WindowStyleKnown = false;
                         break;
                 }
             }

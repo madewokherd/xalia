@@ -1,5 +1,6 @@
 ﻿#if WINDOWS
 using Interop.UIAutomationClient;
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -11,8 +12,69 @@ namespace Xalia.Interop
 {
     internal static class Win32
     {
+        const string KERNEL_LIB = "kernel32";
         const string USER_LIB = "user32";
         const string OLEACC_LIB = "oleacc";
+
+        public const int PROCESS_VM_OPERATION = 0x8;
+        public const int PROCESS_VM_READ = 0x10;
+        public const int PROCESS_VM_WRITE = 0x20;
+
+        [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern SafeProcessHandle OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SYSTEM_INFO
+        {
+            public short wProcessorArchitecture;
+            public short wReserved;
+            public int dwPageSize;
+            public IntPtr lpMinimumApplicationAddress;
+            public IntPtr lpMaximumApplicationAddress;
+            public IntPtr dwActiveProcessorMask;
+            public int dwNumberOfProcessors;
+            public int dwProcessorType;
+            public int dwAllocationGranularity;
+            public short wProcessorLevel;
+            public short wProcessorRevision;
+        }
+
+        [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall)]
+        public static extern void GetSystemInfo(out SYSTEM_INFO info);
+
+        public const int MEM_COMMIT = 0x1000;
+        public const int MEM_RESERVE = 0x2000;
+
+        public const int PAGE_NOACCESS = 0x1;
+        public const int PAGE_READONLY = 0x2;
+        public const int PAGE_READWRITE = 0x4;
+        public const int PAGE_WRITECOPY = 0x8;
+        public const int PAGE_EXECUTE = 0x10;
+        public const int PAGE_EXECUTE_READ = 0x20;
+        public const int PAGE_EXECUTE_READWRITE = 0x40;
+        public const int PAGE_EXECUTE_WRITECOPY = 0x80;
+        public const int PAGE_GUARD = 0x100;
+        public const int PAGE_NOCACHE = 0x200;
+        public const int PAGE_WRITECOMBINE = 0x400;
+
+        [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern IntPtr VirtualAllocEx(SafeProcessHandle hProcess, IntPtr lpAddress, IntPtr dwSize,
+            int flAllocationType, int flProtest);
+
+        public const int MEM_DECOMMIT = 0x4000;
+        public const int MEM_RELEASE = 0x8000;
+
+        [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern bool VirtualFreeEx(SafeProcessHandle hProcess, IntPtr lpAddress, IntPtr dwSize,
+            int dwFreeType);
+
+        [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern bool WriteProcessMemory(SafeProcessHandle hProcess, IntPtr lpBaseAddress,
+            [In] byte[] lpBuffer, IntPtr nSize, IntPtr lpNumberOfBytesWritten);
+
+        [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern bool ReadProcessMemory(SafeProcessHandle hProcess, IntPtr lpBaseAddress,
+            [Out] byte[] lpBuffer, IntPtr nSize, IntPtr lpNumberOfBytesRead);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate IntPtr WNDPROC(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam);
@@ -628,6 +690,34 @@ namespace Xalia.Interop
 
             return info.info.win.window;
         }
+
+        // List view
+        public const int LVS_ICON = 0x0;
+        public const int LVS_REPORT = 0x1;
+        public const int LVS_SMALLICON = 0x2;
+        public const int LVS_LIST = 0x3;
+        public const int LVS_TYPEMASK = 0x3;
+
+        public const int LVM_FIRST = 0x1000;
+        public const int LVM_GETITEMCOUNT = LVM_FIRST + 4;
+        public const int LVM_GETITEMRECT = LVM_FIRST + 14;
+        public const int LVM_GETHEADER = LVM_FIRST + 31;
+        public const int LVM_GETTOPINDEX = LVM_FIRST + 39;
+        public const int LVM_GETCOUNTPERPAGE = LVM_FIRST + 40;
+        public const int LVM_SETVIEW = LVM_FIRST + 142;
+        public const int LVM_GETVIEW = LVM_FIRST + 143;
+
+        public const int LV_VIEW_ICON = 0;
+        public const int LV_VIEW_DETAILS = 1;
+        public const int LV_VIEW_SMALLICON = 2;
+        public const int LV_VIEW_LIST = 3;
+        public const int LV_VIEW_TILE = 4;
+        public const int LV_VIEW_MAX = 5;
+
+        public const int LVIR_BOUNDS = 0;
+        public const int LVIR_ICON = 1;
+        public const int LVIR_LABEL = 2;
+        public const int LVIR_SELECTBOUNDS = 3;
 
         // Trackbar
         public const int TBS_VERT = 0x00000002;

@@ -114,8 +114,16 @@ namespace Xalia.Uia.Win32
             var result = (int)await SendMessageAsync(Hwnd, TBM_GETLINESIZE, IntPtr.Zero, IntPtr.Zero);
             if (result == 0)
                 result = 1;
-            LineSizeKnown = true;
-            LineSize = 1;
+            if (!LineSizeKnown || LineSize != result)
+            {
+                LineSizeKnown = true;
+                LineSize = result;
+
+                if (MatchesDebugCondition())
+                    Console.WriteLine($"{this}.win32_line_size: {LineSize}");
+
+                PropertyChanged("win32_line_size");
+            }
         }
 
         public override async Task<double> GetMinimumIncrement()

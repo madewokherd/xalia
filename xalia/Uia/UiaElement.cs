@@ -459,12 +459,14 @@ namespace Xalia.Uia
 
             if (ElementWrapper.Hwnd != IntPtr.Zero)
             {
-                int win32_element = -1, win32_trackbar = -1;
+                int win32_element = -1, win32_listview = -1, win32_trackbar = -1;
 
                 for (int i = 0; i < Children.Count; i++)
                 {
                     if (Children[i] is Win32Trackbar)
                         win32_trackbar = i;
+                    else if (Children[i] is Win32ListView)
+                        win32_listview = i;
                     else if (Children[i] is Win32Element)
                         win32_element = i;
                 }
@@ -496,6 +498,21 @@ namespace Xalia.Uia
                     if (win32_trackbar != -1)
                     {
                         RemoveChild(win32_trackbar);
+                    }
+                }
+
+                if (all_declarations.TryGetValue("win32_use_listview", out var use_listview) && use_listview.Item2.ToBool())
+                {
+                    if (win32_listview == -1)
+                    {
+                        AddChild(Children.Count, new Win32ListView(ElementWrapper.Hwnd, Root));
+                    }
+                }
+                else
+                {
+                    if (win32_listview != -1)
+                    {
+                        RemoveChild(win32_listview);
                     }
                 }
             }
@@ -786,6 +803,7 @@ namespace Xalia.Uia
                 switch (com.ErrorCode)
                 {
                     case unchecked((int)0x80004005): // E_FAIL
+                    case unchecked((int)0x80010012): // RPC_E_SERVER_DIED_DNE
                     case unchecked((int)0x80010108): // RPC_E_DISCONNECTED
                     case unchecked((int)0x800401FD): // CO_E_OBJNOTCONNECTED
                     case unchecked((int)0x80040201): // EVENT_E_ALL_SUBSCRIBERS_FAILED
