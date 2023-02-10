@@ -339,7 +339,7 @@ namespace Xalia.Interop
                 foreach (var page in memoryPages)
                 {
                     VirtualFreeEx(processHandle, new IntPtr((long)page.StartAddress),
-                        new IntPtr((long)(page.EndAddress - page.StartAddress)), MEM_DECOMMIT | MEM_RELEASE);
+                        IntPtr.Zero, MEM_RELEASE);
                 }
                 memoryPages = null;
                 processHandle.Dispose();
