@@ -1,11 +1,9 @@
 ﻿#if WINDOWS
 using Microsoft.Win32.SafeHandles;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 using static Xalia.Interop.Win32;
 
 namespace Xalia.Interop
