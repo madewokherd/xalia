@@ -662,9 +662,11 @@ namespace Xalia.Ui
                 }
                 var candidate_edge_distance = (dx * dx) + (dy * dy) * 4;
 
-                // Calculate centerpoint distance
-                dy = y_diff_start - (int)Math.Round(candidate_bounds.Item4 * (bias + 1) / 2); // use center point of candidate neutral, bottom point if bias is fully upwards
-                dy -= (int)Math.Round(current_bounds.Item4 * (bias + 1) / 2); // use center point of current if neutral, top point if bias is fully upwards
+                // Calculate centerpoint distance, with bias
+                var candidate_biased_y = candidate_bounds.Item2 + (int)Math.Round(candidate_bounds.Item4 * (1 - bias) / 2);
+                candidate_biased_y -= (int)Math.Round(bias * dx);
+                var current_biased_y = current_bounds.Item2 + (int)Math.Round(current_bounds.Item4 * (1 + bias) / 2);
+                dy = candidate_biased_y - current_biased_y;
                 var candidate_center_distance = (dx * dx) + (dy * dy) * 4;
 
                 if (best_element is null ||
