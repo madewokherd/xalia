@@ -581,6 +581,10 @@ window (uia_class_name == "ApplicationFrameWindow" or uia_framework_id == "XAML"
     application_supports_gamepad: true;
 }
 
+window (framework_id == "Slate") { // Unreal Engine's GUI toolkit
+    application_supports_gamepad: true;
+}
+
 if (application_supports_gamepad) {
     interactable: false;
     toplevel_interactable: false;
