@@ -258,7 +258,7 @@ namespace Xalia.Ui
 
             if (targetable_elements.Count == 1)
             {
-                Utils.RunIdle(SelectAnyTarget());
+                Utils.RunTask(SelectAnyTarget());
             }
 
             if (element == TargetedElement)
@@ -755,7 +755,7 @@ namespace Xalia.Ui
                 target_box.Hide();
 
                 if (targetable_elements.Count != 0)
-                    Utils.RunIdle(SelectAnyTarget());
+                    Utils.RunTask(SelectAnyTarget());
 
                 return;
             }

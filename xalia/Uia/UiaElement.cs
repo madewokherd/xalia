@@ -424,7 +424,7 @@ namespace Xalia.Uia
             }
 
             property_poll_token[propid] = null;
-            Utils.RunIdle(PollProperty(name, propid));
+            Utils.RunTask(PollProperty(name, propid));
         }
 
         private async Task PollChildren()

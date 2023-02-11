@@ -581,7 +581,7 @@ namespace Xalia.AtSpi
             }
 
             children_poll_token = null;
-            Utils.RunIdle(PollChildren()); // Unsure if RunTask would accumulate stack frames forever
+            Utils.RunTask(PollChildren());
         }
         internal void WatchChildren()
         {
@@ -1196,7 +1196,7 @@ namespace Xalia.AtSpi
             }
 
             abs_position_refresh_token = null;
-            Utils.RunIdle(RefreshAbsPos()); // Unsure if RunTask would accumulate stack frames forever
+            Utils.RunTask(RefreshAbsPos());
         }
 
         private async Task RefreshMinimumValue()
@@ -1244,7 +1244,7 @@ namespace Xalia.AtSpi
             }
 
             minimum_value_refresh_token = null;
-            Utils.RunIdle(RefreshMinimumValue()); // Unsure if RunTask would accumulate stack frames forever
+            Utils.RunTask(RefreshMinimumValue());
         }
 
         private async Task RefreshMaximumValue()
@@ -1292,7 +1292,7 @@ namespace Xalia.AtSpi
             }
 
             maximum_value_refresh_token = null;
-            Utils.RunIdle(RefreshMaximumValue()); // Unsure if RunTask would accumulate stack frames forever
+            Utils.RunTask(RefreshMaximumValue());
         }
 
         private async Task WatchStates()

@@ -55,11 +55,6 @@ namespace Xalia
             SynchronizationContext.Current.Post(RunActionCallback, action);
         }
 
-        internal static void RunIdle(Task t)
-        {
-            SynchronizationContext.Current.Post(RunTaskCallback, t);
-        }
-
         internal static T WaitTask<T>(ValueTask<T> task)
         {
             return WaitTask(task.AsTask());

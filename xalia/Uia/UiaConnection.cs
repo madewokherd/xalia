@@ -527,7 +527,7 @@ namespace Xalia.Uia
             }
 
             focus_poll_token = null;
-            Utils.RunIdle(PollFocusedElement());
+            Utils.RunTask(PollFocusedElement());
         }
 
         protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
