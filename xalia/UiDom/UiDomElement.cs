@@ -428,8 +428,20 @@ namespace Xalia.UiDom
             var activeDeclarations = new Dictionary<string, (GudlDeclaration, UiDomValue)>();
             bool stop = false;
             var depends_on = new HashSet<(UiDomElement, GudlExpression)>();
-            foreach ((GudlExpression expr, GudlDeclaration[] declaraions) in Root.Rules)
+            foreach ((GudlExpression expr, GudlDeclaration[] declarations) in Root.Rules)
             {
+                bool any_new_declarations = false;
+                foreach (var decl in declarations)
+                {
+                    if (decl.Property == "stop" || !activeDeclarations.ContainsKey(decl.Property))
+                    {
+                        any_new_declarations = true;
+                        break;
+                    }
+                }
+                if (!any_new_declarations)
+                    continue;
+
                 if (!(expr is null))
                 {
                     UiDomValue condition = Evaluate(expr, Root, depends_on);
@@ -438,7 +450,7 @@ namespace Xalia.UiDom
                         continue;
                 }
 
-                foreach (var decl in declaraions)
+                foreach (var decl in declarations)
                 {
                     if (activeDeclarations.ContainsKey(decl.Property) && decl.Property != "stop")
                     {
