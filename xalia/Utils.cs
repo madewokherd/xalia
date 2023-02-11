@@ -80,5 +80,11 @@ namespace Xalia
             if (!(task.Exception is null))
                 throw task.Exception;
         }
+
+        internal static bool TryGetEnvironmentVariable(string name, out string result)
+        {
+            result = Environment.GetEnvironmentVariable(name);
+            return !(result is null);
+        }
     }
 }

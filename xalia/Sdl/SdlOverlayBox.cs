@@ -31,7 +31,8 @@ namespace Xalia.Sdl
                     {
                         var windowEvent = e.SdlEvent.window;
                         if (windowEvent.windowID == _windowID &&
-                            windowEvent.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_EXPOSED)
+                            (windowEvent.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_EXPOSED ||
+                             windowEvent.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_SHOWN))
                         {
                             Redraw();
                         }
