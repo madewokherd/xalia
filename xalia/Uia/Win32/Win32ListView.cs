@@ -22,6 +22,8 @@ namespace Xalia.Uia.Win32
                 "top_index", "win32_top_index",
                 "item_count", "win32_item_count",
                 "count_per_page", "win32_count_per_page",
+                "header", "win32_header",
+                "header_hwnd", "win32_header_hwnd",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i = 0; i < aliases.Length; i += 2)
