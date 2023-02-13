@@ -332,7 +332,22 @@ namespace Xalia.Ui
                 else if (element_target_sequence.ContainsKey(best_element))
                     continue;
 
-                // FIXME: look for default or focused elements?
+                // Look for default or focused elements
+                double best_priority, candidate_priority;
+
+                if (!best_element.GetDeclaration("target_priority").TryToDouble(out best_priority))
+                    best_priority = 0;
+
+                if (!candidate_element.GetDeclaration("target_priority").TryToDouble(out candidate_priority))
+                    candidate_priority = 0;
+
+                if (candidate_priority > best_priority)
+                {
+                    best_element = candidate_element;
+                    continue;
+                }
+                if (best_priority > candidate_priority)
+                    continue;
 
                 // Choose the first element in the tree, prefer children to ancestors
                 Stack<UiDomElement> best_ancestors = GetAncestors(best_element);

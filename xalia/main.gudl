@@ -231,6 +231,7 @@ image (is_uia_element and interactable and parent.(window and win32_process_name
     primary_action: send_click;
     if (automation_id == "1004") { // Play button
         confirm_action: primary_action;
+        target_priority: 1;
     }
 }
 
