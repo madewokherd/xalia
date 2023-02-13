@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -33,15 +34,30 @@ namespace Xalia.Uia.Win32
             }
         }
 
-        internal Win32Element(IntPtr hwnd, UiDomRoot root) : base(root)
+        internal Win32Element(IntPtr hwnd, UiaConnection root) : base(root)
         {
             Hwnd = hwnd;
+            Root = root;
             _debugid = $"{GetType().Name}-{hwnd}";
         }
 
+        public new UiaConnection Root { get; }
         private readonly string _debugid;
         private static readonly Dictionary<string, string> property_aliases;
         private string ProcessName;
+
+        private int _pid;
+        public int Pid
+        {
+            get
+            {
+                if (_pid == 0)
+                {
+                    GetWindowThreadProcessId(Hwnd, out _pid);
+                }
+                return _pid;
+            }
+        }
 
         public IntPtr Hwnd { get; }
 
@@ -69,6 +85,15 @@ namespace Xalia.Uia.Win32
         public override int GetHashCode()
         {
             return Hwnd.GetHashCode() ^ GetType().GetHashCode();
+        }
+
+        protected override void SetAlive(bool value)
+        {
+            if (!value)
+            {
+                use_virtual_scroll = false;
+            }
+            base.SetAlive(value);
         }
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -243,6 +268,92 @@ namespace Xalia.Uia.Win32
                 }
             }
             base.UnwatchProperty(expression);
+        }
+
+        protected override void PropertiesChanged(HashSet<GudlExpression> changed_properties)
+        {
+            if (use_virtual_scroll && changed_properties.Contains(new IdentifierExpression("win32_style")))
+            {
+                UpdateScrollbars();
+            }
+            base.PropertiesChanged(changed_properties);
+        }
+
+        private bool use_virtual_scroll;
+        private bool has_hscroll;
+        private bool has_vscroll;
+
+        public bool UseVirtualScrollBars
+        {
+            get => use_virtual_scroll;
+            protected set
+            {
+                if (value != use_virtual_scroll)
+                {
+                    use_virtual_scroll = value;
+                    if (value)
+                    {
+                        UpdateScrollbars();
+                    }
+                    else
+                    {
+                        has_hscroll = false;
+                        has_vscroll = false;
+
+                        int idx = Children.FindIndex(e => e is Win32VirtualScrollbar);
+                        if (idx != -1)
+                        {
+                            RemoveChild(idx);
+                            idx = Children.FindIndex(idx, e => e is Win32VirtualScrollbar);
+                            if (idx != -1)
+                                RemoveChild(idx);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void UpdateScrollbars()
+        {
+            bool hscroll = WindowStyleKnown && (WindowStyle & WS_HSCROLL) == WS_HSCROLL;
+            bool vscroll = WindowStyleKnown && (WindowStyle & WS_VSCROLL) == WS_VSCROLL;
+
+            if (hscroll != has_hscroll)
+            {
+                has_hscroll = hscroll;
+                if (has_hscroll)
+                    AddChild(Children.Count, new Win32VirtualScrollbar(this, false));
+                else
+                    RemoveChild(Children.FindIndex(e => e is Win32VirtualScrollbar scroll && !scroll.Vertical));
+            }
+            else
+            {
+                has_vscroll = vscroll;
+                if (has_vscroll)
+                    AddChild(Children.Count, new Win32VirtualScrollbar(this, true));
+                else
+                    RemoveChild(Children.FindIndex(e => e is Win32VirtualScrollbar scroll && scroll.Vertical));
+            }
+        }
+
+        public virtual Task<double> GetHScrollMinimumIncrement()
+        {
+            return Task.FromResult(25.0);
+        }
+
+        public virtual Task<double> GetVScrollMinimumIncrement()
+        {
+            return Task.FromResult(25.0);
+        }
+
+        public virtual Task OffsetHScroll(double ofs)
+        {
+            return Task.CompletedTask;
+        }
+
+        public virtual Task OffsetVScroll(double ofs)
+        {
+            return Task.CompletedTask;
         }
     }
 }

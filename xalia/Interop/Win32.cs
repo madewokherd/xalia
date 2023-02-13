@@ -149,8 +149,10 @@ namespace Xalia.Interop
         public const int GWL_STYLE = -16;
         public const int GWL_EXSTYLE = -20;
 
-        public const int WS_VISIBLE = 0x10000000;
+        public const int WS_HSCROLL = 0x00100000;
+        public const int WS_VSCROLL = 0x00200000;
         public const int WS_DISABLED = 0x08000000;
+        public const int WS_VISIBLE = 0x10000000;
         public const int WS_POPUP = -0x80000000;
 
         public const int WS_EX_TOPMOST = 0x00000008;
@@ -429,6 +431,12 @@ namespace Xalia.Interop
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int x, y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         public struct GUITHREADINFO
         {
             public int cbSize;
@@ -556,6 +564,8 @@ namespace Xalia.Interop
             return (style & WS_VISIBLE) != 0;
         }
 
+        public const int SM_CXVSCROLL = 2;
+        public const int SM_CYHSCROLL = 3;
         public const int SM_XVIRTUALSCREEN = 76;
         public const int SM_YVIRTUALSCREEN = 77;
         public const int SM_CXVIRTUALSCREEN = 78;
@@ -701,9 +711,11 @@ namespace Xalia.Interop
         public const int LVM_FIRST = 0x1000;
         public const int LVM_GETITEMCOUNT = LVM_FIRST + 4;
         public const int LVM_GETITEMRECT = LVM_FIRST + 14;
+        public const int LVM_SCROLL = LVM_FIRST + 20;
         public const int LVM_GETHEADER = LVM_FIRST + 31;
         public const int LVM_GETTOPINDEX = LVM_FIRST + 39;
         public const int LVM_GETCOUNTPERPAGE = LVM_FIRST + 40;
+        public const int LVM_GETORIGIN = LVM_FIRST + 41;
         public const int LVM_SETVIEW = LVM_FIRST + 142;
         public const int LVM_GETVIEW = LVM_FIRST + 143;
 

@@ -232,6 +232,11 @@ namespace Xalia.Interop
             return result;
         }
 
+        public MemoryAllocation Alloc<T>()
+        {
+            return Alloc((ulong)Marshal.SizeOf<T>());
+        }
+
         private void Unref(MemoryAllocation allocation)
         {
             int page_index;

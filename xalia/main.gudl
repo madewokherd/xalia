@@ -525,6 +525,31 @@ if (is_win32_listview_item) {
     height: win32_selectbounds_height;
 }
 
+if (is_win32_element and child_matches(is_win32_virtual_scrollbar)) {
+    scrollable: true;
+    no_scrollable_fallback: true;
+
+    hscroll: child_matches(is_win32_virtual_scrollbar and horizontal);
+    vscroll: child_matches(is_win32_virtual_scrollbar and vertical);
+
+    scroll_view_action: adjust_scrollbars(hscroll, vscroll);
+
+    // FIXME: fill in view/pane sizes
+}
+
+if (is_win32_virtual_scrollbar) {
+    if (vertical) {
+        x: parent.x + parent.width - cxvscroll;
+        y: parent.y;
+        width: cxvscroll;
+        height: parent.height - (parent.child_matches(scrollbar and horizontal).height or 0);
+    }
+    x: parent.x;
+    y: parent.y + parent.height - cyhscroll;
+    width: parent.width - (parent.child_matches(scrollbar and vertical).width or 0);
+    height: cyhscroll;
+}
+
 // Top-level objects
 
 if (role.(desktop_frame or application)) {
@@ -986,7 +1011,7 @@ if (interactable) {
         }
     }
 
-    if ((scroll_bar or slider) and not (is_win32_element or spi_state.(vertical or horizontal) or uia_orientation)) {
+    if ((scroll_bar or slider) and not (is_win32_element or is_win32_subelement or spi_state.(vertical or horizontal) or uia_orientation)) {
         // Qt doesn't set these states
         vertical: height > width;
         horizontal: width > height;

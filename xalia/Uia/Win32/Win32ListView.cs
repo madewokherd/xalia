@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Xalia.Gudl;
+using Xalia.Interop;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
 
@@ -11,7 +12,7 @@ namespace Xalia.Uia.Win32
 {
     internal class Win32ListView : Win32Element
     {
-        public Win32ListView(IntPtr hwnd, UiDomRoot root) : base(hwnd, root)
+        public Win32ListView(IntPtr hwnd, UiaConnection root) : base(hwnd, root)
         {
         }
 
@@ -33,6 +34,8 @@ namespace Xalia.Uia.Win32
         }
 
         static Dictionary<string, string> property_aliases;
+
+        private Win32RemoteProcessMemory remote_process_memory;
 
         bool CheckingComCtl6;
         bool IsComCtl6;
@@ -77,6 +80,11 @@ namespace Xalia.Uia.Win32
                 {
                     ChildItemCountWatcher.Dispose();
                     ChildItemCountWatcher = null;
+                }
+                if (!(remote_process_memory is null))
+                {
+                    remote_process_memory.Unref();
+                    remote_process_memory = null;
                 }
             }
             base.SetAlive(value);
@@ -434,6 +442,7 @@ namespace Xalia.Uia.Win32
                     HeaderHwndWatcher = NotifyPropertyChanged(new IdentifierExpression("win32_header_hwnd"), QueueRefreshChildren);
                     ChildItemStartWatcher = NotifyPropertyChanged(new IdentifierExpression("win32_child_item_start"), QueueRefreshChildren);
                     ChildItemCountWatcher = NotifyPropertyChanged(new IdentifierExpression("win32_child_item_count"), QueueRefreshChildren);
+                    UseVirtualScrollBars = true;
                 }
                 if (!HasHeader() || HeaderHwnd == IntPtr.Zero)
                 {
@@ -495,6 +504,7 @@ namespace Xalia.Uia.Win32
                 if (watching_children)
                 {
                     watching_children = false;
+                    UseVirtualScrollBars = false;
                     if (!(Header is null))
                     {
                         RemoveChild(Children.IndexOf(Header));
@@ -551,6 +561,66 @@ namespace Xalia.Uia.Win32
             {
                 refreshing_children = true;
                 Utils.RunIdle(RefreshChildren);
+            }
+        }
+
+        double yremainder;
+
+        public override Task<double> GetVScrollMinimumIncrement()
+        {
+            return Task.FromResult(1.0);
+        }
+
+        public override async Task OffsetVScroll(double ofs)
+        {
+            switch (ViewAsInt)
+            {
+                case LV_VIEW_DETAILS:
+                    {
+                        int pos = (int)await SendMessageAsync(Hwnd, LVM_GETTOPINDEX, IntPtr.Zero, IntPtr.Zero);
+
+                        int total_items = (int)await SendMessageAsync(Hwnd, LVM_GETITEMCOUNT, IntPtr.Zero, IntPtr.Zero);
+
+                        int count_per_page = (int)await SendMessageAsync(Hwnd, LVM_GETCOUNTPERPAGE, IntPtr.Zero, IntPtr.Zero);
+
+                        int max_pos = total_items - count_per_page;
+
+                        double new_pos = pos + yremainder + ofs;
+
+                        int pos_ofs = (int)Math.Truncate(new_pos - pos);
+
+                        int new_pos_int = pos + pos_ofs;
+
+                        if (new_pos_int != pos)
+                        {
+                            if (new_pos_int < 0)
+                                new_pos = new_pos_int = 0;
+                            else if (new_pos_int > max_pos)
+                                new_pos = new_pos_int = max_pos;
+                        }
+
+                        if (new_pos_int != pos)
+                        {
+                            if (remote_process_memory is null)
+                                remote_process_memory = Win32RemoteProcessMemory.FromPid(Pid);
+                            RECT rc = new RECT();
+                            rc.left = LVIR_SELECTBOUNDS;
+                            IntPtr result;
+                            using (var memory = remote_process_memory.WriteAlloc(rc))
+                            {
+                                result = await SendMessageAsync(Hwnd, LVM_GETITEMRECT, (IntPtr)pos, new IntPtr((long)memory.Address));
+                                rc = memory.Read<RECT>();
+                            }
+
+                            await SendMessageAsync(Hwnd, LVM_SCROLL, IntPtr.Zero, new IntPtr((rc.bottom - rc.top) * pos_ofs));
+                        }
+
+                        yremainder = new_pos - new_pos_int;
+                    }
+                    break;
+                default:
+                    // FIXME
+                    break;
             }
         }
     }
