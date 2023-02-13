@@ -513,8 +513,9 @@ if (is_win32_listview) {
 
 if (is_win32_listview_item) {
     if (parent.view.details) {
-        x: parent.x + first_sibling.win32_selectbounds_x;
+        x: parent.header.x + first_sibling.win32_selectbounds_x;
         y: parent.header.y + parent.header.height +
+            (parent.header.y - parent.y) + // This is the size of the 3d border
             first_sibling.win32_selectbounds_height * index_in_parent;
         width: first_sibling.win32_selectbounds_width;
         height: first_sibling.win32_selectbounds_height;
