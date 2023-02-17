@@ -733,6 +733,7 @@ namespace Xalia.Interop
 
         // Tab Control
         public const int TCM_FIRST = 0x1300;
+        public const int TCM_GETITEMCOUNT = TCM_FIRST + 4;
         public const int TCM_GETCURSEL = TCM_FIRST + 11;
 
         // Trackbar

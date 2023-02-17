@@ -19,6 +19,7 @@ namespace Xalia.Uia.Win32
         {
             string[] aliases = {
                 "selection_index", "win32_selection_index",
+                "item_count", "win32_item_count",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i = 0; i < aliases.Length; i += 2)
@@ -33,6 +34,8 @@ namespace Xalia.Uia.Win32
         private Win32RemoteProcessMemory remote_process_memory;
         private bool SelectionIndexKnown;
         private int SelectionIndex;
+        private bool ItemCountKnown;
+        private int ItemCount;
 
         protected override void SetAlive(bool value)
         {
@@ -73,7 +76,11 @@ namespace Xalia.Uia.Win32
                     if (SelectionIndexKnown)
                         return new UiDomInt(SelectionIndex);
                     return UiDomUndefined.Instance;
-
+                case "win32_item_count":
+                    depends_on.Add((this, new IdentifierExpression("win32_item_count")));
+                    if (ItemCountKnown)
+                        return new UiDomInt(ItemCount);
+                    return UiDomUndefined.Instance;
                 default:
                     break;
             }
@@ -85,6 +92,8 @@ namespace Xalia.Uia.Win32
         {
             if (SelectionIndexKnown)
                 Console.WriteLine($"  win32_selection_index: {SelectionIndex}");
+            if (ItemCountKnown)
+                Console.WriteLine($"  win32_item_count: {ItemCount}");
             base.DumpProperties();
         }
 
@@ -96,6 +105,9 @@ namespace Xalia.Uia.Win32
                 {
                     case "win32_selection_index":
                         PollProperty(expression, RefreshSelectionIndex, 200);
+                        break;
+                    case "win32_item_count":
+                        PollProperty(expression, RefreshItemCount, 200);
                         break;
                 }
             }
@@ -111,6 +123,10 @@ namespace Xalia.Uia.Win32
                     case "win32_selection_index":
                         EndPollProperty(expression);
                         SelectionIndexKnown = false;
+                        break;
+                    case "win32_item_count":
+                        EndPollProperty(expression);
+                        ItemCountKnown = false;
                         break;
                 }
             }
@@ -136,6 +152,29 @@ namespace Xalia.Uia.Win32
                 {
                     SelectionIndexKnown = false;
                     PropertyChanged("win32_selection_index", "undefined");
+                }
+            }
+        }
+
+        private async Task RefreshItemCount()
+        {
+            IntPtr index = await SendMessageAsync(Hwnd, TCM_GETITEMCOUNT, IntPtr.Zero, IntPtr.Zero);
+            int i = index.ToInt32();
+
+            bool known = i >= 0;
+
+            if (known != ItemCountKnown || i != ItemCount)
+            {
+                if (known)
+                {
+                    ItemCountKnown = true;
+                    ItemCount = i;
+                    PropertyChanged("win32_item_count", i);
+                }
+                else
+                {
+                    ItemCountKnown = false;
+                    PropertyChanged("win32_item_count", "undefined");
                 }
             }
         }
