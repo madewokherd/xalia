@@ -534,7 +534,7 @@ if (class_name == "SysTabControl32") {
 }
 
 if (is_win32_tabcontrol) {
-    test: item_count;
+    test: nothing;
 }
 
 if (is_win32_element and child_matches(is_win32_virtual_scrollbar)) {

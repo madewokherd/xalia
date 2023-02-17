@@ -97,6 +97,7 @@
     <Compile Include="Uia\Win32\Win32ListView.cs" />
     <Compile Include="Uia\Win32\Win32ListViewItem.cs" />
     <Compile Include="Uia\Win32\Win32TabControl.cs" />
+    <Compile Include="Uia\Win32\Win32TabControlItem.cs" />
     <Compile Include="Uia\Win32\Win32Trackbar.cs" />
     <Compile Include="Uia\Win32\Win32VirtualScrollbar.cs" />
     <Compile Include="UiDom\UiDomAdjustScrollbars.cs" />

@@ -32,15 +32,24 @@ namespace Xalia.Uia.Win32
         private static readonly UiDomValue role = new UiDomEnum(new[] { "tab", "page_tab_list", "pagetablist" });
 
         private Win32RemoteProcessMemory remote_process_memory;
-        private bool SelectionIndexKnown;
-        private int SelectionIndex;
+        public bool SelectionIndexKnown;
+        public int SelectionIndex;
         private bool ItemCountKnown;
         private int ItemCount;
+        private bool refreshing_children;
+        private bool watching_children;
+        private IDisposable ItemCountWatcher;
+        private int num_child_items;
 
         protected override void SetAlive(bool value)
         {
             if (!value)
             {
+                if (!(ItemCountWatcher is null))
+                {
+                    ItemCountWatcher.Dispose();
+                    ItemCountWatcher = null;
+                }
                 if (!(remote_process_memory is null))
                 {
                     remote_process_memory.Unref();
@@ -176,6 +185,76 @@ namespace Xalia.Uia.Win32
                     ItemCountKnown = false;
                     PropertyChanged("win32_item_count", "undefined");
                 }
+            }
+        }
+
+        protected override void PropertiesChanged(HashSet<GudlExpression> changed_properties)
+        {
+            if (changed_properties.Contains(new IdentifierExpression("recurse")) ||
+                changed_properties.Contains(new IdentifierExpression("win32_item_count")))
+            {
+                QueueRefreshChildren(this, new IdentifierExpression("recurse"));
+            }
+            base.PropertiesChanged(changed_properties);
+        }
+
+        private void QueueRefreshChildren(UiDomElement element, GudlExpression identifierExpression)
+        {
+            if (!refreshing_children)
+            {
+                refreshing_children = true;
+                Utils.RunIdle(RefreshChildren);
+            }
+        }
+
+        private void RefreshChildren()
+        {
+            if (GetDeclaration("recurse").ToBool())
+            {
+                if (!watching_children)
+                {
+                    watching_children = true;
+                    ItemCountWatcher = NotifyPropertyChanged(new IdentifierExpression("win32_item_count"), QueueRefreshChildren);
+                }
+                if (ItemCountKnown && num_child_items != ItemCount)
+                {
+                    if (ItemCount > num_child_items)
+                        AddChildRange(num_child_items, ItemCount);
+                    else
+                        RemoveChildRange(ItemCount, num_child_items);
+                    num_child_items = ItemCount;
+                }
+            }
+            else
+            {
+                if (watching_children)
+                {
+                    watching_children = false;
+                    if (!(ItemCountWatcher is null))
+                    {
+                        ItemCountWatcher.Dispose();
+                        ItemCountWatcher = null;
+                    }
+                    RemoveChildRange(0, num_child_items);
+                    num_child_items = 0;
+                }
+            }
+            refreshing_children = false;
+        }
+
+        private void AddChildRange(int start_index, int end_index)
+        {
+            for (int i=start_index; i<end_index; i++)
+            {
+                AddChild(i, new Win32TabControlItem(this, i));
+            }
+        }
+
+        private void RemoveChildRange(int start_index, int end_index)
+        {
+            for (int i=end_index-1; i>=start_index; i--)
+            {
+                RemoveChild(i);
             }
         }
     }
