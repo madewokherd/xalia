@@ -533,8 +533,11 @@ if (class_name == "SysTabControl32") {
     recurse: false;
 }
 
-if (is_win32_tabcontrol) {
-    test: nothing;
+if (is_win32_tabcontrol_item) {
+    x: parent.x + win32_x;
+    y: parent.y + win32_y;
+    width: win32_width;
+    height: win32_height;
 }
 
 if (is_win32_element and child_matches(is_win32_virtual_scrollbar)) {
