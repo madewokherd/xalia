@@ -731,6 +731,10 @@ namespace Xalia.Interop
         public const int LVIR_LABEL = 2;
         public const int LVIR_SELECTBOUNDS = 3;
 
+        // Tab Control
+        public const int TCM_FIRST = 0x1300;
+        public const int TCM_GETCURSEL = TCM_FIRST + 11;
+
         // Trackbar
         public const int TBS_VERT = 0x00000002;
 

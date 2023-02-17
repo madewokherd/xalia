@@ -527,6 +527,16 @@ if (is_win32_listview_item) {
     height: win32_selectbounds_height;
 }
 
+if (class_name == "SysTabControl32") {
+    win32_use_tabcontrol: ancestor_matches(toplevel_interactable);
+    targetable: false;
+    recurse: false;
+}
+
+if (is_win32_tabcontrol) {
+    test: selection_index;
+}
+
 if (is_win32_element and child_matches(is_win32_virtual_scrollbar)) {
     scrollable: true;
     no_scrollable_fallback: true;

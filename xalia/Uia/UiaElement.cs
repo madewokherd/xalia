@@ -459,7 +459,7 @@ namespace Xalia.Uia
 
             if (ElementWrapper.Hwnd != IntPtr.Zero)
             {
-                int win32_element = -1, win32_listview = -1, win32_trackbar = -1;
+                int win32_element = -1, win32_listview = -1, win32_tabcontrol = -1, win32_trackbar = -1;
 
                 for (int i = 0; i < Children.Count; i++)
                 {
@@ -467,6 +467,8 @@ namespace Xalia.Uia
                         win32_trackbar = i;
                     else if (Children[i] is Win32ListView)
                         win32_listview = i;
+                    else if (Children[i] is Win32TabControl)
+                        win32_tabcontrol = i;
                     else if (Children[i] is Win32Element)
                         win32_element = i;
                 }
@@ -483,6 +485,21 @@ namespace Xalia.Uia
                     if (win32_element != -1)
                     {
                         RemoveChild(win32_element);
+                    }
+                }
+
+                if (all_declarations.TryGetValue("win32_use_tabcontrol", out var use_tabcontrol) && use_tabcontrol.Item2.ToBool())
+                {
+                    if (win32_tabcontrol == -1)
+                    {
+                        AddChild(Children.Count, new Win32TabControl(ElementWrapper.Hwnd, Root));
+                    }
+                }
+                else
+                {
+                    if (win32_tabcontrol != -1)
+                    {
+                        RemoveChild(win32_tabcontrol);
                     }
                 }
 
