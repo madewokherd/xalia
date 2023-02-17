@@ -326,7 +326,7 @@ namespace Xalia.Uia.Win32
                 else
                     RemoveChild(Children.FindIndex(e => e is Win32VirtualScrollbar scroll && !scroll.Vertical));
             }
-            else
+            if (vscroll != has_vscroll)
             {
                 has_vscroll = vscroll;
                 if (has_vscroll)
