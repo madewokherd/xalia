@@ -539,7 +539,6 @@ namespace Xalia.Uia.Win32
 
         private void RemoveChildRange(int child_start, int child_count)
         {
-            Console.WriteLine($"RemoveChildRange {child_start} {child_count}");
             for (int i = child_count - 1; i >= 0; i--)
             {
                 RemoveChild(child_start + i);
@@ -548,7 +547,6 @@ namespace Xalia.Uia.Win32
 
         private void AddChildItemRange(int child_start, int child_count, int item_start)
         {
-            Console.WriteLine($"AddChildItemRange {child_start} {child_count} {item_start}");
             for (int i = 0; i < child_count; i++)
             {
                 AddChild(child_start + i, new Win32ListViewItem(this, item_start + i));
