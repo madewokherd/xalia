@@ -6,12 +6,12 @@ root {
     repeat_delay: 100;
     deadzone: 0.2;
 
-    action_on_left_stick: repeat_action(
+    action_on_left_stick: radial_deadzone(repeat_action(
         menu_move_action or
         list_move_action or
-        radial_deadzone(adjust_current_view_action, deadzone) or
+        adjust_current_view_action or
         target_move,
-        repeat_initial_delay, repeat_delay);
+        repeat_initial_delay, repeat_delay), deadzone);
     action_on_dpad_left: repeat_action(
         menu_left_action or
         list_left_action or
