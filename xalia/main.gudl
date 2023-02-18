@@ -5,6 +5,7 @@ root {
     repeat_initial_delay: 500;
     repeat_delay: 100;
     deadzone: 0.2;
+    panels_always_on: true;
 
     action_on_left_stick: radial_deadzone(repeat_action(
         menu_move_action or
@@ -477,28 +478,6 @@ root (descendent_matches(in_list_navigation)) {
     list_close_action: descendent_matches(in_list_navigation).list_close_action;
 }
 
-if ((table or tree_table or list_box) and
-    ((parent.is_current_view and root.current_view == parent) or
-     (parent.viewport and parent.parent.is_current_view and root.current_view == parent.parent))) {
-    // GTK list
-
-    in_list_navigation: true;
-
-    list_left_action: set_focus + send_key.left;
-    list_down_action: set_focus + send_key.down;
-    list_up_action: set_focus + send_key.up;
-    list_right_action: set_focus + send_key.right;
-
-    list_primary_action: set_focus + send_key.enter;
-    list_secondary_action: descendent_matches(selected).spi_action("expand or contract") or (set_focus + send_key.space);
-    list_context_menu_action: descendent_matches(selected).send_right_click;
-    list_close_action: root.ascend_action;
-
-    child {
-        interactable: false; // FIXME: This hides the "targeting" box, but we should instead hide it when no target_move action is bound.
-    }
-}
-
 // Special win32 controls
 if (class_name == "SysListView32") {
     win32_use_listview: ancestor_matches(toplevel_interactable);
@@ -647,11 +626,12 @@ if (toplevel_interactable or is_active_modal) {
     deepest_modal: descendent_matches(is_active_modal).deepest_modal or this;
 }
 
-if (toplevel_interactable and not root.disable_interactions and deepest_modal == this) {
+if (toplevel_interactable and not root.disable_interactions and deepest_modal == this and
+    not root.current_view) {
     interactable: true;
 }
 
-if (is_active_modal and not root.disable_interactions and ancestor_matches(toplevel_interactable).deepest_modal == this) {
+if (is_active_modal and not root.disable_interactions and root.current_view == this) {
     interactable: true;
 }
 
@@ -664,10 +644,6 @@ if (active and
 }
 
 // Recursive navigation
-
-if (parent.(can_descend and not is_current_view)) {
-    interactable: false;
-}
 
 descend_action: this.assign("is_current_view", true);
 
@@ -688,8 +664,12 @@ root {
 }
 
 // Panels
-if (is_panel and root.in_panel_mode) {
+if (is_panel and (root.in_panel_mode or root.panels_always_on)) {
     toplevel_interactable: true;
+}
+
+if (root.panels_always_on and ancestor_matches(is_panel)) {
+    target_priority: -1;
 }
 
 root (descendent_matches(is_panel) and not disable_interactions) {
@@ -739,10 +719,10 @@ if (uia_control_type.window) {
 // We'd need an unbroken chain of enabled/visible controls from the active window to interact with
 // a control through the mouse and keyboard, so normally we should only consider those. AT-SPI may
 // let us do things with other controls, but it might be confusing or break applications.
-if (is_spi_element and spi_state.enabled and spi_state.sensitive and not parent.stop_interactable and
-    (spi_state.showing or (spi_application.toolkit_name == "gtk" and not parent.page_tab)) and // GTK doesn't reliably update showing state of child controls when a scrollable pane is scrolled
+if (is_spi_element and enabled and sensitive and not parent.stop_interactable and
+    (showing or (spi_application.toolkit_name == "gtk" and not parent.page_tab)) and // GTK doesn't reliably update showing state of child controls when a scrollable pane is scrolled
         // https://gitlab.gnome.org/GNOME/gtk/-/issues/5511
-    (spi_state.visible or spi_application.toolkit_name == "Qt") and // Qt doesn't reliably set visible for some reason (or notify about it?)
+    (visible or spi_application.toolkit_name == "Qt") and // Qt doesn't reliably set visible for some reason (or notify about it?)
     parent.interactable) {
 
     // Qt combo boxes have a structure like this: tool_bar(text, combo_box(list, text))
@@ -753,6 +733,18 @@ if (is_spi_element and spi_state.enabled and spi_state.sensitive and not parent.
     }
 
     interactable: true;
+}
+
+page_tab (is_spi_element and spi_application.toolkit_name == "gtk") {
+    // GTK: Page tabs have the sensitive state only when there is more than one tab, but descendents
+    // can still be used. Worse, GTK does not send notifications when the sensitive state updates, so
+    // we can't really use it.
+
+    sensitive: true;
+
+    if (parent.child_count == 1) {
+        targetable: false;
+    }
 }
 
 if (is_uia_element and parent.interactable and enabled and not parent.stop_interactable and
@@ -1175,8 +1167,7 @@ if (interactable) {
         cancel_action_name: name;
     }
 
-    toggle_button (expandable) {
-        // Expander controls may have descendents that are also targetable
+    toggle_button {
         targetable: true;
     }
 
@@ -1201,10 +1192,6 @@ if (interactable) {
         secondary_action: send_click + send_click;
     }
 
-    if (can_descend) {
-        targetable: true;
-    }
-
     if (group or panel or frame) {
         targetable: false;
     }
@@ -1216,10 +1203,6 @@ if (interactable) {
 
     if (spi_action.menu) {
         context_menu_action: spi_action.menu;
-    }
-
-    if (can_descend) {
-        primary_action: descend_action;
     }
 
     table_cell (ancestor_matches(file_chooser)) {
