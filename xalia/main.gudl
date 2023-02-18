@@ -64,7 +64,8 @@ root {
         menu_open_action or
         confirm_action or
         (targeted_element and send_key.enter);
-    action_on_back: (not disable_interactions and toggle_panel_action);
+    action_on_back: ascend_action or
+        repeat_action(target_next, repeat_initial_delay, repeat_delay);
     action_on_right_stick: radial_deadzone(
         target_scroll_view_action or
         target_adjust_value_action or

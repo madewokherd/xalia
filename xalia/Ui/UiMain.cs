@@ -381,6 +381,149 @@ namespace Xalia.Ui
             TargetedElement = best_element;
         }
 
+        private Dictionary<UiDomElement, (int,int)> BuildPositionMap()
+        {
+            // returns a dictionary mapping elements to the upper-left corner of the
+            // bounding box of their targetable descendents
+
+            var result = new Dictionary<UiDomElement, (int, int)>();
+
+            foreach (var element in targetable_elements.Keys)
+            {
+                if (TryGetElementTargetBounds(element, out var bounds))
+                {
+                    var parent = element;
+                    while (!(parent is null))
+                    {
+                        if (result.TryGetValue(parent, out var prev_ul))
+                        {
+                            if (prev_ul.Item1 <= bounds.Item1 && prev_ul.Item2 <= bounds.Item2)
+                                break;
+                            result[parent] = (Math.Min(prev_ul.Item1, bounds.Item1), Math.Min(prev_ul.Item2, bounds.Item2));
+                        }
+                        else
+                            result[parent] = (bounds.Item1, bounds.Item2);
+                        parent = parent.Parent;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private int TargetTraverseOrder(UiDomElement a, UiDomElement b, Dictionary<UiDomElement, (int,int)> position_map)
+        {
+            var a_ancestors = GetAncestors(a);
+            var b_ancestors = GetAncestors(b);
+
+            if (a_ancestors.Contains(b))
+                return 1;
+
+            if (b_ancestors.Contains(a))
+                return -1;
+
+            while (a_ancestors.Count != 0 && b_ancestors.Count != 0)
+            {
+                var a_parent = a_ancestors.Pop();
+                var b_parent = b_ancestors.Pop();
+
+                if (a_parent == b_parent)
+                {
+                    continue;
+                }
+
+                if (a_parent.Parent is null || b_parent.Parent is null)
+                    return 0;
+
+                if (!position_map.TryGetValue(a_parent, out var a_parent_pos))
+                    return 0;
+
+                if (!position_map.TryGetValue(b_parent, out var b_parent_pos))
+                    return 0;
+
+                if (a_parent_pos.Item2 > b_parent_pos.Item2)
+                    return 1;
+                if (b_parent_pos.Item2 > a_parent_pos.Item2)
+                    return -1;
+
+                if (a_parent_pos.Item1 > b_parent_pos.Item1)
+                    return 1;
+                if (b_parent_pos.Item1 > a_parent_pos.Item1)
+                    return -1;
+
+                return (a_parent.Parent.Children.IndexOf(a_parent) > b_parent.Parent.Children.IndexOf(b_parent)) ?
+                    1 : -1;
+            }
+
+            return 0;
+        }
+
+        private void TargetTraverse(bool forward)
+        {
+            UiDomElement best_candidate = null;
+            bool best_candidate_after_current = false;
+            int mult = forward ? 1 : -1;
+
+            if (TargetedElement is null)
+                return;
+
+            var position_map = BuildPositionMap();
+
+            foreach (var candidate_element in targetable_elements.Keys)
+            {
+                if (candidate_element == TargetedElement)
+                    continue;
+
+                var targeted_cmp = mult * TargetTraverseOrder(TargetedElement, candidate_element, position_map);
+                if (targeted_cmp == 0)
+                    continue;
+
+                if (best_candidate is null)
+                {
+                    best_candidate = candidate_element;
+                    best_candidate_after_current = targeted_cmp < 0;
+                    continue;
+                }
+
+                if (best_candidate_after_current && targeted_cmp > 0)
+                {
+                    // current candidate is before target in the order, best candidate is after
+                    continue;
+                }
+                if (!best_candidate_after_current && targeted_cmp < 0)
+                {
+                    // current candidate is after target in the order, best candidate is before
+                    best_candidate = candidate_element;
+                    best_candidate_after_current = targeted_cmp < 0;
+                    continue;
+                }
+
+                var candidate_cmp = mult * TargetTraverseOrder(best_candidate, candidate_element, position_map);
+                if (candidate_cmp > 0)
+                {
+                    // current candidate is sooner in the order, therefore closer to target
+                    best_candidate = candidate_element;
+                    best_candidate_after_current = targeted_cmp < 0;
+                    continue;
+                }
+            }
+
+            if (!(best_candidate is null))
+            {
+                TargetedElement = best_candidate;
+            }
+        }
+
+        private void TargetNext(UiDomRoutineSync obj)
+        {
+            TargetTraverse(true);
+        }
+
+        private void TargetPrevious(UiDomRoutineSync obj)
+        {
+            TargetTraverse(false);
+        }
+
         private void UpdateActions()
         {
             var new_actions = new Dictionary<string, ActionInfo>();
@@ -493,6 +636,10 @@ namespace Xalia.Ui
                     return new UiDomRoutineAsync(element, "send_right_click", SendRightClick);
                 case "send_scroll":
                     return new SendScroll(element, Windowing);
+                case "target_next":
+                    return new UiDomRoutineSync("target_next", TargetNext);
+                case "target_previous":
+                    return new UiDomRoutineSync("target_previous", TargetPrevious);
             }
             return null;
         }
