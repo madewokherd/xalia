@@ -169,7 +169,7 @@ namespace Xalia.Sdl
                 int keycode = XKeysymToKeycode(display, new IntPtr(keysym)).ToInt32();
                 if (keycode == 0)
                 {
-                    Console.WriteLine($"WARNING: Failed looking up X keycode for keysym {keysym}");
+                    Utils.DebugWriteLine($"WARNING: Failed looking up X keycode for keysym {keysym}");
                     return;
                 }
                 //TODO: check XkbGetSlowKeysDelay

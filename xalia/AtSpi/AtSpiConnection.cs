@@ -57,10 +57,10 @@ namespace Xalia.AtSpi
             string bus = await GetAtSpiBusAddress();
             if (string.IsNullOrWhiteSpace(bus))
             {
-                Console.WriteLine("AT-SPI bus could not be found. Did you enable assistive technologies in your desktop environment?");
+                Utils.DebugWriteLine("AT-SPI bus could not be found. Did you enable assistive technologies in your desktop environment?");
                 return null;
             }
-            Console.WriteLine("AT-SPI bus found: {0}", bus);
+            Utils.DebugWriteLine($"AT-SPI bus found: {bus}");
             var options = new ClientConnectionOptions(bus);
             options.SynchronizationContext = SynchronizationContext.Current;
             var connection = new Connection(options);

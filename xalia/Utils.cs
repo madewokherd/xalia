@@ -29,10 +29,20 @@ namespace Xalia
             SynchronizationContext.Current.Send(RunTaskCallback, t);
         }
 
+        internal static void DebugWriteLine(string str)
+        {
+            Console.Error.WriteLine(str);
+        }
+
+        internal static void DebugWriteLine(object obj)
+        {
+            DebugWriteLine(obj.ToString());
+        }
+
         internal static void OnError(Exception obj)
         {
-            Console.WriteLine("Unhandled exception:");
-            Console.WriteLine(obj);
+            DebugWriteLine("Unhandled exception:");
+            DebugWriteLine(obj);
 #if DEBUG
             Environment.FailFast(obj.ToString());
 #endif

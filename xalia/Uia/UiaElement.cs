@@ -370,7 +370,7 @@ namespace Xalia.Uia
         internal void OnChildrenChanged(StructureChangeType arg2, int[] arg3)
         {
             if (MatchesDebugCondition())
-                Console.WriteLine("OnChildrenChanged for {0}", DebugId);
+                Utils.DebugWriteLine($"OnChildrenChanged for {this}");
             UpdateChildren();
         }
 
@@ -379,7 +379,7 @@ namespace Xalia.Uia
             if (watching_children)
                 return;
             if (MatchesDebugCondition())
-                Console.WriteLine("WatchChildren for {0}", DebugId);
+                Utils.DebugWriteLine($"WatchChildren for {this}");
             watching_children = true;
             Utils.RunTask(RefreshChildren());
         }
@@ -389,7 +389,7 @@ namespace Xalia.Uia
             if (!watching_children)
                 return;
             if (MatchesDebugCondition())
-                Console.WriteLine("UnwatchChildren for {0}", DebugId);
+                Utils.DebugWriteLine($"UnwatchChildren for {this}");
             watching_children = false;
             if (children_poll_token != null)
             {
@@ -697,7 +697,7 @@ namespace Xalia.Uia
             else
             {
                 if (!(value is null))
-                    Console.WriteLine($"Warning: value for {name} has unsupported type {value.GetType()}");
+                    Utils.DebugWriteLine($"Warning: value for {name} has unsupported type {value.GetType()}");
                 new_value = UiDomUndefined.Instance;
             }
 
@@ -709,7 +709,7 @@ namespace Xalia.Uia
             if (!old_value.Equals(new_value))
             {
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"{DebugId}.{name}: {new_value}");
+                    Utils.DebugWriteLine($"{DebugId}.{name}: {new_value}");
                 property_value[propid] = new_value;
                 property_raw_value[propid] = value;
                 PropertyChanged(name);
@@ -803,8 +803,8 @@ namespace Xalia.Uia
 #if DEBUG
             if (DebugExceptions)
             {
-                Console.WriteLine("WARNING: Exception:");
-                Console.WriteLine(e);
+                Utils.DebugWriteLine("WARNING: Exception:");
+                Utils.DebugWriteLine(e);
             }
 #endif
             if (e is FlaUI.Core.Exceptions.NotSupportedException)
@@ -834,8 +834,8 @@ namespace Xalia.Uia
 #else
             if (DebugExceptions)
             {
-                Console.WriteLine("WARNING: Exception ignored:");
-                Console.WriteLine(e);
+                Utils.DebugWriteLine("WARNING: Exception ignored:");
+                Utils.DebugWriteLine(e);
             }
             return true;
 #endif
@@ -1300,28 +1300,28 @@ namespace Xalia.Uia
             {
                 if (kvp.Value && property_value.TryGetValue(kvp.Key, out var val))
                 {
-                    Console.WriteLine($"  {Root.properties_to_name[kvp.Key]}: {val}");
+                    Utils.DebugWriteLine($"  {Root.properties_to_name[kvp.Key]}: {val}");
                 }
             }
             if (ElementWrapper.Equals(Root.FocusedElement))
-                Console.WriteLine($"  uia_focused: true");
+                Utils.DebugWriteLine($"  uia_focused: true");
             if (ElementWrapper.Equals(Root.ForegroundElement))
-                Console.WriteLine($"  msaa_foreground: true");
+                Utils.DebugWriteLine($"  msaa_foreground: true");
             if (ElementWrapper.Equals(Root.ActiveElement))
-                Console.WriteLine($"  win32_active: true");
+                Utils.DebugWriteLine($"  win32_active: true");
             if (!(supported_patterns is null))
                 foreach (var patternid in supported_patterns)
-                    Console.WriteLine($"  supported pattern: {patternid.Name}");
+                    Utils.DebugWriteLine($"  supported pattern: {patternid.Name}");
             if (!(application_name is null))
-                Console.WriteLine($"  acc2_application_name: {application_name}");
+                Utils.DebugWriteLine($"  acc2_application_name: {application_name}");
             if (!(application_version is null))
-                Console.WriteLine($"  acc2_application_verion: {application_version}");
+                Utils.DebugWriteLine($"  acc2_application_verion: {application_version}");
             if (!(toolkit_name is null))
-                Console.WriteLine($"  acc2_toolkit_name: {toolkit_name}");
+                Utils.DebugWriteLine($"  acc2_toolkit_name: {toolkit_name}");
             if (!(toolkit_version is null))
-                Console.WriteLine($"  acc2_toolkit_version: {toolkit_version}");
+                Utils.DebugWriteLine($"  acc2_toolkit_version: {toolkit_version}");
             if (!(ProcessName is null))
-                Console.WriteLine($"  win32_process_name: {ProcessName}");
+                Utils.DebugWriteLine($"  win32_process_name: {ProcessName}");
             base.DumpProperties();
         }
 
@@ -1385,7 +1385,7 @@ namespace Xalia.Uia
 
             if (!supported)
             {
-                Console.WriteLine($"WARNING: msaa_do_default_action not supported on {this}");
+                Utils.DebugWriteLine($"WARNING: msaa_do_default_action not supported on {this}");
             }
         }
 
@@ -1416,7 +1416,7 @@ namespace Xalia.Uia
 
             if (!supported)
             {
-                Console.WriteLine($"WARNING: uia_invoke not supported on {this}");
+                Utils.DebugWriteLine($"WARNING: uia_invoke not supported on {this}");
             }
         }
 

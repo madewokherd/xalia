@@ -100,9 +100,9 @@ namespace Xalia.Uia.Win32
         protected override void DumpProperties()
         {
             if (SelectionIndexKnown)
-                Console.WriteLine($"  win32_selection_index: {SelectionIndex}");
+                Utils.DebugWriteLine($"  win32_selection_index: {SelectionIndex}");
             if (ItemCountKnown)
-                Console.WriteLine($"  win32_item_count: {ItemCount}");
+                Utils.DebugWriteLine($"  win32_item_count: {ItemCount}");
             base.DumpProperties();
         }
 

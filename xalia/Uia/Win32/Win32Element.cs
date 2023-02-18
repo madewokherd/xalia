@@ -169,19 +169,19 @@ namespace Xalia.Uia.Win32
         protected override void DumpProperties()
         {
             if (!(ProcessName is null))
-                Console.WriteLine($"  win32_process_name: {ProcessName}");
+                Utils.DebugWriteLine($"  win32_process_name: {ProcessName}");
             if (WindowRectKnown)
             {
-                Console.WriteLine($"  win32_x: {X}");
-                Console.WriteLine($"  win32_y: {Y}");
-                Console.WriteLine($"  win32_width: {Width}");
-                Console.WriteLine($"  win32_height: {Height}");
+                Utils.DebugWriteLine($"  win32_x: {X}");
+                Utils.DebugWriteLine($"  win32_y: {Y}");
+                Utils.DebugWriteLine($"  win32_width: {Width}");
+                Utils.DebugWriteLine($"  win32_height: {Height}");
             }
             if (WindowStyleKnown)
             {
-                Console.WriteLine($"  win32_style: 0x{WindowStyle:X}");
-                Console.WriteLine($"  win32_visible: {(WindowStyle & WS_VISIBLE) == WS_VISIBLE}");
-                Console.WriteLine($"  win32_enabled: {(WindowStyle & WS_DISABLED) == 0}");
+                Utils.DebugWriteLine($"  win32_style: 0x{WindowStyle:X}");
+                Utils.DebugWriteLine($"  win32_visible: {(WindowStyle & WS_VISIBLE) == WS_VISIBLE}");
+                Utils.DebugWriteLine($"  win32_enabled: {(WindowStyle & WS_DISABLED) == 0}");
             }
             base.DumpProperties();
         }
@@ -206,9 +206,9 @@ namespace Xalia.Uia.Win32
                 if (MatchesDebugCondition())
                 {
                     if (WindowRectKnown)
-                        Console.WriteLine($"{DebugId}.win32_rect: {X},{Y} {Width}x{Height}");
+                        Utils.DebugWriteLine($"{DebugId}.win32_rect: {X},{Y} {Width}x{Height}");
                     else
-                        Console.WriteLine($"{DebugId}.win32_rect: undefined");
+                        Utils.DebugWriteLine($"{DebugId}.win32_rect: undefined");
                 }
 
                 PropertyChanged("win32_rect");
@@ -227,7 +227,7 @@ namespace Xalia.Uia.Win32
                 WindowStyleKnown = true;
 
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"{DebugId}.win32_style: {new_style:x}");
+                    Utils.DebugWriteLine($"{DebugId}.win32_style: {new_style:x}");
 
                 PropertyChanged("win32_style");
             }

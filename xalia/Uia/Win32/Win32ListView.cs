@@ -227,31 +227,31 @@ namespace Xalia.Uia.Win32
         {
             if (IsComCtl6Known)
             {
-                Console.WriteLine($"  win32_is_comctl6: {IsComCtl6}");
+                Utils.DebugWriteLine($"  win32_is_comctl6: {IsComCtl6}");
                 if (IsComCtl6)
                 {
                     if (ViewKnown)
-                        Console.WriteLine($"  win32_view: {ViewFromInt(ViewInt)}");
+                        Utils.DebugWriteLine($"  win32_view: {ViewFromInt(ViewInt)}");
                 }
                 else
                 {
                     if (WindowStyleKnown)
-                        Console.WriteLine($"  win32_view: {ViewFromStyle(WindowStyle)}");
+                        Utils.DebugWriteLine($"  win32_view: {ViewFromStyle(WindowStyle)}");
                 }
             }
             if (HasHeader())
             {
                 if (HeaderHwndKnown)
-                    Console.WriteLine($"  win32_header_hwnd: {HeaderHwnd}");
+                    Utils.DebugWriteLine($"  win32_header_hwnd: {HeaderHwnd}");
                 if (!(Header is null))
-                    Console.WriteLine($"  win32_header: {Header}");
+                    Utils.DebugWriteLine($"  win32_header: {Header}");
             }
             if (HasTopIndex() && TopIndexKnown)
-                Console.WriteLine($"  win32_top_index: {TopIndex}");
+                Utils.DebugWriteLine($"  win32_top_index: {TopIndex}");
             if (ItemCountKnown)
-                Console.WriteLine($"  win32_item_count: {ItemCount}");
+                Utils.DebugWriteLine($"  win32_item_count: {ItemCount}");
             if (CountPerPageKnown)
-                Console.WriteLine($"  win32_count_per_page: {CountPerPage}");
+                Utils.DebugWriteLine($"  win32_count_per_page: {CountPerPage}");
             base.DumpProperties();
         }
 

@@ -93,7 +93,7 @@ namespace Xalia.Sdl
                     {
                         var axis = e.SdlEvent.caxis;
                         if (DebugInput)
-                            Console.WriteLine($"axis {(SDL_GameControllerAxis)axis.axis} value updated to {axis.axisValue}");
+                            Utils.DebugWriteLine($"axis {(SDL_GameControllerAxis)axis.axis} value updated to {axis.axisValue}");
                         switch ((SDL_GameControllerAxis)axis.axis)
                         {
                             case SDL_GameControllerAxis.SDL_CONTROLLER_AXIS_LEFTX:
@@ -117,7 +117,7 @@ namespace Xalia.Sdl
                     {
                         var button = e.SdlEvent.cbutton;
                         if (DebugInput)
-                            Console.WriteLine($"button {(SDL_GameControllerButton)button.button} pressed on controller {button.which}");
+                            Utils.DebugWriteLine($"button {(SDL_GameControllerButton)button.button} pressed on controller {button.which}");
                         if (button_states.TryGetValue(button.which, out var states))
                         {
                             states[button.button] = true;
@@ -129,7 +129,7 @@ namespace Xalia.Sdl
                     {
                         var button = e.SdlEvent.cbutton;
                         if (DebugInput)
-                            Console.WriteLine($"button {(SDL_GameControllerButton)button.button} released on controller {button.which}");
+                            Utils.DebugWriteLine($"button {(SDL_GameControllerButton)button.button} released on controller {button.which}");
                         if (button_states.TryGetValue(button.which, out var states))
                         {
                             states[button.button] = false;
@@ -240,7 +240,7 @@ namespace Xalia.Sdl
             var joystick = SDL_GameControllerGetJoystick(game_controller);
             var index = SDL_JoystickInstanceID(joystick);
             if (DebugInput)
-                Console.WriteLine($"Game controller connected: {index}");
+                Utils.DebugWriteLine($"Game controller connected: {index}");
             game_controllers[index] = game_controller;
             button_states[index] = new bool[button_names.Length];
             UpdateMappings(index);
@@ -251,7 +251,7 @@ namespace Xalia.Sdl
             if (game_controllers.TryGetValue(index, out IntPtr controller))
             {
                 if (DebugInput)
-                    Console.WriteLine($"Game controller disconnected: {index}");
+                    Utils.DebugWriteLine($"Game controller disconnected: {index}");
                 UpdateMappings(index, disconnected: true);
                 SDL_GameControllerClose(controller);
                 game_controllers.Remove(index);

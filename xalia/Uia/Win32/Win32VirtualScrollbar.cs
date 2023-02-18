@@ -88,7 +88,7 @@ namespace Xalia.Uia.Win32
         protected override void DumpProperties()
         {
             if (MinimumIncrementKnown)
-                Console.WriteLine($"  win32_minimum_increment: {MinimumIncrement}");
+                Utils.DebugWriteLine($"  win32_minimum_increment: {MinimumIncrement}");
             base.DumpProperties();
         }
 

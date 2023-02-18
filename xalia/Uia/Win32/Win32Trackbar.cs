@@ -75,8 +75,8 @@ namespace Xalia.Uia.Win32
         {
             if (WindowStyleKnown)
             {
-                Console.WriteLine($"  win32_vertical: {(WindowStyle & TBS_VERT) == TBS_VERT}");
-                Console.WriteLine($"  win32_horizontal: {(WindowStyle & TBS_VERT) == 0}");
+                Utils.DebugWriteLine($"  win32_vertical: {(WindowStyle & TBS_VERT) == TBS_VERT}");
+                Utils.DebugWriteLine($"  win32_horizontal: {(WindowStyle & TBS_VERT) == 0}");
             }
             base.DumpProperties();
         }
@@ -120,7 +120,7 @@ namespace Xalia.Uia.Win32
                 LineSize = result;
 
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"{this}.win32_line_size: {LineSize}");
+                    Utils.DebugWriteLine($"{this}.win32_line_size: {LineSize}");
 
                 PropertyChanged("win32_line_size");
             }

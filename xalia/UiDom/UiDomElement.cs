@@ -96,7 +96,7 @@ namespace Xalia.UiDom
         protected void AddChild(int index, UiDomElement child)
         {
             if (MatchesDebugCondition())
-                Console.WriteLine("Child {0} added to {1} at index {2}", child.DebugId, DebugId, index);
+                Utils.DebugWriteLine($"Child {child} added to {this} at index {index}");
             if (child.Parent != null)
                 throw new InvalidOperationException(string.Format("Attempted to add child {0} to {1} but it already has a parent of {2}", child.DebugId, DebugId, child.Parent.DebugId));
             child.Parent = this;
@@ -127,7 +127,7 @@ namespace Xalia.UiDom
         {
             var child = Children[index];
             if (MatchesDebugCondition() || child.MatchesDebugCondition())
-                Console.WriteLine("Child {0} removed from {1}", child.DebugId, DebugId);
+                Utils.DebugWriteLine($"Child {child} removed from {this}");
             Children.RemoveAt(index);
             child.Parent = null;
             child.SetAlive(false);
@@ -152,7 +152,7 @@ namespace Xalia.UiDom
                 if (_assignedProperties.ContainsKey(propName))
                 {
                     if (MatchesDebugCondition())
-                        Console.WriteLine($"{this}.{propName} assigned: {propValue}");
+                        Utils.DebugWriteLine($"{this}.{propName} assigned: {propValue}");
                     _assignedProperties.Remove(propName);
                     PropertyChanged(new IdentifierExpression(propName));
                     return;
@@ -162,7 +162,7 @@ namespace Xalia.UiDom
             if (!_assignedProperties.TryGetValue(propName, out var oldValue) || !oldValue.Equals(propValue))
             {
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"{this}.{propName} assigned: {propValue}");
+                    Utils.DebugWriteLine($"{this}.{propName} assigned: {propValue}");
                 _assignedProperties[propName] = propValue;
                 PropertyChanged(propName);
                 return;
@@ -475,7 +475,7 @@ namespace Xalia.UiDom
 
             if (MatchesDebugCondition())
             {
-                Console.WriteLine($"properties for {DebugId}:");
+                Utils.DebugWriteLine($"properties for {DebugId}:");
                 DumpProperties();
             }
         }
@@ -484,18 +484,18 @@ namespace Xalia.UiDom
         {
             if (!(Parent is null))
             {
-                Console.WriteLine($"  parent: {Parent.DebugId}");
-                Console.WriteLine($"  index_in_parent: {Parent.Children.IndexOf(this)}");
+                Utils.DebugWriteLine($"  parent: {Parent.DebugId}");
+                Utils.DebugWriteLine($"  index_in_parent: {Parent.Children.IndexOf(this)}");
             }
             for (int i = 0; i < Children.Count; i++)
             {
-                Console.WriteLine($"  child_at_index({i}): {Children[i].DebugId}");
+                Utils.DebugWriteLine($"  child_at_index({i}): {Children[i].DebugId}");
             }
             foreach (var kvp in _relationshipWatchers)
             {
                 if (!(kvp.Value.Value is UiDomUndefined))
                 {
-                    Console.WriteLine($"  {kvp.Key}: {kvp.Value.Value}");
+                    Utils.DebugWriteLine($"  {kvp.Key}: {kvp.Value.Value}");
                 }
             }
             Root.Application.DumpElementProperties(this);
@@ -503,14 +503,14 @@ namespace Xalia.UiDom
             {
                 if (!(kvp.Value.Item2 is UiDomUndefined))
                 {
-                    Console.WriteLine($"  {kvp.Key}: {kvp.Value.Item2} [{kvp.Value.Item1.Position}]");
+                    Utils.DebugWriteLine($"  {kvp.Key}: {kvp.Value.Item2} [{kvp.Value.Item1.Position}]");
                 }
             }
             foreach (var kvp in _assignedProperties)
             {
                 if (!(kvp.Value is UiDomUndefined))
                 {
-                    Console.WriteLine($"  {kvp.Key}: {kvp.Value} [assigned]");
+                    Utils.DebugWriteLine($"  {kvp.Key}: {kvp.Value} [assigned]");
                 }
             }
         }
@@ -570,7 +570,7 @@ namespace Xalia.UiDom
                 _updatingRules = true;
                 Utils.RunIdle(EvaluateRules);
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"queued rule evaluation for {this} because {element}.{property} changed");
+                    Utils.DebugWriteLine($"queued rule evaluation for {this} because {element}.{property} changed");
             }
         }
 
@@ -678,7 +678,7 @@ namespace Xalia.UiDom
         protected internal void PropertyChanged(string identifier, object val)
         {
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.{identifier}: {val}");
+                Utils.DebugWriteLine($"{this}.{identifier}: {val}");
             PropertyChanged(identifier);
         }
 

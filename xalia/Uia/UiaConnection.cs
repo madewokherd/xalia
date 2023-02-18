@@ -714,7 +714,7 @@ namespace Xalia.Uia
                 }
 
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"Focus changed to {value.UniqueId}");
+                    Utils.DebugWriteLine($"Focus changed to {value.UniqueId}");
 
                 focused_element = value;
 
@@ -747,7 +747,7 @@ namespace Xalia.Uia
                 }
 
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"Foreground window changed to {value.UniqueId}");
+                    Utils.DebugWriteLine($"Foreground window changed to {value.UniqueId}");
 
                 foreground_element = value;
 
@@ -780,7 +780,7 @@ namespace Xalia.Uia
                 }
 
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"Active window changed to {value.UniqueId}");
+                    Utils.DebugWriteLine($"Active window changed to {value.UniqueId}");
 
                 active_element = value;
 
@@ -821,8 +821,8 @@ namespace Xalia.Uia
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error getting element for active window:");
-                Console.WriteLine(e);
+                Utils.DebugWriteLine("Error getting element for active window:");
+                Utils.DebugWriteLine(e);
             }
 
             updating_active_window = false;
@@ -873,22 +873,22 @@ namespace Xalia.Uia
         {
             var focused = LookupAutomationElement(focused_element);
             if (!(focused is null))
-                Console.WriteLine($"  uia_focused_element: {focused}");
+                Utils.DebugWriteLine($"  uia_focused_element: {focused}");
             var foreground = LookupAutomationElement(foreground_element);
             if (!(foreground is null))
-                Console.WriteLine($"  msaa_foreground_element: {foreground}");
+                Utils.DebugWriteLine($"  msaa_foreground_element: {foreground}");
             var active = LookupAutomationElement(active_element);
             if (!(active is null))
-                Console.WriteLine($"  win32_active_element: {active}");
+                Utils.DebugWriteLine($"  win32_active_element: {active}");
             if (UiaMenuMode)
-                Console.WriteLine($"  uia_menu_mode: true");
+                Utils.DebugWriteLine($"  uia_menu_mode: true");
             var opened_menu = LookupAutomationElement(UiaOpenedMenu);
             if (!(opened_menu is null))
-                Console.WriteLine($"  uia_opened_menu: {opened_menu}");
+                Utils.DebugWriteLine($"  uia_opened_menu: {opened_menu}");
             if (UiaInMenu)
-                Console.WriteLine($"  uia_in_menu: true");
+                Utils.DebugWriteLine($"  uia_in_menu: true");
             if (UiaInSubmenu)
-                Console.WriteLine($"  uia_in_submenu: true");
+                Utils.DebugWriteLine($"  uia_in_submenu: true");
             base.DumpProperties();
         }
 

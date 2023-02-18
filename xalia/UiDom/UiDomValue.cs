@@ -23,8 +23,8 @@ namespace Xalia.UiDom
             }
             catch (Exception e)
             {
-                Console.WriteLine($"failed evaluation of identifier {id} on {this}");
-                Console.WriteLine(e);
+                Utils.DebugWriteLine($"failed evaluation of identifier {id} on {this}");
+                Utils.DebugWriteLine(e);
                 return UiDomUndefined.Instance;
             }
         }
@@ -127,8 +127,8 @@ namespace Xalia.UiDom
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"failed evaluation of apply expression {apply} in {this}");
-                    Console.WriteLine(e);
+                    Utils.DebugWriteLine($"failed evaluation of apply expression {apply} in {this}");
+                    Utils.DebugWriteLine(e);
                     return UiDomUndefined.Instance;
                 }
             }
@@ -146,8 +146,8 @@ namespace Xalia.UiDom
                             }
                             catch (Exception e)
                             {
-                                Console.WriteLine($"failed evaluation of dot expression {bin.Right} on {left} in {this}");
-                                Console.WriteLine(e);
+                                Utils.DebugWriteLine($"failed evaluation of dot expression {bin.Right} on {left} in {this}");
+                                Utils.DebugWriteLine(e);
                                 return UiDomUndefined.Instance;
                             }
                         }

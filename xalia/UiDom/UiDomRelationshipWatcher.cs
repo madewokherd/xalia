@@ -185,7 +185,7 @@ namespace Xalia.UiDom
             if (!new_value.Equals(Value))
             {
                 if (Element.MatchesDebugCondition())
-                    Console.WriteLine($"{Element}.{AsProperty}: {new_value}");
+                    Utils.DebugWriteLine($"{Element}.{AsProperty}: {new_value}");
                 Value = new_value;
                 Element.RelationshipValueChanged(this);
             }

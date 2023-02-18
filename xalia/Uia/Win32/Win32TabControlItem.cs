@@ -94,13 +94,13 @@ namespace Xalia.Uia.Win32
         protected override void DumpProperties()
         {
             if (Parent.SelectionIndexKnown)
-                Console.WriteLine($"  selected: {Index == Parent.SelectionIndex}");
+                Utils.DebugWriteLine($"  selected: {Index == Parent.SelectionIndex}");
             if (BoundsKnown)
             {
-                Console.WriteLine($"  win32_x: {X}");
-                Console.WriteLine($"  win32_y: {Y}");
-                Console.WriteLine($"  win32_width: {Width}");
-                Console.WriteLine($"  win32_height: {Height}");
+                Utils.DebugWriteLine($"  win32_x: {X}");
+                Utils.DebugWriteLine($"  win32_y: {Y}");
+                Utils.DebugWriteLine($"  win32_width: {Width}");
+                Utils.DebugWriteLine($"  win32_height: {Height}");
             }
             base.DumpProperties();
         }
@@ -163,7 +163,7 @@ namespace Xalia.Uia.Win32
                     Height = rc.bottom - rc.top;
 
                     if (MatchesDebugCondition())
-                        Console.WriteLine($"{this}.win32_bounds: {X},{Y} {Width}x{Height}");
+                        Utils.DebugWriteLine($"{this}.win32_bounds: {X},{Y} {Width}x{Height}");
                     PropertyChanged("win32_bounds");
                 }
                 else

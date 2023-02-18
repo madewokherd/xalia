@@ -62,14 +62,14 @@ namespace Xalia
 
                 if (connection == null)
                 {
-                    Console.WriteLine("No Accessibility API available");
+                    Utils.DebugWriteLine("No Accessibility API available");
                 }
 
                 GameControllerInput.Init();
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Utils.DebugWriteLine(e);
                 Environment.Exit(1);
             }
         }
@@ -91,7 +91,7 @@ namespace Xalia
                 Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "main.gudl"),
                 out config, out var error))
             {
-                Console.WriteLine(error);
+                Utils.DebugWriteLine(error);
             }
 
             Utils.RunTask(Init(config));

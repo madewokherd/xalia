@@ -312,9 +312,9 @@ namespace Xalia.AtSpi
                         if (MatchesDebugCondition())
                         {
                             if (Role < role_to_enum.Length)
-                                Console.WriteLine($"{this}.spi_role: {role_to_enum[Role]}");
+                                Utils.DebugWriteLine($"{this}.spi_role: {role_to_enum[Role]}");
                             else
-                                Console.WriteLine($"{this}.spi_role: {Role}");
+                                Utils.DebugWriteLine($"{this}.spi_role: {Role}");
                         }
                         PropertyChanged("spi_role");
                     }
@@ -325,7 +325,7 @@ namespace Xalia.AtSpi
                         Name = name;
                         NameKnown = true;
                         if (MatchesDebugCondition())
-                            Console.WriteLine($"{this}.spi_name: {Name}");
+                            Utils.DebugWriteLine($"{this}.spi_name: {Name}");
                         PropertyChanged("spi_name");
                     }
                     break;
@@ -454,8 +454,8 @@ namespace Xalia.AtSpi
 #if DEBUG
             if (DebugExceptions)
             {
-                Console.WriteLine("WARNING: DBus exception:");
-                Console.WriteLine(e);
+                Utils.DebugWriteLine("WARNING: DBus exception:");
+                Utils.DebugWriteLine(e);
             }
 #endif
             switch (e.ErrorName)
@@ -476,8 +476,8 @@ namespace Xalia.AtSpi
 #else
                     if (DebugExceptions)
                     {
-                        Console.WriteLine("WARNING: DBus exception ignored:");
-                        Console.WriteLine(e);
+                        Utils.DebugWriteLine("WARNING: DBus exception ignored:");
+                        Utils.DebugWriteLine(e);
                     }
                     return true;
 #endif
@@ -588,7 +588,7 @@ namespace Xalia.AtSpi
             if (watching_children)
                 return;
             if (MatchesDebugCondition())
-                Console.WriteLine("WatchChildren for {0}", DebugId);
+                Utils.DebugWriteLine($"WatchChildren for {this}");
             watching_children = true;
             children_known = false;
             Utils.RunTask(WatchChildrenTask());
@@ -599,7 +599,7 @@ namespace Xalia.AtSpi
             if (!watching_children)
                 return;
             if (MatchesDebugCondition())
-                Console.WriteLine("UnwatchChildren for {0}", DebugId);
+                Utils.DebugWriteLine($"UnwatchChildren for {this}");
             watching_children = false;
             if (children_changed_event != null)
             {
@@ -625,7 +625,7 @@ namespace Xalia.AtSpi
             {
                 if (index > Children.Count)
                 {
-                    Console.WriteLine($"WARNING: Index {index} for new child of {service}:{path} is out of range");
+                    Utils.DebugWriteLine($"WARNING: Index {index} for new child of {service}:{path} is out of range");
                     index = (uint)Children.Count;
                 }
 
@@ -643,7 +643,7 @@ namespace Xalia.AtSpi
                         if (index != i)
                         {
                             if (MatchesDebugCondition())
-                                Console.WriteLine("Got remove notification for {0} with index {1}, but we have it at index {2}", child.DebugId, index, i);
+                                Utils.DebugWriteLine($"Got remove notification for {child} with index {index}, but we have it at index {i}");
                         }
                         found = true;
                         RemoveChild(i);
@@ -651,8 +651,7 @@ namespace Xalia.AtSpi
                     }
                 }
                 if (!found && MatchesDebugCondition())
-                    Console.WriteLine("Got remove notification from {0} for {1}:{2}, but we don't have it as a child",
-                        DebugId, service, path);
+                    Utils.DebugWriteLine($"Got remove notification from {this} for {service}:{path}, but we don't have it as a child");
             }
         }
 
@@ -740,9 +739,9 @@ namespace Xalia.AtSpi
             if (MatchesDebugCondition())
             {
                 if (role < role_to_enum.Length)
-                    Console.WriteLine($"{this}.spi_role: {role_to_enum[role]}");
+                    Utils.DebugWriteLine($"{this}.spi_role: {role_to_enum[role]}");
                 else
-                    Console.WriteLine($"{this}.spi_role: {role}");
+                    Utils.DebugWriteLine($"{this}.spi_role: {role}");
             }
             PropertyChanged("spi_role");
         }
@@ -763,7 +762,7 @@ namespace Xalia.AtSpi
             Name = name;
             NameKnown = true;
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_name: {Name}");
+                Utils.DebugWriteLine($"{this}.spi_name: {Name}");
             PropertyChanged("spi_name");
         }
 
@@ -795,7 +794,7 @@ namespace Xalia.AtSpi
             }
             BoundsKnown = true;
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_bounds: {X},{Y}: {Width}x{Height}");
+                Utils.DebugWriteLine($"{this}.spi_bounds: {X},{Y}: {Width}x{Height}");
             PropertyChanged("spi_bounds");
        }
 
@@ -811,7 +810,7 @@ namespace Xalia.AtSpi
             Height = height;
             BoundsKnown = true;
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_bounds: {X},{Y}: {Width}x{Height}");
+                Utils.DebugWriteLine($"{this}.spi_bounds: {X},{Y}: {Width}x{Height}");
             PropertyChanged("spi_bounds");
         }
 
@@ -843,7 +842,7 @@ namespace Xalia.AtSpi
             }
             TextKnown = true;
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_text: {Text}");
+                Utils.DebugWriteLine($"{this}.spi_text: {Text}");
             PropertyChanged("spi_text");
         }
 
@@ -861,27 +860,27 @@ namespace Xalia.AtSpi
             {
                 if (MatchesDebugCondition() && data.Length != length)
                 {
-                    Console.WriteLine($"WARNING: Got object:text-changed:insert event with mismatched length - length={length}, data={data}");
+                    Utils.DebugWriteLine($"WARNING: Got object:text-changed:insert event with mismatched length - length={length}, data={data}");
                 }
                 Text = string.Format("{0}{1}{2}",
                     Text.Substring(0, start_ofs),
                     data,
                     Text.Substring(start_ofs));
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"{this}.spi_text: {Text}");
+                    Utils.DebugWriteLine($"{this}.spi_text: {Text}");
                 PropertyChanged("spi_text");
             }
             else if (detail == "delete")
             {
                 if (MatchesDebugCondition() && Text.Substring(start_ofs, length) != data)
                 {
-                    Console.WriteLine("WARNING: Got object:text-changed:delete event with wrong data");
-                    Console.WriteLine($"  expected {Text.Substring(start_ofs, length)}");
-                    Console.WriteLine($"  got {data}");
+                    Utils.DebugWriteLine("WARNING: Got object:text-changed:delete event with wrong data");
+                    Utils.DebugWriteLine($"  expected {Text.Substring(start_ofs, length)}");
+                    Utils.DebugWriteLine($"  got {data}");
                 }
                 Text = Text.Substring(0, start_ofs) + Text.Substring(start_ofs + length);
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"{this}.spi_text: {Text}");
+                    Utils.DebugWriteLine($"{this}.spi_text: {Text}");
                 PropertyChanged("spi_text");
             }
         }
@@ -901,7 +900,7 @@ namespace Xalia.AtSpi
             AttributesKnown = true;
             if (MatchesDebugCondition())
                 foreach (var kvp in Attributes)
-                    Console.WriteLine($"{this}.spi_attributes.{kvp.Key}: {kvp.Value}");
+                    Utils.DebugWriteLine($"{this}.spi_attributes.{kvp.Key}: {kvp.Value}");
             PropertyChanged("spi_attributes");
             // FIXME: There is an AttributesChanged event, but no toolkit implements it so there's no info on how it works.
         }
@@ -1095,7 +1094,7 @@ namespace Xalia.AtSpi
             }
             Actions = result;
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_action: ({string.Join(",", Actions)})");
+                Utils.DebugWriteLine($"{this}.spi_action: ({string.Join(",", Actions)})");
             PropertyChanged("spi_action");
         }
 
@@ -1112,7 +1111,7 @@ namespace Xalia.AtSpi
                 return;
             }
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_supported: ({string.Join(",", SupportedInterfaces)})");
+                Utils.DebugWriteLine($"{this}.spi_supported: ({string.Join(",", SupportedInterfaces)})");
             PropertyChanged("spi_supported");
         }
 
@@ -1129,7 +1128,7 @@ namespace Xalia.AtSpi
                 return;
             }
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_toolkit_name: {ToolkitName}");
+                Utils.DebugWriteLine($"{this}.spi_toolkit_name: {ToolkitName}");
             PropertyChanged("spi_toolkit_name");
         }
 
@@ -1165,7 +1164,7 @@ namespace Xalia.AtSpi
                     AbsWidth = width;
                     AbsHeight = height;
                     if (MatchesDebugCondition())
-                        Console.WriteLine($"{this}.spi_abs_pos: ({x},{y},{width},{height})");
+                        Utils.DebugWriteLine($"{this}.spi_abs_pos: ({x},{y},{width},{height})");
                     PropertyChanged("spi_abs_pos");
                 }
             }
@@ -1175,7 +1174,7 @@ namespace Xalia.AtSpi
                 {
                     AbsPositionKnown = false;
                     if (MatchesDebugCondition())
-                        Console.WriteLine($"{this}.spi_abs_pos: undefined");
+                        Utils.DebugWriteLine($"{this}.spi_abs_pos: undefined");
                     PropertyChanged("spi_abs_pos");
                 }
             }
@@ -1224,7 +1223,7 @@ namespace Xalia.AtSpi
                 MinimumValueKnown = true;
                 MinimumValue = result;
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"{this}.spi_minimum_value: ({result})");
+                    Utils.DebugWriteLine($"{this}.spi_minimum_value: ({result})");
                 PropertyChanged("spi_minimum_value");
             }
 
@@ -1272,7 +1271,7 @@ namespace Xalia.AtSpi
                 MaximumValueKnown = true;
                 MaximumValue = result;
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"{this}.spi_maximum_value: ({result})");
+                    Utils.DebugWriteLine($"{this}.spi_maximum_value: ({result})");
                 PropertyChanged("spi_maximum_value");
             }
 
@@ -1339,7 +1338,7 @@ namespace Xalia.AtSpi
             }
             state.SetStates(states);
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_state: {state}");
+                Utils.DebugWriteLine($"{this}.spi_state: {state}");
         }
 
         private void OnWindowActivate((string, uint, uint, object) obj)
@@ -1359,7 +1358,7 @@ namespace Xalia.AtSpi
             if (!AtSpiState.name_mapping.TryGetValue(name, out var actual_name) || actual_name != name)
             {
                 if (MatchesDebugCondition())
-                    Console.WriteLine($"unrecognized state {name} changed to {value} on {this}");
+                    Utils.DebugWriteLine($"unrecognized state {name} changed to {value} on {this}");
                 return;
             }
             if (value)
@@ -1373,7 +1372,7 @@ namespace Xalia.AtSpi
                     return;
             }
             if (MatchesDebugCondition())
-                Console.WriteLine($"{this}.spi_state.{name}: {value}");
+                Utils.DebugWriteLine($"{this}.spi_state.{name}: {value}");
             PropertyChanged(new BinaryExpression(
                 new IdentifierExpression("spi_state"),
                 new IdentifierExpression(name),
@@ -1771,45 +1770,45 @@ namespace Xalia.AtSpi
         protected override void DumpProperties()
         {
             if (Role > 0 && Role < role_to_enum.Length)
-                Console.WriteLine($"  spi_role: {role_to_enum[Role]}");
+                Utils.DebugWriteLine($"  spi_role: {role_to_enum[Role]}");
             if (NameKnown)
-                Console.WriteLine($"  spi_name: {Name}");
+                Utils.DebugWriteLine($"  spi_name: {Name}");
             if (BoundsKnown)
             {
-                Console.WriteLine($"  spi_rel_x: {X}");
-                Console.WriteLine($"  spi_rel_y: {Y}");
-                Console.WriteLine($"  spi_width: {Width}");
-                Console.WriteLine($"  spi_height: {Height}");
+                Utils.DebugWriteLine($"  spi_rel_x: {X}");
+                Utils.DebugWriteLine($"  spi_rel_y: {Y}");
+                Utils.DebugWriteLine($"  spi_width: {Width}");
+                Utils.DebugWriteLine($"  spi_height: {Height}");
             }
             if (TextKnown)
-                Console.WriteLine($"  spi_text: {Text}");
-            Console.WriteLine($"  spi_state: {state}");
+                Utils.DebugWriteLine($"  spi_text: {Text}");
+            Utils.DebugWriteLine($"  spi_state: {state}");
             if (AbsPositionKnown)
             {
-                Console.WriteLine($"  spi_abs_x: {AbsX}");
-                Console.WriteLine($"  spi_abs_y: {AbsY}");
-                Console.WriteLine($"  spi_abs_width: {AbsWidth}");
-                Console.WriteLine($"  spi_abs_height: {AbsHeight}");
+                Utils.DebugWriteLine($"  spi_abs_x: {AbsX}");
+                Utils.DebugWriteLine($"  spi_abs_y: {AbsY}");
+                Utils.DebugWriteLine($"  spi_abs_width: {AbsWidth}");
+                Utils.DebugWriteLine($"  spi_abs_height: {AbsHeight}");
             }
             if (!(Actions is null))
-                Console.WriteLine($"  spi_action: [{String.Join(",", Actions)}]");
+                Utils.DebugWriteLine($"  spi_action: [{String.Join(",", Actions)}]");
             if (!(SupportedInterfaces is null))
-                Console.WriteLine($"  spi_supported: [{String.Join(",", SupportedInterfaces)}]");
+                Utils.DebugWriteLine($"  spi_supported: [{String.Join(",", SupportedInterfaces)}]");
             if (!(ToolkitName is null))
-                Console.WriteLine($"  spi_toolkit_name: {ToolkitName}");
+                Utils.DebugWriteLine($"  spi_toolkit_name: {ToolkitName}");
             if (AttributesKnown)
             {
                 foreach (var kvp in Attributes)
                 {
-                    Console.WriteLine($"  spi_attributes.{kvp.Key}: {kvp.Value}");
+                    Utils.DebugWriteLine($"  spi_attributes.{kvp.Key}: {kvp.Value}");
                 }
             }
             if (MinimumValueKnown)
-                Console.WriteLine($"  spi_minimum_value: {MinimumValue}");
+                Utils.DebugWriteLine($"  spi_minimum_value: {MinimumValue}");
             if (MaximumValueKnown)
-                Console.WriteLine($"  spi_maximum_value: {MaximumValue}");
+                Utils.DebugWriteLine($"  spi_maximum_value: {MaximumValue}");
             if (MinimumIncrementKnown)
-                Console.WriteLine($"  spi_minimum_increment: {MinimumIncrement}");
+                Utils.DebugWriteLine($"  spi_minimum_increment: {MinimumIncrement}");
             base.DumpProperties();
         }
 

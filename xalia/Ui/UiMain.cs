@@ -82,7 +82,7 @@ namespace Xalia.Ui
         private void OnActionStateChangeEvent(object sender, InputSystem.ActionStateChangeEventArgs e)
         {
             if (DebugInput)
-                Console.WriteLine($"Got input: {e.Action} {e.State}");
+                Utils.DebugWriteLine($"Got input: {e.Action} {e.State}");
             if (defined_actions.TryGetValue(e.Action, out var info))
             {
                 if (info.queue is null)
@@ -91,7 +91,7 @@ namespace Xalia.Ui
                         return;
 
                     if (DebugInput)
-                        Console.WriteLine($"Passing input to routine: {info.routine}");
+                        Utils.DebugWriteLine($"Passing input to routine: {info.routine}");
                     info.queue = new InputQueue();
                     info.queue.Enqueue(e.State);
 
@@ -100,7 +100,7 @@ namespace Xalia.Ui
                 else
                 {
                     if (DebugInput)
-                        Console.WriteLine($"Passing input to routine: {info.routine}");
+                        Utils.DebugWriteLine($"Passing input to routine: {info.routine}");
                     info.queue.Enqueue(e.State);
                     if (e.State.Kind is InputStateKind.Disconnected)
                     {
@@ -168,7 +168,7 @@ namespace Xalia.Ui
                     if (Root.MatchesDebugCondition() ||
                         (!(previous is null) && previous.MatchesDebugCondition()) ||
                         (!(_targetedElement is null) && _targetedElement.MatchesDebugCondition()))
-                        Console.WriteLine($"targeted_element: {_targetedElement}");
+                        Utils.DebugWriteLine($"targeted_element: {_targetedElement}");
 
                     Root.PropertyChanged("targeted_element");
                     if (!(_targetedElement is null))
@@ -422,14 +422,14 @@ namespace Xalia.Ui
                     continue;
                 }
                 if (DebugInput)
-                    Console.WriteLine($"action {info.action} defined as {info.routine}");
+                    Utils.DebugWriteLine($"action {info.action} defined as {info.routine}");
             }
             defined_actions = new_actions;
 
             foreach (var info in old_actions.Values)
             {
                 if (DebugInput)
-                    Console.WriteLine($"action {info.action} is no longer {info.routine}");
+                    Utils.DebugWriteLine($"action {info.action} is no longer {info.routine}");
                 if (!(info.queue is null))
                     info.queue.Enqueue(new InputState(InputStateKind.Disconnected));
                 if (!new_actions.ContainsKey(info.action))
@@ -500,9 +500,9 @@ namespace Xalia.Ui
         public void DumpElementProperties(UiDomElement element)
         {
             if (element is UiDomRoot)
-                Console.WriteLine($"  targeted_element: {TargetedElement}");
+                Utils.DebugWriteLine($"  targeted_element: {TargetedElement}");
             if (TargetedElement == element)
-                Console.WriteLine("  targeted: true");
+                Utils.DebugWriteLine("  targeted: true");
         }
 
         private async Task SendClick(UiDomRoutineAsync obj, WindowingSystem.MouseButton button)
@@ -511,7 +511,7 @@ namespace Xalia.Ui
 
             if (!position.Item1)
             {
-                Console.WriteLine($"WARNING: Could not get clickable point for {obj.Element}");
+                Utils.DebugWriteLine($"WARNING: Could not get clickable point for {obj.Element}");
                 return;
             }
 
@@ -523,7 +523,7 @@ namespace Xalia.Ui
             }
             catch (NotImplementedException)
             {
-                Console.WriteLine($"WARNING: Cannot send click events on the current windowing system");
+                Utils.DebugWriteLine($"WARNING: Cannot send click events on the current windowing system");
             }
         }
 
@@ -778,7 +778,7 @@ namespace Xalia.Ui
             (int, int, int, int) bounds;
             if (!TryGetElementTargetBounds(TargetedElement, out bounds))
             {
-                Console.WriteLine($"WARNING: {TargetedElement} is targeted but it does not have target bounds");
+                Utils.DebugWriteLine($"WARNING: {TargetedElement} is targeted but it does not have target bounds");
                 target_box.Hide();
                 return;
             }

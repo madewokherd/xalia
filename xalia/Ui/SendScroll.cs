@@ -91,7 +91,7 @@ namespace Xalia.Ui
 
             if (!position.Item1)
             {
-                Console.WriteLine($"WARNING: Could not get clickable point for {Element}");
+                Utils.DebugWriteLine($"WARNING: Could not get clickable point for {Element}");
                 return (xofs - xadjustment, yofs - yadjustment);
             }
 
@@ -103,7 +103,7 @@ namespace Xalia.Ui
             }
             catch (NotImplementedException)
             {
-                Console.WriteLine($"WARNING: Cannot send mouse scroll events on the current windowing system");
+                Utils.DebugWriteLine($"WARNING: Cannot send mouse scroll events on the current windowing system");
             }
 
             return (xofs - xadjustment, yofs - yadjustment);

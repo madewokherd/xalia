@@ -127,10 +127,10 @@ namespace Xalia.Uia.Win32
                 int bounds_type = BoundsTypeFromName(bounds_name);
                 if (rect_infos[bounds_type].Known)
                 {
-                    Console.WriteLine($"  {this}.{bounds_name}_x: {rect_infos[bounds_type].X}");
-                    Console.WriteLine($"  {this}.{bounds_name}_y: {rect_infos[bounds_type].Y}");
-                    Console.WriteLine($"  {this}.{bounds_name}_width: {rect_infos[bounds_type].Width}");
-                    Console.WriteLine($"  {this}.{bounds_name}_height: {rect_infos[bounds_type].Height}");
+                    Utils.DebugWriteLine($"  {this}.{bounds_name}_x: {rect_infos[bounds_type].X}");
+                    Utils.DebugWriteLine($"  {this}.{bounds_name}_y: {rect_infos[bounds_type].Y}");
+                    Utils.DebugWriteLine($"  {this}.{bounds_name}_width: {rect_infos[bounds_type].Width}");
+                    Utils.DebugWriteLine($"  {this}.{bounds_name}_height: {rect_infos[bounds_type].Height}");
                 }
             }
             base.DumpProperties();
