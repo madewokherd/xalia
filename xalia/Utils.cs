@@ -1,6 +1,11 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
+#if WINDOWS
+using static Xalia.Interop.Win32;
+#endif
 
 namespace Xalia
 {
@@ -29,8 +34,55 @@ namespace Xalia
             SynchronizationContext.Current.Send(RunTaskCallback, t);
         }
 
+#if WINDOWS
+        private static void WineDebugWriteLine(string str)
+        {
+            var bytes = Encoding.UTF8.GetBytes(str + "\n\0");
+
+            while (bytes.Length > 1018)
+            {
+                // Line is too long for Wine to output, break it up.
+                string substr = str.Substring(0, 300);
+
+                if (substr.Contains("\n"))
+                {
+                    int index = substr.LastIndexOf('\n');
+                    substr = str.Substring(0, index);
+                    str = str.Substring(index + 1);
+                }
+                else
+                {
+                    str = str.Substring(300);
+                }
+
+                bytes = Encoding.UTF8.GetBytes(substr + "\n\0");
+                __wine_dbg_output(bytes);
+
+                bytes = Encoding.UTF8.GetBytes(str + "\n\0");
+            }
+
+            __wine_dbg_output(bytes);
+        }
+
+        static bool useWineDebug = true;
+#endif
+
         internal static void DebugWriteLine(string str)
         {
+#if WINDOWS
+            if (useWineDebug)
+            {
+                try
+                {
+                    WineDebugWriteLine(str);
+                    return;
+                }
+                catch (EntryPointNotFoundException)
+                {
+                    useWineDebug = false;
+                }
+            }
+#endif
             Console.Error.WriteLine(str);
         }
 
@@ -41,7 +93,7 @@ namespace Xalia
 
         internal static void OnError(Exception obj)
         {
-            DebugWriteLine("Unhandled exception:");
+            DebugWriteLine("Unhandled exception in Xalia:");
             DebugWriteLine(obj);
 #if DEBUG
             Environment.FailFast(obj.ToString());
@@ -90,6 +142,17 @@ namespace Xalia
         {
             result = Environment.GetEnvironmentVariable(name);
             return !(result is null);
+        }
+        internal static bool IsUnix()
+        {
+            int p = (int)Environment.OSVersion.Platform;
+            // Intentionally excluding macOS from this check as AT-SPI is not standard there
+            return p == 4 || p == 128;
+        }
+
+        internal static bool IsWindows()
+        {
+            return Environment.OSVersion.Platform == PlatformID.Win32NT;
         }
     }
 }

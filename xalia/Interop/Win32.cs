@@ -12,9 +12,14 @@ namespace Xalia.Interop
 {
     internal static class Win32
     {
+        const string NT_LIB = "ntdll";
         const string KERNEL_LIB = "kernel32";
         const string USER_LIB = "user32";
         const string OLEACC_LIB = "oleacc";
+
+        // Wine extension
+        [DllImport(NT_LIB, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int __wine_dbg_output(byte[] str);
 
         public const int PROCESS_VM_OPERATION = 0x8;
         public const int PROCESS_VM_READ = 0x10;

@@ -21,18 +21,6 @@ namespace Xalia
 {
     public class MainClass
     {
-        static bool IsUnix()
-        {
-            int p = (int)Environment.OSVersion.Platform;
-            // Intentionally excluding macOS from this check as AT-SPI is not standard there
-            return p == 4 || p == 128;
-        }
-
-        static bool IsWindows()
-        {
-            return Environment.OSVersion.Platform == PlatformID.Win32NT;
-        }
-
         static async Task Init(GudlStatement[] config)
         {
             try
@@ -41,7 +29,7 @@ namespace Xalia
 
                 UiDomRoot connection = null;
 
-                if (((Environment.GetEnvironmentVariable("XALIA_USE_ATSPI") ?? (IsUnix() ? "1" : "0")) != "0"))
+                if (((Environment.GetEnvironmentVariable("XALIA_USE_ATSPI") ?? (Utils.IsUnix() ? "1" : "0")) != "0"))
                 {
                     connection = await AtSpiConnection.Connect(config, application);
                 }
@@ -54,7 +42,7 @@ namespace Xalia
                 }
 
                 if (connection == null &&
-                    (Environment.GetEnvironmentVariable("XALIA_USE_UIA3") ?? (IsWindows() ? "1" : "0")) != "0")
+                    (Environment.GetEnvironmentVariable("XALIA_USE_UIA3") ?? (Utils.IsWindows() ? "1" : "0")) != "0")
                 {
                     connection = new UiaConnection(true, config, application);
                 }
