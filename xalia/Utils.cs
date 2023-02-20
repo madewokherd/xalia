@@ -70,7 +70,7 @@ namespace Xalia
         internal static void DebugWriteLine(string str)
         {
 #if WINDOWS
-            if (useWineDebug)
+            if (IsWindows() && useWineDebug)
             {
                 try
                 {
