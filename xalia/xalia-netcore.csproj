@@ -45,9 +45,9 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)'=='Release-Windows' OR '$(Configuration)'=='Debug-Windows'">
-    <PackageReference Include="FlaUI.Core" Version="3.2.0" />
-    <PackageReference Include="FlaUI.UIA2" Version="3.2.0" />
-    <PackageReference Include="FlaUI.UIA3" Version="3.2.0" />
+    <PackageReference Include="FlaUI.Core" Version="4.0.0" />
+    <PackageReference Include="FlaUI.UIA2" Version="4.0.0" />
+    <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
   </ItemGroup>
 
   <ItemGroup>

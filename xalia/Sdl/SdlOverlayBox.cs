@@ -2,7 +2,9 @@
 
 using static SDL2.SDL;
 
+#if WINDOWS
 using static Xalia.Interop.Win32;
+#endif
 
 namespace Xalia.Sdl
 {
@@ -63,6 +65,7 @@ namespace Xalia.Sdl
             if (_renderer == IntPtr.Zero)
                 throw new Exception(SDL_GetError());
 
+#if WINDOWS
             if (windowingSystem is Win32WindowingSystem)
             {
                 var win32_window = GetSdlWindowHwnd(_window);
@@ -73,6 +76,7 @@ namespace Xalia.Sdl
 
                 SetWindowLong(win32_window, GWL_EXSTYLE, new_exstyle);
             }
+#endif
         }
 
         private void UpdateWindowRegion()
@@ -100,6 +104,7 @@ namespace Xalia.Sdl
 
                     SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
 
+#if WINDOWS
                     if (windowingSystem is Win32WindowingSystem)
                     {
                         rect.x = EffectiveThickness - 1;
@@ -109,11 +114,14 @@ namespace Xalia.Sdl
                     }
                     else
                     {
+#endif
                         rect.x = EffectiveThickness;
                         rect.y = EffectiveThickness;
                         rect.w = Width;
                         rect.h = Height;
-                    }
+#if WINDOWS
+                }
+#endif
 
                     SDL_RenderFillRect(surface_renderer, ref rect);
                 }
@@ -161,12 +169,14 @@ namespace Xalia.Sdl
         {
             SDL_SetWindowPosition(_window, X - EffectiveThickness, Y - EffectiveThickness);
 
+#if WINDOWS
             if (windowingSystem is Win32WindowingSystem)
             {
                 var win32_window = GetSdlWindowHwnd(_window);
 
                 SetWindowPos(win32_window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
             }
+#endif
         }
 
         protected override void Update(UpdateFlags flags)

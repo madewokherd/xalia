@@ -1,6 +1,8 @@
 ﻿using System;
 using static SDL2.SDL;
+#if WINDOWS
 using static Xalia.Interop.Win32;
+#endif
 
 namespace Xalia.Sdl
 {
@@ -46,6 +48,7 @@ namespace Xalia.Sdl
                 if (windows[i].renderer == IntPtr.Zero)
                     throw new Exception(SDL_GetError());
 
+#if WINDOWS
                 if (windowingSystem is Win32WindowingSystem)
                 {
                     var win32_window = GetSdlWindowHwnd(windows[i].window);
@@ -56,6 +59,7 @@ namespace Xalia.Sdl
 
                     SetWindowLong(win32_window, GWL_EXSTYLE, new_exstyle);
                 }
+#endif
             }
         }
 
@@ -225,12 +229,14 @@ namespace Xalia.Sdl
             if (!resize_first)
                 SDL_SetWindowSize(window, width, height);
 
+#if WINDOWS
             if (windowingSystem is Win32WindowingSystem)
             {
                 var win32_window = GetSdlWindowHwnd(window);
 
                 SetWindowPos(win32_window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
             }
+#endif
         }
 
         private void HideWindow()

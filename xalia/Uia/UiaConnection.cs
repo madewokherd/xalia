@@ -949,40 +949,6 @@ namespace Xalia.Uia
 
             // TODO: If automationid is provided, use automationid + parent id
 
-            // Query for IAccessible2 directly, for old Qt versions
-            try
-            {
-                var acc = element.Patterns.LegacyIAccessible.Pattern.GetIAccessible();
-
-                var acc2 = QueryIAccessible2(acc);
-
-                return $"{BlockingGetElementId(element.Parent, out var _)}-acc2-{acc2.uniqueID}";
-            }
-            catch (PatternNotSupportedException)
-            {
-                // Fall back on other methods
-            }
-            catch (InvalidOperationException)
-            {
-                // Pattern not supported
-            }
-            catch (NotImplementedException)
-            {
-                // Fall back on other methods
-            }
-            catch (InvalidCastException)
-            {
-                // Fall back on other methods
-            }
-            catch (ArgumentException)
-            {
-                // Fall back on other methods
-            }
-            catch (COMException)
-            {
-                // Fall back on other methods
-            }
-
             // TODO: Use NAV_PREVIOUS if supported to find index in parent, and use it for comparison.
             // This requires saving the element along with the parent, because the index may change.
 
