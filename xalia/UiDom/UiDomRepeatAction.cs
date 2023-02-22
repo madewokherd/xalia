@@ -9,7 +9,7 @@ namespace Xalia.UiDom
 {
     public class UiDomRepeatAction : UiDomRoutine
     {
-        public UiDomRepeatAction(UiDomValue context, UiDomRoot root, GudlExpression action_expression, TimeSpan initial_delay, TimeSpan repeat_delay)
+        public UiDomRepeatAction(UiDomValue context, UiDomRoot root, GudlExpression action_expression, long initial_delay, long repeat_delay)
         {
             Context = context;
             Root = root;
@@ -21,8 +21,8 @@ namespace Xalia.UiDom
         public UiDomValue Context { get; }
         public UiDomRoot Root { get; }
         public GudlExpression ActionExpression { get; }
-        public TimeSpan InitialDelay { get; }
-        public TimeSpan RepeatDelay { get; }
+        public long InitialDelay { get; }
+        public long RepeatDelay { get; }
 
         public static UiDomValue GetMethod()
         {
@@ -40,50 +40,37 @@ namespace Xalia.UiDom
                 return UiDomUndefined.Instance;
 
             UiDomValue initial_delay = context.Evaluate(arglist[1], root, depends_on);
-            TimeSpan initial_delay_ts;
+            long initial_delay_ticks;
 
-            if (initial_delay is UiDomInt ii)
+            if (initial_delay.TryToDouble(out double id))
             {
-                if (ii.Value <= 0)
+                if (id <= 0)
                     return action;
-                initial_delay_ts = new TimeSpan((long)(ii.Value * 10000));
-            }
-            else if (initial_delay is UiDomDouble id)
-            {
-                if (id.Value <= 0)
-                    return action;
-                initial_delay_ts = new TimeSpan((long)(id.Value * 10000));
+                initial_delay_ticks = (long)(id * Stopwatch.Frequency / 1000);
             }
             else
                 return action;
 
-            TimeSpan repeat_delay_ts;
+            long repeat_delay_ticks;
 
             if (arglist.Length >= 3)
             {
                 UiDomValue repeat_delay = context.Evaluate(arglist[2], root, depends_on);
 
-                if (repeat_delay is UiDomInt ri)
+                if (repeat_delay.TryToDouble(out double rd))
                 {
-                    if (ri.Value <= 0)
-                        repeat_delay_ts = initial_delay_ts;
+                    if (rd <= 0)
+                        repeat_delay_ticks = initial_delay_ticks;
                     else
-                        repeat_delay_ts = new TimeSpan((long)(ri.Value * 10000));
-                }
-                else if (repeat_delay is UiDomDouble rd)
-                {
-                    if (rd.Value <= 0)
-                        repeat_delay_ts = initial_delay_ts;
-                    else
-                        repeat_delay_ts = new TimeSpan((long)(rd.Value * 10000));
+                        repeat_delay_ticks = (long)(rd * Stopwatch.Frequency / 1000);
                 }
                 else
-                    repeat_delay_ts = initial_delay_ts;
+                    repeat_delay_ticks = initial_delay_ticks;
             }
             else
-                repeat_delay_ts = initial_delay_ts;
+                repeat_delay_ticks = initial_delay_ticks;
 
-            return new UiDomRepeatAction(context, root, action_expr, initial_delay_ts, repeat_delay_ts);
+            return new UiDomRepeatAction(context, root, action_expr, initial_delay_ticks, repeat_delay_ticks);
         }
 
         public override bool Equals(object obj)
@@ -149,7 +136,9 @@ namespace Xalia.UiDom
                         prev_state = state;
                         state = await queue.Dequeue();
                         if (!(inner_queue is null))
+                        {
                             inner_queue.Enqueue(state);
+                        }
                         if (state.Kind == InputStateKind.Disconnected)
                         {
                             break;
@@ -163,7 +152,7 @@ namespace Xalia.UiDom
                     }
                     if (stopwatch.IsRunning && state.Pressed)
                     {
-                        long remaining_delay = (is_initial ? InitialDelay : RepeatDelay).Ticks -
+                        long remaining_delay = (is_initial ? InitialDelay : RepeatDelay) -
                                 stopwatch.ElapsedTicks;
                         if (remaining_delay <= 0)
                         {
@@ -177,7 +166,7 @@ namespace Xalia.UiDom
                             }
                             continue;
                         }
-                        await Task.WhenAny(queue.WaitForInput(), watcher.WaitChanged(), Task.Delay(new TimeSpan(remaining_delay)));
+                        await Task.WhenAny(queue.WaitForInput(), watcher.WaitChanged(), Task.Delay(TimeSpan.FromSeconds(remaining_delay / (double)Stopwatch.Frequency)));
                         continue;
                     }
                     await Task.WhenAny(queue.WaitForInput(), watcher.WaitChanged());
@@ -187,7 +176,7 @@ namespace Xalia.UiDom
 
         public override string ToString()
         {
-            return $"{Context}.(repeat_action({ActionExpression}, {InitialDelay.Ticks / 10000.0}, {RepeatDelay.Ticks / 10000.0}))";
+            return $"{Context}.(repeat_action({ActionExpression}, {InitialDelay / (double)Stopwatch.Frequency * 1000}, {RepeatDelay / (double)Stopwatch.Frequency * 1000}))";
         }
     }
 }

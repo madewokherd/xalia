@@ -18,7 +18,7 @@ namespace Xalia.UiDom
 
         private static readonly double xscale = 1.0 / 3 / 32767;
         private static readonly double yscale = 1.0 / 3 / 32767;
-        private static readonly long delay_ticks = 10000000 / 120;
+        private static readonly long delay_ticks = Stopwatch.Frequency / 120;
 
         public override bool Equals(object obj)
         {
@@ -88,7 +88,7 @@ namespace Xalia.UiDom
                         var elapsed_ticks = stopwatch.ElapsedTicks - last_repeat;
                         if (elapsed_ticks < delay_ticks)
                         {
-                            await Task.WhenAny(queue.WaitForInput(), Task.Delay(new TimeSpan(delay_ticks - elapsed_ticks)));
+                            await Task.WhenAny(queue.WaitForInput(), Task.Delay(TimeSpan.FromSeconds((delay_ticks - elapsed_ticks) / (double)Stopwatch.Frequency)));
                             continue;
                         }
                         long num_steps = elapsed_ticks / delay_ticks;
