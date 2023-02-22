@@ -26,9 +26,6 @@ namespace Xalia.UiDom
             Application.ElementDied(element);
         }
 
-        public override string ToString()
-        {
-            return "root";
-        }
+        public override string DebugId => "root";
     }
 }

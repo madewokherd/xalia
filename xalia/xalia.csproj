@@ -55,6 +55,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
     <None Include="App.config" />
     <None Include="main.gudl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -89,6 +92,8 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AtSpi2\AtSpiConnection.cs" />
+    <Compile Include="AtSpi2\DBusUtils.cs" />
     <Compile Include="AtSpi\AtSpiActionList.cs" />
     <Compile Include="Interop\Win32RemoteProcessMemory.cs" />
     <Compile Include="Interop\Win32WaitHandle.cs" />
@@ -209,6 +214,10 @@
     <PackageReference Include="System.Threading.Tasks.Extensions">
       <Version>4.5.4</Version>
     </PackageReference>
+    <PackageReference Include="Tmds.DBus.Protocol">
+      <Version>0.13.0</Version>
+    </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

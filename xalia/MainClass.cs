@@ -49,7 +49,13 @@ namespace Xalia
 
                 UiDomRoot connection = null;
 
-                if (((Environment.GetEnvironmentVariable("XALIA_USE_ATSPI") ?? (Utils.IsUnix() ? "1" : "0")) != "0"))
+                if (((Environment.GetEnvironmentVariable("XALIA_EXPERIMENTAL_ATSPI") ?? "0") != "0"))
+                {
+                    connection = await Xalia.AtSpi2.AtSpiConnection.Connect(config, application);
+                }
+
+                if (connection == null &&
+                    ((Environment.GetEnvironmentVariable("XALIA_USE_ATSPI") ?? (Utils.IsUnix() ? "1" : "0")) != "0"))
                 {
                     connection = await AtSpiConnection.Connect(config, application);
                 }
