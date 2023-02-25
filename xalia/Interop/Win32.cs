@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static SDL2.SDL;
 
@@ -20,6 +21,23 @@ namespace Xalia.Interop
         // Wine extension
         [DllImport(NT_LIB, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int __wine_dbg_output(byte[] str);
+
+        public enum PROCESSINFOCLASS
+        {
+            ProcessBasicInformation = 0,
+            
+            // Wine extension:
+            ProcessWineMakeProcessSystem = 1000,
+        }
+
+        [DllImport(NT_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int NtSetInformationProcess(IntPtr process, PROCESSINFOCLASS infoclass,
+            out SafeWaitHandle handle, int size);
+
+        public static IntPtr GetCurrentProcess()
+        {
+            return new IntPtr(-1);
+        }
 
         public const int PROCESS_VM_OPERATION = 0x8;
         public const int PROCESS_VM_READ = 0x10;

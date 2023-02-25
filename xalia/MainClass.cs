@@ -1,11 +1,13 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-#if NETCOREAPP3_0_OR_GREATER
-using System.Runtime.InteropServices;
+﻿#if WINDOWS
+using Microsoft.Win32.SafeHandles;
 #endif
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
-
 using Xalia.AtSpi;
 using Xalia.Gudl;
 using Xalia.Ui;
@@ -16,11 +18,29 @@ using Xalia.Uia;
 using Xalia.Sdl;
 
 using static SDL2.SDL;
+#if WINDOWS
+using static Xalia.Interop.Win32;
+#endif
 
 namespace Xalia
 {
     public class MainClass
     {
+#if WINDOWS
+        static async Task MakeWineSystemProcess()
+        {
+            int status = NtSetInformationProcess(GetCurrentProcess(),
+                PROCESSINFOCLASS.ProcessWineMakeProcessSystem,
+                out SafeWaitHandle exit_event, IntPtr.Size);
+
+            Marshal.ThrowExceptionForHR(status);
+
+            await Utils.WaitAsync(exit_event, true);
+
+            Environment.Exit(0);
+        }
+#endif
+
         static async Task Init(GudlStatement[] config)
         {
             try
@@ -63,7 +83,7 @@ namespace Xalia
         }
 
         [STAThread()]
-        public static int Main()
+        public static int Main(string[] argv)
         {
 #if NETCOREAPP3_0_OR_GREATER
             NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), OnDllImport);
@@ -72,6 +92,15 @@ namespace Xalia
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
             SdlSynchronizationContext.Instance.Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
+
+#if WINDOWS
+            if (Utils.IsWindows() &&
+                (argv.Contains("-wineSystemProcess") ||
+                 (Utils.TryGetEnvironmentVariable("XALIA_WINE_SYSTEM_PROCESS", out var system_process) && system_process != "0")))
+            {
+                Utils.RunTask(MakeWineSystemProcess());
+            }
+#endif
 
             GudlStatement[] config;
 

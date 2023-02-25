@@ -91,6 +91,7 @@
   <ItemGroup>
     <Compile Include="AtSpi\AtSpiActionList.cs" />
     <Compile Include="Interop\Win32RemoteProcessMemory.cs" />
+    <Compile Include="Interop\Win32WaitHandle.cs" />
     <Compile Include="Sdl\OverlayBox.cs" />
     <Compile Include="Sdl\SplitOverlayBox.cs" />
     <Compile Include="Uia\Win32\Win32Element.cs" />

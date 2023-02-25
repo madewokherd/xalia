@@ -1,7 +1,9 @@
-﻿using System;
+using Microsoft.Win32.SafeHandles;
+using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Xalia.Interop;
 
 #if WINDOWS
 using static Xalia.Interop.Win32;
@@ -136,6 +138,28 @@ namespace Xalia
             task.Wait();
             if (!(task.Exception is null))
                 throw task.Exception;
+        }
+
+        internal static Task WaitAsync(WaitHandle handle)
+        {
+            var result = new TaskCompletionSource<bool>();
+
+            ThreadPool.RegisterWaitForSingleObject(handle, (object state, bool timedOut) =>
+            {
+                result.SetResult(timedOut);
+            }, null, -1, true);
+
+            return result.Task;
+        }
+
+        internal static Task WaitAsync(SafeWaitHandle handle, bool ownHandle)
+        {
+            return WaitAsync(new Win32WaitHandle(handle, ownHandle));
+        }
+
+        internal static Task WaitAsync(SafeWaitHandle handle)
+        {
+            return WaitAsync(handle, false);
         }
 
         internal static bool TryGetEnvironmentVariable(string name, out string result)
