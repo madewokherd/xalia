@@ -138,6 +138,11 @@ namespace Xalia.AtSpi2
             return message.GetBodyReader().ReadString();
         }
 
+        public static int ReadMessageInt32(Message message, object state)
+        {
+            return message.GetBodyReader().ReadInt32();
+        }
+
         public static uint ReadMessageUint32(Message message, object state)
         {
             return message.GetBodyReader().ReadUInt32();
