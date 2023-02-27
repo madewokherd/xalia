@@ -94,7 +94,7 @@ namespace Xalia.AtSpi2
         public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
             string iface, string member, string arg1, int arg2, MessageValueReader<T> reply_reader)
         {
-            return CallMethod(connection, peer, path, iface, member, "sx", MessageFlags.None, (ref MessageWriter writer) =>
+            return CallMethod(connection, peer, path, iface, member, "si", MessageFlags.None, (ref MessageWriter writer) =>
             {
                 writer.WriteString(arg1);
                 writer.WriteInt32(arg2);
@@ -114,7 +114,7 @@ namespace Xalia.AtSpi2
         public static Task CallMethod(Connection connection, string peer, string path,
             string iface, string member, string arg1, int arg2)
         {
-            return CallMethod(connection, peer, path, iface, member, "sx", MessageFlags.None, (ref MessageWriter writer) =>
+            return CallMethod(connection, peer, path, iface, member, "si", MessageFlags.None, (ref MessageWriter writer) =>
             {
                 writer.WriteString(arg1);
                 writer.WriteInt32(arg2);

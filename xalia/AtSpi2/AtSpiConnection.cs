@@ -1,5 +1,4 @@
-﻿using Superpower.Model;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Tmds.DBus.Protocol;
 using Xalia.Gudl;
@@ -13,6 +12,7 @@ namespace Xalia.AtSpi2
     internal class AtSpiConnection : UiDomRoot
     {
         public Connection Connection { get; }
+        public AtSpiElement DesktopFrame { get; private set; }
 
         private AtSpiConnection(Connection connection, GudlStatement[] rules, IUiDomApplication application) : base(rules, application)
         {
@@ -71,6 +71,9 @@ namespace Xalia.AtSpi2
                 "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetNameOwner", "org.a11y.atspi.Registry",
                 ReadMessageString);
             Console.WriteLine($"registry client: {registryClient}");
+
+            result.DesktopFrame = new AtSpiElement(result, registryClient, "/org/a11y/atspi/accessible/root");
+            result.AddChild(0, result.DesktopFrame);
 
             return result;
         }
