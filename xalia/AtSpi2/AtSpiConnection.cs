@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Superpower.Model;
+using System;
 using System.Threading.Tasks;
 using Tmds.DBus.Protocol;
 using Xalia.Gudl;
@@ -11,9 +12,11 @@ namespace Xalia.AtSpi2
 {
     internal class AtSpiConnection : UiDomRoot
     {
-        private AtSpiConnection(GudlStatement[] rules, IUiDomApplication application) : base(rules, application)
-        {
+        public Connection Connection { get; }
 
+        private AtSpiConnection(Connection connection, GudlStatement[] rules, IUiDomApplication application) : base(rules, application)
+        {
+            Connection = connection;
         }
 
         internal static async Task<string> GetAtSpiBusAddress()
@@ -40,10 +43,8 @@ namespace Xalia.AtSpi2
             // Try getting bus address from session bus org.a11y.Bus interface
             if (string.IsNullOrWhiteSpace(result))
             {
-                var buffer = CreateMethodCall(session, "org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus",
-                    "GetAddress");
-
-                result = await session.CallMethodAsync(buffer, ReadMessageString);
+                result = await CallMethod(session, "org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus",
+                    "GetAddress", ReadMessageString);
             }
 
             return result;
@@ -57,8 +58,21 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine("AT-SPI bus could not be found. Did you enable assistive technologies in your desktop environment?");
                 return null;
             }
-            Utils.DebugWriteLine($"AT-SPI bus found: {bus}");
-            return null;
+
+            var connection = new Connection(bus);
+            await connection.ConnectAsync();
+
+            var result = new AtSpiConnection(connection, config, application);
+
+            await CallMethod(connection, "org.freedesktop.DBus", "/org/freedesktop/DBus",
+                "org.freedesktop.DBus", "StartServiceByName", "org.a11y.atspi.Registry", (uint)0);
+
+            var registryClient = await CallMethod(connection, "org.freedesktop.DBus",
+                "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetNameOwner", "org.a11y.atspi.Registry",
+                ReadMessageString);
+            Console.WriteLine($"registry client: {registryClient}");
+
+            return result;
         }
     }
 }
