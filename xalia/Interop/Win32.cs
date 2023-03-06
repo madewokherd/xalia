@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using static SDL2.SDL;
 
@@ -15,6 +14,7 @@ namespace Xalia.Interop
     {
         const string NT_LIB = "ntdll";
         const string KERNEL_LIB = "kernel32";
+        const string GDI_LIB = "gdi32";
         const string USER_LIB = "user32";
         const string OLEACC_LIB = "oleacc";
 
@@ -99,6 +99,42 @@ namespace Xalia.Interop
         public static extern bool ReadProcessMemory(SafeProcessHandle hProcess, IntPtr lpBaseAddress,
             [Out] byte[] lpBuffer, IntPtr nSize, IntPtr lpNumberOfBytesRead);
 
+        [DllImport(GDI_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+
+        [DllImport(GDI_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern bool DeleteDC(IntPtr hdc);
+
+        [DllImport(GDI_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern IntPtr SelectObject(IntPtr hdc, IntPtr h);
+
+        public const int BI_RGB = 0;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct BITMAPINFOHEADER
+        {
+            public int biSize;
+            public int biWidth;
+            public int biHeight;
+            public short biPlanes;
+            public short biBitCount;
+            public int biCompression;
+            public int biSizeImage;
+            public int biXPelsPerMeter;
+            public int biYPelsPerMeter;
+            public int biClrUsed;
+            public int biClrImportant;
+        }
+
+        public const int DIB_RGB_COLORS = 0;
+
+        [DllImport(GDI_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern IntPtr CreateDIBSection(IntPtr hdc, ref BITMAPINFOHEADER pbmi, int usage,
+            out IntPtr ppvBits, IntPtr hSection, int offset);
+
+        [DllImport(GDI_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern bool DeleteObject(IntPtr ho);
+
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate IntPtr WNDPROC(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam);
 
@@ -120,7 +156,7 @@ namespace Xalia.Interop
         }
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
-        public extern static IntPtr RegisterWindowClassExW([In]ref WNDCLASSEXW wndclassex);
+        public extern static IntPtr RegisterClassExW([In]ref WNDCLASSEXW wndclassex);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode, SetLastError = true)]
         public extern static IntPtr CreateWindowExW(int dwExStyle, IntPtr lpClassName, string lpWindowName,
@@ -131,6 +167,7 @@ namespace Xalia.Interop
         public static extern bool DestroyWindow(IntPtr hWnd);
 
         public const int SW_HIDE = 0;
+        public const int SW_SHOWNOACTIVATE = 4;
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -174,6 +211,7 @@ namespace Xalia.Interop
 
         public const int WS_HSCROLL = 0x00100000;
         public const int WS_VSCROLL = 0x00200000;
+        public const int WS_CLIPSIBLINGS = 0x04000000;
         public const int WS_DISABLED = 0x08000000;
         public const int WS_VISIBLE = 0x10000000;
         public const int WS_POPUP = -0x80000000;
@@ -185,9 +223,12 @@ namespace Xalia.Interop
 
         public static readonly IntPtr HWND_TOPMOST = (IntPtr)(-1);
 
-        public const uint SWP_NOACTIVATE = 0x0010;
         public const uint SWP_NOSIZE = 0x0001;
         public const uint SWP_NOMOVE = 0x0002;
+        public const uint SWP_NOZORDER = 0x0004;
+        public const uint SWP_NOACTIVATE = 0x0010;
+        public const uint SWP_SHOWWINDOW = 0x0040;
+        public const uint SWP_HIDEWINDOW = 0x0080;
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
@@ -198,6 +239,30 @@ namespace Xalia.Interop
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
         public delegate void WINEVENTPROC(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject,
             int idChild, int idEventThread, int dwmsEventTime);
+
+        public const byte AC_SRC_OVER = 0;
+        public const byte AC_SRC_ALPHA = 1;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct BLENDFUNCTION
+        {
+            public byte BlendOp;
+            public byte BlendFlags;
+            public byte SourceConstantAlpha;
+            public byte AlphaFormat;
+        }
+
+        public const int ULW_ALPHA = 2;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool UpdateLayeredWindow(IntPtr hWnd, IntPtr hdcDst, ref POINT pptDst,
+            ref SIZE psize, IntPtr hdcSrc, ref POINT pptSrc, int crKey, ref BLENDFUNCTION pblend,
+            int dwFlags);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool UpdateLayeredWindow(IntPtr hWnd, IntPtr hdcDst, IntPtr pptDst,
+            ref SIZE psize, IntPtr hdcSrc, ref POINT pptSrc, int crKey, ref BLENDFUNCTION pblend,
+            int dwFlags);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc,
@@ -460,6 +525,12 @@ namespace Xalia.Interop
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct SIZE
+        {
+            public int cx, cy;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         public struct GUITHREADINFO
         {
             public int cbSize;
@@ -603,6 +674,22 @@ namespace Xalia.Interop
             y = (int)Math.Round((double)(y - GetSystemMetrics(SM_YVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CYVIRTUALSCREEN));
         }
 
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct CREATESTRUCTW
+        {
+            public IntPtr lpCreateParams;
+            public IntPtr hInstance;
+            public IntPtr hMenu;
+            public IntPtr hwndParent;
+            public int cy, cx, y, x;
+            public int style;
+            public IntPtr lpszName;
+            public IntPtr lpszClass;
+            public int dwExStyle;
+        }
+
+        public const int WM_DESTROY = 0x2;
+        public const int WM_NCCREATE = 0x81;
         public const int WM_HSCROLL = 0x114;
         public const int WM_VSCROLL = 0x115;
         public const int WM_USER = 0x400;
