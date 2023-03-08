@@ -95,6 +95,9 @@ namespace Xalia.Sdl
                     _windowDestroyed = true;
                     Dispose();
                     return IntPtr.Zero;
+                case WM_MOUSEACTIVATE:
+                    // For some reason, WS_EX_NOACTIVATE doesn't affect this on Wine.
+                    return (IntPtr)MA_NOACTIVATE;
             }
             return DefWindowProcW(_hwnd, msg, wparam, lparam);
         }

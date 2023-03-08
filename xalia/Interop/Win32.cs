@@ -674,6 +674,8 @@ namespace Xalia.Interop
             y = (int)Math.Round((double)(y - GetSystemMetrics(SM_YVIRTUALSCREEN)) * 65535 / GetSystemMetrics(SM_CYVIRTUALSCREEN));
         }
 
+        public const int MA_NOACTIVATE = 3;
+
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         public struct CREATESTRUCTW
         {
@@ -689,6 +691,7 @@ namespace Xalia.Interop
         }
 
         public const int WM_DESTROY = 0x2;
+        public const int WM_MOUSEACTIVATE = 0x21;
         public const int WM_NCCREATE = 0x81;
         public const int WM_HSCROLL = 0x114;
         public const int WM_VSCROLL = 0x115;
