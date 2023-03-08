@@ -20,7 +20,7 @@ namespace Xalia.Sdl
             try
             {
                 CreateWindowExW(exstyle, WindowClass,
-                    "Overlay Box", 0, 0, 5, 5, style, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero,
+                    "Overlay Box", style, 0, 0, 5, 5, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero,
                     GCHandle.ToIntPtr(handle));
                 if (_hwnd == IntPtr.Zero)
                     throw new Win32Exception();

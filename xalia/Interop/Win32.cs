@@ -160,7 +160,7 @@ namespace Xalia.Interop
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode, SetLastError = true)]
         public extern static IntPtr CreateWindowExW(int dwExStyle, IntPtr lpClassName, string lpWindowName,
-            int x, int y, int width, int height, int dwStyle,
+            int dwStyle, int x, int y, int width, int height,
             IntPtr hwndParent, IntPtr hMenu, IntPtr hInstance, IntPtr lpParam);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
