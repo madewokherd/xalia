@@ -217,6 +217,7 @@ namespace Xalia.Interop
         public const int WS_POPUP = -0x80000000;
 
         public const int WS_EX_TOPMOST = 0x00000008;
+        public const int WS_EX_TRANSPARENT = 0x00000020;
         public const int WS_EX_CONTROLPARENT = 0x00010000;
         public const int WS_EX_LAYERED = 0x00080000;
         public const int WS_EX_NOACTIVATE = 0x08000000;

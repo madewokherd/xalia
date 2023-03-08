@@ -15,7 +15,8 @@ namespace Xalia.Sdl
             WindowingSystem = windowingSystem;
             int style = WS_POPUP;
             // WS_EX_CONTROLPARENT has special meaning to gamescope allowing the window to display
-            int exstyle = WS_EX_LAYERED | WS_EX_CONTROLPARENT | WS_EX_NOACTIVATE;
+            // WS_EX_TRANSPARENT makes it possible to click theough the window when set with WS_EX_LAYERED
+            int exstyle = WS_EX_LAYERED | WS_EX_CONTROLPARENT | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT;
             GCHandle handle = GCHandle.Alloc(this, GCHandleType.Normal);
             try
             {
