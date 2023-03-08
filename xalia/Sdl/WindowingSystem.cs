@@ -48,7 +48,7 @@ namespace Xalia.Sdl
 
         public virtual OverlayBox CreateOverlayBox()
         {
-            if (Utils.TryGetEnvironmentVariable("XALIA_SPLIT_BOX", out var value) &&
+            if (!Utils.TryGetEnvironmentVariable("XALIA_SPLIT_BOX", out var value) ||
                 value != "0")
                 return new SplitOverlayBox(this);
             return new SdlOverlayBox(this);
