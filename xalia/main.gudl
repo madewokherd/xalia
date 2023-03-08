@@ -431,7 +431,7 @@ root (uia_menu_mode or uia_in_menu or
 // Combo boxes contain subcontrols we don't want to directly navigate to
 if (combo_box and not uia_expand_collapse_state.leaf_node)
 {
-    stop_interactable: false;
+    stop_interactable: true;
 }
 
 // We have a separate mechanism for interacting with menus
