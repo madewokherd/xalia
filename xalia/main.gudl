@@ -1150,9 +1150,9 @@ if (interactable) {
         tab_left_action_name: spi_name;
     }
 
-    menu_bar (child_matches(primary_action))
+    menu_bar (child_matches(primary_action and (uia_name != "System" or width != height)))
     {
-        menu_open_action: child_matches(primary_action).primary_action;
+        menu_open_action: child_matches(primary_action and (uia_name != "System" or width != height)).primary_action;
         menu_open_action_name: "Open Menu";
     }
 
