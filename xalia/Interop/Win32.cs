@@ -440,29 +440,48 @@ namespace Xalia.Interop
 
         public static IAccessible2 QueryIAccessible2(object acc)
         {
-            IServiceProvider sp = (IServiceProvider)acc;
-
-            if (sp is null)
-                return null;
-
-            Guid service_id = IID_IAccessible;
-            Guid iid = IID_IAccessible2;
-
-            IntPtr pIA2;
-
             try
             {
-                // This is the method documented by the spec - guidService = IID_IAccessible
-                pIA2 = sp.QueryService(ref service_id, ref iid);
-            }
-            catch
-            {
-                // This is the method UI Automation seems to use - guidService = IID_IAccessible2
-                service_id = IID_IAccessible2;
-                pIA2 = sp.QueryService(ref service_id, ref iid);
-            }
+                IServiceProvider sp = (IServiceProvider)acc;
 
-            return (IAccessible2)Marshal.GetTypedObjectForIUnknown(pIA2, typeof(IAccessible2));
+                if (sp is null)
+                    return null;
+
+                Guid service_id = IID_IAccessible;
+                Guid iid = IID_IAccessible2;
+
+                IntPtr pIA2;
+
+                try
+                {
+                    // This is the method documented by the spec - guidService = IID_IAccessible
+                    pIA2 = sp.QueryService(ref service_id, ref iid);
+                }
+                catch
+                {
+                    // This is the method UI Automation seems to use - guidService = IID_IAccessible2
+                    service_id = IID_IAccessible2;
+                    pIA2 = sp.QueryService(ref service_id, ref iid);
+                }
+
+                return (IAccessible2)Marshal.GetTypedObjectForIUnknown(pIA2, typeof(IAccessible2));
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (NotImplementedException)
+            {
+            }
+            catch (InvalidCastException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (COMException)
+            {
+            }
+            return null;
         }
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]

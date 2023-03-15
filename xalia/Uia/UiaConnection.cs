@@ -3,6 +3,7 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Exceptions;
 using FlaUI.Core.Identifiers;
+using FlaUI.UIA3;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,8 @@ using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
+using IAccessible = Interop.UIAutomationClient.IAccessible;
+using IUIAutomationLegacyIAccessiblePattern = Interop.UIAutomationClient.IUIAutomationLegacyIAccessiblePattern;
 
 namespace Xalia.Uia
 {
@@ -892,6 +895,30 @@ namespace Xalia.Uia
             base.DumpProperties();
         }
 
+        internal IAccessible GetIAccessibleBackground(AutomationElement element)
+        {
+            var fae = element.FrameworkAutomationElement as UIA3FrameworkAutomationElement;
+            if (fae is null)
+                return null;
+
+            var nae = fae.NativeElement;
+
+            try
+            {
+                var lia = nae.GetCurrentPattern(Automation.PatternLibrary.LegacyIAccessiblePattern.Id) as IUIAutomationLegacyIAccessiblePattern;
+                if (lia is null)
+                    return null;
+
+                return lia.GetIAccessible();
+            }
+            catch (COMException e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    Utils.OnError(e);
+                return null;
+            }
+        }
+
         internal string BlockingGetElementId(AutomationElement element, out IntPtr hwnd)
         {
             // hwnd/childid pair
@@ -949,10 +976,21 @@ namespace Xalia.Uia
 
             // TODO: If automationid is provided, use automationid + parent id
 
-            // TODO: Use NAV_PREVIOUS if supported to find index in parent, and use it for comparison.
-            // This requires saving the element along with the parent, because the index may change.
+            var acc = GetIAccessibleBackground(element);
 
-            // TODO: If NAV_PREVIOUS is not supported, use every MSAA property we can find for comparison.
+            if (!(acc is null))
+            {
+                // Query for IAccessible2 directly, for old Qt versions
+                var acc2 = QueryIAccessible2(acc);
+
+                if (!(acc2 is null))
+                    return $"{BlockingGetElementId(element.Parent, out var _)}-acc2-{acc2.uniqueID}";
+
+                // TODO: Use NAV_PREVIOUS if supported to find index in parent, and use it for comparison.
+                // This requires saving the element along with the parent, because the index may change.
+
+                // TODO: If NAV_PREVIOUS is not supported, use role+position+parent for comparison.
+            }
 
             var id = Interlocked.Increment(ref DummyElementId);
             return $"incomparable-element-{id}";

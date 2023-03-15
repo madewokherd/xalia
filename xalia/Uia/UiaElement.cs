@@ -72,6 +72,8 @@ namespace Xalia.Uia
 
         private double offset_remainder;
 
+        string application_name, application_version, toolkit_name, toolkit_version;
+        bool fetching_application_name, fetching_application_version, fetching_toolkit_name, fetching_toolkit_version;
         internal static readonly string[] control_type_names =
         {
             "unknown",
@@ -729,6 +731,42 @@ namespace Xalia.Uia
                             }
                             break;
                         }
+                    case "acc2_application_name":
+                        {
+                            if (!fetching_application_name)
+                            {
+                                fetching_application_name = true;
+                                Utils.RunTask(FetchApplicationName());
+                            }
+                            break;
+                        }
+                    case "acc2_application_version":
+                        {
+                            if (!fetching_application_version)
+                            {
+                                fetching_application_version = true;
+                                Utils.RunTask(FetchApplicationVersion());
+                            }
+                            break;
+                        }
+                    case "acc2_toolkit_name":
+                        {
+                            if (!fetching_toolkit_name)
+                            {
+                                fetching_toolkit_name = true;
+                                Utils.RunTask(FetchToolkitName());
+                            }
+                            break;
+                        }
+                    case "acc2_toolkit_version":
+                        {
+                            if (!fetching_toolkit_version)
+                            {
+                                fetching_toolkit_version = true;
+                                Utils.RunTask(FetchToolkitVersion());
+                            }
+                            break;
+                        }
                 }
 
                 if (Root.names_to_property.TryGetValue(id.Name, out var propid) &&
@@ -801,6 +839,111 @@ namespace Xalia.Uia
             }
             return true;
 #endif
+        }
+
+        private IAccessibleApplication QueryAccessibleApplicationBackground()
+        {
+            IntPtr pIAA;
+
+            try
+            {
+                object acc = Root.GetIAccessibleBackground(ElementWrapper.AutomationElement);
+
+                if (acc is null)
+                    return null;
+
+                IServiceProvider sp = (IServiceProvider)acc;
+
+                if (sp is null)
+                {
+                    // Unsure how this can happen
+                    return null;
+                }
+
+                Guid iid = IID_IAccessibleApplication;
+
+                pIAA = sp.QueryService(ref iid, ref iid);
+            }
+            catch (InvalidCastException) // E_NOINTERFACE
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (Exception e)
+            {
+                if (IsExpectedException(e))
+                    return null;
+                throw;
+            }
+
+            return (IAccessibleApplication)Marshal.GetTypedObjectForIUnknown(pIAA, typeof(IAccessibleApplication));
+        }
+
+        private async Task FetchApplicationName()
+        {
+            try
+            {
+                application_name = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return QueryAccessibleApplicationBackground()?.appName;
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
+        }
+
+        private async Task FetchApplicationVersion()
+        {
+            try
+            {
+                application_version = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return QueryAccessibleApplicationBackground()?.appVersion;
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
+        }
+
+        private async Task FetchToolkitName()
+        {
+            try
+            {
+                toolkit_name = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return QueryAccessibleApplicationBackground()?.toolkitName;
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
+        }
+
+        private async Task FetchToolkitVersion()
+        {
+            try
+            {
+                toolkit_version = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return QueryAccessibleApplicationBackground()?.toolkitVersion;
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
 
         protected override void SetAlive(bool value)
@@ -1085,6 +1228,26 @@ namespace Xalia.Uia
                         return new UiaAdjustScrollContainer(this);
                     }
                     return UiDomUndefined.Instance;
+                case "acc2_application_name":
+                    depends_on.Add((this, new IdentifierExpression(id)));
+                    if (application_name is null)
+                        return UiDomUndefined.Instance;
+                    return new UiDomString(application_name);
+                case "acc2_application_version":
+                    depends_on.Add((this, new IdentifierExpression(id)));
+                    if (application_version is null)
+                        return UiDomUndefined.Instance;
+                    return new UiDomString(application_version);
+                case "acc2_toolkit_name":
+                    depends_on.Add((this, new IdentifierExpression(id)));
+                    if (toolkit_name is null)
+                        return UiDomUndefined.Instance;
+                    return new UiDomString(toolkit_name);
+                case "acc2_toolkit_version":
+                    depends_on.Add((this, new IdentifierExpression(id)));
+                    if (toolkit_version is null)
+                        return UiDomUndefined.Instance;
+                    return new UiDomString(toolkit_version);
                 case "win32_set_foreground_window":
                     if (ElementWrapper.Hwnd != IntPtr.Zero)
                     {
@@ -1152,6 +1315,14 @@ namespace Xalia.Uia
             if (!(supported_patterns is null))
                 foreach (var patternid in supported_patterns)
                     Utils.DebugWriteLine($"  supported pattern: {patternid.Name}");
+            if (!(application_name is null))
+                Utils.DebugWriteLine($"  acc2_application_name: {application_name}");
+            if (!(application_version is null))
+                Utils.DebugWriteLine($"  acc2_application_verion: {application_version}");
+            if (!(toolkit_name is null))
+                Utils.DebugWriteLine($"  acc2_toolkit_name: {toolkit_name}");
+            if (!(toolkit_version is null))
+                Utils.DebugWriteLine($"  acc2_toolkit_version: {toolkit_version}");
             if (!(ProcessName is null))
                 Utils.DebugWriteLine($"  win32_process_name: {ProcessName}");
             base.DumpProperties();
