@@ -281,6 +281,8 @@ namespace Xalia.Interop
 
         public const int CHILDID_SELF = 0;
 
+        public const int NAVDIR_PREVIOUS = 6;
+
         [DllImport(OLEACC_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int AccessibleObjectFromEvent(IntPtr hwnd, int dwId, int dwChildId,
             [Out, MarshalAs(UnmanagedType.Interface)] out IAccessible accessible,

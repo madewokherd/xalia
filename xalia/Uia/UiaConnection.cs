@@ -5,6 +5,7 @@ using FlaUI.Core.Exceptions;
 using FlaUI.Core.Identifiers;
 using FlaUI.UIA3;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -14,14 +15,15 @@ using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
-using IAccessible = Interop.UIAutomationClient.IAccessible;
+using AccessibilityRole = FlaUI.Core.WindowsAPI.AccessibilityRole;
+using IAccessible = Accessibility.IAccessible;
 using IUIAutomationLegacyIAccessiblePattern = Interop.UIAutomationClient.IUIAutomationLegacyIAccessiblePattern;
 
 namespace Xalia.Uia
 {
     public class UiaConnection : UiDomRoot
     {
-        static int DummyElementId; // For the worst case, where we can't get any unique id for an element
+        static int MonotonicElementId; // For cases where we can't get any unique id for an element
 
         static List<WINEVENTPROC> event_proc_delegates = new List<WINEVENTPROC>(); // to make sure delegates aren't GC'd while in use
 
@@ -30,6 +32,10 @@ namespace Xalia.Uia
 
         bool polling_focus;
         CancellationTokenSource focus_poll_token;
+
+        // Dictionary mapping parent,role to a set of known child ids and elements
+        ConcurrentDictionary<string, ConcurrentDictionary<AccessibilityRole, ConcurrentBag<(string, AutomationElement)>>> no_id_elements =
+            new ConcurrentDictionary<string, ConcurrentDictionary<AccessibilityRole, ConcurrentBag<(string, AutomationElement)>>>();
 
         public UiaConnection(bool use_uia3, GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
@@ -699,7 +705,16 @@ namespace Xalia.Uia
         {
             if (ae is null)
                 return UiaElementWrapper.InvalidElement;
-            return new UiaElementWrapper(ae, this);
+            try
+            {
+                return new UiaElementWrapper(ae, this);
+            }
+            catch (Exception e)
+            {
+                if (UiaElement.IsExpectedException(e))
+                    return UiaElementWrapper.InvalidElement;
+                throw;
+            }
         }
 
         UiaElementWrapper focused_element;
@@ -895,8 +910,10 @@ namespace Xalia.Uia
             base.DumpProperties();
         }
 
-        internal IAccessible GetIAccessibleBackground(AutomationElement element)
+        internal IAccessible GetIAccessibleBackground(AutomationElement element, out int child_id)
         {
+            child_id = default;
+
             var fae = element.FrameworkAutomationElement as UIA3FrameworkAutomationElement;
             if (fae is null)
                 return null;
@@ -909,7 +926,9 @@ namespace Xalia.Uia
                 if (lia is null)
                     return null;
 
-                return lia.GetIAccessible();
+                child_id = lia.CurrentChildId;
+
+                return (IAccessible)lia.GetIAccessible();
             }
             catch (COMException e)
             {
@@ -976,24 +995,193 @@ namespace Xalia.Uia
 
             // TODO: If automationid is provided, use automationid + parent id
 
-            var acc = GetIAccessibleBackground(element);
-
-            if (!(acc is null))
+            var acc = GetIAccessibleBackground(element, out var child_id);
+            AutomationElement parent = null;
+            try
             {
+                parent = element.Parent;
+            }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+            }
+
+            if (!(acc is null) && !(parent is null))
+            {
+                string parent_id = BlockingGetElementId(parent, out var _unused);
+
                 // Query for IAccessible2 directly, for old Qt versions
                 var acc2 = QueryIAccessible2(acc);
 
                 if (!(acc2 is null))
-                    return $"{BlockingGetElementId(element.Parent, out var _)}-acc2-{acc2.uniqueID}";
+                {
+                    if (child_id != 0)
+                        return $"{parent_id}-acc2-{acc2.uniqueID}-{child_id}";
+                    return $"{parent_id}-acc2-{acc2.uniqueID}";
+                }
 
-                // TODO: Use NAV_PREVIOUS if supported to find index in parent, and use it for comparison.
-                // This requires saving the element along with the parent, because the index may change.
-
-                // TODO: If NAV_PREVIOUS is not supported, use role+position+parent for comparison.
+                // Use MSAA attributes and comparison to find elements
+                if (!no_id_elements.TryGetValue(parent_id, out var roles))
+                {
+                    // TryAdd may fail, in which case we use whatever was actually added
+                    no_id_elements.TryAdd(parent_id, new ConcurrentDictionary<AccessibilityRole, ConcurrentBag<(string, AutomationElement)>>());
+                    roles = no_id_elements[parent_id];
+                }
+                AccessibilityRole role = default;
+                try
+                {
+                    role = element.Patterns.LegacyIAccessible.Pattern.Role.ValueOrDefault;
+                }
+                catch (Exception e2)
+                {
+                    if (!UiaElement.IsExpectedException(e2))
+                        throw;
+                }
+                if (!roles.TryGetValue(role, out var values))
+                {
+                    // TryAdd may fail, in which case we use whatever was actually added
+                    roles.TryAdd(role, new ConcurrentBag<(string, AutomationElement)>());
+                    values = roles[role];
+                }
+                while (true)
+                {
+                    int old_count = 0;
+                    // search for already-seen item
+                    foreach (var item in values)
+                    {
+                        old_count++;
+                        if (MsaaSiblingsAreEqual(item.Item2, element))
+                        {
+                            return item.Item1;
+                        }
+                    }
+                    lock (values)
+                    {
+                        if (values.Count != old_count)
+                        {
+                            // bag was modified during iteration, try again
+                            continue;
+                        }
+                        // add item
+                        var result = $"element-{Interlocked.Increment(ref MonotonicElementId)}";
+                        values.Add((result, element));
+                        return result;
+                    }
+                }
             }
 
-            var id = Interlocked.Increment(ref DummyElementId);
+            var id = Interlocked.Increment(ref MonotonicElementId);
             return $"incomparable-element-{id}";
+        }
+
+        struct MsaaSiblingComparisonInfo
+        {
+            public int role;
+            public int child_id;
+            public int left, top, width, height;
+            public int index;
+            public string name;
+            public int child_count;
+        }
+
+        private bool GetSiblingComparisonInfo(AutomationElement element, out MsaaSiblingComparisonInfo result)
+        {
+            result = default;
+            var acc = GetIAccessibleBackground(element, out var child_id);
+            if (acc is null)
+                return false;
+            result.child_id = child_id;
+            try
+            {
+                result.role = (int)acc.accRole[child_id];
+            }
+            catch (InvalidCastException) { }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+            }
+            try
+            {
+                acc.accLocation(out result.left, out result.top, out result.width, out result.height,
+                    child_id);
+            }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+            }
+            if (child_id == 0)
+            {
+                try
+                {
+                    int index = 0;
+                    var nav_acc = acc;
+                    int nav_child_id = child_id;
+                    while (true)
+                    {
+                        var nav_result = nav_acc.accNavigate(NAVDIR_PREVIOUS, nav_child_id);
+                        if (nav_result is null)
+                            break;
+                        if (nav_result is int new_child_id)
+                        {
+                            nav_child_id = new_child_id;
+                        }
+                        else
+                        {
+                            nav_acc = (IAccessible)nav_result;
+                        }
+                    }
+                    result.index = index;
+                }
+                catch (Exception e)
+                {
+                    if (!UiaElement.IsExpectedException(e))
+                        throw;
+                }
+            }
+            try
+            {
+                result.name = acc.accName[child_id];
+            }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+            }
+            try
+            {
+                result.child_count = acc.accChildCount;
+            }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+            }
+            return true;
+        }
+
+        private bool MsaaSiblingsAreEqual(AutomationElement item1, AutomationElement item2)
+        {
+            // This is unfortunately a bit racy, item1 might change and revert between the two queries
+            while (true)
+            {
+                if (!GetSiblingComparisonInfo(item1, out var info_1_1))
+                    return false;
+                if (!GetSiblingComparisonInfo(item2, out var info_2))
+                    return false;
+                if (!GetSiblingComparisonInfo(item1, out var info_1_2))
+                    return false;
+                if (!info_1_1.Equals(info_1_2)) // item may have changed
+                    continue;
+                return (info_1_1.Equals(info_2));
+            }
+        }
+
+        internal void NotifyElementDefunct(UiaElement element)
+        {
+            no_id_elements.TryRemove(element.DebugId, out var _unused);
         }
     }
 }

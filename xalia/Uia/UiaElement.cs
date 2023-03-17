@@ -304,7 +304,7 @@ namespace Xalia.Uia
 
             refreshing_children = true;
 
-            var children = await Root.CommandThread.GetChildren(ElementWrapper);
+            var children = (await Root.CommandThread.GetChildren(ElementWrapper)).ToList();
 
             if (!watching_children)
             {
@@ -313,8 +313,21 @@ namespace Xalia.Uia
                 return;
             }
 
-            // First remove any existing children that are missing or out of order
+            // Ignore any duplicate children
+            HashSet<string> seen_children = new HashSet<string>();
             int i = 0;
+            while (i < children.Count)
+            {
+                if (!seen_children.Add(children[i].UniqueId))
+                {
+                    children.RemoveAt(i);
+                    continue;
+                }
+                i++;
+            }
+
+            // First remove any existing children that are missing or out of order
+            i = 0;
             foreach (var new_child in children)
             {
                 if (!Children.Exists((UiDomElement element) => ElementMatches(element, new_child.UniqueId)))
@@ -824,10 +837,16 @@ namespace Xalia.Uia
                     case unchecked((int)0x80010108): // RPC_E_DISCONNECTED
                     case unchecked((int)0x800401FD): // CO_E_OBJNOTCONNECTED
                     case unchecked((int)0x80040201): // EVENT_E_ALL_SUBSCRIBERS_FAILED
+                    case unchecked((int)0x800706B5): // RPC_S_UNKNOWN_IF
                     case unchecked((int)0x800706BA): // RPC_E_SERVER_UNAVAILABLE
+                    case unchecked((int)0x800706BE): // RPC_S_CALL_FAILED
                     case unchecked((int)0x80131505): // UIA_E_TIMEOUT
                         return true;
                 }
+            }
+            if (e is UnauthorizedAccessException)
+            {
+                return true;
             }
 #if DEBUG
             return false;
@@ -847,7 +866,7 @@ namespace Xalia.Uia
 
             try
             {
-                object acc = Root.GetIAccessibleBackground(ElementWrapper.AutomationElement);
+                object acc = Root.GetIAccessibleBackground(ElementWrapper.AutomationElement, out var _unused);
 
                 if (acc is null)
                     return null;
@@ -989,6 +1008,7 @@ namespace Xalia.Uia
                 }
                 property_poll_token.Clear();
                 polling_property.Clear();
+                Root.NotifyElementDefunct(this);
             }
             base.SetAlive(value);
         }

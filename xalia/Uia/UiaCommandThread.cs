@@ -162,6 +162,8 @@ namespace Xalia.Uia
                 for (var i = 0; i < elements.Length; i++)
                 {
                     result[i] = element.Connection.WrapElement(elements[i]);
+                    if (!result[i].IsValid)
+                        return new UiaElementWrapper[0];
                 }
 
                 return result;
