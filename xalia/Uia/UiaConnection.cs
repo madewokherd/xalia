@@ -1046,19 +1046,13 @@ namespace Xalia.Uia
                 }
                 while (true)
                 {
-                    int old_count = 0;
                     // search for already-seen item
-                    foreach (var item in values)
-                    {
-                        old_count++;
-                        if (MsaaSiblingsAreEqual(item.Item2, element))
-                        {
-                            return item.Item1;
-                        }
-                    }
+                    var values_list = values.ToList();
+                    if (MsaaSiblingSearchList(element, values_list, out var item))
+                        return item.Item1;
                     lock (values)
                     {
-                        if (values.Count != old_count)
+                        if (values.Count != values_list.Count)
                         {
                             // bag was modified during iteration, try again
                             continue;
@@ -1162,20 +1156,43 @@ namespace Xalia.Uia
             return true;
         }
 
-        private bool MsaaSiblingsAreEqual(AutomationElement item1, AutomationElement item2)
+        private bool MsaaSiblingSearchList(AutomationElement item1, List<(string, AutomationElement)> list,
+            out (string, AutomationElement) result)
         {
-            // This is unfortunately a bit racy, item1 might change and revert between the two queries
+            result = default;
+
             while (true)
             {
-                if (!GetSiblingComparisonInfo(item1, out var info_1_1))
+                if (!GetSiblingComparisonInfo(item1, out var info1))
                     return false;
-                if (!GetSiblingComparisonInfo(item2, out var info_2))
+
+                bool found = false;
+
+                foreach (var item2 in list)
+                {
+                    if (GetSiblingComparisonInfo(item2.Item2, out var info2) &&
+                        info1.Equals(info2))
+                    {
+                        found = true;
+                        result = item2;
+                        break;
+                    }
+                }
+
+                if (!GetSiblingComparisonInfo(item1, out var check1))
+                {
+                    result = default;
                     return false;
-                if (!GetSiblingComparisonInfo(item1, out var info_1_2))
-                    return false;
-                if (!info_1_1.Equals(info_1_2)) // item may have changed
+                }
+
+                if (!check1.Equals(info1))
+                {
+                    // info was modified during search
+                    result = default;
                     continue;
-                return (info_1_1.Equals(info_2));
+                }
+
+                return found;
             }
         }
 
