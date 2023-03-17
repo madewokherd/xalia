@@ -835,6 +835,7 @@ namespace Xalia.Uia
                     case unchecked((int)0x80004005): // E_FAIL
                     case unchecked((int)0x80010012): // RPC_E_SERVER_DIED_DNE
                     case unchecked((int)0x80010108): // RPC_E_DISCONNECTED
+                    case unchecked((int)0x80020003): // DISP_E_MEMBERNOTFOUND
                     case unchecked((int)0x800401FD): // CO_E_OBJNOTCONNECTED
                     case unchecked((int)0x80040201): // EVENT_E_ALL_SUBSCRIBERS_FAILED
                     case unchecked((int)0x800706B5): // RPC_S_UNKNOWN_IF
