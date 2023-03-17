@@ -266,6 +266,18 @@ if (class_name == "TermControl") {
     }
 }
 
+// APPLICATION: X-Blades (launcher)
+if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherWnd")) {
+	recurse: uia_offscreen == false;
+
+    manual_buttons: true;
+    manual_checkboxes: true;
+
+    pane {
+        poll_uia_offscreen: true;
+    }
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
