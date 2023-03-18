@@ -17,7 +17,11 @@ namespace Xalia.AtSpi2
             Root = root;
             Peer = peer;
             Path = path;
+            RegisterTrackedProperties(tracked_properties);
         }
+
+        private static string[] tracked_properties = { "recurse" };
+        private static readonly Dictionary<string, string> property_aliases;
 
         static AtSpiElement()
         {
@@ -43,6 +47,14 @@ namespace Xalia.AtSpi2
                 foreach (string rolename in names)
                     name_to_role[rolename] = i;
             }
+            string[] aliases = {
+                "role", "spi_role",
+            };
+            property_aliases = new Dictionary<string, string>(aliases.Length / 2);
+            for (int i=0; i<aliases.Length; i+=2)
+            {
+                property_aliases[aliases[i]] = aliases[i + 1];
+            }
         }
 
         public new AtSpiConnection Root { get; }
@@ -54,6 +66,11 @@ namespace Xalia.AtSpi2
         public bool RoleKnown { get; private set; }
         public int Role { get; private set; }
         private bool fetching_role;
+
+        private bool watching_children;
+#pragma warning disable CS0414 // The field 'AtSpiElement.children_known' is assigned but its value is never used
+        private bool children_known; // TODO: Use this when we get a notification of children changed
+#pragma warning restore CS0414 // The field 'AtSpiElement.children_known' is assigned but its value is never used
 
         internal static readonly string[] role_names =
         {
@@ -191,8 +208,31 @@ namespace Xalia.AtSpi2
         private static readonly Dictionary<string, int> name_to_role;
         private static readonly UiDomEnum[] role_to_enum;
 
+        protected override void SetAlive(bool value)
+        {
+            if (value)
+            {
+                Root.NotifyElementCreated(this);
+            }
+            else
+            {
+                watching_children = false;
+                children_known = false;
+                Root.NotifyElementDestroyed(this);
+            }
+            base.SetAlive(value);
+        }
+
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            if (property_aliases.TryGetValue(id, out string aliased))
+            {
+                var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                if (!value.Equals(UiDomUndefined.Instance))
+                    return value;
+                id = aliased;
+            }
+
             switch (id)
             {
                 case "spi_peer":
@@ -248,7 +288,7 @@ namespace Xalia.AtSpi2
             try
             {
                 result = await CallMethod(Root.Connection, Peer, Path,
-                    "org.a11y.atspi.Accessible", "GetRole", ReadMessageInt32);
+                    IFACE_ACCESSIBLE, "GetRole", ReadMessageInt32);
             }
             catch (DBusException e)
             {
@@ -303,6 +343,148 @@ namespace Xalia.AtSpi2
                     return true;
 #endif
             }
+        }
+
+        private async Task<List<(string, string)>> GetChildList()
+        {
+            try
+            {
+                var children = await CallMethod(Root.Connection, Peer, Path,
+                    IFACE_ACCESSIBLE, "GetChildren", ReadMessageElementList);
+
+                if (children.Count == 0)
+                {
+                    var child_count = (int)await GetProperty(Root.Connection, Peer, Path,
+                        IFACE_ACCESSIBLE, "ChildCount");
+                    if (child_count != 0)
+                    {
+                        // This happens for AtkSocket/AtkPlug
+                        // https://gitlab.gnome.org/GNOME/at-spi2-core/-/issues/98
+
+                        children = new List<(string, string)>(child_count);
+
+                        for (int i = 0; i < child_count; i++)
+                        {
+                            children.Add(await CallMethod(Root.Connection, Peer, Path,
+                                IFACE_ACCESSIBLE, "GetChildAtIndex", i, ReadMessageElement));
+                        }
+                    }
+                }
+
+                return children;
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return new List<(string, string)>();
+            }
+            catch (InvalidCastException)
+            {
+                return new List<(string, string)>();
+            }
+        }
+
+        private async Task PollChildrenTask()
+        {
+            if (!watching_children)
+                return;
+
+            List<(string, string)> children = await GetChildList();
+
+            // Ignore any duplicate children
+            HashSet<(string, string)> seen_children = new HashSet<(string, string)>();
+            int i = 0;
+            while (i < children.Count)
+            {
+                if (!seen_children.Add(children[i]))
+                {
+                    children.RemoveAt(i);
+                    continue;
+                }
+                i++;
+            }
+
+            // First remove any existing children that are missing or out of order
+            i = 0;
+            foreach (var new_child in children)
+            {
+                if (!Children.Exists((UiDomElement element) => ElementMatches(element, new_child)))
+                    continue;
+                while (!ElementMatches(Children[i], new_child))
+                {
+                    RemoveChild(i);
+                }
+                i++;
+            }
+
+            // Remove any remaining missing children
+            while (i < Children.Count && Children[i] is AtSpiElement)
+                RemoveChild(i);
+
+            // Add any new children
+            i = 0;
+            foreach (var new_child in children)
+            {
+                if (Children.Count <= i || !ElementMatches(Children[i], new_child))
+                {
+                    if (!(Root.LookupElement(new_child) is null))
+                    {
+                        // Child element is a duplicate of another element somewhere in the tree.
+                        continue;
+                    }
+                    AddChild(i, new AtSpiElement(Root, new_child.Item1, new_child.Item2));
+                }
+                i += 1;
+            }
+
+            children_known = true;
+        }
+
+        private bool ElementMatches(UiDomElement element, (string, string) new_child)
+        {
+            return element is AtSpiElement e && e.Peer == new_child.Item1 && e.Path == new_child.Item2;
+        }
+
+        internal void WatchChildren()
+        {
+            if (watching_children)
+                return;
+            if (MatchesDebugCondition())
+                Utils.DebugWriteLine($"WatchChildren for {this}");
+            watching_children = true;
+            children_known = false;
+            Utils.RunTask(PollChildrenTask());
+        }
+
+        internal void UnwatchChildren()
+        {
+            if (!watching_children)
+                return;
+            if (MatchesDebugCondition())
+                Utils.DebugWriteLine($"UnwatchChildren for {this}");
+            watching_children = false;
+            for (int i=Children.Count-1; i >= 0; i--)
+            {
+                if (Children[i] is AtSpiElement)
+                    RemoveChild(i);
+            }
+        }
+
+        protected override void TrackedPropertyChanged(string name, UiDomValue new_value)
+        {
+            switch (name)
+            {
+                case "recurse":
+                    {
+                        if (new_value.ToBool())
+                            WatchChildren();
+                        else
+                            UnwatchChildren();
+                        break;
+                    }
+            }
+            base.TrackedPropertyChanged(name, new_value);
         }
     }
 }

@@ -37,6 +37,11 @@ namespace Xalia.UiDom
         private Dictionary<GudlExpression, bool> polling_properties = new Dictionary<GudlExpression, bool>();
         private Dictionary<GudlExpression, CancellationTokenSource> polling_refresh_tokens = new Dictionary<GudlExpression, CancellationTokenSource>();
 
+        private LinkedList<string[]> tracked_property_lists = new LinkedList<string[]>();
+        private bool updating_tracked_properties;
+        private Dictionary<string, UiDomValue> tracked_property_values = new Dictionary<string, UiDomValue>();
+        private Dictionary<(UiDomElement, GudlExpression), IDisposable> tracked_property_notifiers = new Dictionary<(UiDomElement, GudlExpression), IDisposable>();
+
         protected virtual void SetAlive(bool value)
         {
             if (IsAlive != value)
@@ -777,6 +782,81 @@ namespace Xalia.UiDom
                     polling_refresh_tokens[expression] = null;
                 }
             }
+        }
+
+        private void OnTrackedDependencyChanged(UiDomElement element, GudlExpression property)
+        {
+            if (!updating_tracked_properties)
+            {
+                updating_tracked_properties = true;
+                Utils.RunIdle(UpdateTrackedProperties);
+            }
+        }
+
+        protected void RegisterTrackedProperties(string[] properties)
+        {
+            tracked_property_lists.AddLast(properties);
+            if (!updating_tracked_properties)
+            {
+                updating_tracked_properties = true;
+                Utils.RunIdle(UpdateTrackedProperties);
+            }
+        }
+
+        private void UpdateTrackedProperties()
+        {
+            updating_tracked_properties = false;
+
+            Dictionary<string, UiDomValue> new_property_values = new Dictionary<string, UiDomValue>();
+            HashSet<(UiDomElement, GudlExpression)> depends_on = new HashSet<(UiDomElement, GudlExpression)>();
+
+            // Evaluate all tracked properties
+            foreach (var proplist in tracked_property_lists)
+            {
+                foreach (var propname in proplist)
+                {
+                    if (new_property_values.ContainsKey(propname))
+                        continue;
+                    var propvalue = EvaluateIdentifier(propname, Root, depends_on);
+                    new_property_values[propname] = propvalue;
+                }
+            }
+
+            // Update dependency notifiers
+            var updated_dependency_notifiers = new Dictionary<(UiDomElement, GudlExpression), IDisposable>();
+            foreach (var dep in depends_on)
+            {
+                if (tracked_property_notifiers.TryGetValue(dep, out var notifier))
+                {
+                    updated_dependency_notifiers[dep] = notifier;
+                    tracked_property_notifiers.Remove(dep);
+                }
+                else
+                {
+                    updated_dependency_notifiers.Add(dep,
+                        dep.Item1.NotifyPropertyChanged(dep.Item2, OnTrackedDependencyChanged));
+                }
+            }
+            foreach (var notifier in tracked_property_notifiers.Values)
+            {
+                notifier.Dispose();
+            }
+            tracked_property_notifiers = updated_dependency_notifiers;
+
+            // Notify subclass of updates
+            var old_values = tracked_property_values;
+            tracked_property_values = new_property_values;
+            foreach (var kvp in new_property_values)
+            {
+                if (!old_values.TryGetValue(kvp.Key, out var old_value) || !kvp.Value.Equals(old_value))
+                {
+                    TrackedPropertyChanged(kvp.Key, kvp.Value);
+                }
+            }
+        }
+
+        protected virtual void TrackedPropertyChanged(string name, UiDomValue new_value)
+        {
         }
     }
 }

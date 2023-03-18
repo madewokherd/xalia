@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 using Tmds.DBus.Protocol;
 
 namespace Xalia.AtSpi2
@@ -82,6 +84,24 @@ namespace Xalia.AtSpi2
         }
 
         public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+            string iface, string member, int arg1, MessageValueReader<T> reply_reader)
+        {
+            return CallMethod(connection, peer, path, iface, member, "i", MessageFlags.None, (ref MessageWriter writer) =>
+            {
+                writer.WriteInt32(arg1);
+            }, reply_reader);
+        }
+
+        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+            string iface, string member, uint arg1, MessageValueReader<T> reply_reader)
+        {
+            return CallMethod(connection, peer, path, iface, member, "u", MessageFlags.None, (ref MessageWriter writer) =>
+            {
+                writer.WriteUInt32(arg1);
+            }, reply_reader);
+        }
+
+        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
             string iface, string member, string arg1, uint arg2, MessageValueReader<T> reply_reader)
         {
             return CallMethod(connection, peer, path, iface, member, "su", MessageFlags.None, (ref MessageWriter writer) =>
@@ -121,6 +141,17 @@ namespace Xalia.AtSpi2
             });
         }
 
+        public static Task<object> GetProperty(Connection connection, string peer, string path,
+            string iface, string prop)
+        {
+            return CallMethod(connection, peer, path, "org.freedesktop.DBus.Properties",
+                "Get", "ss", (ref MessageWriter writer) =>
+                {
+                    writer.WriteString(iface);
+                    writer.WriteString(prop);
+                }, ReadMessageVariant);
+        } 
+
         public static Task SetProperty(Connection connection, string peer, string path,
             string iface, string prop, bool value)
         {
@@ -147,5 +178,36 @@ namespace Xalia.AtSpi2
         {
             return message.GetBodyReader().ReadUInt32();
         }
+
+        public static object ReadMessageVariant(Message message, object state)
+        {
+            return message.GetBodyReader().ReadVariant();
+        }
+
+        public static (string, string) ReadMessageElement(Message message, object state)
+        {
+            var reader = message.GetBodyReader();
+            reader.AlignStruct();
+            var peer = reader.ReadString();
+            var path = reader.ReadString();
+            return (peer, path);
+        }
+
+        public static List<(string, string)> ReadMessageElementList(Message message, object state)
+        {
+            var result = new List<(string, string)>();
+            var reader = message.GetBodyReader();
+            var end = reader.ReadArrayStart(DBusType.Struct);
+            while (reader.HasNext(end))
+            {
+                reader.AlignStruct();
+                var peer = reader.ReadString();
+                var path = reader.ReadString();
+                result.Add((peer, path));
+            }
+            return result;
+        }
+
+        public const string IFACE_ACCESSIBLE = "org.a11y.atspi.Accessible";
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tmds.DBus.Protocol;
 using Xalia.Gudl;
@@ -18,6 +19,8 @@ namespace Xalia.AtSpi2
         {
             Connection = connection;
         }
+
+        private Dictionary<(string, string), AtSpiElement> elements = new Dictionary<(string, string), AtSpiElement>();
 
         internal static async Task<string> GetAtSpiBusAddress()
         {
@@ -76,6 +79,23 @@ namespace Xalia.AtSpi2
             result.AddChild(0, result.DesktopFrame);
 
             return result;
+        }
+
+        internal void NotifyElementCreated(AtSpiElement element)
+        {
+            elements.Add((element.Peer, element.Path), element);
+        }
+
+        internal void NotifyElementDestroyed(AtSpiElement element)
+        {
+            elements.Remove((element.Peer, element.Path));
+        }
+
+        internal AtSpiElement LookupElement((string, string) id)
+        {
+            if (elements.TryGetValue(id, out var element))
+                return element;
+            return null;
         }
     }
 }
