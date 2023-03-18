@@ -486,5 +486,56 @@ namespace Xalia.AtSpi2
             }
             base.TrackedPropertyChanged(name, new_value);
         }
+
+        internal void AtSpiChildrenChanged(AtSpiSignal signal)
+        {
+            if (!children_known)
+                return;
+            var index = signal.detail1;
+            var child = ((string, ObjectPath))signal.value;
+            var child_element = Root.LookupElement(child);
+            switch (signal.detail)
+            {
+                case "add":
+                    {
+                        if (!(child_element is null))
+                        {
+                            Console.WriteLine($"WARNING: {child_element} added to {this} but is already a child of {child_element.Parent}, ignoring.");
+                            return;
+                        }
+                        if (index > Children.Count || index < 0)
+                        {
+                            Console.WriteLine($"WARNING: {child.Item1}:{child.Item2} added to {this} at index {index}, but there are only {Children.Count} known children");
+                            index = Children.Count;
+                        }
+                        AddChild(index, new AtSpiElement(Root, child.Item1, child.Item2));
+                        break;
+                    }
+                case "remove":
+                    {
+                        if (child_element is null)
+                        {
+                            Console.WriteLine($"WARNING: {child.Item1}:{child.Item2} removed from {this}, but the element is unknown");
+                            return;
+                        }
+                        if (child_element.Parent != this)
+                        {
+                            Console.WriteLine($"WARNING: {child.Item1}:{child.Item2} removed from {this}, but is a child of {child_element.Parent}");
+                            return;
+                        }
+                        if (index >= Children.Count || index < 0 || Children[index] != child_element)
+                        {
+                            var real_index = Children.IndexOf(child_element);
+                            Console.WriteLine($"WARNING: {child.Item1}:{child.Item2} remove event has wrong index - got {index}, should be {real_index}");
+                            index = real_index;
+                        }
+                        RemoveChild(index);
+                        break;
+                    }
+                default:
+                    Console.WriteLine($"WARNING: unknown detail on ChildrenChanged event: {signal.detail}");
+                    break;
+            }
+        }
     }
 }

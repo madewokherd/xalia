@@ -74,10 +74,27 @@ namespace Xalia.AtSpi2
                 "GetNameOwner", SERVICE_REGISTRY,
                 ReadMessageString);
 
+            await RegisterEvent(connection, registryClient, "object:children-changed");
+            await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "ChildrenChanged", result.OnChildrenChanged);
+
             result.DesktopFrame = new AtSpiElement(result, registryClient, PATH_ACCESSIBLE_ROOT);
             result.AddChild(0, result.DesktopFrame);
 
             return result;
+        }
+
+        private static Task RegisterEvent(Connection connection, string registryClient, string name)
+        {
+            return CallMethod(connection, registryClient, PATH_REGISTRY, IFACE_REGISTRY,
+                "RegisterEvent", name);
+        }
+
+        private void OnChildrenChanged(AtSpiSignal signal)
+        {
+            var element = LookupElement((signal.peer, signal.path));
+            if (element is null)
+                return;
+            element.AtSpiChildrenChanged(signal);
         }
 
         internal void NotifyElementCreated(AtSpiElement element)
