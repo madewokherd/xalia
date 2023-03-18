@@ -144,7 +144,7 @@ namespace Xalia.AtSpi2
         public static Task<object> GetProperty(Connection connection, string peer, string path,
             string iface, string prop)
         {
-            return CallMethod(connection, peer, path, "org.freedesktop.DBus.Properties",
+            return CallMethod(connection, peer, path, IFACE_PROPERTIES,
                 "Get", "ss", (ref MessageWriter writer) =>
                 {
                     writer.WriteString(iface);
@@ -155,7 +155,7 @@ namespace Xalia.AtSpi2
         public static Task SetProperty(Connection connection, string peer, string path,
             string iface, string prop, bool value)
         {
-            return CallMethod(connection, peer, path, "org.freedesktop.DBus.Properties",
+            return CallMethod(connection, peer, path, IFACE_PROPERTIES,
                 "Set", "ssv", (ref MessageWriter writer) =>
                 {
                     writer.WriteString(iface);
@@ -208,6 +208,18 @@ namespace Xalia.AtSpi2
             return result;
         }
 
+        public const string SERVICE_DBUS = "org.freedesktop.DBus";
+        public const string PATH_DBUS = "/org/freedesktop/DBus";
+        public const string IFACE_DBUS = "org.freedesktop.DBus";
+        public const string IFACE_PROPERTIES = "org.freedesktop.DBus.Properties";
+
+        public const string SERVICE_BUS = "org.a11y.Bus";
+        public const string PATH_BUS = "/org/a11y/bus";
+        public const string IFACE_BUS = "org.a11y.Bus";
+        public const string IFACE_STATUS = "org.a11y.Status";
+
+        public const string SERVICE_REGISTRY = "org.a11y.atspi.Registry";
+        public const string PATH_ACCESSIBLE_ROOT = "/org/a11y/atspi/accessible/root";
         public const string IFACE_ACCESSIBLE = "org.a11y.atspi.Accessible";
     }
 }

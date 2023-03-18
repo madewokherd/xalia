@@ -29,7 +29,7 @@ namespace Xalia.AtSpi2
             var session = Connection.Session;
 
             // Request that accessibility support be enabled, before fetching address.
-            await SetProperty(session, "org.a11y.Bus", "/org/a11y/bus", "org.a11y.Status",
+            await SetProperty(session, SERVICE_BUS, PATH_BUS, IFACE_STATUS,
                 "IsEnabled", true);
 
             // Try getting AT_SPI_BUS property from X11 root
@@ -46,7 +46,7 @@ namespace Xalia.AtSpi2
             // Try getting bus address from session bus org.a11y.Bus interface
             if (string.IsNullOrWhiteSpace(result))
             {
-                result = await CallMethod(session, "org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus",
+                result = await CallMethod(session, SERVICE_BUS, PATH_BUS, IFACE_BUS,
                     "GetAddress", ReadMessageString);
             }
 
@@ -67,15 +67,14 @@ namespace Xalia.AtSpi2
 
             var result = new AtSpiConnection(connection, config, application);
 
-            await CallMethod(connection, "org.freedesktop.DBus", "/org/freedesktop/DBus",
-                "org.freedesktop.DBus", "StartServiceByName", "org.a11y.atspi.Registry", (uint)0);
+            await CallMethod(connection, SERVICE_DBUS, PATH_DBUS, IFACE_DBUS,
+                "StartServiceByName", SERVICE_REGISTRY, (uint)0);
 
-            var registryClient = await CallMethod(connection, "org.freedesktop.DBus",
-                "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetNameOwner", "org.a11y.atspi.Registry",
+            var registryClient = await CallMethod(connection, SERVICE_DBUS, PATH_DBUS, IFACE_DBUS,
+                "GetNameOwner", SERVICE_REGISTRY,
                 ReadMessageString);
-            Console.WriteLine($"registry client: {registryClient}");
 
-            result.DesktopFrame = new AtSpiElement(result, registryClient, "/org/a11y/atspi/accessible/root");
+            result.DesktopFrame = new AtSpiElement(result, registryClient, PATH_ACCESSIBLE_ROOT);
             result.AddChild(0, result.DesktopFrame);
 
             return result;
