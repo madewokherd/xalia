@@ -1129,17 +1129,8 @@ namespace Xalia.Uia
                     int nav_child_id = child_id;
                     while (true)
                     {
-                        var nav_result = nav_acc.accNavigate(NAVDIR_PREVIOUS, nav_child_id);
-                        if (nav_result is null)
+                        if (!AccessibleNavigate(ref nav_acc, ref nav_child_id, NAVDIR_PREVIOUS))
                             break;
-                        if (nav_result is int new_child_id)
-                        {
-                            nav_child_id = new_child_id;
-                        }
-                        else
-                        {
-                            nav_acc = (IAccessible)nav_result;
-                        }
                         index++;
                         if (comparand.HasValue && comparand.Value.index < index)
                             return false;

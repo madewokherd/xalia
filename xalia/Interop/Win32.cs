@@ -281,7 +281,22 @@ namespace Xalia.Interop
 
         public const int CHILDID_SELF = 0;
 
+        public const int NAVDIR_NEXT = 5;
         public const int NAVDIR_PREVIOUS = 6;
+        public const int NAVDIR_FIRSTCHILD = 7;
+        public const int NAVDIR_LASTCHILD = 8;
+
+        public static bool AccessibleNavigate(ref Accessibility.IAccessible acc, ref int child_id, int navdir)
+        {
+            var result = acc.accNavigate(navdir, child_id);
+            if (result is null)
+                return false;
+            if (result is int i)
+                child_id = i;
+            else
+                acc = (Accessibility.IAccessible)result;
+            return true;
+        }
 
         [DllImport(OLEACC_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int AccessibleObjectFromEvent(IntPtr hwnd, int dwId, int dwChildId,
