@@ -158,10 +158,11 @@ namespace Xalia.Uia
                 }
 
                 var result = new UiaElementWrapper[elements.Length];
+                bool assume_unique = !element.Connection.HasNonIdChildren(element);
 
                 for (var i = 0; i < elements.Length; i++)
                 {
-                    result[i] = element.Connection.WrapElement(elements[i]);
+                    result[i] = element.Connection.WrapElement(elements[i], element.UniqueId, assume_unique);
                     if (!result[i].IsValid)
                         return new UiaElementWrapper[0];
                 }

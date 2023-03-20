@@ -10,11 +10,11 @@ namespace Xalia.Uia
 
         // The constructor should generally only be used on background threads because it can block.
 
-        internal UiaElementWrapper(AutomationElement ae, UiaConnection connection)
+        internal UiaElementWrapper(AutomationElement ae, UiaConnection connection, string parent_id = null, bool assume_unique = false)
         {
             AutomationElement = ae;
             Connection = connection;
-            UniqueId = connection.BlockingGetElementId(ae, out var hwnd);
+            UniqueId = connection.BlockingGetElementId(ae, out var hwnd, parent_id, assume_unique);
             Hwnd = hwnd;
             try
             {

@@ -701,13 +701,13 @@ namespace Xalia.Uia
             return result;
         }
 
-        public UiaElementWrapper WrapElement(AutomationElement ae)
+        public UiaElementWrapper WrapElement(AutomationElement ae, string parent_id=null, bool assume_unique=false)
         {
             if (ae is null)
                 return UiaElementWrapper.InvalidElement;
             try
             {
-                return new UiaElementWrapper(ae, this);
+                return new UiaElementWrapper(ae, this, parent_id, assume_unique);
             }
             catch (Exception e)
             {
@@ -938,7 +938,12 @@ namespace Xalia.Uia
             }
         }
 
-        internal string BlockingGetElementId(AutomationElement element, out IntPtr hwnd)
+        internal bool HasNonIdChildren(UiaElementWrapper wrapper)
+        {
+            return no_id_elements.ContainsKey(wrapper.UniqueId);
+        }
+
+        internal string BlockingGetElementId(AutomationElement element, out IntPtr hwnd, string parent_id=null, bool assume_unique=false)
         {
             // hwnd/childid pair
             try
@@ -1009,7 +1014,8 @@ namespace Xalia.Uia
 
             if (!(acc is null) && !(parent is null))
             {
-                string parent_id = BlockingGetElementId(parent, out var _unused);
+                if (parent_id is null)
+                    parent_id = BlockingGetElementId(parent, out var _unused);
 
                 // Query for IAccessible2 directly, for old Qt versions
                 var acc2 = QueryIAccessible2(acc);
@@ -1048,11 +1054,11 @@ namespace Xalia.Uia
                 {
                     // search for already-seen item
                     var values_list = values.ToList();
-                    if (MsaaSiblingSearchList(element, values_list, out var item))
+                    if (!assume_unique && MsaaSiblingSearchList(element, values_list, out var item))
                         return item.Item1;
                     lock (values)
                     {
-                        if (values.Count != values_list.Count)
+                        if (!assume_unique && values.Count != values_list.Count)
                         {
                             // bag was modified during iteration, try again
                             continue;
