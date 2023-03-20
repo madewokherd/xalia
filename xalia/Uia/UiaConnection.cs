@@ -1071,12 +1071,10 @@ namespace Xalia.Uia
 
         struct MsaaSiblingComparisonInfo
         {
-            public int role;
             public int child_id;
             public int left, top, width, height;
+            public int state;
             public int index;
-            public string name;
-            public int child_count;
         }
 
         private bool GetSiblingComparisonInfo(AutomationElement element, MsaaSiblingComparisonInfo? comparand, out MsaaSiblingComparisonInfo result)
@@ -1087,18 +1085,6 @@ namespace Xalia.Uia
                 return false;
             result.child_id = child_id;
             if (comparand.HasValue && comparand.Value.child_id != result.child_id)
-                return false;
-            try
-            {
-                result.role = (int)acc.accRole[child_id];
-            }
-            catch (InvalidCastException) { }
-            catch (Exception e)
-            {
-                if (!UiaElement.IsExpectedException(e))
-                    throw;
-            }
-            if (comparand.HasValue && comparand.Value.role != result.role)
                 return false;
             try
             {
@@ -1115,6 +1101,18 @@ namespace Xalia.Uia
                  comparand.Value.top != result.top ||
                  comparand.Value.width != result.width ||
                  comparand.Value.height != result.height))
+                return false;
+            try
+            {
+                result.state = (int)acc.accState[child_id];
+            }
+            catch (InvalidCastException) { }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+            }
+            if (comparand.HasValue && comparand.Value.state != result.state)
                 return false;
             if (child_id == 0)
             {
@@ -1150,28 +1148,6 @@ namespace Xalia.Uia
                         throw;
                 }
             }
-            try
-            {
-                result.name = acc.accName[child_id];
-            }
-            catch (Exception e)
-            {
-                if (!UiaElement.IsExpectedException(e))
-                    throw;
-            }
-            if (comparand.HasValue && comparand.Value.name != result.name)
-                return false;
-            try
-            {
-                result.child_count = acc.accChildCount;
-            }
-            catch (Exception e)
-            {
-                if (!UiaElement.IsExpectedException(e))
-                    throw;
-            }
-            if (comparand.HasValue && comparand.Value.child_count != result.child_count)
-                return false;
             return true;
         }
 
