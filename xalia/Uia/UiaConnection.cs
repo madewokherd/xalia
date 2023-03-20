@@ -1079,13 +1079,15 @@ namespace Xalia.Uia
             public int child_count;
         }
 
-        private bool GetSiblingComparisonInfo(AutomationElement element, out MsaaSiblingComparisonInfo result)
+        private bool GetSiblingComparisonInfo(AutomationElement element, MsaaSiblingComparisonInfo? comparand, out MsaaSiblingComparisonInfo result)
         {
             result = default;
             var acc = GetIAccessibleBackground(element, out var child_id);
             if (acc is null)
                 return false;
             result.child_id = child_id;
+            if (comparand.HasValue && comparand.Value.child_id != result.child_id)
+                return false;
             try
             {
                 result.role = (int)acc.accRole[child_id];
@@ -1096,6 +1098,8 @@ namespace Xalia.Uia
                 if (!UiaElement.IsExpectedException(e))
                     throw;
             }
+            if (comparand.HasValue && comparand.Value.role != result.role)
+                return false;
             try
             {
                 acc.accLocation(out result.left, out result.top, out result.width, out result.height,
@@ -1106,6 +1110,12 @@ namespace Xalia.Uia
                 if (!UiaElement.IsExpectedException(e))
                     throw;
             }
+            if (comparand.HasValue &&
+                (comparand.Value.left != result.left ||
+                 comparand.Value.top != result.top ||
+                 comparand.Value.width != result.width ||
+                 comparand.Value.height != result.height))
+                return false;
             if (child_id == 0)
             {
                 try
@@ -1126,8 +1136,13 @@ namespace Xalia.Uia
                         {
                             nav_acc = (IAccessible)nav_result;
                         }
+                        index++;
+                        if (comparand.HasValue && comparand.Value.index < index)
+                            return false;
                     }
                     result.index = index;
+                    if (comparand.HasValue && comparand.Value.index != result.index)
+                        return false;
                 }
                 catch (Exception e)
                 {
@@ -1144,6 +1159,8 @@ namespace Xalia.Uia
                 if (!UiaElement.IsExpectedException(e))
                     throw;
             }
+            if (comparand.HasValue && comparand.Value.name != result.name)
+                return false;
             try
             {
                 result.child_count = acc.accChildCount;
@@ -1153,6 +1170,8 @@ namespace Xalia.Uia
                 if (!UiaElement.IsExpectedException(e))
                     throw;
             }
+            if (comparand.HasValue && comparand.Value.child_count != result.child_count)
+                return false;
             return true;
         }
 
@@ -1163,15 +1182,14 @@ namespace Xalia.Uia
 
             while (true)
             {
-                if (!GetSiblingComparisonInfo(item1, out var info1))
+                if (!GetSiblingComparisonInfo(item1, null, out var info1))
                     return false;
 
                 bool found = false;
 
                 foreach (var item2 in list)
                 {
-                    if (GetSiblingComparisonInfo(item2.Item2, out var info2) &&
-                        info1.Equals(info2))
+                    if (GetSiblingComparisonInfo(item2.Item2, info1, out var _unused))
                     {
                         found = true;
                         result = item2;
@@ -1179,17 +1197,11 @@ namespace Xalia.Uia
                     }
                 }
 
-                if (!GetSiblingComparisonInfo(item1, out var check1))
-                {
-                    result = default;
-                    return false;
-                }
-
-                if (!check1.Equals(info1))
+                if (!GetSiblingComparisonInfo(item1, info1, out var _unused2))
                 {
                     // info was modified during search
                     result = default;
-                    continue;
+                    return false;
                 }
 
                 return found;
