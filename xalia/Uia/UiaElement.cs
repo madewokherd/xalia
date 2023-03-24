@@ -794,6 +794,15 @@ namespace Xalia.Uia
             base.WatchProperty(expression);
         }
 
+        internal async Task PropertyMaybeChanged(PropertyId propid)
+        {
+            if ((property_known.TryGetValue(propid, out var known) && known) ||
+                (fetching_property.TryGetValue(propid, out var fetching) && fetching))
+            {
+                await FetchPropertyAsync(Root.properties_to_name[propid], propid);
+            }
+        }
+
         private async Task FetchSupportedPatterns()
         {
             try

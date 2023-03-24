@@ -273,6 +273,9 @@ namespace Xalia.Interop
 
         public const uint EVENT_OBJECT_CREATE = 0x8000;
         public const uint EVENT_OBJECT_DESTROY = 0x8001;
+        public const uint EVENT_OBJECT_STATECHANGE = 0x800A;
+        public const uint EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
+        public const uint EVENT_OBJECT_NAMECHANGE = 0x800C;
 
         public const uint WINEVENT_OUTOFCONTEXT = 0;
 

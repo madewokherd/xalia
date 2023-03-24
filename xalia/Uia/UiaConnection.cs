@@ -29,6 +29,7 @@ namespace Xalia.Uia
 
         internal Dictionary<string, PropertyId> names_to_property = new Dictionary<string, PropertyId>();
         internal Dictionary<PropertyId, string> properties_to_name = new Dictionary<PropertyId, string>();
+        internal Dictionary<uint, List<PropertyId>> msaa_event_properties = new Dictionary<uint, List<PropertyId>>();
 
         bool polling_focus;
         CancellationTokenSource focus_poll_token;
@@ -60,20 +61,20 @@ namespace Xalia.Uia
 
             event_proc_delegates.Add(eventprocdelegate);
 
-            SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_DESTROY, IntPtr.Zero,
+            SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_NAMECHANGE, IntPtr.Zero,
                 eventprocdelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
 
-            RegisterPropertyMapping("uia_control_type", Automation.PropertyLibrary.Element.ControlType);
+            RegisterPropertyMapping("uia_control_type", Automation.PropertyLibrary.Element.ControlType, EVENT_OBJECT_STATECHANGE);
             RegisterPropertyMapping("uia_automation_id", Automation.PropertyLibrary.Element.AutomationId);
             RegisterPropertyMapping("uia_class_name", Automation.PropertyLibrary.Element.ClassName);
-            RegisterPropertyMapping("uia_enabled", Automation.PropertyLibrary.Element.IsEnabled);
-            RegisterPropertyMapping("uia_keyboard_focusable", Automation.PropertyLibrary.Element.IsKeyboardFocusable);
-            RegisterPropertyMapping("uia_has_keyboard_focus", Automation.PropertyLibrary.Element.HasKeyboardFocus);
-            RegisterPropertyMapping("uia_bounding_rectangle", Automation.PropertyLibrary.Element.BoundingRectangle);
-            RegisterPropertyMapping("uia_name", Automation.PropertyLibrary.Element.Name);
-            RegisterPropertyMapping("uia_offscreen", Automation.PropertyLibrary.Element.IsOffscreen);
-            RegisterPropertyMapping("uia_selected", Automation.PropertyLibrary.SelectionItem.IsSelected);
-            RegisterPropertyMapping("uia_expand_collapse_state", Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState);
+            RegisterPropertyMapping("uia_enabled", Automation.PropertyLibrary.Element.IsEnabled, EVENT_OBJECT_STATECHANGE);
+            RegisterPropertyMapping("uia_keyboard_focusable", Automation.PropertyLibrary.Element.IsKeyboardFocusable, EVENT_OBJECT_STATECHANGE);
+            RegisterPropertyMapping("uia_has_keyboard_focus", Automation.PropertyLibrary.Element.HasKeyboardFocus, EVENT_OBJECT_STATECHANGE);
+            RegisterPropertyMapping("uia_bounding_rectangle", Automation.PropertyLibrary.Element.BoundingRectangle, EVENT_OBJECT_LOCATIONCHANGE);
+            RegisterPropertyMapping("uia_name", Automation.PropertyLibrary.Element.Name, EVENT_OBJECT_NAMECHANGE);
+            RegisterPropertyMapping("uia_offscreen", Automation.PropertyLibrary.Element.IsOffscreen, EVENT_OBJECT_STATECHANGE);
+            RegisterPropertyMapping("uia_selected", Automation.PropertyLibrary.SelectionItem.IsSelected, EVENT_OBJECT_STATECHANGE);
+            RegisterPropertyMapping("uia_expand_collapse_state", Automation.PropertyLibrary.ExpandCollapse.ExpandCollapseState, EVENT_OBJECT_STATECHANGE);
             RegisterPropertyMapping("uia_orientation", Automation.PropertyLibrary.Element.Orientation);
             RegisterPropertyMapping("uia_framework_id", Automation.PropertyLibrary.Element.FrameworkId);
             RegisterPropertyMapping("msaa_role", Automation.PropertyLibrary.LegacyIAccessible.Role);
@@ -458,10 +459,19 @@ namespace Xalia.Uia
             }, null);
         }
 
-        private void RegisterPropertyMapping(string name, PropertyId propid)
+        private void RegisterPropertyMapping(string name, PropertyId propid, uint msaa_change_event=0)
         {
             names_to_property[name] = propid;
             properties_to_name[propid] = name;
+            if (msaa_change_event != 0)
+            {
+                if (!msaa_event_properties.TryGetValue(msaa_change_event, out var propids))
+                {
+                    propids = new List<PropertyId>();
+                    msaa_event_properties[msaa_change_event] = propids;
+                }
+                propids.Add(propid);
+            }
         }
 
         private void OnStructureChangedBackground(AutomationElement arg1, StructureChangeType arg2, int[] arg3)
@@ -597,6 +607,9 @@ namespace Xalia.Uia
                 case EVENT_SYSTEM_FOREGROUND:
                 case EVENT_OBJECT_CREATE:
                 case EVENT_OBJECT_DESTROY:
+                case EVENT_OBJECT_STATECHANGE:
+                case EVENT_OBJECT_LOCATIONCHANGE:
+                case EVENT_OBJECT_NAMECHANGE:
                     TranslateMsaaEvent(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime);
                     break;
             }
@@ -654,6 +667,15 @@ namespace Xalia.Uia
 
             if (element is null)
                 return;
+
+            if (msaa_event_properties.TryGetValue(eventId, out var properties))
+            {
+                foreach (var propid in properties)
+                {
+                    if (element.IsAlive)
+                        await element.PropertyMaybeChanged(propid);
+                }
+            }
 
             switch (eventId)
             {
