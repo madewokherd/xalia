@@ -674,6 +674,8 @@ namespace Xalia.Uia
                 {
                     if (element.IsAlive)
                         await element.PropertyMaybeChanged(propid);
+                    else
+                        break;
                 }
             }
 
