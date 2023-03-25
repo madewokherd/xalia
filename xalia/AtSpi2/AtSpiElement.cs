@@ -296,16 +296,7 @@ namespace Xalia.AtSpi2
                     throw;
                 return;
             }
-            RoleKnown = true;
-            Role = result;
-            if (MatchesDebugCondition())
-            {
-                if (Role > 0 && Role < role_names.Length)
-                    Utils.DebugWriteLine($"{this}.spi_role: {role_names[Role]}");
-                else
-                    Utils.DebugWriteLine($"{this}.spi_role: {Role}");
-            }
-            PropertyChanged("spi_role");
+            AtSpiPropertyChange("accessible-role", result);
         }
 
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
@@ -534,6 +525,32 @@ namespace Xalia.AtSpi2
                     }
                 default:
                     Console.WriteLine($"WARNING: unknown detail on ChildrenChanged event: {signal.detail}");
+                    break;
+            }
+        }
+
+        internal void AtSpiPropertyChange(string detail, object value)
+        {
+            switch (detail)
+            {
+                case "accessible-role":
+                    {
+                        if (value is int ival && (!RoleKnown || ival != Role))
+                        {
+                            RoleKnown = true;
+                            Role = ival;
+                            if (MatchesDebugCondition())
+                            {
+                                if (Role > 0 && Role < role_names.Length)
+                                    Utils.DebugWriteLine($"{this}.spi_role: {role_names[Role]}");
+                                else
+                                    Utils.DebugWriteLine($"{this}.spi_role: {Role}");
+                            }
+                            PropertyChanged("spi_role");
+                        }
+                        break;
+                    }
+                default:
                     break;
             }
         }

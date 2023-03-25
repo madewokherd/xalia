@@ -77,6 +77,9 @@ namespace Xalia.AtSpi2
             await RegisterEvent(connection, registryClient, "object:children-changed");
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "ChildrenChanged", result.OnChildrenChanged);
 
+            await RegisterEvent(connection, registryClient, "object:property-change:accessible-role");
+            await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "PropertyChange", result.OnPropertyChange);
+
             result.DesktopFrame = new AtSpiElement(result, registryClient, PATH_ACCESSIBLE_ROOT);
             result.AddChild(0, result.DesktopFrame);
 
@@ -95,6 +98,14 @@ namespace Xalia.AtSpi2
             if (element is null)
                 return;
             element.AtSpiChildrenChanged(signal);
+        }
+
+        private void OnPropertyChange(AtSpiSignal signal)
+        {
+            var element = LookupElement((signal.peer, signal.path));
+            if (element is null)
+                return;
+            element.AtSpiPropertyChange(signal.detail, signal.value);
         }
 
         internal void NotifyElementCreated(AtSpiElement element)
