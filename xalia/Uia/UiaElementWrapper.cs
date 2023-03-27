@@ -70,8 +70,5 @@ namespace Xalia.Uia
         {
             return Connection.LookupAutomationElement(this);
         }
-
-        // In the future, we may want to store the processid here so we can ensure only 1
-        // background thread works on a single process's request at a time.
     }
 }
