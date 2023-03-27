@@ -284,6 +284,9 @@ namespace Xalia.Interop
 
         public const int CHILDID_SELF = 0;
 
+        public const int STATE_SYSTEM_UNAVAILABLE = 0x00000001;
+        public const int STATE_SYSTEM_INVISIBLE = 0x00008000;
+
         public const int NAVDIR_NEXT = 5;
         public const int NAVDIR_PREVIOUS = 6;
         public const int NAVDIR_FIRSTCHILD = 7;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -24,6 +25,7 @@ namespace Xalia.Uia
                 "process_name", "msaa_process_name",
                 "role", "msaa_role",
                 "control_type", "msaa_role",
+                "state", "msaa_state",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -44,6 +46,15 @@ namespace Xalia.Uia
                     msaa_name_to_role[rolename] = i;
                 msaa_role_to_enum[i] = new UiDomEnum(names);
             }
+
+            msaa_name_to_state = new Dictionary<string, int>();
+            int flag = 1;
+            foreach (var name in msaa_state_names)
+            {
+                msaa_name_to_state[name] = flag;
+                flag <<= 1;
+            }
+            msaa_name_to_state["disabled"] = STATE_SYSTEM_UNAVAILABLE;
         }
 
         internal static readonly string[] msaa_role_names =
@@ -135,6 +146,46 @@ namespace Xalia.Uia
         private bool _roleKnown;
         private bool _fetchingRole;
 
+        private int _state;
+        private bool _stateKnown;
+        private bool _fetchingState;
+
+        internal static string[] msaa_state_names =
+        {
+            "unavailable",
+            "selected",
+            "focused",
+            "pressed",
+            "checked",
+            "mixed",
+            "readonly",
+            "hottracked",
+            "default",
+            "expanded",
+            "collapsed",
+            "busy",
+            "floating",
+            "marqueed",
+            "animated",
+            "invisible",
+            "offscreen",
+            "sizeable",
+            "moveable",
+            "selfvoicing",
+            "focusable",
+            "selectable",
+            "linked",
+            "traversed",
+            "multiselectable",
+            "extselectable",
+            "alert_low",
+            "alert_medium",
+            "alert_high",
+            "protected",
+        };
+
+        internal static Dictionary<string, int> msaa_name_to_state;
+
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             UiDomValue value;
@@ -176,11 +227,30 @@ namespace Xalia.Uia
                     if (_roleKnown)
                         return MsaaRoleToValue(_role);
                     return UiDomUndefined.Instance;
+                case "msaa_state":
+                    depends_on.Add((this, new IdentifierExpression(id)));
+                    if (_stateKnown)
+                        return new MsaaState(_state);
+                    return UiDomUndefined.Instance;
             }
 
             value = base.EvaluateIdentifierCore(id, root, depends_on);
             if (!value.Equals(UiDomUndefined.Instance))
                 return value;
+
+            switch (id)
+            {
+                case "visible":
+                    depends_on.Add((this, new IdentifierExpression("msaa_state")));
+                    if (_stateKnown)
+                        return UiDomBoolean.FromBool((_state & STATE_SYSTEM_INVISIBLE) == 0);
+                    return UiDomUndefined.Instance;
+                case "enabled":
+                    depends_on.Add((this, new IdentifierExpression("msaa_state")));
+                    if (_stateKnown)
+                        return UiDomBoolean.FromBool((_state & STATE_SYSTEM_UNAVAILABLE) == 0);
+                    return UiDomUndefined.Instance;
+            }
 
             if (msaa_name_to_role.TryGetValue(id, out var role))
             {
@@ -188,6 +258,15 @@ namespace Xalia.Uia
                 if (_roleKnown)
                 {
                     return UiDomBoolean.FromBool(_role == role);
+                }
+            }
+
+            if (msaa_name_to_state.TryGetValue(id, out var state))
+            {
+                depends_on.Add((this, new IdentifierExpression("msaa_state")));
+                if (_stateKnown)
+                {
+                    return UiDomBoolean.FromBool((_state & state) != 0);
                 }
             }
 
@@ -205,6 +284,8 @@ namespace Xalia.Uia
                 Utils.DebugWriteLine($"  msaa_process_name: {_processName}");
             if (_roleKnown)
                 Utils.DebugWriteLine($"  msaa_role: {MsaaRoleToValue(_role)}");
+            if (_stateKnown)
+                Utils.DebugWriteLine($"  msaa_state: {new MsaaState(_state)}");
             base.DumpProperties();
         }
 
@@ -231,9 +312,53 @@ namespace Xalia.Uia
                             }
                             break;
                         }
+                    case "msaa_state":
+                        {
+                            if (!_stateKnown && !_fetchingState)
+                            {
+                                _fetchingState = true;
+                                Utils.RunTask(FetchState());
+                            }
+                            break;
+                        }
                 }
             }
             base.WatchProperty(expression);
+        }
+
+        private async Task FetchState()
+        {
+            object state_obj;
+            try
+            {
+                state_obj = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return ElementWrapper.Accessible.accState[ElementWrapper.ChildId];
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (state_obj is null)
+            {
+                Utils.DebugWriteLine($"WARNING: accState returned NULL for {this}");
+            }
+            else if (!(state_obj is int state))
+            {
+                Utils.DebugWriteLine($"WARNING: accState returned {state_obj.GetType()} instead of int for {this}");
+            }
+            else
+            {
+                _stateKnown = true;
+                _state = state;
+                if (MatchesDebugCondition())
+                    Utils.DebugWriteLine($"{this}.msaa_state: {new MsaaState(state)}");
+                PropertyChanged("msaa_state");
+            }
         }
 
         private async Task FetchRole()
