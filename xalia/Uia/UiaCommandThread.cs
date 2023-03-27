@@ -75,6 +75,11 @@ namespace Xalia.Uia
             return OnBackgroundThread(func, element.Pid);
         }
 
+        public Task<T> OnBackgroundThread<T>(Func<T> func, MsaaElementWrapper element)
+        {
+            return OnBackgroundThread(func, element.Pid);
+        }
+
         public async Task<T> OnBackgroundThread<T>(Func<T> func, int pid = 0)
         {
             var request = new CommandThreadRequest();

@@ -192,7 +192,8 @@ namespace Xalia.Uia
         private static readonly Dictionary<string, ControlType> name_to_control_type;
         private static readonly UiDomEnum[] control_type_to_enum;
 
-        private static readonly UiDomEnum[] msaa_role_to_enum;
+        internal static readonly UiDomEnum[] msaa_role_to_enum;
+        internal static readonly Dictionary<string, int> msaa_name_to_role;
 
         private static readonly Dictionary<string, string> property_aliases;
 
@@ -224,6 +225,7 @@ namespace Xalia.Uia
                     name_to_control_type[rolename] = (ControlType)i;
             }
             msaa_role_to_enum = new UiDomEnum[msaa_role_names.Length];
+            msaa_name_to_role = new Dictionary<string, int>();
             for (int i = 0; i < msaa_role_names.Length; i++)
             {
                 string name = msaa_role_names[i];
@@ -232,6 +234,8 @@ namespace Xalia.Uia
                     names = new[] { name, name.Replace("_", "") };
                 else
                     names = new[] { name };
+                foreach (string rolename in names)
+                    msaa_name_to_role[rolename] = i;
                 msaa_role_to_enum[i] = new UiDomEnum(names);
             }
             string[] aliases = {
