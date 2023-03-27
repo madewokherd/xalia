@@ -535,6 +535,8 @@ namespace Xalia.AtSpi2
             {
                 case "accessible-role":
                     {
+                        if (value is uint uval)
+                            value = (int)uval;
                         if (value is int ival && (!RoleKnown || ival != Role))
                         {
                             RoleKnown = true;
@@ -547,6 +549,15 @@ namespace Xalia.AtSpi2
                                     Utils.DebugWriteLine($"{this}.spi_role: {Role}");
                             }
                             PropertyChanged("spi_role");
+                        }
+                        else if (value is null)
+                        {
+                            if (fetching_role || RoleKnown)
+                                Utils.RunTask(FetchRole());
+                        }
+                        else
+                        {
+                            Console.WriteLine($"WARNING: unexpected type for accessible-role: {value.GetType()}");
                         }
                         break;
                     }
