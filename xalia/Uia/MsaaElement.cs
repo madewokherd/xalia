@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
@@ -21,6 +22,8 @@ namespace Xalia.Uia
                 "child_id", "msaa_child_id",
                 "application_name", "msaa_process_name",
                 "process_name", "msaa_process_name",
+                "role", "msaa_role",
+                "control_type", "msaa_role",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -28,6 +31,7 @@ namespace Xalia.Uia
                 property_aliases[aliases[i]] = aliases[i + 1];
             }
             msaa_role_to_enum = new UiDomEnum[msaa_role_names.Length];
+            msaa_name_to_role = new Dictionary<string, int>();
             for (int i = 0; i < msaa_role_names.Length; i++)
             {
                 string name = msaa_role_names[i];
@@ -36,6 +40,8 @@ namespace Xalia.Uia
                     names = new[] { name, name.Replace("_", "") };
                 else
                     names = new[] { name };
+                foreach (string rolename in names)
+                    msaa_name_to_role[rolename] = i;
                 msaa_role_to_enum[i] = new UiDomEnum(names);
             }
         }
@@ -110,23 +116,32 @@ namespace Xalia.Uia
         };
 
         internal static readonly UiDomEnum[] msaa_role_to_enum;
+        internal static readonly Dictionary<string, int> msaa_name_to_role;
         
         public MsaaElement(MsaaElementWrapper wrapper, UiaConnection root) : base(root)
         {
             ElementWrapper = wrapper;
+            Root = root;
         }
 
         public override string DebugId => ElementWrapper.UniqueId;
 
         public MsaaElementWrapper ElementWrapper { get; }
+        public new UiaConnection Root { get; }
 
         private string _processName;
 
+        private int _role;
+        private bool _roleKnown;
+        private bool _fetchingRole;
+
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            UiDomValue value;
+
             if (property_aliases.TryGetValue(id, out string aliased))
             {
-                var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                value = base.EvaluateIdentifierCore(id, root, depends_on);
                 if (!value.Equals(UiDomUndefined.Instance))
                     return value;
                 id = aliased;
@@ -156,9 +171,27 @@ namespace Xalia.Uia
                         return UiDomUndefined.Instance;
                     }
                     return new UiDomString(_processName);
+                case "msaa_role":
+                    depends_on.Add((this, new IdentifierExpression(id)));
+                    if (_roleKnown)
+                        return MsaaRoleToValue(_role);
+                    return UiDomUndefined.Instance;
             }
 
-            return base.EvaluateIdentifierCore(id, root, depends_on);
+            value = base.EvaluateIdentifierCore(id, root, depends_on);
+            if (!value.Equals(UiDomUndefined.Instance))
+                return value;
+
+            if (msaa_name_to_role.TryGetValue(id, out var role))
+            {
+                depends_on.Add((this, new IdentifierExpression("msaa_role")));
+                if (_roleKnown)
+                {
+                    return UiDomBoolean.FromBool(_role == role);
+                }
+            }
+
+            return value;
         }
 
         protected override void DumpProperties()
@@ -170,6 +203,8 @@ namespace Xalia.Uia
             Utils.DebugWriteLine($"  msaa_pid: {ElementWrapper.Pid}");
             if (!(_processName is null))
                 Utils.DebugWriteLine($"  msaa_process_name: {_processName}");
+            if (_roleKnown)
+                Utils.DebugWriteLine($"  msaa_role: {MsaaRoleToValue(_role)}");
             base.DumpProperties();
         }
 
@@ -179,6 +214,60 @@ namespace Xalia.Uia
                 return msaa_role_to_enum[role];
             else
                 return new UiDomInt(role);
+        }
+
+        protected override void WatchProperty(GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "msaa_role":
+                        {
+                            if (!_roleKnown && !_fetchingRole)
+                            {
+                                _fetchingRole = true;
+                                Utils.RunTask(FetchRole());
+                            }
+                            break;
+                        }
+                }
+            }
+            base.WatchProperty(expression);
+        }
+
+        private async Task FetchRole()
+        {
+            object role_obj;
+            try
+            {
+                role_obj = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return ElementWrapper.Accessible.accRole[ElementWrapper.ChildId];
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (role_obj is null)
+            {
+                Utils.DebugWriteLine($"WARNING: accRole returned NULL for {this}");
+            }
+            else if (!(role_obj is int role))
+            {
+                Utils.DebugWriteLine($"WARNING: accRole returned {role_obj.GetType()} instead of int for {this}");
+            }
+            else
+            {
+                _role = role;
+                _roleKnown = true;
+                if (MatchesDebugCondition())
+                    Utils.DebugWriteLine($"{this}.msaa_role: {MsaaRoleToValue(_role)}");
+                PropertyChanged("msaa_role");
+            }
         }
     }
 }
