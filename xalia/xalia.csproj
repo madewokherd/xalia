@@ -103,6 +103,8 @@
     <Compile Include="Sdl\OverlayBox.cs" />
     <Compile Include="Sdl\SplitOverlayBox.cs" />
     <Compile Include="Sdl\Win32LayeredBox.cs" />
+    <Compile Include="Uia\MsaaElement.cs" />
+    <Compile Include="Uia\MsaaElementWrapper.cs" />
     <Compile Include="Uia\Win32\Win32Element.cs" />
     <Compile Include="Uia\Win32\Win32ListView.cs" />
     <Compile Include="Uia\Win32\Win32ListViewItem.cs" />

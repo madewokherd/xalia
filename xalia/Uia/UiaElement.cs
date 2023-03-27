@@ -196,6 +196,9 @@ namespace Xalia.Uia
 
         private static readonly Dictionary<string, string> property_aliases;
 
+        private bool adding_msaa_element;
+        private CancellationTokenSource adding_msaa_element_cancel;
+
         static UiaElement()
         {
             name_to_control_type = new Dictionary<string, ControlType>();
@@ -472,11 +475,15 @@ namespace Xalia.Uia
 
             if (ElementWrapper.Hwnd != IntPtr.Zero)
             {
-                int win32_element = -1, win32_listview = -1, win32_tabcontrol = -1, win32_trackbar = -1;
+                int msaa_element = -1, win32_element = -1, win32_listview = -1, win32_tabcontrol = -1, win32_trackbar = -1;
 
                 for (int i = 0; i < Children.Count; i++)
                 {
-                    if (Children[i] is Win32Trackbar)
+                    if (Children[i] is UiaElement)
+                        continue;
+                    else if (Children[i] is MsaaElement)
+                        msaa_element = i;
+                    else if (Children[i] is Win32Trackbar)
                         win32_trackbar = i;
                     else if (Children[i] is Win32ListView)
                         win32_listview = i;
@@ -484,6 +491,28 @@ namespace Xalia.Uia
                         win32_tabcontrol = i;
                     else if (Children[i] is Win32Element)
                         win32_element = i;
+                }
+
+                if (all_declarations.TryGetValue("msaa_use_element", out var use_msaa) && use_msaa.Item2.ToBool())
+                {
+                    if (msaa_element == -1 && !adding_msaa_element)
+                    {
+                        adding_msaa_element = true;
+                        Utils.RunTask(AddMsaaElement());
+                    }
+                }
+                else
+                {
+                    if (msaa_element != -1)
+                    {
+                        RemoveChild(msaa_element);
+                    }
+                    adding_msaa_element = false;
+                    if (!(adding_msaa_element_cancel is null))
+                    {
+                        adding_msaa_element_cancel.Cancel();
+                        adding_msaa_element_cancel = null;
+                    }
                 }
 
                 if (all_declarations.TryGetValue("win32_use_element", out var use_element) && use_element.Item2.ToBool())
@@ -609,6 +638,33 @@ namespace Xalia.Uia
             }
 
             base.DeclarationsChanged(all_declarations, dependencies);
+        }
+
+        private async Task AddMsaaElement()
+        {
+            MsaaElementWrapper wrapper;
+            var cancel = new CancellationTokenSource();
+            adding_msaa_element_cancel = cancel;
+            try
+            {
+                wrapper = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return MsaaElementWrapper.FromUiaElementBackground(ElementWrapper);
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (cancel.IsCancellationRequested)
+                return;
+
+            AddChild(Children.Count, new MsaaElement(wrapper, Root));
+            adding_msaa_element = false;
+            adding_msaa_element_cancel = null;
         }
 
         private async Task FetchPropertyAsync(string name, PropertyId propid)
@@ -1018,6 +1074,12 @@ namespace Xalia.Uia
                 }
                 property_poll_token.Clear();
                 polling_property.Clear();
+                adding_msaa_element = false;
+                if (!(adding_msaa_element_cancel is null))
+                {
+                    adding_msaa_element_cancel.Cancel();
+                    adding_msaa_element_cancel = null;
+                }
                 Root.NotifyElementDefunct(this);
             }
             base.SetAlive(value);
