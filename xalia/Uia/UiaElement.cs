@@ -21,6 +21,7 @@ namespace Xalia.Uia
     {
         static string[] tracked_properties = { "recurse", "poll_children",
             "win32_use_element", "win32_use_trackbar", "win32_use_tabcontrol", "win32_use_listview",
+            "msaa_use_element",
         };
 
         public UiaElement(UiaElementWrapper wrapper) : base(wrapper.Connection)
@@ -200,6 +201,9 @@ namespace Xalia.Uia
         private static readonly UiDomEnum[] msaa_role_to_enum;
 
         private static readonly Dictionary<string, string> property_aliases;
+
+        private bool msaa_use_element;
+        private int msaa_use_element_change_count;
 
         static UiaElement()
         {
@@ -488,6 +492,30 @@ namespace Xalia.Uia
                         (UiDomElement e) => { return e is Win32ListView; },
                         () => { return new Win32ListView(ElementWrapper.Hwnd, Root); });
                     break;
+                case "msaa_use_element":
+                    {
+                        bool use_msaa = new_value.ToBool();
+                        if (msaa_use_element != use_msaa)
+                        {
+                            msaa_use_element = use_msaa;
+                            msaa_use_element_change_count++;
+
+                            if (use_msaa)
+                                Utils.RunTask(AddMsaaElement());
+                            else
+                            {
+                                for (int i=0; i<Children.Count; i++)
+                                {
+                                    if (Children[i] is MsaaElement)
+                                    {
+                                        RemoveChild(i);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
             }
             if (name.StartsWith("poll_") && Root.names_to_property.TryGetValue(name.Substring(5), out var propid))
             {
@@ -527,6 +555,30 @@ namespace Xalia.Uia
                 AddChild(Children.Count, ctor());
             else
                 RemoveChild(idx);
+        }
+
+        private async Task AddMsaaElement()
+        {
+            MsaaElementWrapper wrapper;
+            int old_change_count = msaa_use_element_change_count;
+            try
+            {
+                wrapper = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    return MsaaElementWrapper.FromUiaElementBackground(ElementWrapper);
+                }, ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (old_change_count != msaa_use_element_change_count)
+                return;
+
+            AddChild(Children.Count, new MsaaElement(wrapper, Root));
         }
 
         private async Task FetchPropertyAsync(string name, PropertyId propid)
