@@ -279,7 +279,7 @@ if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherW
         recurse: false;
         targetable: false;
     }
-	recurse: uia_offscreen == false;
+	recurse: offscreen == false;
 
     manual_buttons: true;
     manual_checkboxes: true;

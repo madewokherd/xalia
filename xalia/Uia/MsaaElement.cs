@@ -13,6 +13,7 @@ namespace Xalia.Uia
 {
     internal class MsaaElement : UiDomElement
     {
+        private static string[] tracked_properties = { "recurse" };
         private static readonly Dictionary<string, string> property_aliases;
 
         static MsaaElement()
@@ -133,6 +134,7 @@ namespace Xalia.Uia
         {
             ElementWrapper = wrapper;
             Root = root;
+            RegisterTrackedProperties(tracked_properties);
         }
 
         public override string DebugId => ElementWrapper.UniqueId;
@@ -151,6 +153,9 @@ namespace Xalia.Uia
         private bool _fetchingState;
         private int _stateChangeCount;
         private bool _watchingState;
+
+        private bool _watchingChildren;
+        private bool _childrenKnown;
 
         internal static string[] msaa_state_names =
         {
@@ -441,6 +446,167 @@ namespace Xalia.Uia
             {
                 _stateKnown = false;
             }
+        }
+
+        protected override void TrackedPropertyChanged(string name, UiDomValue new_value)
+        {
+            switch (name)
+            {
+                case "recurse":
+                    if (new_value.ToBool())
+                    {
+                        WatchChildren();
+                    }
+                    else
+                    {
+                        UnwatchChildren();
+                    }
+                    break;
+            }
+            base.TrackedPropertyChanged(name, new_value);
+        }
+
+        private void WatchChildren()
+        {
+            if (_watchingChildren)
+                return;
+            _watchingChildren = true;
+
+            if (!_childrenKnown)
+                Utils.RunTask(FetchChildren());
+        }
+
+        private async Task FetchChildren()
+        {
+            if (!_watchingChildren)
+                return;
+
+            List<MsaaElementWrapper> children = await GetChildren(!_childrenKnown || Children.Count == 0);
+
+            if (!_watchingChildren)
+                return;
+
+            if (children is null)
+            {
+                RemoveAllChildren();
+                return;
+            }
+
+            // Ignore any duplicate children
+            HashSet<string> seen_children = new HashSet<string>();
+            int i = 0;
+            while (i < children.Count)
+            {
+                if (!seen_children.Add(children[i].UniqueId))
+                {
+                    children.RemoveAt(i);
+                    continue;
+                }
+                i++;
+            }
+
+            // First remove any existing children that are missing or out of order
+            i = 0;
+            foreach (var new_child in children)
+            {
+                if (!Children.Exists((UiDomElement element) => ElementMatches(element, new_child)))
+                    continue;
+                while (!ElementMatches(Children[i], new_child))
+                {
+                    RemoveChild(i);
+                }
+                i++;
+            }
+
+            // Remove any remaining missing children
+            while (i < Children.Count && Children[i] is MsaaElement)
+                RemoveChild(i);
+
+            // Add any new children
+            i = 0;
+            foreach (var new_child in children)
+            {
+                if (Children.Count <= i || !ElementMatches(Children[i], new_child))
+                {
+                    if (Root.msaa_elements_by_id.ContainsKey(new_child.UniqueId))
+                    {
+                        // Child element is a duplicate of another element somewhere in the tree.
+                        continue;
+                    }
+                    AddChild(i, new MsaaElement(new_child, Root));
+                }
+                i += 1;
+            }
+
+            _childrenKnown = true;
+        }
+
+        private bool ElementMatches(UiDomElement element, MsaaElementWrapper wrapper)
+        {
+            return element is MsaaElement msaa && msaa.ElementWrapper.UniqueId == wrapper.UniqueId;
+        }
+
+        private List<MsaaElementWrapper> GetChildrenBackground_accChild(bool assumeUnique)
+        {
+            var acc = ElementWrapper.Accessible;
+
+            int child_count = acc.accChildCount;
+
+            if (child_count == 0)
+                return null;
+
+            var result = new List<MsaaElementWrapper>(child_count);
+
+            for (int i=1; i <= child_count;  i++)
+            {
+                object child = acc.accChild[i];
+
+                if (ElementWrapper.FromVariantBackground(child, assumeUnique, out var child_wrapper))
+                {
+                    result.Add(child_wrapper);
+                }
+                else
+                    return null;
+            }
+            return result;
+        }
+
+        private async Task<List<MsaaElementWrapper>> GetChildren(bool assumeUnique)
+        {
+            try
+            {
+                if (ElementWrapper.ChildId == CHILDID_SELF)
+                    return await Root.CommandThread.OnBackgroundThread(() => {
+                        return GetChildrenBackground_accChild(assumeUnique);
+                    },
+                    ElementWrapper);
+            }
+            catch (Exception e)
+            {
+                if (UiaElement.IsExpectedException(e))
+                    return null;
+                throw;
+            }
+            throw new NotImplementedException(); // try IEnumVARIANT or accNavigate
+        }
+
+        private void RemoveAllChildren()
+        {
+            for (int i=Children.Count-1; i>=0; i--)
+            {
+                if (Children[i] is MsaaElement)
+                    RemoveChild(i);
+            }
+        }
+
+        private void UnwatchChildren()
+        {
+            if (!_watchingChildren)
+                return;
+            _watchingChildren = false;
+
+            RemoveAllChildren();
+            _childrenKnown = false;
         }
     }
 }

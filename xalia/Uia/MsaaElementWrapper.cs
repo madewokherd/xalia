@@ -1,5 +1,7 @@
 ﻿using Accessibility;
 using System;
+using System.Threading;
+using static Xalia.Interop.Win32;
 
 namespace Xalia.Uia
 {
@@ -23,6 +25,8 @@ namespace Xalia.Uia
 
         public bool IsValid => Accessible != null;
 
+        private static int MonotonicId;
+
         private static bool UniqueIdFromAccessibleBackground(IAccessible acc, IntPtr hwnd, int child_id, out string id)
         {
             id = null;
@@ -43,6 +47,41 @@ namespace Xalia.Uia
                 throw new NotImplementedException("cannot generate unique id for MsaaElementWrapper");
             }
             return new MsaaElementWrapper(acc, child_id, unique_id, wrapper.Pid, wrapper.Hwnd);
+        }
+
+        private string GenerateUniqueId()
+        {
+            var id = Interlocked.Increment(ref MonotonicId);
+            return $"msaa-{id}";
+        }
+
+        public bool FromVariantBackground(object child, bool assumeUnique, out MsaaElementWrapper child_wrapper)
+        {
+            child_wrapper = default;
+            if (child is int child_id)
+            {
+                if (!UniqueIdFromAccessibleBackground(Accessible, Hwnd, child_id, out var unique_id))
+                    unique_id = GenerateUniqueId();
+                child_wrapper = new MsaaElementWrapper(Accessible, child_id, unique_id, Pid, Hwnd);
+                return true;
+            }
+            else if (child is IAccessible acc)
+            {
+                if (!UniqueIdFromAccessibleBackground(acc, IntPtr.Zero, CHILDID_SELF, out var unique_id))
+                    unique_id = GenerateUniqueId();
+                child_wrapper = new MsaaElementWrapper(acc, CHILDID_SELF, unique_id, Pid, IntPtr.Zero);
+                return true;
+            }
+            else if (child is null)
+            {
+                Utils.DebugWriteLine($"WARNING: accChild on {UniqueId} returned NULL");
+                return false;
+            }
+            else
+            {
+                Utils.DebugWriteLine($"WARNING: accChild on {UniqueId} returned {child.GetType()}");
+                return false;
+            }
         }
     }
 }
