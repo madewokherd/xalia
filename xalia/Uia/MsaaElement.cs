@@ -64,6 +64,7 @@ namespace Xalia.Uia
         private bool _stateKnown;
         private bool _fetchingState;
         private CancellationTokenSource _fetchingStateCancel;
+        private bool _watchingState;
 
         internal static string[] msaa_state_names =
         {
@@ -103,7 +104,11 @@ namespace Xalia.Uia
 
         protected override void SetAlive(bool value)
         {
-            if (!value)
+            if (value)
+            {
+                Root.msaa_elements_by_id[ElementWrapper.UniqueId] = this;
+            }
+            else
             {
                 _fetchingState = false;
                 if (!(_fetchingStateCancel is null))
@@ -111,6 +116,8 @@ namespace Xalia.Uia
                     _fetchingStateCancel.Cancel();
                     _fetchingStateCancel = null;
                 }
+                _watchingState = false;
+                Root.msaa_elements_by_id.Remove(ElementWrapper.UniqueId);
             }
             base.SetAlive(value);
         }
@@ -258,6 +265,7 @@ namespace Xalia.Uia
                         }
                     case "msaa_state":
                         {
+                            _watchingState = true;
                             if (!_stateKnown && !_fetchingState)
                             {
                                 _fetchingState = true;
@@ -268,6 +276,20 @@ namespace Xalia.Uia
                 }
             }
             base.WatchProperty(expression);
+        }
+
+        protected override void UnwatchProperty(GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "msaa_state":
+                        _watchingState = false;
+                        break;
+                }
+            }
+            base.UnwatchProperty(expression);
         }
 
         private async Task FetchState()
@@ -346,6 +368,18 @@ namespace Xalia.Uia
                         Utils.DebugWriteLine($"{this}.msaa_role: {_role}");
                 }
                 PropertyChanged("msaa_role");
+            }
+        }
+
+        internal void MsaaStateChange()
+        {
+            if (_watchingState)
+            {
+                Utils.RunTask(FetchState());
+            }
+            else if (_stateKnown)
+            {
+                _stateKnown = false;
             }
         }
     }

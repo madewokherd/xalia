@@ -641,6 +641,21 @@ namespace Xalia.Uia
                 }
             }
 
+            string msaa_element_id;
+            if (idChild == 0)
+                msaa_element_id = $"msaa-hwnd-{hwnd}";
+            else
+                msaa_element_id = $"msaa-hwnd-{hwnd}-{idChild}";
+            if (msaa_elements_by_id.TryGetValue(msaa_element_id, out var msaa_element))
+            {
+                switch (eventId)
+                {
+                    case EVENT_OBJECT_STATECHANGE:
+                        msaa_element.MsaaStateChange();
+                        break;
+                }
+            }
+
             var wrapper = await WrapperFromHwnd(hwnd, idObject, idChild);
 
             if (eventId == EVENT_SYSTEM_FOREGROUND)
@@ -716,6 +731,7 @@ namespace Xalia.Uia
         public UiaCommandThread CommandThread { get; }
 
         internal Dictionary<string, UiaElement> elements_by_id = new Dictionary<string, UiaElement>();
+        internal Dictionary<string, MsaaElement> msaa_elements_by_id = new Dictionary<string, MsaaElement>();
 
         public UiaElement LookupAutomationElement(UiaElementWrapper ae)
         {
