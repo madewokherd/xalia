@@ -149,6 +149,8 @@ namespace Xalia.Uia
         private int _state;
         private bool _stateKnown;
         private bool _fetchingState;
+        private int _stateChangeCount;
+        private bool _watchingState;
 
         internal static string[] msaa_state_names =
         {
@@ -185,6 +187,20 @@ namespace Xalia.Uia
         };
 
         internal static Dictionary<string, int> msaa_name_to_state;
+
+        protected override void SetAlive(bool value)
+        {
+            if (value)
+            {
+                Root.msaa_elements_by_id[ElementWrapper.UniqueId] = this;
+            }
+            else
+            {
+                _watchingState = false;
+                Root.msaa_elements_by_id.Remove(ElementWrapper.UniqueId);
+            }
+            base.SetAlive(value);
+        }
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
@@ -314,6 +330,7 @@ namespace Xalia.Uia
                         }
                     case "msaa_state":
                         {
+                            _watchingState = true;
                             if (!_stateKnown && !_fetchingState)
                             {
                                 _fetchingState = true;
@@ -326,9 +343,24 @@ namespace Xalia.Uia
             base.WatchProperty(expression);
         }
 
+        protected override void UnwatchProperty(GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "msaa_state":
+                        _watchingState = false;
+                        break;
+                }
+            }
+            base.UnwatchProperty(expression);
+        }
+
         private async Task FetchState()
         {
             object state_obj;
+            int change_count = _stateChangeCount;
             try
             {
                 state_obj = await Root.CommandThread.OnBackgroundThread(() =>
@@ -342,6 +374,9 @@ namespace Xalia.Uia
                     throw;
                 return;
             }
+
+            if (change_count != _stateChangeCount)
+                return;
 
             if (state_obj is null)
             {
@@ -392,6 +427,19 @@ namespace Xalia.Uia
                 if (MatchesDebugCondition())
                     Utils.DebugWriteLine($"{this}.msaa_role: {MsaaRoleToValue(_role)}");
                 PropertyChanged("msaa_role");
+            }
+        }
+
+        internal void MsaaStateChange()
+        {
+            _stateChangeCount++;
+            if (_watchingState)
+            {
+                Utils.RunTask(FetchState());
+            }
+            else if (_stateKnown)
+            {
+                _stateKnown = false;
             }
         }
     }
