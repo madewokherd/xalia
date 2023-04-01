@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -47,8 +48,14 @@ namespace Xalia.AtSpi2
                 foreach (string rolename in names)
                     name_to_role[rolename] = i;
             }
+            name_to_state = new Dictionary<string, int>();
+            for (int i=0; i<state_names.Length; i++)
+            {
+                name_to_state[state_names[i]] = i;
+            }
             string[] aliases = {
                 "role", "spi_role",
+                "state", "spi_state",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -66,6 +73,10 @@ namespace Xalia.AtSpi2
         public bool RoleKnown { get; private set; }
         public int Role { get; private set; }
         private bool fetching_role;
+
+        public bool StateKnown { get; private set; }
+        public uint[] State { get; private set; }
+        private bool fetching_state;
 
         private bool watching_children;
 #pragma warning disable CS0414 // The field 'AtSpiElement.children_known' is assigned but its value is never used
@@ -205,8 +216,60 @@ namespace Xalia.AtSpi2
             "suggestion",
         };
 
+        internal static readonly string[] state_names =
+        {
+            "invalid",
+            "active",
+            "armed",
+            "busy",
+            "checked",
+            "collapsed",
+            "defunct",
+            "editable",
+            "enabled",
+            "expandable",
+            "expanded",
+            "focusable",
+            "focused",
+            "has_tooltip",
+            "horizontal",
+            "iconified",
+            "modal",
+            "multi_line",
+            "multiselectable",
+            "opaque",
+            "pressed",
+            "resizable",
+            "selectable",
+            "selected",
+            "sensitive",
+            "showing",
+            "single_line",
+            "stale",
+            "transient",
+            "vertical",
+            "visible",
+            "manages_descendants",
+            "indeterminate",
+            "required",
+            "truncated",
+            "animated",
+            "invalid_entry",
+            "supports_autocompletion",
+            "selectable_text",
+            "is_default",
+            "visited",
+            "checkable",
+            "has_popup",
+            "read_only",
+        };
+
+        internal static Dictionary<string, string> name_mapping;
+
         private static readonly Dictionary<string, int> name_to_role;
         private static readonly UiDomEnum[] role_to_enum;
+
+        internal static Dictionary<string, int> name_to_state;
 
         protected override void SetAlive(bool value)
         {
@@ -256,6 +319,11 @@ namespace Xalia.AtSpi2
                         return new UiDomInt(Role);
                     }
                     return UiDomUndefined.Instance;
+                case "spi_state":
+                    depends_on.Add((this, new IdentifierExpression("spi_state")));
+                    if (StateKnown)
+                        return new AtSpiState(State);
+                    return UiDomUndefined.Instance;
             }
 
             value = base.EvaluateIdentifierCore(id, root, depends_on);
@@ -267,6 +335,13 @@ namespace Xalia.AtSpi2
                 depends_on.Add((this, new IdentifierExpression("spi_role")));
                 if (RoleKnown)
                     return UiDomBoolean.FromBool(Role == expected_role);
+            }
+
+            if (name_to_state.TryGetValue(id, out var expected_state))
+            {
+                depends_on.Add((this, new IdentifierExpression("spi_state")));
+                if (StateKnown)
+                    return UiDomBoolean.FromBool(AtSpiState.IsStateSet(State, expected_state));
             }
 
             return UiDomUndefined.Instance;
@@ -281,6 +356,8 @@ namespace Xalia.AtSpi2
                 else
                     Utils.DebugWriteLine($"  spi_role: {Role}");
             }
+            if (StateKnown)
+                Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
             base.DumpProperties();
         }
 
@@ -295,6 +372,13 @@ namespace Xalia.AtSpi2
                         {
                             fetching_role = true;
                             Utils.RunTask(FetchRole());
+                        }
+                        break;
+                    case "spi_state":
+                        if (!fetching_state)
+                        {
+                            fetching_state = true;
+                            Utils.RunTask(FetchState());
                         }
                         break;
                 }
@@ -317,6 +401,32 @@ namespace Xalia.AtSpi2
                 return;
             }
             AtSpiPropertyChange("accessible-role", result);
+        }
+
+        private async Task FetchState()
+        {
+            uint[] result;
+            try
+            {
+                result = await CallMethod(Root.Connection, Peer, Path,
+                    IFACE_ACCESSIBLE, "GetState", ReadMessageUint32Array);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (StateKnown)
+            {
+                if (StructuralComparisons.StructuralEqualityComparer.Equals(State, result))
+                    return;
+            }
+            StateKnown = true;
+            State = result;
+            if (MatchesDebugCondition())
+                Utils.DebugWriteLine($"{this}.spi_state: {new AtSpiState(State)}");
+            PropertyChanged("spi_state");
         }
 
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";

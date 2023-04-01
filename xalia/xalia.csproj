@@ -94,6 +94,7 @@
   <ItemGroup>
     <Compile Include="AtSpi2\AtSpiConnection.cs" />
     <Compile Include="AtSpi2\AtSpiElement.cs" />
+    <Compile Include="AtSpi2\AtSpiState.cs" />
     <Compile Include="AtSpi2\DBusUtils.cs" />
     <Compile Include="AtSpi\AtSpiActionList.cs" />
     <Compile Include="GlobalSuppressions.cs" />

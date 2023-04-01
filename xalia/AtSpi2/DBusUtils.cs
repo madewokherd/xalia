@@ -189,6 +189,18 @@ namespace Xalia.AtSpi2
             return message.GetBodyReader().ReadUInt32();
         }
 
+        public static uint[] ReadMessageUint32Array(Message message, object state)
+        {
+            List<uint> result = new List<uint>();
+            var reader = message.GetBodyReader();
+            var array = reader.ReadArrayStart(DBusType.UInt32);
+            while (reader.HasNext(array))
+            {
+                result.Add(reader.ReadUInt32());
+            }
+            return result.ToArray();
+        }
+
         public static object ReadMessageVariant(Message message, object state)
         {
             return message.GetBodyReader().ReadVariant();
