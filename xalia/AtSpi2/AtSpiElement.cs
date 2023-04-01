@@ -235,6 +235,12 @@ namespace Xalia.AtSpi2
 
             switch (id)
             {
+                case "is_uia_element":
+                    return UiDomBoolean.False;
+                case "is_spi_element":
+                case "is_atspi_element":
+                case "is_at_spi_element":
+                    return UiDomBoolean.True;
                 case "spi_peer":
                     return new UiDomString(Peer);
                 case "spi_path":
