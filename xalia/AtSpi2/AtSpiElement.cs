@@ -225,9 +225,11 @@ namespace Xalia.AtSpi2
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            UiDomValue value;
+
             if (property_aliases.TryGetValue(id, out string aliased))
             {
-                var value = base.EvaluateIdentifierCore(id, root, depends_on);
+                value = base.EvaluateIdentifierCore(id, root, depends_on);
                 if (!value.Equals(UiDomUndefined.Instance))
                     return value;
                 id = aliased;
@@ -255,7 +257,19 @@ namespace Xalia.AtSpi2
                     }
                     return UiDomUndefined.Instance;
             }
-            return base.EvaluateIdentifierCore(id, root, depends_on);
+
+            value = base.EvaluateIdentifierCore(id, root, depends_on);
+            if (!value.Equals(UiDomUndefined.Instance))
+                return value;
+
+            if (name_to_role.TryGetValue(id, out var expected_role))
+            {
+                depends_on.Add((this, new IdentifierExpression("spi_role")));
+                if (RoleKnown)
+                    return UiDomBoolean.FromBool(Role == expected_role);
+            }
+
+            return UiDomUndefined.Instance;
         }
 
         protected override void DumpProperties()
