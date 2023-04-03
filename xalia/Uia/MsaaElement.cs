@@ -13,7 +13,7 @@ namespace Xalia.Uia
 {
     internal class MsaaElement : UiDomElement
     {
-        private static string[] tracked_properties = { "recurse", "poll_msaa_state" };
+        private static string[] tracked_properties = { "recurse", "poll_msaa_state", "msaa_navigate_children" };
         private static readonly Dictionary<string, string> property_aliases;
 
         static MsaaElement()
@@ -160,6 +160,7 @@ namespace Xalia.Uia
         private bool _pollingState;
 
         private bool _watchingChildren;
+        private bool _navigateChildren;
         private bool _childrenKnown;
 
         private int _locationX;
@@ -559,6 +560,14 @@ namespace Xalia.Uia
                             EndPollProperty(new IdentifierExpression("msaa_state"));
                     }
                     break;
+                case "msaa_navigate_children":
+                    if (new_value.ToBool() != _navigateChildren)
+                    {
+                        _navigateChildren = new_value.ToBool();
+                        if (_watchingChildren)
+                            Utils.RunTask(FetchChildren());
+                    }
+                    break;
             }
             base.TrackedPropertyChanged(name, new_value);
         }
@@ -668,10 +677,41 @@ namespace Xalia.Uia
             return result;
         }
 
+        private List<MsaaElementWrapper> GetChildrenBackground_accNavigate(bool assumeUnique)
+        {
+            var wrapper = ElementWrapper;
+            MsaaElementWrapper child_wrapper;
+
+            object child = wrapper.Accessible.accNavigate(NAVDIR_FIRSTCHILD, wrapper.ChildId);
+            if (child is null || !wrapper.FromVariantBackground(child, assumeUnique, out child_wrapper))
+                return null;
+
+            var result = new List<MsaaElementWrapper> { child_wrapper };
+            wrapper = child_wrapper;
+
+            while (true)
+            {
+                child = wrapper.Accessible.accNavigate(NAVDIR_NEXT, wrapper.ChildId); 
+                if (child is null || !wrapper.FromVariantBackground(child, assumeUnique, out child_wrapper))
+                    break;
+
+                result.Add(child_wrapper);
+                wrapper = child_wrapper;
+            }
+
+            return result;
+        }
+
         private async Task<List<MsaaElementWrapper>> GetChildren(bool assumeUnique)
         {
             try
             {
+                if (_navigateChildren)
+                    return await Root.CommandThread.OnBackgroundThread(() =>
+                    {
+                        return GetChildrenBackground_accNavigate(assumeUnique);
+                    },
+                    ElementWrapper);
                 if (ElementWrapper.ChildId == CHILDID_SELF)
                     return await Root.CommandThread.OnBackgroundThread(() => {
                         return GetChildrenBackground_accChild(assumeUnique);
@@ -684,7 +724,7 @@ namespace Xalia.Uia
                     return null;
                 throw;
             }
-            throw new NotImplementedException(); // try IEnumVARIANT or accNavigate
+            throw new NotImplementedException(); // try IEnumVARIANT
         }
 
         private void RemoveAllChildren()

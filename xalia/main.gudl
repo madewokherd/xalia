@@ -274,17 +274,20 @@ if (process_name == "launcher" and class_name == "GameLauncherWnd") {
 }
 
 if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherWnd")) {
-    pane (parent.class_name == "GameLauncherWnd" and previous_sibling) {
-        // The launcher has a lot of duplicate panes at the top level
-        recurse: false;
-        targetable: false;
-    }
 	recurse: offscreen == false;
 
     manual_buttons: true;
     manual_checkboxes: true;
 
 	poll_msaa_state: true;
+
+    list {
+        msaa_navigate_children: true;
+    }
+
+    list_item (interactable) {
+        targetable: true;
+    }
 }
 
 // General behaviors:
