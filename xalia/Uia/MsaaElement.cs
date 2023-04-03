@@ -13,7 +13,7 @@ namespace Xalia.Uia
 {
     internal class MsaaElement : UiDomElement
     {
-        private static string[] tracked_properties = { "recurse" };
+        private static string[] tracked_properties = { "recurse", "poll_msaa_state" };
         private static readonly Dictionary<string, string> property_aliases;
 
         static MsaaElement()
@@ -153,6 +153,7 @@ namespace Xalia.Uia
         private bool _fetchingState;
         private int _stateChangeCount;
         private bool _watchingState;
+        private bool _pollingState;
 
         private bool _watchingChildren;
         private bool _childrenKnown;
@@ -339,7 +340,11 @@ namespace Xalia.Uia
                             if (!_stateKnown && !_fetchingState)
                             {
                                 _fetchingState = true;
-                                Utils.RunTask(FetchState());
+                                Utils.RunTask(FetchState(false));
+                            }
+                            if (_pollingState)
+                            {
+                                PollProperty(expression, PollState, 200);
                             }
                             break;
                         }
@@ -356,13 +361,14 @@ namespace Xalia.Uia
                 {
                     case "msaa_state":
                         _watchingState = false;
+                        EndPollProperty(expression);
                         break;
                 }
             }
             base.UnwatchProperty(expression);
         }
 
-        private async Task FetchState()
+        private async Task FetchState(bool polling)
         {
             object state_obj;
             int change_count = _stateChangeCount;
@@ -371,7 +377,7 @@ namespace Xalia.Uia
                 state_obj = await Root.CommandThread.OnBackgroundThread(() =>
                 {
                     return ElementWrapper.Accessible.accState[ElementWrapper.ChildId];
-                }, ElementWrapper);
+                }, polling ? ElementWrapper.Pid + 2 : ElementWrapper.Pid);
             }
             catch (Exception e)
             {
@@ -391,7 +397,7 @@ namespace Xalia.Uia
             {
                 Utils.DebugWriteLine($"WARNING: accState returned {state_obj.GetType()} instead of int for {this}");
             }
-            else
+            else if (!_stateKnown || _state != state)
             {
                 _stateKnown = true;
                 _state = state;
@@ -400,6 +406,8 @@ namespace Xalia.Uia
                 PropertyChanged("msaa_state");
             }
         }
+
+        private Task PollState() => FetchState(true);
 
         private async Task FetchRole()
         {
@@ -440,7 +448,7 @@ namespace Xalia.Uia
             _stateChangeCount++;
             if (_watchingState)
             {
-                Utils.RunTask(FetchState());
+                Utils.RunTask(FetchState(false));
             }
             else if (_stateKnown)
             {
@@ -460,6 +468,19 @@ namespace Xalia.Uia
                     else
                     {
                         UnwatchChildren();
+                    }
+                    break;
+                case "poll_msaa_state":
+                    if (new_value.ToBool() != _pollingState)
+                    {
+                        _pollingState = new_value.ToBool();
+                        if (_pollingState)
+                        {
+                            if (_watchingState)
+                                PollProperty(new IdentifierExpression("msaa_state"), PollState, 200);
+                        }
+                        else
+                            EndPollProperty(new IdentifierExpression("msaa_state"));
                     }
                     break;
             }
