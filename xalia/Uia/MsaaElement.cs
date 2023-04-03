@@ -27,6 +27,10 @@ namespace Xalia.Uia
                 "role", "msaa_role",
                 "control_type", "msaa_role",
                 "state", "msaa_state",
+                "x", "msaa_x",
+                "y", "msaa_y",
+                "width", "msaa_width",
+                "height", "msaa_height",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -158,6 +162,13 @@ namespace Xalia.Uia
         private bool _watchingChildren;
         private bool _childrenKnown;
 
+        private int _locationX;
+        private int _locationY;
+        private int _locationWidth;
+        private int _locationHeight;
+        private bool _locationKnown;
+        private bool _fetchingLocation;
+
         internal static string[] msaa_state_names =
         {
             "unavailable",
@@ -254,6 +265,26 @@ namespace Xalia.Uia
                     if (_stateKnown)
                         return new MsaaState(_state);
                     return UiDomUndefined.Instance;
+                case "msaa_x":
+                    depends_on.Add((this, new IdentifierExpression("msaa_location")));
+                    if (_locationKnown)
+                        return new UiDomInt(_locationX);
+                    return UiDomUndefined.Instance;
+                case "msaa_y":
+                    depends_on.Add((this, new IdentifierExpression("msaa_location")));
+                    if (_locationKnown)
+                        return new UiDomInt(_locationY);
+                    return UiDomUndefined.Instance;
+                case "msaa_width":
+                    depends_on.Add((this, new IdentifierExpression("msaa_location")));
+                    if (_locationKnown)
+                        return new UiDomInt(_locationWidth);
+                    return UiDomUndefined.Instance;
+                case "msaa_height":
+                    depends_on.Add((this, new IdentifierExpression("msaa_location")));
+                    if (_locationKnown)
+                        return new UiDomInt(_locationHeight);
+                    return UiDomUndefined.Instance;
             }
 
             value = base.EvaluateIdentifierCore(id, root, depends_on);
@@ -308,6 +339,13 @@ namespace Xalia.Uia
                 Utils.DebugWriteLine($"  msaa_role: {MsaaRoleToValue(_role)}");
             if (_stateKnown)
                 Utils.DebugWriteLine($"  msaa_state: {new MsaaState(_state)}");
+            if (_locationKnown)
+            {
+                Utils.DebugWriteLine($"  msaa_x: {_locationX}");
+                Utils.DebugWriteLine($"  msaa_y: {_locationY}");
+                Utils.DebugWriteLine($"  msaa_width: {_locationWidth}");
+                Utils.DebugWriteLine($"  msaa_height: {_locationHeight}");
+            }
             base.DumpProperties();
         }
 
@@ -345,6 +383,15 @@ namespace Xalia.Uia
                             if (_pollingState)
                             {
                                 PollProperty(expression, PollState, 200);
+                            }
+                            break;
+                        }
+                    case "msaa_location":
+                        {
+                            if (!_locationKnown && !_fetchingLocation)
+                            {
+                                _fetchingLocation = true;
+                                Utils.RunTask(FetchLocation());
                             }
                             break;
                         }
@@ -441,6 +488,35 @@ namespace Xalia.Uia
                     Utils.DebugWriteLine($"{this}.msaa_role: {MsaaRoleToValue(_role)}");
                 PropertyChanged("msaa_role");
             }
+        }
+
+        private async Task FetchLocation()
+        {
+            (int, int, int, int) location;
+            try
+            {
+                location = await Root.CommandThread.OnBackgroundThread(() =>
+                {
+                    ElementWrapper.Accessible.accLocation(out var x, out var y, out var width, out var height,
+                        ElementWrapper.ChildId);
+                    return (x, y, width, height);
+                }, ElementWrapper.Pid);
+            }
+            catch (Exception e)
+            {
+                if (!UiaElement.IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            _locationKnown = true;
+            _locationX = location.Item1;
+            _locationY = location.Item2;
+            _locationWidth = location.Item3;
+            _locationHeight = location.Item4;
+            if (MatchesDebugCondition())
+                Utils.DebugWriteLine($"{this}.msaa_location: {location}");
+            PropertyChanged("msaa_location");
         }
 
         internal void MsaaStateChange()

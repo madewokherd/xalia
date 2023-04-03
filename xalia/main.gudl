@@ -999,7 +999,7 @@ if (targetable or is_current_view) {
         target_height: spi_abs_height;
     }
 
-    if (is_uia_element or is_win32_element or is_win32_subelement) {
+    if (is_uia_element or is_msaa_element or is_win32_element or is_win32_subelement) {
         target_x: x + (offset_target_x or 0);
         target_y: y + (offset_target_y or 0);
         target_width: width;
