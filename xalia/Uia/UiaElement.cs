@@ -19,7 +19,9 @@ namespace Xalia.Uia
 {
     public class UiaElement : UiDomElement
     {
-        static string[] tracked_properties = { "recurse", "poll_children" };
+        static string[] tracked_properties = { "recurse", "poll_children",
+            "win32_use_element", "win32_use_trackbar", "win32_use_tabcontrol", "win32_use_listview",
+        };
 
         public UiaElement(UiaElementWrapper wrapper) : base(wrapper.Connection)
         {
@@ -464,89 +466,48 @@ namespace Xalia.Uia
                         }
                     }
                     break;
+                case "win32_use_element":
+                    UseElementPropertyChanged(new_value,
+                        // have to do slow check because Win32Element has subclasses
+                        (UiDomElement e) => { return e.GetType() == typeof(Win32Element); },
+                        () => { return new Win32Element(ElementWrapper.Hwnd, Root); });
+                    break;
+                case "win32_use_trackbar":
+                    UseElementPropertyChanged(new_value,
+                        (UiDomElement e) => { return e is Win32Trackbar; },
+                        () => { return new Win32Trackbar(ElementWrapper.Hwnd, Root); });
+                    break;
+                case "win32_use_tabcontrol":
+                    UseElementPropertyChanged(new_value,
+                        (UiDomElement e) => { return e is Win32TabControl; },
+                        () => { return new Win32TabControl(ElementWrapper.Hwnd, Root); });
+                    break;
+                case "win32_use_listview":
+                    UseElementPropertyChanged(new_value,
+                        (UiDomElement e) => { return e is Win32ListView; },
+                        () => { return new Win32ListView(ElementWrapper.Hwnd, Root); });
+                    break;
             }
             base.TrackedPropertyChanged(name, new_value);
         }
 
+        private void UseElementPropertyChanged(UiDomValue new_value, Predicate<UiDomElement> predicate, Func<Win32Element> ctor)
+        {
+            bool new_use_element = new_value.ToBool();
+            int idx = Children.FindIndex(predicate);
+            bool old_use_element = (idx != -1);
+
+            if (new_use_element == old_use_element)
+                return;
+
+            if (new_use_element)
+                AddChild(Children.Count, ctor());
+            else
+                RemoveChild(idx);
+        }
+
         protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
-            if (ElementWrapper.Hwnd != IntPtr.Zero)
-            {
-                int win32_element = -1, win32_listview = -1, win32_tabcontrol = -1, win32_trackbar = -1;
-
-                for (int i = 0; i < Children.Count; i++)
-                {
-                    if (Children[i] is Win32Trackbar)
-                        win32_trackbar = i;
-                    else if (Children[i] is Win32ListView)
-                        win32_listview = i;
-                    else if (Children[i] is Win32TabControl)
-                        win32_tabcontrol = i;
-                    else if (Children[i] is Win32Element)
-                        win32_element = i;
-                }
-
-                if (all_declarations.TryGetValue("win32_use_element", out var use_element) && use_element.Item2.ToBool())
-                {
-                    if (win32_element == -1)
-                    {
-                        AddChild(Children.Count, new Win32Element(ElementWrapper.Hwnd, Root));
-                    }
-                }
-                else
-                {
-                    if (win32_element != -1)
-                    {
-                        RemoveChild(win32_element);
-                    }
-                }
-
-                if (all_declarations.TryGetValue("win32_use_tabcontrol", out var use_tabcontrol) && use_tabcontrol.Item2.ToBool())
-                {
-                    if (win32_tabcontrol == -1)
-                    {
-                        AddChild(Children.Count, new Win32TabControl(ElementWrapper.Hwnd, Root));
-                    }
-                }
-                else
-                {
-                    if (win32_tabcontrol != -1)
-                    {
-                        RemoveChild(win32_tabcontrol);
-                    }
-                }
-
-                if (all_declarations.TryGetValue("win32_use_trackbar", out var use_trackbar) && use_trackbar.Item2.ToBool())
-                {
-                    if (win32_trackbar == -1)
-                    {
-                        AddChild(Children.Count, new Win32Trackbar(ElementWrapper.Hwnd, Root));
-                    }
-                }
-                else
-                {
-                    if (win32_trackbar != -1)
-                    {
-                        RemoveChild(win32_trackbar);
-                    }
-                }
-
-                if (all_declarations.TryGetValue("win32_use_listview", out var use_listview) && use_listview.Item2.ToBool())
-                {
-                    if (win32_listview == -1)
-                    {
-                        AddChild(Children.Count, new Win32ListView(ElementWrapper.Hwnd, Root));
-                    }
-                }
-                else
-                {
-                    if (win32_listview != -1)
-                    {
-                        RemoveChild(win32_listview);
-                    }
-                }
-            }
-
             foreach (var kvp in all_declarations)
             {
                 if (!kvp.Key.StartsWith("poll_") || !kvp.Value.Item2.ToBool())
