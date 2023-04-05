@@ -20,7 +20,6 @@ namespace Xalia.AtSpi
         private bool watching_children;
         private bool children_known;
         private bool polling_children;
-        private CancellationTokenSource children_poll_token;
         private IDisposable children_changed_event;
         private IDisposable property_change_event;
         private IDisposable state_changed_event;
@@ -233,6 +232,8 @@ namespace Xalia.AtSpi
         public bool MinimumIncrementKnown { get; private set; }
         private bool fetching_minimum_increment;
 
+        static string[] tracked_properties = { "recurse", "poll_children" };
+
         static AtSpiElement()
         {
             name_to_role = new Dictionary<string, int>();
@@ -274,6 +275,7 @@ namespace Xalia.AtSpi
             value_iface = connection.connection.CreateProxy<IValue>(service, path);
             object_events = connection.connection.CreateProxy<IObject>(service, path);
             window_events = connection.connection.CreateProxy<IWindow>(service, path);
+            RegisterTrackedProperties(tracked_properties);
         }
 
         internal AtSpiElement(AtSpiConnection connection, string service, ObjectPath path) :
@@ -404,11 +406,6 @@ namespace Xalia.AtSpi
                     maximum_value_refresh_token = null;
                 }
                 watching_maximum_value = false;
-                if (children_poll_token != null)
-                {
-                    children_poll_token.Cancel();
-                    children_poll_token = null;
-                }
                 polling_children = false;
             }
             base.SetAlive(value);
@@ -528,12 +525,9 @@ namespace Xalia.AtSpi
 
         private async Task PollChildren()
         {
-            if (!polling_children)
-                return;
-
             var children = await GetChildList();
 
-            if (!polling_children)
+            if (!watching_children || !polling_children)
                 return;
 
             // First remove any existing children that are missing or out of order
@@ -567,22 +561,8 @@ namespace Xalia.AtSpi
             }
 
             children_known = true;
-
-            children_poll_token = new CancellationTokenSource();
-
-            try
-            {
-                await Task.Delay(2000, children_poll_token.Token);
-            }
-            catch (TaskCanceledException)
-            {
-                children_poll_token = null;
-                return;
-            }
-
-            children_poll_token = null;
-            Utils.RunTask(PollChildren());
         }
+
         internal void WatchChildren()
         {
             if (watching_children)
@@ -592,6 +572,8 @@ namespace Xalia.AtSpi
             watching_children = true;
             children_known = false;
             Utils.RunTask(WatchChildrenTask());
+            if (polling_children)
+                PollProperty(new IdentifierExpression("children"), PollChildren, 2000);
         }
 
         internal void UnwatchChildren()
@@ -610,6 +592,8 @@ namespace Xalia.AtSpi
             {
                 RemoveChild(i);
             }
+            if (polling_children)
+                EndPollProperty(new IdentifierExpression("children"));
         }
 
         private void OnChildrenChanged((string, uint, uint, object) obj)
@@ -655,36 +639,32 @@ namespace Xalia.AtSpi
             }
         }
 
-        protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
+        protected override void TrackedPropertyChanged(string name, UiDomValue new_value)
         {
-            if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.Item2.ToBool())
-                WatchChildren();
-            else
-                UnwatchChildren();
-
-            if (watching_children &&
-                all_declarations.TryGetValue("poll_children", out var poll_children) && poll_children.Item2.ToBool())
+            switch (name)
             {
-                if (!polling_children)
-                {
-                    polling_children = true;
-                    Utils.RunTask(PollChildren());
-                }
-            }
-            else
-            {
-                if (polling_children)
-                {
-                    polling_children = false;
-                    if (children_poll_token != null)
+                case "recurse":
+                    if (new_value.ToBool())
+                        WatchChildren();
+                    else
+                        UnwatchChildren();
+                    break;
+                case "poll_children":
+                    if (polling_children != new_value.ToBool())
                     {
-                        children_poll_token.Cancel();
-                        children_poll_token = null;
+                        polling_children = new_value.ToBool();
+                        if (watching_children)
+                        {
+                            if (polling_children)
+                                PollProperty(new IdentifierExpression("children"), PollChildren, 2000);
+                            else
+                                EndPollProperty(new IdentifierExpression("children"));
+                        }
                     }
-                }
+                    break;
             }
 
-            base.DeclarationsChanged(all_declarations, dependencies);
+            base.TrackedPropertyChanged(name, new_value);
         }
 
         internal void StatesChanged(HashSet<string> changed_states)
