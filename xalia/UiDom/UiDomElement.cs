@@ -520,7 +520,7 @@ namespace Xalia.UiDom
             }
         }
 
-        protected virtual void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations,
+        private void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations,
             HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
             HashSet<GudlExpression> changed = new HashSet<GudlExpression>();
