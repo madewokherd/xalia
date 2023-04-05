@@ -30,6 +30,7 @@ namespace Xalia.Uia
         internal Dictionary<string, PropertyId> names_to_property = new Dictionary<string, PropertyId>();
         internal Dictionary<PropertyId, string> properties_to_name = new Dictionary<PropertyId, string>();
         internal Dictionary<uint, List<PropertyId>> msaa_event_properties = new Dictionary<uint, List<PropertyId>>();
+        private string[] property_poll_names;
 
         bool polling_focus;
         CancellationTokenSource focus_poll_token;
@@ -474,6 +475,23 @@ namespace Xalia.Uia
                     msaa_event_properties[msaa_change_event] = propids;
                 }
                 propids.Add(propid);
+            }
+        }
+
+        internal string[] PropertyPollNames
+        {
+            get
+            {
+                if (property_poll_names is null)
+                {
+                    List<string> result = new List<string>();
+                    foreach (var propname in names_to_property.Keys)
+                    {
+                        result.Add("poll_" + propname);
+                    }
+                    property_poll_names = result.ToArray();
+                }
+                return property_poll_names;
             }
         }
 

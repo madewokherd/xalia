@@ -27,6 +27,7 @@ namespace Xalia.Uia
         {
             ElementWrapper = wrapper;
             RegisterTrackedProperties(tracked_properties);
+            RegisterTrackedProperties(Root.PropertyPollNames);
         }
 
         public UiaElementWrapper ElementWrapper { get; }
@@ -488,6 +489,28 @@ namespace Xalia.Uia
                         () => { return new Win32ListView(ElementWrapper.Hwnd, Root); });
                     break;
             }
+            if (name.StartsWith("poll_") && Root.names_to_property.TryGetValue(name.Substring(5), out var propid))
+            {
+                var prop_name = Root.properties_to_name[propid];
+
+                bool new_polling = new_value.ToBool();
+                bool old_polling = polling_property.TryGetValue(propid, out bool polling) && polling;
+
+                if (new_polling != old_polling)
+                {
+                    polling_property[propid] = new_polling;
+                    if (new_polling)
+                        Utils.RunTask(PollProperty(prop_name, propid));
+                    else
+                    {
+                        if (property_poll_token.TryGetValue(propid, out var token) && token != null)
+                        {
+                            token.Cancel();
+                            property_poll_token[propid] = null;
+                        }
+                    }
+                }
+            }
             base.TrackedPropertyChanged(name, new_value);
         }
 
@@ -504,51 +527,6 @@ namespace Xalia.Uia
                 AddChild(Children.Count, ctor());
             else
                 RemoveChild(idx);
-        }
-
-        protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
-        {
-            foreach (var kvp in all_declarations)
-            {
-                if (!kvp.Key.StartsWith("poll_") || !kvp.Value.Item2.ToBool())
-                    continue;
-
-                var prop_name = kvp.Key.Substring(5);
-
-                if (!Root.names_to_property.TryGetValue(prop_name, out var propid))
-                    continue;
-
-                if (!polling_property.TryGetValue(propid, out bool polling) || !polling)
-                {
-                    polling_property[propid] = true;
-                    Utils.RunTask(PollProperty(prop_name, propid));
-                }
-            }
-
-            // Search for properties to stop polling
-            foreach (var kvp in new List<KeyValuePair<PropertyId, bool>>(polling_property))
-            {
-                var propid = kvp.Key;
-                string prop_name = Root.properties_to_name[propid];
-
-                if (!kvp.Value)
-                    // not being currently polled
-                    continue;
-
-                if (all_declarations.TryGetValue("poll_"+prop_name, out var polling) &&
-                    polling.Item2.ToBool())
-                    // still being polled
-                    continue;
-
-                polling_property[propid] = false;
-                if (property_poll_token.TryGetValue(propid, out var token) && token != null)
-                {
-                    token.Cancel();
-                    property_poll_token[propid] = null;
-                }
-            }
-
-            base.DeclarationsChanged(all_declarations, dependencies);
         }
 
         private async Task FetchPropertyAsync(string name, PropertyId propid)
