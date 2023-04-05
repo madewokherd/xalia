@@ -38,11 +38,14 @@ namespace Xalia.Uia
         ConcurrentDictionary<string, ConcurrentDictionary<AccessibilityRole, ConcurrentBag<(string, AutomationElement)>>> no_id_elements =
             new ConcurrentDictionary<string, ConcurrentDictionary<AccessibilityRole, ConcurrentBag<(string, AutomationElement)>>>();
 
+        private static string[] tracked_properties = { "poll_focus" };
+
         public UiaConnection(bool use_uia3, GudlStatement[] rules, IUiDomApplication app) : base(rules, app)
         {
             MainContext = SynchronizationContext.Current;
             CommandThread = new UiaCommandThread();
             Utils.RunTask(InitUia(use_uia3));
+            RegisterTrackedProperties(tracked_properties);
         }
 
         private async Task InitUia(bool use_uia3)
@@ -549,15 +552,12 @@ namespace Xalia.Uia
             Utils.RunTask(PollFocusedElement());
         }
 
-        protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
+        protected override void TrackedPropertyChanged(string name, UiDomValue new_value)
         {
-            bool poll_focus = all_declarations.TryGetValue("poll_focus", out var ui_dom_poll_focus) && ui_dom_poll_focus.Item2.ToBool();
-
-            if (poll_focus != polling_focus)
+            if (name == "poll_focus" && new_value.ToBool() != polling_focus)
             {
-                polling_focus = poll_focus;
-
-                if (poll_focus)
+                polling_focus = new_value.ToBool();
+                if (polling_focus)
                 {
                     Utils.RunTask(PollFocusedElement());
                 }
@@ -567,8 +567,7 @@ namespace Xalia.Uia
                     focus_poll_token = null;
                 }
             }
-
-            base.DeclarationsChanged(all_declarations, dependencies);
+            base.TrackedPropertyChanged(name, new_value);
         }
 
         private void OnWindowOpenedBackground(AutomationElement arg1, EventId arg2)
