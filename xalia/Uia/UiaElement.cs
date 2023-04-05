@@ -19,9 +19,12 @@ namespace Xalia.Uia
 {
     public class UiaElement : UiDomElement
     {
+        static string[] tracked_properties = { "recurse", "poll_children" };
+
         public UiaElement(UiaElementWrapper wrapper) : base(wrapper.Connection)
         {
             ElementWrapper = wrapper;
+            RegisterTrackedProperties(tracked_properties);
         }
 
         public UiaElementWrapper ElementWrapper { get; }
@@ -62,7 +65,6 @@ namespace Xalia.Uia
         bool inflight_structure_changed;
 
         bool polling_children;
-        CancellationTokenSource children_poll_token;
 
         PatternId[] supported_patterns;
         bool fetching_supported_patterns;
@@ -395,6 +397,8 @@ namespace Xalia.Uia
                 Utils.DebugWriteLine($"WatchChildren for {this}");
             watching_children = true;
             Utils.RunTask(RefreshChildren());
+            if (polling_children)
+                PollProperty(new IdentifierExpression("children"), RefreshChildren, 2000);
         }
 
         internal void UnwatchChildren()
@@ -404,16 +408,13 @@ namespace Xalia.Uia
             if (MatchesDebugCondition())
                 Utils.DebugWriteLine($"UnwatchChildren for {this}");
             watching_children = false;
-            if (children_poll_token != null)
-            {
-                children_poll_token.Cancel();
-                children_poll_token = null;
-            }
             for (int i = Children.Count - 1; i >= 0; i--)
             {
                 if (Children[i] is UiaElement)
                     RemoveChild(i);
             }
+            if (polling_children)
+                EndPollProperty(new IdentifierExpression("children"));
         }
 
         private async Task PollProperty(string name, PropertyId propid)
@@ -440,36 +441,35 @@ namespace Xalia.Uia
             Utils.RunTask(PollProperty(name, propid));
         }
 
-        private async Task PollChildren()
+        protected override void TrackedPropertyChanged(string name, UiDomValue new_value)
         {
-            if (!polling_children)
-                return;
-
-            await RefreshChildren();
-
-            children_poll_token = new CancellationTokenSource();
-
-            try
+            switch (name)
             {
-                await Task.Delay(2000, children_poll_token.Token);
+                case "recurse":
+                    if (new_value.ToBool())
+                        WatchChildren();
+                    else
+                        UnwatchChildren();
+                    break;
+                case "poll_children":
+                    if (new_value.ToBool() != polling_children)
+                    {
+                        polling_children = new_value.ToBool();
+                        if (watching_children)
+                        {
+                            if (polling_children)
+                                PollProperty(new IdentifierExpression("poll_children"), RefreshChildren, 2000);
+                            else
+                                EndPollProperty(new IdentifierExpression("poll_children"));
+                        }
+                    }
+                    break;
             }
-            catch (TaskCanceledException)
-            {
-                children_poll_token = null;
-                return;
-            }
-
-            children_poll_token = null;
-            Utils.RunTask(PollChildren());
+            base.TrackedPropertyChanged(name, new_value);
         }
 
         protected override void DeclarationsChanged(Dictionary<string, (GudlDeclaration, UiDomValue)> all_declarations, HashSet<(UiDomElement, GudlExpression)> dependencies)
         {
-            if (all_declarations.TryGetValue("recurse", out var recurse) && recurse.Item2.ToBool())
-                WatchChildren();
-            else
-                UnwatchChildren();
-
             if (ElementWrapper.Hwnd != IntPtr.Zero)
             {
                 int win32_element = -1, win32_listview = -1, win32_tabcontrol = -1, win32_trackbar = -1;
@@ -543,27 +543,6 @@ namespace Xalia.Uia
                     if (win32_listview != -1)
                     {
                         RemoveChild(win32_listview);
-                    }
-                }
-            }
-
-            if (watching_children && all_declarations.TryGetValue("poll_children", out var poll_children) && poll_children.Item2.ToBool())
-            {
-                if (!polling_children)
-                {
-                    polling_children = true;
-                    Utils.RunTask(PollChildren());
-                }
-            }
-            else
-            {
-                if (polling_children)
-                {
-                    polling_children = false;
-                    if (children_poll_token != null)
-                    {
-                        children_poll_token.Cancel();
-                        children_poll_token = null;
                     }
                 }
             }
@@ -1003,11 +982,6 @@ namespace Xalia.Uia
                 property_value.Clear();
                 property_raw_value.Clear();
                 Root.elements_by_id.Remove(ElementIdentifier);
-                if (children_poll_token != null)
-                {
-                    children_poll_token.Cancel();
-                    children_poll_token = null;
-                }
                 polling_children = false;
                 while (property_poll_token.Count != 0)
                 {
