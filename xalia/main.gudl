@@ -290,6 +290,37 @@ if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherW
     }
 }
 
+list (process_name == "launcher" and class_name == "HTMLAYOUT-POPUP") {
+    msaa_use_element: true;
+
+    child {
+        // Dropdown from combo box
+        in_menu_navigation: true;
+
+        // We have to select an item by hovering/clicking. Up and Down keys work, but
+        // Enter starts the game, and we can't get immediate updates of the selection.
+        if (manual_selected_child != undefined) {
+            selected_child: manual_selected_child;
+        }
+        selected_child: child_matches(selected).index_in_parent;
+
+        if (selected_child + 1 < child_count) {
+            menu_down_action: child_at_index(selected_child + 1).send_hover + assign("manual_selected_child", selected_child + 1);
+        }
+
+        if (selected_child - 1 >= 0) {
+            menu_up_action: child_at_index(selected_child - 1).send_hover + assign("manual_selected_child", selected_child - 1);
+        }
+
+        menu_back_action: send_key.esc;
+        menu_close_action: send_key.esc;
+        menu_select_action: child_at_index(selected_child).send_click;
+
+        recurse: true;
+        msaa_navigate_children: true;
+    }
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
