@@ -126,79 +126,8 @@ namespace Xalia.Uia
             "window",
         };
 
-        internal static readonly string[] msaa_role_names =
-        {
-            "unknown",
-            "title_bar",
-            "menu_bar",
-            "scroll_bar",
-            "grip",
-            "sound",
-            "cursor",
-            "caret",
-            "alert",
-            "window",
-            "client",
-            "menu_popup",
-            "menu_item",
-            "tool_tip",
-            "application",
-            "document",
-            "pane",
-            "chart",
-            "dialog",
-            "border",
-            "grouping",
-            "separator",
-            "tool_bar",
-            "status_bar",
-            "table",
-            "column_header",
-            "row_header",
-            "column",
-            "row",
-            "cell",
-            "link",
-            "help_balloon",
-            "character",
-            "list",
-            "list_item",
-            "outline",
-            "outline_item",
-            "page_tab",
-            "property_page",
-            "indicator",
-            "graphic",
-            "static_text",
-            "text",
-            "push_button",
-            "check_button",
-            "radio_button",
-            "combo_box",
-            "drop_list",
-            "progress_bar",
-            "dial",
-            "hotkey_field",
-            "slider",
-            "spin_button",
-            "diagram",
-            "animation",
-            "equation",
-            "button_dropdown",
-            "button_menu",
-            "button_dropdown_grid",
-            "white_space",
-            "page_tab_list",
-            "clock",
-            "split_button",
-            "ip_address",
-            "outline_button",
-        };
-
         private static readonly Dictionary<string, ControlType> name_to_control_type;
         private static readonly UiDomEnum[] control_type_to_enum;
-
-        private static readonly UiDomEnum[] msaa_role_to_enum;
 
         private static readonly Dictionary<string, string> property_aliases;
 
@@ -228,17 +157,6 @@ namespace Xalia.Uia
                 control_type_to_enum[i] = new UiDomEnum(names);
                 foreach (string rolename in names)
                     name_to_control_type[rolename] = (ControlType)i;
-            }
-            msaa_role_to_enum = new UiDomEnum[msaa_role_names.Length];
-            for (int i = 0; i < msaa_role_names.Length; i++)
-            {
-                string name = msaa_role_names[i];
-                string[] names;
-                if (name.Contains("_"))
-                    names = new[] { name, name.Replace("_", "") };
-                else
-                    names = new[] { name };
-                msaa_role_to_enum[i] = new UiDomEnum(names);
             }
             string[] aliases = {
                 "role", "uia_control_type",
@@ -628,7 +546,7 @@ namespace Xalia.Uia
             }
             else if (value is AccessibilityRole role)
             {
-                new_value = msaa_role_to_enum[(int)role];
+                new_value = MsaaElement.MsaaRoleToValue((int)role);
             }
             else if (value is bool b)
             {

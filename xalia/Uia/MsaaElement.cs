@@ -27,7 +27,89 @@ namespace Xalia.Uia
             {
                 property_aliases[aliases[i]] = aliases[i + 1];
             }
+            msaa_role_to_enum = new UiDomEnum[msaa_role_names.Length];
+            for (int i = 0; i < msaa_role_names.Length; i++)
+            {
+                string name = msaa_role_names[i];
+                string[] names;
+                if (name.Contains("_"))
+                    names = new[] { name, name.Replace("_", "") };
+                else
+                    names = new[] { name };
+                msaa_role_to_enum[i] = new UiDomEnum(names);
+            }
         }
+
+        internal static readonly string[] msaa_role_names =
+        {
+            "unknown",
+            "title_bar",
+            "menu_bar",
+            "scroll_bar",
+            "grip",
+            "sound",
+            "cursor",
+            "caret",
+            "alert",
+            "window",
+            "client",
+            "menu_popup",
+            "menu_item",
+            "tool_tip",
+            "application",
+            "document",
+            "pane",
+            "chart",
+            "dialog",
+            "border",
+            "grouping",
+            "separator",
+            "tool_bar",
+            "status_bar",
+            "table",
+            "column_header",
+            "row_header",
+            "column",
+            "row",
+            "cell",
+            "link",
+            "help_balloon",
+            "character",
+            "list",
+            "list_item",
+            "outline",
+            "outline_item",
+            "page_tab",
+            "property_page",
+            "indicator",
+            "graphic",
+            "static_text",
+            "text",
+            "push_button",
+            "check_button",
+            "radio_button",
+            "combo_box",
+            "drop_list",
+            "progress_bar",
+            "dial",
+            "hotkey_field",
+            "slider",
+            "spin_button",
+            "diagram",
+            "animation",
+            "equation",
+            "button_dropdown",
+            "button_menu",
+            "button_dropdown_grid",
+            "white_space",
+            "page_tab_list",
+            "clock",
+            "split_button",
+            "ip_address",
+            "outline_button",
+        };
+
+        internal static readonly UiDomEnum[] msaa_role_to_enum;
         
         public MsaaElement(MsaaElementWrapper wrapper, UiaConnection root) : base(root)
         {
@@ -89,6 +171,14 @@ namespace Xalia.Uia
             if (!(_processName is null))
                 Utils.DebugWriteLine($"  msaa_process_name: {_processName}");
             base.DumpProperties();
+        }
+
+        internal static UiDomValue MsaaRoleToValue(int role)
+        {
+            if (role >= 0 && role < msaa_role_to_enum.Length)
+                return msaa_role_to_enum[role];
+            else
+                return new UiDomInt(role);
         }
     }
 }
