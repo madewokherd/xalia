@@ -745,5 +745,20 @@ namespace Xalia.Uia
             RemoveAllChildren();
             _childrenKnown = false;
         }
+
+        public override async Task<(bool, int, int)> GetClickablePoint()
+        {
+            var result = await base.GetClickablePoint();
+
+            if (!result.Item1)
+            {
+                if (!_locationKnown)
+                    await FetchLocation();
+                if (_locationKnown)
+                    return (true, _locationX + _locationWidth / 2, _locationY + _locationHeight / 2);
+            }
+
+            return result;
+        }
     }
 }
