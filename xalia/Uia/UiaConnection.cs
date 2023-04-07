@@ -377,6 +377,35 @@ namespace Xalia.Uia
                 }
             }, pid);
         }
+
+        internal AutomationElement AutomationElementFromEventBackground(IntPtr hwnd, int objectId, int childId)
+        {
+            try
+            {
+                int hr = AccessibleObjectFromEvent(hwnd, objectId, childId, out var acc, out var res_childid);
+
+                Marshal.ThrowExceptionForHR(hr);
+
+                var au3 = (FlaUI.UIA3.UIA3Automation)Automation;
+
+                var native = au3.NativeAutomation.ElementFromIAccessible(acc, (int)res_childid);
+
+                return au3.WrapNativeElement(native);
+            }
+            catch (COMException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (ElementNotAvailableException)
+            {
+                return null;
+            }
+        }
+
         internal Task<UiaElementWrapper> WrapperFromHwnd(IntPtr hwnd, int objectId, int childId)
         {
             if (objectId == OBJID_WINDOW || objectId == OBJID_CLIENT)
@@ -400,18 +429,10 @@ namespace Xalia.Uia
 
             return CommandThread.OnBackgroundThread(() =>
             {
+                var element = AutomationElementFromEventBackground(hwnd, objectId, childId);
+
                 try
                 {
-                    int hr = AccessibleObjectFromEvent(hwnd, objectId, childId, out var acc, out var res_childid);
-
-                    Marshal.ThrowExceptionForHR(hr);
-
-                    var au3 = (FlaUI.UIA3.UIA3Automation)Automation;
-
-                    var native = au3.NativeAutomation.ElementFromIAccessible(acc, (int)res_childid);
-
-                    var element = au3.WrapNativeElement(native);
-
                     return WrapElement(element);
                 }
                 catch (COMException)
@@ -638,34 +659,38 @@ namespace Xalia.Uia
 
         private async Task TranslateMsaaCreate(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
         {
-            // Can't retrieve the actual IAccessible for this event, get the parent instead.
-
-            if (idChild != CHILDID_SELF)
-                idChild = CHILDID_SELF;
-            else if (idObject != OBJID_WINDOW && idObject != OBJID_CLIENT)
-                idObject = OBJID_WINDOW;
-            else
+            if (idChild == CHILDID_SELF &&
+                (idObject == OBJID_WINDOW || idObject == OBJID_CLIENT))
             {
-                var parent = GetAncestor(hwnd, GA_PARENT);
-                if (parent == GetDesktopWindow())
-                    hwnd = GetWindow(hwnd, GW_OWNER);
-                else
-                    hwnd = parent;
-                idObject = OBJID_CLIENT;
+                // Parent may be effectively the desktop window.
+                UpdateChildren();
             }
 
-            var wrapper = await WrapperFromHwnd(hwnd, idObject, idChild);
+            GetWindowThreadProcessId(hwnd, out int pid);
+
+            var wrapper = await CommandThread.OnBackgroundThread(() =>
+            {
+                var child_element = AutomationElementFromEventBackground(hwnd, idObject, idChild);
+
+                if (child_element == null)
+                    return UiaElementWrapper.InvalidElement;
+
+                try
+                {
+                    var parent_element = child_element.Parent;
+
+                    return WrapElement(parent_element);
+                }
+                catch (Exception e)
+                {
+                    if (!UiaElement.IsExpectedException(e))
+                        throw;
+                    return UiaElementWrapper.InvalidElement;
+                }
+            }, pid);
 
             if (!wrapper.IsValid)
-            {
-                if (idChild == CHILDID_SELF &&
-                    (idObject == OBJID_WINDOW || idObject == OBJID_CLIENT))
-                {
-                    // Parent may be effectively the desktop window.
-                    UpdateChildren();
-                }
                 return;
-            }
 
             var element = LookupAutomationElement(wrapper);
 
@@ -675,36 +700,19 @@ namespace Xalia.Uia
 
         private async Task TranslateMsaaDestroy(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
         {
-            // Can't retrieve the actual IAccessible for this event, get the parent instead.
-
-            if (idChild != CHILDID_SELF)
-                idChild = CHILDID_SELF;
-            else if (idObject != OBJID_WINDOW && idObject != OBJID_CLIENT)
-                idObject = OBJID_WINDOW;
-            else
+            if (idChild == CHILDID_SELF &&
+                (idObject == OBJID_WINDOW || idObject == OBJID_CLIENT))
             {
-                var parent = GetAncestor(hwnd, GA_PARENT);
-                if (parent == GetDesktopWindow())
-                    hwnd = GetWindow(hwnd, GW_OWNER);
-                else
-                    hwnd = parent;
-                idObject = OBJID_CLIENT;
+                // Parent may be effectively the desktop window.
+                UpdateChildren();
             }
 
             var wrapper = await WrapperFromHwnd(hwnd, idObject, idChild);
 
             if (!wrapper.IsValid)
-            {
-                if (idChild == CHILDID_SELF &&
-                    (idObject == OBJID_WINDOW || idObject == OBJID_CLIENT))
-                {
-                    // Parent may be effectively the desktop window.
-                    UpdateChildren();
-                }
                 return;
-            }
 
-            var element = LookupAutomationElement(wrapper);
+            var element = LookupAutomationElement(wrapper)?.Parent as UiaElement;
 
             if (element != null)
                 element.UpdateChildren();
