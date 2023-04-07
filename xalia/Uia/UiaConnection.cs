@@ -622,42 +622,96 @@ namespace Xalia.Uia
             switch (eventId)
             {
                 case EVENT_SYSTEM_FOREGROUND:
-                case EVENT_OBJECT_CREATE:
-                case EVENT_OBJECT_DESTROY:
                 case EVENT_OBJECT_STATECHANGE:
                 case EVENT_OBJECT_LOCATIONCHANGE:
                 case EVENT_OBJECT_NAMECHANGE:
-                    TranslateMsaaEvent(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime);
+                    Utils.RunTask(TranslateMsaaEvent(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime));
+                    break;
+                case EVENT_OBJECT_CREATE:
+                    Utils.RunTask(TranslateMsaaCreate(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime));
+                    break;
+                case EVENT_OBJECT_DESTROY:
+                    Utils.RunTask(TranslateMsaaDestroy(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime));
                     break;
             }
         }
 
-        private void TranslateMsaaEvent(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
+        private async Task TranslateMsaaCreate(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
         {
-            Utils.RunTask(TranslateMsaaEventTask(eventId, hwnd, idObject, idChild, idEventThread, dwmsEventTime));
-        }
+            // Can't retrieve the actual IAccessible for this event, get the parent instead.
 
-        private async Task TranslateMsaaEventTask(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
-        {
-            if (eventId == EVENT_OBJECT_CREATE || eventId == EVENT_OBJECT_DESTROY)
+            if (idChild != CHILDID_SELF)
+                idChild = CHILDID_SELF;
+            else if (idObject != OBJID_WINDOW && idObject != OBJID_CLIENT)
+                idObject = OBJID_WINDOW;
+            else
             {
-                // Can't retrieve the actual IAccessible for this event, get the parent instead.
-
-                if (idChild != CHILDID_SELF)
-                    idChild = CHILDID_SELF;
-                else if (idObject != OBJID_WINDOW && idObject != OBJID_CLIENT)
-                    idObject = OBJID_WINDOW;
+                var parent = GetAncestor(hwnd, GA_PARENT);
+                if (parent == GetDesktopWindow())
+                    hwnd = GetWindow(hwnd, GW_OWNER);
                 else
-                {
-                    var parent = GetAncestor(hwnd, GA_PARENT);
-                    if (parent == GetDesktopWindow())
-                        hwnd = GetWindow(hwnd, GW_OWNER);
-                    else
-                        hwnd = parent;
-                    idObject = OBJID_CLIENT;
-                }
+                    hwnd = parent;
+                idObject = OBJID_CLIENT;
             }
 
+            var wrapper = await WrapperFromHwnd(hwnd, idObject, idChild);
+
+            if (!wrapper.IsValid)
+            {
+                if (idChild == CHILDID_SELF &&
+                    (idObject == OBJID_WINDOW || idObject == OBJID_CLIENT))
+                {
+                    // Parent may be effectively the desktop window.
+                    UpdateChildren();
+                }
+                return;
+            }
+
+            var element = LookupAutomationElement(wrapper);
+
+            if (element != null)
+                element.UpdateChildren();
+        }
+
+        private async Task TranslateMsaaDestroy(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
+        {
+            // Can't retrieve the actual IAccessible for this event, get the parent instead.
+
+            if (idChild != CHILDID_SELF)
+                idChild = CHILDID_SELF;
+            else if (idObject != OBJID_WINDOW && idObject != OBJID_CLIENT)
+                idObject = OBJID_WINDOW;
+            else
+            {
+                var parent = GetAncestor(hwnd, GA_PARENT);
+                if (parent == GetDesktopWindow())
+                    hwnd = GetWindow(hwnd, GW_OWNER);
+                else
+                    hwnd = parent;
+                idObject = OBJID_CLIENT;
+            }
+
+            var wrapper = await WrapperFromHwnd(hwnd, idObject, idChild);
+
+            if (!wrapper.IsValid)
+            {
+                if (idChild == CHILDID_SELF &&
+                    (idObject == OBJID_WINDOW || idObject == OBJID_CLIENT))
+                {
+                    // Parent may be effectively the desktop window.
+                    UpdateChildren();
+                }
+                return;
+            }
+
+            var element = LookupAutomationElement(wrapper);
+
+            if (element != null)
+                element.UpdateChildren();
+        }
+
+        private async Task TranslateMsaaEvent(uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
+        {
             var wrapper = await WrapperFromHwnd(hwnd, idObject, idChild);
 
             if (eventId == EVENT_SYSTEM_FOREGROUND)
@@ -665,18 +719,6 @@ namespace Xalia.Uia
                 // We may not know about the element yet, so just set the wrapper.
                 ForegroundElement = wrapper;
                 Utils.RunTask(UpdateActiveWindow());
-                return;
-            }
-
-            if (!wrapper.IsValid)
-            {
-                if ((eventId == EVENT_OBJECT_CREATE || eventId == EVENT_OBJECT_DESTROY) &&
-                    idChild == CHILDID_SELF &&
-                    (idObject == OBJID_WINDOW || idObject == OBJID_CLIENT))
-                {
-                    // Parent may be effectively the desktop window.
-                    UpdateChildren();
-                }
                 return;
             }
 
@@ -694,14 +736,6 @@ namespace Xalia.Uia
                     else
                         break;
                 }
-            }
-
-            switch (eventId)
-            {
-                case EVENT_OBJECT_CREATE:
-                case EVENT_OBJECT_DESTROY:
-                    element.UpdateChildren();
-                    break;
             }
         }
 
