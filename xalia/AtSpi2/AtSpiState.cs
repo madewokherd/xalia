@@ -37,6 +37,27 @@ namespace Xalia.AtSpi2
             return typeof(AtSpiState).GetHashCode() ^ StructuralComparisons.StructuralEqualityComparer.GetHashCode(Flags);
         }
 
+        public static uint[] SetState(uint[] flags, int state, bool value)
+        {
+            int idx = state / 32;
+            uint flag = (uint)1 << (state % 32);
+            uint[] result = (uint[])flags.Clone();
+            if (value)
+                result[idx] |= flag;
+            else
+                result[idx] &= ~flag;
+            return result;
+        }
+
+        public static uint[] SetState(uint[] flags, string state, bool value)
+        {
+            if (AtSpiElement.name_to_state.TryGetValue(state, out var state_num))
+            {
+                return SetState(flags, state_num, value);
+            }
+            return null;
+        }
+
         public static bool IsStateSet(uint[] flags, int state)
         {
             int idx = state / 32;

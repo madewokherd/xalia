@@ -80,10 +80,21 @@ namespace Xalia.AtSpi2
             await RegisterEvent(connection, registryClient, "object:property-change:accessible-role");
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "PropertyChange", result.OnPropertyChange);
 
+            await RegisterEvent(connection, registryClient, "object:state-changed");
+            await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "StateChanged", result.OnStateChanged);
+
             result.DesktopFrame = new AtSpiElement(result, registryClient, PATH_ACCESSIBLE_ROOT);
             result.AddChild(0, result.DesktopFrame);
 
             return result;
+        }
+
+        private void OnStateChanged(AtSpiSignal signal)
+        {
+            var element = LookupElement((signal.peer, signal.path));
+            if (element is null)
+                return;
+            element.AtSpiStateChanged(signal);
         }
 
         private static Task RegisterEvent(Connection connection, string registryClient, string name)

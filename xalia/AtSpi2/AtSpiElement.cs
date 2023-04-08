@@ -695,5 +695,23 @@ namespace Xalia.AtSpi2
                     break;
             }
         }
+
+        internal void AtSpiStateChanged(AtSpiSignal signal)
+        {
+            if (!StateKnown)
+                return;
+            var new_state = AtSpiState.SetState(State, signal.detail, signal.detail1 != 0);
+            if (new_state is null)
+                return;
+            if (StructuralComparisons.StructuralEqualityComparer.Equals(State, new_state))
+                return;
+            State = new_state;
+            if (MatchesDebugCondition())
+            {
+                var action = (signal.detail1 != 0) ? "added" : "removed";
+                Utils.DebugWriteLine($"{this}.spi_state: {new AtSpiState(State)} ({signal.detail} {action})");
+            }
+            PropertyChanged("spi_state");
+        }
     }
 }
