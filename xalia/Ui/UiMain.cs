@@ -636,12 +636,34 @@ namespace Xalia.Ui
                     return new UiDomRoutineAsync(element, "send_right_click", SendRightClick);
                 case "send_scroll":
                     return new SendScroll(element, Windowing);
+                case "send_hover":
+                    return new UiDomRoutineAsync(element, "send_hover", SendHover);
                 case "target_next":
                     return new UiDomRoutineSync("target_next", TargetNext);
                 case "target_previous":
                     return new UiDomRoutineSync("target_previous", TargetPrevious);
             }
             return null;
+        }
+
+        private async Task SendHover(UiDomRoutineAsync obj)
+        {
+            var position = await obj.Element.GetClickablePoint();
+
+            if (!position.Item1)
+            {
+                Utils.DebugWriteLine($"WARNING: Could not get clickable point for {obj.Element}");
+                return;
+            }
+
+            try
+            {
+                await Windowing.SendMouseMotion(position.Item2, position.Item3);
+            }
+            catch (NotImplementedException)
+            {
+                Utils.DebugWriteLine($"WARNING: Cannot move mouse on the current windowing system");
+            }
         }
 
         public void DumpElementProperties(UiDomElement element)
