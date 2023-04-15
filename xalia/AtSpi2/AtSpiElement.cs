@@ -848,5 +848,25 @@ namespace Xalia.AtSpi2
         {
             AncestorBoundsChanged();
         }
+
+        public async override Task<(bool, int, int)> GetClickablePoint()
+        {
+            var result = await base.GetClickablePoint();
+            if (result.Item1)
+                return result;
+
+            try
+            {
+                var bounds = await CallMethod(Root.Connection, Peer, Path,
+                    IFACE_COMPONENT, "GetExtents", (uint)0, ReadMessageExtents);
+                return (true, bounds.Item1 + bounds.Item3 / 2, bounds.Item2 + bounds.Item4 / 2);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return (false, 0, 0);
+            }
+        }
     }
 }
