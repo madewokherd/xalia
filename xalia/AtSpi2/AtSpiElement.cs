@@ -65,6 +65,7 @@ namespace Xalia.AtSpi2
                 "abs_y", "spi_abs_y",
                 "abs_width", "spi_abs_width",
                 "abs_height", "spi_abs_height",
+                "action", "spi_action",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -97,6 +98,9 @@ namespace Xalia.AtSpi2
         public int AbsHeight { get; private set; }
         private bool watching_abs_pos;
         private int abs_pos_change_count;
+
+        public string[] Actions { get; private set; }
+        private bool fetching_actions;
 
         internal static readonly string[] role_names =
         {
@@ -361,6 +365,11 @@ namespace Xalia.AtSpi2
                     if (AbsPosKnown)
                         return new UiDomInt(AbsHeight);
                     return UiDomUndefined.Instance;
+                case "spi_action":
+                    depends_on.Add((this, new IdentifierExpression("spi_action")));
+                    if (!(Actions is null))
+                        return new AtSpiActionList(this);
+                    return UiDomUndefined.Instance;
             }
 
             value = base.EvaluateIdentifierCore(id, root, depends_on);
@@ -402,6 +411,8 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"  spi_abs_width: {AbsWidth}");
                 Utils.DebugWriteLine($"  spi_abs_height: {AbsHeight}");
             }
+            if (!(Actions is null))
+                Utils.DebugWriteLine($"  spi_action: [{String.Join(",", Actions)}]");
             base.DumpProperties();
         }
 
@@ -432,9 +443,41 @@ namespace Xalia.AtSpi2
                             PollProperty(expression, FetchAbsPos, 2000);
                         }
                         break;
+                    case "spi_action":
+                        if (!fetching_actions)
+                        {
+                            fetching_actions = true;
+                            Utils.RunTask(FetchActions());
+                        }
+                        break;
                 }
             }
             base.WatchProperty(expression);
+        }
+
+        private async Task FetchActions()
+        {
+            string[] result;
+            try
+            {
+                int count = (int)await GetProperty(Root.Connection, Peer, Path, IFACE_ACTION, "NActions");
+                result = new string[count];
+                for (int i = 0; i < count; i++)
+                {
+                    result[i] = await CallMethod(Root.Connection, Peer, Path, IFACE_ACTION,
+                        "GetName", i, ReadMessageString);
+                }
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e, "org.freedesktop.DBus.Error.Failed"))
+                    throw;
+                return;
+            }
+            Actions = result;
+            if (MatchesDebugCondition())
+                Utils.DebugWriteLine($"{this}.spi_action: ({string.Join(",", Actions)})");
+            PropertyChanged("spi_action");
         }
 
         protected override void UnwatchProperty(GudlExpression expression)
@@ -874,6 +917,26 @@ namespace Xalia.AtSpi2
                 if (!IsExpectedException(e))
                     throw;
                 return (false, 0, 0);
+            }
+        }
+
+        public async Task DoAction(int index)
+        {
+            bool success;
+            try
+            {
+                success = await CallMethod(Root.Connection, Peer, Path,
+                    IFACE_ACTION, "DoAction", index, ReadMessageBoolean);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (!success)
+            {
+                Utils.DebugWriteLine($"WARNING: {this}.spi_action({index}) failed");
             }
         }
     }

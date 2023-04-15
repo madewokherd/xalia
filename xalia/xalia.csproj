@@ -92,6 +92,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AtSpi2\AtSpiActionList.cs" />
     <Compile Include="AtSpi2\AtSpiConnection.cs" />
     <Compile Include="AtSpi2\AtSpiElement.cs" />
     <Compile Include="AtSpi2\AtSpiState.cs" />
