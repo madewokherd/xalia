@@ -55,6 +55,7 @@ namespace Xalia.AtSpi2
             }
             string[] aliases = {
                 "role", "spi_role",
+                "control_type", "spi_role",
                 "state", "spi_state",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
