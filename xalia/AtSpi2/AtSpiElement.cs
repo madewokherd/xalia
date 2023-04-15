@@ -470,6 +470,8 @@ namespace Xalia.AtSpi2
                     return;
                 try
                 {
+                    await Root.RegisterEvent("object:bounds-changed");
+
                     result = await CallMethod(Root.Connection, Peer, Path,
                         IFACE_COMPONENT, "GetExtents", (uint)0, ReadMessageExtents);
                 }
@@ -505,6 +507,8 @@ namespace Xalia.AtSpi2
             int result;
             try
             {
+                await Root.RegisterEvent("object:property-change:accessible-role");
+
                 result = await CallMethod(Root.Connection, Peer, Path,
                     IFACE_ACCESSIBLE, "GetRole", ReadMessageInt32);
             }
@@ -522,6 +526,8 @@ namespace Xalia.AtSpi2
             uint[] result;
             try
             {
+                await Root.RegisterEvent("object:state-changed");
+
                 result = await CallMethod(Root.Connection, Peer, Path,
                     IFACE_ACCESSIBLE, "GetState", ReadMessageUint32Array);
             }
@@ -624,6 +630,8 @@ namespace Xalia.AtSpi2
         {
             if (!watching_children)
                 return;
+
+            await Root.RegisterEvent("object:children-changed");
 
             List<(string, string)> children = await GetChildList();
 

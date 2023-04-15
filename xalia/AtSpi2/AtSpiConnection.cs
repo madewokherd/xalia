@@ -15,6 +15,8 @@ namespace Xalia.AtSpi2
         public Connection Connection { get; }
         public AtSpiElement DesktopFrame { get; private set; }
 
+        private HashSet<string> registered_events = new HashSet<string>();
+
         private Dictionary<string, int> poll_count = new Dictionary<string, int>();
         private Dictionary<string, IDisposable> poll_disposable = new Dictionary<string, IDisposable>();
         private Dictionary<string, Queue<TaskCompletionSource<IDisposable>>> poll_known_sources = new Dictionary<string, Queue<TaskCompletionSource<IDisposable>>>();
@@ -79,16 +81,9 @@ namespace Xalia.AtSpi2
                 "GetNameOwner", SERVICE_REGISTRY,
                 ReadMessageString);
 
-            await RegisterEvent(connection, registryClient, "object:children-changed");
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "ChildrenChanged", result.OnChildrenChanged);
-
-            await RegisterEvent(connection, registryClient, "object:property-change:accessible-role");
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "PropertyChange", result.OnPropertyChange);
-
-            await RegisterEvent(connection, registryClient, "object:state-changed");
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "StateChanged", result.OnStateChanged);
-
-            await RegisterEvent(connection, registryClient, "object:bounds-changed");
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "BoundsChanged", result.OnBoundsChanged);
 
             result.DesktopFrame = new AtSpiElement(result, registryClient, PATH_ACCESSIBLE_ROOT);
@@ -113,9 +108,12 @@ namespace Xalia.AtSpi2
             element.AtSpiStateChanged(signal);
         }
 
-        private static Task RegisterEvent(Connection connection, string registryClient, string name)
+        public Task RegisterEvent(string name)
         {
-            return CallMethod(connection, registryClient, PATH_REGISTRY, IFACE_REGISTRY,
+            if (registered_events.Contains(name))
+                return Task.CompletedTask;
+            registered_events.Add(name);
+            return CallMethod(Connection, SERVICE_REGISTRY, PATH_REGISTRY, IFACE_REGISTRY,
                 "RegisterEvent", name);
         }
 
