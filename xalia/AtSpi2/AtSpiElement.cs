@@ -96,6 +96,7 @@ namespace Xalia.AtSpi2
         public int AbsWidth { get; private set; }
         public int AbsHeight { get; private set; }
         private bool watching_abs_pos;
+        private int abs_pos_change_count;
 
         internal static readonly string[] role_names =
         {
@@ -428,7 +429,7 @@ namespace Xalia.AtSpi2
                         if (!watching_abs_pos)
                         {
                             watching_abs_pos = true;
-                            PollProperty(expression, FetchAbsPos, 200);
+                            PollProperty(expression, FetchAbsPos, 2000);
                         }
                         break;
                 }
@@ -452,12 +453,20 @@ namespace Xalia.AtSpi2
             base.UnwatchProperty(expression);
         }
 
-        private async Task FetchAbsPos()
+        private Task FetchAbsPos()
+        {
+            return FetchAbsPos(false);
+        }
+
+        private async Task FetchAbsPos(bool from_event)
         {
             (int, int, int, int) result;
-            using (var poll = await LimitPolling(AbsPosKnown))
+            int old_change_count = abs_pos_change_count;
+            using (var poll = await LimitPolling(AbsPosKnown && !from_event))
             {
                 if (!watching_abs_pos)
+                    return;
+                if (old_change_count != abs_pos_change_count)
                     return;
                 try
                 {
@@ -471,6 +480,8 @@ namespace Xalia.AtSpi2
                     return;
                 }
             }
+            if (old_change_count != abs_pos_change_count)
+                return;
             if (watching_abs_pos && (!AbsPosKnown || result != (AbsX, AbsY, AbsWidth, AbsHeight)))
             {
                 AbsPosKnown = true;
@@ -815,6 +826,27 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"{this}.spi_state: {new AtSpiState(State)} ({signal.detail} {action})");
             }
             PropertyChanged("spi_state");
+        }
+
+        private void AncestorBoundsChanged()
+        {
+            abs_pos_change_count++;
+            if (watching_abs_pos)
+            {
+                Utils.RunTask(FetchAbsPos(true));
+            }
+            foreach (var child in Children)
+            {
+                if (child is AtSpiElement ch)
+                {
+                    ch.AncestorBoundsChanged();
+                }
+            }
+        }
+
+        internal void AtSpiBoundsChanged(AtSpiSignal signal)
+        {
+            AncestorBoundsChanged();
         }
     }
 }

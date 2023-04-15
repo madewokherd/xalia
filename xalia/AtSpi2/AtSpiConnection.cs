@@ -88,10 +88,21 @@ namespace Xalia.AtSpi2
             await RegisterEvent(connection, registryClient, "object:state-changed");
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "StateChanged", result.OnStateChanged);
 
+            await RegisterEvent(connection, registryClient, "object:bounds-changed");
+            await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "BoundsChanged", result.OnBoundsChanged);
+
             result.DesktopFrame = new AtSpiElement(result, registryClient, PATH_ACCESSIBLE_ROOT);
             result.AddChild(0, result.DesktopFrame);
 
             return result;
+        }
+
+        private void OnBoundsChanged(AtSpiSignal signal)
+        {
+            var element = LookupElement((signal.peer, signal.path));
+            if (element is null)
+                return;
+            element.AtSpiBoundsChanged(signal);
         }
 
         private void OnStateChanged(AtSpiSignal signal)
