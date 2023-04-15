@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Documents;
@@ -275,6 +276,66 @@ namespace Xalia.AtSpi2
 
         static bool debug_events = Utils.TryGetEnvironmentVariable("XALIA_DEBUG_EVENTS", out var debug) && debug != "0";
 
+        public static string SignatureFromType(Type type)
+        {
+            switch(type.Name)
+            {
+                case "Byte":
+                    return "y";
+                case "Boolean":
+                    return "b";
+                case "Int16":
+                    return "n";
+                case "UInt16":
+                    return "q";
+                case "Int32":
+                    return "i";
+                case "UInt32":
+                    return "u";
+                case "Int64":
+                    return "x";
+                case "UInt64":
+                    return "t";
+                case "Double":
+                    return "d";
+                case "String":
+                    return "s";
+                case "ObjectPath":
+                    return "o";
+                case "Signature":
+                    return "g";
+                case "SafeHandle":
+                    return "h";
+                case "Dictionary`2":
+                    return $"{{{SignatureFromType(type.GenericTypeArguments[0])}{SignatureFromType(type.GenericTypeArguments[1])}}}";
+                case "ValueTuple`1":
+                case "ValueTuple`2":
+                case "ValueTuple`3":
+                case "ValueTuple`4":
+                case "ValueTuple`5":
+                case "ValueTuple`6":
+                case "ValueTuple`7":
+                case "ValueTuple`8":
+                case "ValueTuple`9":
+                case "ValueTuple`10":
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append("(");
+                        foreach (var subtype in type.GenericTypeArguments)
+                        {
+                            sb.Append(SignatureFromType(subtype));
+                        }
+                        sb.Append(")");
+                        return sb.ToString();
+                    }
+                case "Array":
+                    return "a" + SignatureFromType(type.GetElementType());
+                case "Object":
+                    return "v";
+            }
+            return "*";
+        }
+
         public static Task<IDisposable> MatchAtSpiSignal(Connection connection, string iface, string name, Action<AtSpiSignal> handler)
         {
             bool debug_this_event = (debug_events ||
@@ -301,12 +362,12 @@ namespace Xalia.AtSpi2
                         if (signal.detail2 != 0)
                             Console.WriteLine($"  detail2: {signal.detail2}");
                         if (!(signal.value is null))
-                            Console.WriteLine($"  value: {signal.value}");
+                            Console.WriteLine($"  value(type {SignatureFromType(signal.value.GetType())}): {signal.value}");
                         if (!(signal.properties is null))
                         {
                             foreach (var property in signal.properties)
                             {
-                                Console.WriteLine($"  properties[\"{property.Key}\": {property.Value}");
+                                Console.WriteLine($"  properties[\"{property.Key}\"] (type {SignatureFromType(property.Value.GetType())}): {property.Value}");
                             }
                         }
                     }
