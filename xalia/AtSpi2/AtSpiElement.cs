@@ -95,7 +95,7 @@ namespace Xalia.AtSpi2
         public int AbsY { get; private set; }
         public int AbsWidth { get; private set; }
         public int AbsHeight { get; private set; }
-        private bool fetching_abs_pos;
+        private bool watching_abs_pos;
 
         internal static readonly string[] role_names =
         {
@@ -295,6 +295,8 @@ namespace Xalia.AtSpi2
             {
                 watching_children = false;
                 children_known = false;
+                watching_abs_pos = false;
+                AbsPosKnown = false;
                 Root.NotifyElementDestroyed(this);
             }
             base.SetAlive(value);
@@ -423,10 +425,10 @@ namespace Xalia.AtSpi2
                         }
                         break;
                     case "spi_abs_pos":
-                        if (!fetching_abs_pos)
+                        if (!watching_abs_pos)
                         {
-                            fetching_abs_pos = true;
-                            Utils.RunTask(FetchAbsPos());
+                            watching_abs_pos = true;
+                            PollProperty(expression, FetchAbsPos, 200);
                         }
                         break;
                 }
@@ -434,21 +436,42 @@ namespace Xalia.AtSpi2
             base.WatchProperty(expression);
         }
 
+        protected override void UnwatchProperty(GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "spi_abs_pos":
+                        EndPollProperty(expression);
+                        watching_abs_pos = false;
+                        AbsPosKnown = false;
+                        break;
+                }
+            }
+            base.UnwatchProperty(expression);
+        }
+
         private async Task FetchAbsPos()
         {
             (int, int, int, int) result;
-            try
+            using (var poll = await LimitPolling(AbsPosKnown))
             {
-                result = await CallMethod(Root.Connection, Peer, Path,
-                    IFACE_COMPONENT, "GetExtents", (uint)0, ReadMessageExtents);
+                if (!watching_abs_pos)
+                    return;
+                try
+                {
+                    result = await CallMethod(Root.Connection, Peer, Path,
+                        IFACE_COMPONENT, "GetExtents", (uint)0, ReadMessageExtents);
+                }
+                catch (DBusException e)
+                {
+                    if (!IsExpectedException(e))
+                        throw;
+                    return;
+                }
             }
-            catch (DBusException e)
-            {
-                if (!IsExpectedException(e))
-                    throw;
-                return;
-            }
-            if (!AbsPosKnown || result != (AbsX, AbsY, AbsWidth, AbsHeight))
+            if (watching_abs_pos && (!AbsPosKnown || result != (AbsX, AbsY, AbsWidth, AbsHeight)))
             {
                 AbsPosKnown = true;
                 AbsX = result.Item1;
@@ -459,6 +482,11 @@ namespace Xalia.AtSpi2
                     Utils.DebugWriteLine($"{this}.spi_abs_(x,y,width,height): {result}");
                 PropertyChanged("spi_abs_pos");
             }
+        }
+
+        private Task<IDisposable> LimitPolling(bool value_known)
+        {
+            return Root.LimitPolling(Peer, value_known);
         }
 
         private async Task FetchRole()

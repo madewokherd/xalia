@@ -15,6 +15,11 @@ namespace Xalia.AtSpi2
         public Connection Connection { get; }
         public AtSpiElement DesktopFrame { get; private set; }
 
+        private Dictionary<string, int> poll_count = new Dictionary<string, int>();
+        private Dictionary<string, IDisposable> poll_disposable = new Dictionary<string, IDisposable>();
+        private Dictionary<string, Queue<TaskCompletionSource<IDisposable>>> poll_known_sources = new Dictionary<string, Queue<TaskCompletionSource<IDisposable>>>();
+        private Dictionary<string, Queue<TaskCompletionSource<IDisposable>>> poll_unknown_sources = new Dictionary<string, Queue<TaskCompletionSource<IDisposable>>>();
+
         private AtSpiConnection(Connection connection, GudlStatement[] rules, IUiDomApplication application) : base(rules, application)
         {
             Connection = connection;
@@ -134,6 +139,78 @@ namespace Xalia.AtSpi2
             if (elements.TryGetValue(id, out var element))
                 return element;
             return null;
+        }
+
+        private const int POLL_KNOWN_LIMIT = 32;
+        private const int POLL_UNKNOWN_LIMIT = 64;
+
+        internal Task<IDisposable> LimitPolling(string peer, bool value_known)
+        {
+            // Set a limit on the number of polling requests on the bus at once, so that we can
+            // balance benefits from batching with added latency.
+            int limit = value_known ? POLL_KNOWN_LIMIT : POLL_UNKNOWN_LIMIT;
+
+            if (!poll_disposable.TryGetValue(peer, out var disposable))
+            {
+                disposable = new PollDispoable(this, peer);
+                poll_disposable.Add(peer, disposable);
+            }
+
+            if (!poll_count.TryGetValue(peer, out var count))
+            {
+                count = 0;
+                poll_count.Add(peer, count);
+            }
+
+            if (count < limit)
+            {
+                poll_count[peer] = count + 1;
+                return Task.FromResult(disposable);
+            }
+
+            var source = new TaskCompletionSource<IDisposable>();
+            var source_queues = value_known ? poll_known_sources : poll_unknown_sources;
+
+            if (!source_queues.TryGetValue(peer, out var queue))
+            {
+                queue = new Queue<TaskCompletionSource<IDisposable>>();
+                source_queues.Add(peer, queue);
+            }
+
+            queue.Enqueue(source);
+
+            return source.Task;
+        }
+
+        private class PollDispoable : IDisposable
+        {
+            private string peer;
+            private AtSpiConnection connection;
+
+            public PollDispoable(AtSpiConnection connection, string peer)
+            {
+                this.connection = connection;
+                this.peer = peer;
+            }
+
+            public void Dispose()
+            {
+                var count = connection.poll_count[peer];
+
+                if (count <= POLL_UNKNOWN_LIMIT && connection.poll_unknown_sources.TryGetValue(peer, out var sources) &&
+                    sources.Count != 0)
+                {
+                    sources.Dequeue().SetResult(connection.poll_disposable[peer]);
+                    return;
+                }
+                if (count <= POLL_KNOWN_LIMIT && connection.poll_known_sources.TryGetValue(peer, out sources) &&
+                    sources.Count != 0)
+                {
+                    sources.Dequeue().SetResult(connection.poll_disposable[peer]);
+                    return;
+                }
+                connection.poll_count[peer] = count - 1;
+            }
         }
     }
 }
