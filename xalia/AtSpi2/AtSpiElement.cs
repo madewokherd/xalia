@@ -80,9 +80,7 @@ namespace Xalia.AtSpi2
         private bool fetching_state;
 
         private bool watching_children;
-#pragma warning disable CS0414 // The field 'AtSpiElement.children_known' is assigned but its value is never used
-        private bool children_known; // TODO: Use this when we get a notification of children changed
-#pragma warning restore CS0414 // The field 'AtSpiElement.children_known' is assigned but its value is never used
+        private bool children_known;
 
         internal static readonly string[] role_names =
         {
