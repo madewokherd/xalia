@@ -57,6 +57,14 @@ namespace Xalia.AtSpi2
                 "role", "spi_role",
                 "control_type", "spi_role",
                 "state", "spi_state",
+                "x", "spi_abs_x",
+                "y", "spi_abs_y",
+                "width", "spi_abs_width",
+                "height", "spi_abs_height",
+                "abs_x", "spi_abs_x",
+                "abs_y", "spi_abs_y",
+                "abs_width", "spi_abs_width",
+                "abs_height", "spi_abs_height",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
             for (int i=0; i<aliases.Length; i+=2)
@@ -81,6 +89,13 @@ namespace Xalia.AtSpi2
 
         private bool watching_children;
         private bool children_known;
+
+        public bool AbsPosKnown { get; private set; }
+        public int AbsX { get; private set; }
+        public int AbsY { get; private set; }
+        public int AbsWidth { get; private set; }
+        public int AbsHeight { get; private set; }
+        private bool fetching_abs_pos;
 
         internal static readonly string[] role_names =
         {
@@ -323,6 +338,26 @@ namespace Xalia.AtSpi2
                     if (StateKnown)
                         return new AtSpiState(State);
                     return UiDomUndefined.Instance;
+                case "spi_abs_x":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPosKnown)
+                        return new UiDomInt(AbsX);
+                    return UiDomUndefined.Instance;
+                case "spi_abs_y":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPosKnown)
+                        return new UiDomInt(AbsY);
+                    return UiDomUndefined.Instance;
+                case "spi_abs_width":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPosKnown)
+                        return new UiDomInt(AbsWidth);
+                    return UiDomUndefined.Instance;
+                case "spi_abs_height":
+                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
+                    if (AbsPosKnown)
+                        return new UiDomInt(AbsHeight);
+                    return UiDomUndefined.Instance;
             }
 
             value = base.EvaluateIdentifierCore(id, root, depends_on);
@@ -357,6 +392,13 @@ namespace Xalia.AtSpi2
             }
             if (StateKnown)
                 Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
+            if (AbsPosKnown)
+            {
+                Utils.DebugWriteLine($"  spi_abs_x: {AbsX}");
+                Utils.DebugWriteLine($"  spi_abs_y: {AbsY}");
+                Utils.DebugWriteLine($"  spi_abs_width: {AbsWidth}");
+                Utils.DebugWriteLine($"  spi_abs_height: {AbsHeight}");
+            }
             base.DumpProperties();
         }
 
@@ -380,9 +422,43 @@ namespace Xalia.AtSpi2
                             Utils.RunTask(FetchState());
                         }
                         break;
+                    case "spi_abs_pos":
+                        if (!fetching_abs_pos)
+                        {
+                            fetching_abs_pos = true;
+                            Utils.RunTask(FetchAbsPos());
+                        }
+                        break;
                 }
             }
             base.WatchProperty(expression);
+        }
+
+        private async Task FetchAbsPos()
+        {
+            (int, int, int, int) result;
+            try
+            {
+                result = await CallMethod(Root.Connection, Peer, Path,
+                    IFACE_COMPONENT, "GetExtents", (uint)0, ReadMessageExtents);
+            }
+            catch (DBusException e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (!AbsPosKnown || result != (AbsX, AbsY, AbsWidth, AbsHeight))
+            {
+                AbsPosKnown = true;
+                AbsX = result.Item1;
+                AbsY = result.Item2;
+                AbsWidth = result.Item3;
+                AbsHeight = result.Item4;
+                if (MatchesDebugCondition())
+                    Utils.DebugWriteLine($"{this}.spi_abs_(x,y,width,height): {result}");
+                PropertyChanged("spi_abs_pos");
+            }
         }
 
         private async Task FetchRole()

@@ -230,6 +230,13 @@ namespace Xalia.AtSpi2
             return result;
         }
 
+        public static (int, int, int, int) ReadMessageExtents(Message message, object state)
+        {
+            var reader = message.GetBodyReader();
+            reader.AlignStruct();
+            return (reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
+        }
+
         public struct AtSpiSignal
         {
             public string peer;
@@ -333,6 +340,7 @@ namespace Xalia.AtSpi2
         public const string PATH_ACCESSIBLE_ROOT = "/org/a11y/atspi/accessible/root";
         public const string PATH_REGISTRY = "/org/a11y/atspi/registry";
         public const string IFACE_ACCESSIBLE = "org.a11y.atspi.Accessible";
+        public const string IFACE_COMPONENT = "org.a11y.atspi.Component";
         public const string IFACE_REGISTRY = "org.a11y.atspi.Registry";
         public const string IFACE_EVENT_OBJECT = "org.a11y.atspi.Event.Object";
     }
