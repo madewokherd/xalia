@@ -25,36 +25,12 @@ namespace Xalia.AtSpi2
 
         static AtSpiElement()
         {
-            name_to_role = new Dictionary<string, int>();
-            role_to_enum = new UiDomEnum[role_names.Length];
-            for (int i=0; i<role_names.Length; i++)
-            {
-                string name = role_names[i];
-                string[] names;
-                if (name == "push_button")
-                    names = new[] { "push_button", "pushbutton", "button" };
-                else if (name == "page_tab")
-                    names = new[] { "page_tab", "pagetab", "tab" };
-                else if (name == "page_tab_list")
-                    names = new[] { "page_tab_list", "pagetablist", "tab_item", "tabitem" };
-                else if (name == "text")
-                    names = new[] { "text", "text_box", "textbox", "edit" };
-                else if (name.Contains("_"))
-                    names = new[] { name, name.Replace("_", "") };
-                else
-                    names = new[] { name };
-                role_to_enum[i] = new UiDomEnum(names);
-                foreach (string rolename in names)
-                    name_to_role[rolename] = i;
-            }
             name_to_state = new Dictionary<string, int>();
             for (int i=0; i<state_names.Length; i++)
             {
                 name_to_state[state_names[i]] = i;
             }
             string[] aliases = {
-                "role", "spi_role",
-                "control_type", "spi_role",
                 "state", "spi_state",
                 "x", "spi_abs_x",
                 "y", "spi_abs_y",
@@ -77,10 +53,6 @@ namespace Xalia.AtSpi2
         public string Peer { get; }
         public string Path { get; }
 
-        public bool RoleKnown { get; private set; }
-        public int Role { get; private set; }
-        private bool fetching_role;
-
         public bool StateKnown { get; private set; }
         public uint[] State { get; private set; }
         private bool fetching_state;
@@ -95,139 +67,6 @@ namespace Xalia.AtSpi2
 
         public string[] Actions { get; private set; }
         private bool fetching_actions;
-
-        internal static readonly string[] role_names =
-        {
-            "invalid",
-            "accelerator_label",
-            "alert",
-            "animation",
-            "arrow",
-            "calendar",
-            "canvas",
-            "check_box",
-            "check_menu_item",
-            "color_chooser",
-            "column_header",
-            "combo_box",
-            "date_editor",
-            "desktop_icon",
-            "desktop_frame",
-            "dial",
-            "dialog",
-            "directory_pane",
-            "drawing_area",
-            "file_chooser",
-            "filler",
-            "focus_traversable",
-            "font_chooser",
-            "frame",
-            "glass_pane",
-            "html_container",
-            "icon",
-            "image",
-            "internal_frame",
-            "label",
-            "layered_pane",
-            "list",
-            "list_item",
-            "menu",
-            "menu_bar",
-            "menu_item",
-            "option_pane",
-            "page_tab",
-            "page_tab_list",
-            "panel",
-            "password_text",
-            "popup_menu",
-            "progress_bar",
-            "push_button",
-            "radio_button",
-            "radio_menu_item",
-            "root_pane",
-            "row_header",
-            "scroll_bar",
-            "scroll_pane",
-            "separator",
-            "slider",
-            "spin_button",
-            "split_pane",
-            "status_bar",
-            "table",
-            "table_cell",
-            "table_column_header",
-            "table_row_header",
-            "tearoff_menu_item",
-            "terminal",
-            "text",
-            "toggle_button",
-            "tool_bar",
-            "tool_tip",
-            "tree",
-            "tree_table",
-            "unknown",
-            "viewport",
-            "window",
-            "extended",
-            "header",
-            "footer",
-            "paragraph",
-            "ruler",
-            "application",
-            "autocomplete",
-            "editbar",
-            "embedded",
-            "entry",
-            "chart",
-            "caption",
-            "document_frame",
-            "heading",
-            "page",
-            "section",
-            "redundant_object",
-            "form",
-            "link",
-            "input_method_window",
-            "table_row",
-            "tree_item",
-            "document_spreadsheet",
-            "document_presentation",
-            "document_text",
-            "document_web",
-            "document_email",
-            "comment",
-            "list_box",
-            "grouping",
-            "image_map",
-            "notification",
-            "info_bar",
-            "level_bar",
-            "title_bar",
-            "block_quote",
-            "audio",
-            "video",
-            "definition",
-            "article",
-            "landmark",
-            "log",
-            "marquee",
-            "math",
-            "rating",
-            "timer",
-            "static",
-            "math_fraction",
-            "math_root",
-            "subscript",
-            "superscript",
-            "description_list",
-            "description_term",
-            "description_value",
-            "footnote",
-            "content_deletion",
-            "content_insertion",
-            "mark",
-            "suggestion",
-        };
 
         internal static readonly string[] state_names =
         {
@@ -279,9 +118,6 @@ namespace Xalia.AtSpi2
 
         internal static Dictionary<string, string> name_mapping;
 
-        private static readonly Dictionary<string, int> name_to_role;
-        private static readonly UiDomEnum[] role_to_enum;
-
         internal static Dictionary<string, int> name_to_state;
 
         protected override void SetAlive(bool value)
@@ -313,15 +149,6 @@ namespace Xalia.AtSpi2
 
             switch (id)
             {
-                case "spi_role":
-                    depends_on.Add((this, new IdentifierExpression("spi_role")));
-                    if (RoleKnown)
-                    {
-                        if (Role > 0 && Role < role_to_enum.Length)
-                            return role_to_enum[Role];
-                        return new UiDomInt(Role);
-                    }
-                    return UiDomUndefined.Instance;
                 case "spi_state":
                     depends_on.Add((this, new IdentifierExpression("spi_state")));
                     if (StateKnown)
@@ -358,13 +185,6 @@ namespace Xalia.AtSpi2
             if (!value.Equals(UiDomUndefined.Instance))
                 return value;
 
-            if (name_to_role.TryGetValue(id, out var expected_role))
-            {
-                depends_on.Add((this, new IdentifierExpression("spi_role")));
-                if (RoleKnown)
-                    return UiDomBoolean.FromBool(Role == expected_role);
-            }
-
             if (name_to_state.TryGetValue(id, out var expected_state))
             {
                 depends_on.Add((this, new IdentifierExpression("spi_state")));
@@ -377,13 +197,6 @@ namespace Xalia.AtSpi2
 
         protected override void DumpProperties()
         {
-            if (RoleKnown)
-            {
-                if (Role > 0 && Role < role_names.Length)
-                    Utils.DebugWriteLine($"  spi_role: {role_names[Role]}");
-                else
-                    Utils.DebugWriteLine($"  spi_role: {Role}");
-            }
             if (StateKnown)
                 Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
             if (AbsPosKnown)
@@ -404,13 +217,6 @@ namespace Xalia.AtSpi2
             {
                 switch (id.Name)
                 {
-                    case "spi_role":
-                        if (!fetching_role)
-                        {
-                            fetching_role = true;
-                            Utils.RunTask(FetchRole());
-                        }
-                        break;
                     case "spi_state":
                         if (!fetching_state)
                         {
@@ -527,25 +333,6 @@ namespace Xalia.AtSpi2
             return Root.LimitPolling(Peer, value_known);
         }
 
-        private async Task FetchRole()
-        {
-            int result;
-            try
-            {
-                await Root.RegisterEvent("object:property-change:accessible-role");
-
-                result = await CallMethod(Root.Connection, Peer, Path,
-                    IFACE_ACCESSIBLE, "GetRole", ReadMessageInt32);
-            }
-            catch (DBusException e)
-            {
-                if (!IsExpectedException(e))
-                    throw;
-                return;
-            }
-            AtSpiPropertyChange("accessible-role", result);
-        }
-
         private async Task FetchState()
         {
             uint[] result;
@@ -608,43 +395,6 @@ namespace Xalia.AtSpi2
                     }
                     return true;
 #endif
-            }
-        }
-
-        internal void AtSpiPropertyChange(string detail, object value)
-        {
-            switch (detail)
-            {
-                case "accessible-role":
-                    {
-                        if (value is uint uval)
-                            value = (int)uval;
-                        if (value is int ival && (!RoleKnown || ival != Role))
-                        {
-                            RoleKnown = true;
-                            Role = ival;
-                            if (MatchesDebugCondition())
-                            {
-                                if (Role > 0 && Role < role_names.Length)
-                                    Utils.DebugWriteLine($"{this}.spi_role: {role_names[Role]}");
-                                else
-                                    Utils.DebugWriteLine($"{this}.spi_role: {Role}");
-                            }
-                            PropertyChanged("spi_role");
-                        }
-                        else if (value is null)
-                        {
-                            if (fetching_role || RoleKnown)
-                                Utils.RunTask(FetchRole());
-                        }
-                        else
-                        {
-                            Console.WriteLine($"WARNING: unexpected type for accessible-role: {value.GetType()}");
-                        }
-                        break;
-                    }
-                default:
-                    break;
             }
         }
 
