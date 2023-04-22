@@ -26,14 +26,6 @@ namespace Xalia.AtSpi2
         static AtSpiElement()
         {
             string[] aliases = {
-                "x", "spi_abs_x",
-                "y", "spi_abs_y",
-                "width", "spi_abs_width",
-                "height", "spi_abs_height",
-                "abs_x", "spi_abs_x",
-                "abs_y", "spi_abs_y",
-                "abs_width", "spi_abs_width",
-                "abs_height", "spi_abs_height",
                 "action", "spi_action",
             };
             property_aliases = new Dictionary<string, string>(aliases.Length / 2);
@@ -46,14 +38,6 @@ namespace Xalia.AtSpi2
         public new AtSpiConnection Root { get; }
         public string Peer { get; }
         public string Path { get; }
-
-        public bool AbsPosKnown { get; private set; }
-        public int AbsX { get; private set; }
-        public int AbsY { get; private set; }
-        public int AbsWidth { get; private set; }
-        public int AbsHeight { get; private set; }
-        private bool watching_abs_pos;
-        private int abs_pos_change_count;
 
         public string[] Actions { get; private set; }
         private bool fetching_actions;
@@ -68,8 +52,6 @@ namespace Xalia.AtSpi2
             }
             else
             {
-                watching_abs_pos = false;
-                AbsPosKnown = false;
                 Root.NotifyElementDestroyed(this);
             }
             base.SetAlive(value);
@@ -89,26 +71,6 @@ namespace Xalia.AtSpi2
 
             switch (id)
             {
-                case "spi_abs_x":
-                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
-                    if (AbsPosKnown)
-                        return new UiDomInt(AbsX);
-                    return UiDomUndefined.Instance;
-                case "spi_abs_y":
-                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
-                    if (AbsPosKnown)
-                        return new UiDomInt(AbsY);
-                    return UiDomUndefined.Instance;
-                case "spi_abs_width":
-                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
-                    if (AbsPosKnown)
-                        return new UiDomInt(AbsWidth);
-                    return UiDomUndefined.Instance;
-                case "spi_abs_height":
-                    depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
-                    if (AbsPosKnown)
-                        return new UiDomInt(AbsHeight);
-                    return UiDomUndefined.Instance;
                 case "spi_action":
                     depends_on.Add((this, new IdentifierExpression("spi_action")));
                     if (!(Actions is null))
@@ -125,13 +87,6 @@ namespace Xalia.AtSpi2
 
         protected override void DumpProperties()
         {
-            if (AbsPosKnown)
-            {
-                Utils.DebugWriteLine($"  spi_abs_x: {AbsX}");
-                Utils.DebugWriteLine($"  spi_abs_y: {AbsY}");
-                Utils.DebugWriteLine($"  spi_abs_width: {AbsWidth}");
-                Utils.DebugWriteLine($"  spi_abs_height: {AbsHeight}");
-            }
             if (!(Actions is null))
                 Utils.DebugWriteLine($"  spi_action: [{String.Join(",", Actions)}]");
             base.DumpProperties();
@@ -143,13 +98,6 @@ namespace Xalia.AtSpi2
             {
                 switch (id.Name)
                 {
-                    case "spi_abs_pos":
-                        if (!watching_abs_pos)
-                        {
-                            watching_abs_pos = true;
-                            PollProperty(expression, FetchAbsPos, 2000);
-                        }
-                        break;
                     case "spi_action":
                         if (!fetching_actions)
                         {
@@ -189,62 +137,7 @@ namespace Xalia.AtSpi2
 
         protected override void UnwatchProperty(GudlExpression expression)
         {
-            if (expression is IdentifierExpression id)
-            {
-                switch (id.Name)
-                {
-                    case "spi_abs_pos":
-                        EndPollProperty(expression);
-                        watching_abs_pos = false;
-                        AbsPosKnown = false;
-                        break;
-                }
-            }
             base.UnwatchProperty(expression);
-        }
-
-        private Task FetchAbsPos()
-        {
-            return FetchAbsPos(false);
-        }
-
-        private async Task FetchAbsPos(bool from_event)
-        {
-            (int, int, int, int) result;
-            int old_change_count = abs_pos_change_count;
-            using (var poll = await LimitPolling(AbsPosKnown && !from_event))
-            {
-                if (!watching_abs_pos)
-                    return;
-                if (old_change_count != abs_pos_change_count)
-                    return;
-                try
-                {
-                    await Root.RegisterEvent("object:bounds-changed");
-
-                    result = await CallMethod(Root.Connection, Peer, Path,
-                        IFACE_COMPONENT, "GetExtents", (uint)0, ReadMessageExtents);
-                }
-                catch (DBusException e)
-                {
-                    if (!IsExpectedException(e))
-                        throw;
-                    return;
-                }
-            }
-            if (old_change_count != abs_pos_change_count)
-                return;
-            if (watching_abs_pos && (!AbsPosKnown || result != (AbsX, AbsY, AbsWidth, AbsHeight)))
-            {
-                AbsPosKnown = true;
-                AbsX = result.Item1;
-                AbsY = result.Item2;
-                AbsWidth = result.Item3;
-                AbsHeight = result.Item4;
-                if (MatchesDebugCondition())
-                    Utils.DebugWriteLine($"{this}.spi_abs_(x,y,width,height): {result}");
-                PropertyChanged("spi_abs_pos");
-            }
         }
 
         private Task<IDisposable> LimitPolling(bool value_known)
@@ -287,27 +180,6 @@ namespace Xalia.AtSpi2
                     return true;
 #endif
             }
-        }
-
-        private void AncestorBoundsChanged()
-        {
-            abs_pos_change_count++;
-            if (watching_abs_pos)
-            {
-                Utils.RunTask(FetchAbsPos(true));
-            }
-            foreach (var child in Children)
-            {
-                if (child is AtSpiElement ch)
-                {
-                    ch.AncestorBoundsChanged();
-                }
-            }
-        }
-
-        internal void AtSpiBoundsChanged(AtSpiSignal signal)
-        {
-            AncestorBoundsChanged();
         }
 
         public async override Task<(bool, int, int)> GetClickablePoint()
