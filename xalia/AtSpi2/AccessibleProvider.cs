@@ -24,6 +24,9 @@ namespace Xalia.AtSpi2
         public string Peer { get; }
         public string Path { get; }
 
+        public string[] SupportedInterfaces { get; private set; }
+        private bool fetching_supported;
+
         private static string[] _trackedProperties = new string[] { "recurse_method" };
 
         private static readonly Dictionary<string, int> name_to_role;
@@ -219,6 +222,14 @@ namespace Xalia.AtSpi2
             { "state", "spi_state" },
         };
 
+        private static readonly HashSet<string> other_interface_properties = new HashSet<string>()
+        {
+            // ComponentProvider
+            "x", "y", "width", "height",
+            "abs_x", "abs_y", "abs_width", "abs_height",
+            "spi_abs_x", "spi_abs_y", "spi_abs_width", "spi_abs_height",
+        };
+
         static AccessibleProvider()
         {
             name_to_role = new Dictionary<string, int>();
@@ -277,6 +288,8 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"  spi_role: {RoleAsValue}");
             if (StateKnown)
                 Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
+            if (!(SupportedInterfaces is null))
+                Utils.DebugWriteLine($"  spi_supported: [{String.Join(",", SupportedInterfaces)}]");
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -301,7 +314,16 @@ namespace Xalia.AtSpi2
                     if (StateKnown)
                         return new AtSpiState(State);
                     return UiDomUndefined.Instance;
+                case "spi_supported":
+                    depends_on.Add((element, new IdentifierExpression("spi_supported")));
+                    if (!(SupportedInterfaces is null))
+                    {
+                        return new AtSpiSupported(SupportedInterfaces);
+                    }
+                    return UiDomUndefined.Instance;
             }
+            if (other_interface_properties.Contains(identifier))
+                depends_on.Add((element, new IdentifierExpression("spi_supported")));
             return UiDomUndefined.Instance;
         }
 
@@ -567,9 +589,46 @@ namespace Xalia.AtSpi2
                             Utils.RunTask(FetchState());
                         }
                         return true;
+                    case "spi_supported":
+                        if (!fetching_supported)
+                        {
+                            fetching_supported = true;
+                            Utils.RunTask(FetchSupported());
+                        }
+                        break;
                 }
             }
             return false;
+        }
+
+        private async Task FetchSupported()
+        {
+            try
+            {
+                SupportedInterfaces = await CallMethod(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE,
+                    "GetInterfaces", ReadMessageStringArray);
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiElement.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (Element.MatchesDebugCondition())
+                Utils.DebugWriteLine($"{Element}.spi_supported: ({string.Join(",", SupportedInterfaces)})");
+            Element.PropertyChanged("spi_supported");
+            foreach (var iface in SupportedInterfaces)
+            {
+                bool seen_component = false;
+                switch (iface)
+                {
+                    case IFACE_COMPONENT:
+                        if (!seen_component)
+                            Element.AddProvider(new ComponentProvider(this), 0);
+                        seen_component = true;
+                        break;
+                }
+            }
         }
 
         private async Task FetchState()
@@ -667,6 +726,44 @@ namespace Xalia.AtSpi2
                 return;
             }
             AtSpiPropertyChange("accessible-role", result);
+        }
+
+        private void AncestorBoundsChanged()
+        {
+            if (!(SupportedInterfaces is null))
+            {
+                foreach (var provider in Element.Providers)
+                {
+                    if (provider is ComponentProvider component)
+                    {
+                        component.AncestorBoundsChanged();
+                        break;
+                    }
+                }
+            }
+            foreach (var child in Element.Children)
+            {
+                foreach (var provider in child.Providers)
+                {
+                    if (provider is AccessibleProvider acc)
+                    {
+                        acc.AncestorBoundsChanged();
+                    }
+                }
+            }
+        }
+
+        internal void AtSpiBoundsChanged(AtSpiSignal signal)
+        {
+            // This should arguably be on ComponentProvider, but we need
+            // the event to update bounds of descendents even if there is
+            // no ComponentProvider for this element.
+            AncestorBoundsChanged();
+        }
+
+        internal Task<IDisposable> LimitPolling(bool value_known)
+        {
+            return Connection.LimitPolling(Peer, value_known);
         }
     }
 }

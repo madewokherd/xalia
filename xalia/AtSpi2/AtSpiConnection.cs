@@ -97,7 +97,14 @@ namespace Xalia.AtSpi2
             var element = LookupElement((signal.peer, signal.path));
             if (element is null)
                 return;
-            element.AtSpiBoundsChanged(signal);
+            foreach (var provider in element.Providers)
+            {
+                if (provider is AccessibleProvider acc)
+                {
+                    acc.AtSpiBoundsChanged(signal);
+                    break;
+                }
+            }
         }
 
         private void OnStateChanged(AtSpiSignal signal)
