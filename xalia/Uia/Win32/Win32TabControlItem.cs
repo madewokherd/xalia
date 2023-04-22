@@ -11,7 +11,7 @@ namespace Xalia.Uia.Win32
 {
     internal class Win32TabControlItem : UiDomElement
     {
-        public Win32TabControlItem(Win32TabControl parent, int index) : base(parent.Root)
+        public Win32TabControlItem(Win32TabControl parent, int index) : base($"Win32TabControlItem-{parent.Hwnd}-{index}", parent.Root)
         {
             Parent = parent;
             Hwnd = parent.Hwnd;
@@ -30,8 +30,6 @@ namespace Xalia.Uia.Win32
             }
             base.SetAlive(value);
         }
-
-        public override string DebugId => $"Win32TabControlItem-{Hwnd}-{Index}";
 
         private static readonly UiDomValue role = new UiDomEnum(new[] { "tab_item", "tabitem", "page_tab", "pagetab" });
 

@@ -13,8 +13,6 @@ namespace Xalia.AtSpi
     {
         internal Connection connection;
 
-        public override string DebugId => "AtSpiConnection";
-
         IRegistry registry;
 
         private AtSpiConnection(Connection connection, GudlStatement[] rules, IUiDomApplication application) : base(rules, application)

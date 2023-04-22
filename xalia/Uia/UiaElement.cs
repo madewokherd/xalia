@@ -23,7 +23,7 @@ namespace Xalia.Uia
             "win32_use_element", "win32_use_trackbar", "win32_use_tabcontrol", "win32_use_listview",
         };
 
-        public UiaElement(UiaElementWrapper wrapper) : base(wrapper.Connection)
+        public UiaElement(UiaElementWrapper wrapper) : base(wrapper.UniqueId, wrapper.Connection)
         {
             ElementWrapper = wrapper;
             RegisterTrackedProperties(tracked_properties);
@@ -31,14 +31,6 @@ namespace Xalia.Uia
         }
 
         public UiaElementWrapper ElementWrapper { get; }
-
-        public override string DebugId
-        {
-            get
-            {
-                return ElementWrapper.UniqueId;
-            }
-        }
 
         public string ElementIdentifier
         {
@@ -471,7 +463,7 @@ namespace Xalia.Uia
                     UseElementPropertyChanged(new_value,
                         // have to do slow check because Win32Element has subclasses
                         (UiDomElement e) => { return e.GetType() == typeof(Win32Element); },
-                        () => { return new Win32Element(ElementWrapper.Hwnd, Root); });
+                        () => { return new Win32Element("Win32Element", ElementWrapper.Hwnd, Root); });
                     break;
                 case "win32_use_trackbar":
                     UseElementPropertyChanged(new_value,

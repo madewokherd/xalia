@@ -24,7 +24,8 @@ namespace Xalia.Uia.Win32
 
         private Win32RemoteProcessMemory remote_process_memory;
 
-        public Win32ListViewItem(Win32ListView parent, int index) : base(parent.Root)
+        public Win32ListViewItem(Win32ListView parent, int index) : base($"Win32ListViewItem-{parent.Hwnd}-{index}", parent.Root)
+
         {
             Parent = parent;
             Hwnd = parent.Hwnd;
@@ -43,8 +44,6 @@ namespace Xalia.Uia.Win32
             }
             base.SetAlive(value);
         }
-
-        public override string DebugId => $"Win32ListViewItem-{Hwnd}-{Index}";
 
         public new Win32ListView Parent { get; }
         public IntPtr Hwnd { get; }

@@ -15,8 +15,6 @@ namespace Xalia.AtSpi
         internal readonly AtSpiConnection Connection;
         internal readonly string Service;
         internal readonly string Path;
-        public override string DebugId => string.Format("{0}:{1}", Service, Path);
-
         private bool watching_children;
         private bool children_known;
         private bool polling_children;
@@ -260,7 +258,7 @@ namespace Xalia.AtSpi
             }
         }
 
-        internal AtSpiElement(AtSpiConnection connection, string service, string path) : base(connection)
+        internal AtSpiElement(AtSpiConnection connection, string service, string path) : base($"{service}:{path}", connection)
         {
             Path = path;
             Service = service;

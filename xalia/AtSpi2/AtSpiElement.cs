@@ -13,7 +13,7 @@ namespace Xalia.AtSpi2
 {
     internal class AtSpiElement : UiDomElement
     {
-        public AtSpiElement(AtSpiConnection root, string peer, string path): base(root)
+        public AtSpiElement(AtSpiConnection root, string peer, string path): base($"{peer}:{path}", root)
         {
             Root = root;
             Peer = peer;
@@ -77,8 +77,6 @@ namespace Xalia.AtSpi2
         public new AtSpiConnection Root { get; }
         public string Peer { get; }
         public string Path { get; }
-
-        public override string DebugId => $"{Peer}:{Path}";
 
         public bool RoleKnown { get; private set; }
         public int Role { get; private set; }

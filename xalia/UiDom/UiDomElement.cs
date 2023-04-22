@@ -9,7 +9,7 @@ namespace Xalia.UiDom
 {
     public abstract class UiDomElement : UiDomValue
     {
-        public abstract string DebugId { get; }
+        public string DebugId { get; }
 
         public List<UiDomElement> Children { get; } = new List<UiDomElement> ();
 
@@ -82,8 +82,9 @@ namespace Xalia.UiDom
             }
         }
 
-        public UiDomElement(UiDomRoot root)
+        public UiDomElement(string debug_id, UiDomRoot root)
         {
+            DebugId = debug_id;
             Root = root;
         }
 
@@ -92,6 +93,7 @@ namespace Xalia.UiDom
             if (this is UiDomRoot root)
             {
                 Root = root;
+                DebugId = "root";
                 SetAlive(true);
             }
             else
