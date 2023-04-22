@@ -12,7 +12,7 @@ namespace Xalia.Uia.Win32
 {
     internal class Win32ListView : Win32Element
     {
-        public Win32ListView(IntPtr hwnd, UiaConnection root) : base(hwnd, root)
+        public Win32ListView(IntPtr hwnd, UiaConnection root) : base("Win32ListView", hwnd, root)
         {
         }
 
@@ -457,7 +457,7 @@ namespace Xalia.Uia.Win32
                 {
                     if (!(Header is null))
                         RemoveChild(Children.IndexOf(Header));
-                    Header = new Win32Element(HeaderHwnd, Root);
+                    Header = new Win32Element("Win32Element", HeaderHwnd, Root);
                     AddChild(Children.Count, Header);
                     PropertyChanged("win32_header", Header);
                 }

@@ -10,7 +10,8 @@ namespace Xalia.Uia.Win32
 {
     public class Win32VirtualScrollbar : UiDomElement
     {
-        public Win32VirtualScrollbar(Win32Element parent, bool vertical) : base(parent.Root)
+        public Win32VirtualScrollbar(Win32Element parent, bool vertical) :
+            base($"Win32VirtualScrollbar-{parent.Hwnd}-{(vertical ? 'V' : 'H')}", parent.Root)
         {
             Parent = parent;
             Vertical = vertical;
@@ -42,8 +43,6 @@ namespace Xalia.Uia.Win32
         public new Win32Element Parent { get; }
         public bool Vertical { get; }
         public IntPtr Hwnd { get; }
-
-        public override string DebugId => $"Win32VirtualScrollbar-{Hwnd}-{(Vertical ? 'V': 'H')}";
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {

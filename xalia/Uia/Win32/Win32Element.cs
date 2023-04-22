@@ -34,15 +34,13 @@ namespace Xalia.Uia.Win32
             }
         }
 
-        internal Win32Element(IntPtr hwnd, UiaConnection root) : base(root)
+        public Win32Element(string typename, IntPtr hwnd, UiaConnection root) : base($"{typename}-{hwnd}", root)
         {
             Hwnd = hwnd;
             Root = root;
-            _debugid = $"{GetType().Name}-{hwnd}";
         }
 
         public new UiaConnection Root { get; }
-        private readonly string _debugid;
         private static readonly Dictionary<string, string> property_aliases;
         private string ProcessName;
 
@@ -71,13 +69,11 @@ namespace Xalia.Uia.Win32
         public int WindowStyle { get; private set; }
         public bool WindowStyleKnown { get; private set; }
 
-        public override string DebugId => _debugid;
-
         public override bool Equals(object obj)
         {
             if (obj is Win32Element win32)
             {
-                return _debugid == win32._debugid;
+                return DebugId == win32.DebugId;
             }
             return false;
         }

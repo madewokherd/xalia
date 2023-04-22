@@ -11,7 +11,7 @@ namespace Xalia.Uia.Win32
 {
     internal class Win32Trackbar : Win32Element
     {
-        public Win32Trackbar(IntPtr hwnd, UiaConnection root) : base(hwnd, root) { }
+        public Win32Trackbar(IntPtr hwnd, UiaConnection root) : base("Win32Trackbar", hwnd, root) { }
 
         static UiDomEnum role = new UiDomEnum(new string[] { "slider" });
         static Win32Trackbar()

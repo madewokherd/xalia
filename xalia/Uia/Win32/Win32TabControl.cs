@@ -11,7 +11,7 @@ namespace Xalia.Uia.Win32
 {
     internal class Win32TabControl : Win32Element
     {
-        public Win32TabControl(IntPtr hwnd, UiaConnection root) : base(hwnd, root)
+        public Win32TabControl(IntPtr hwnd, UiaConnection root) : base("Win32TabControl", hwnd, root)
         {
         }
 

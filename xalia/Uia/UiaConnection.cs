@@ -725,8 +725,6 @@ namespace Xalia.Uia
                 element.UpdateChildren();
         }
 
-        public override string DebugId => "UiaConnection";
-
         public AutomationBase Automation { get; private set; }
         public SynchronizationContext MainContext { get; }
         
