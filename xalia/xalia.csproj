@@ -92,6 +92,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AtSpi2\AccessibleProvider.cs" />
     <Compile Include="AtSpi2\AtSpiActionList.cs" />
     <Compile Include="AtSpi2\AtSpiConnection.cs" />
     <Compile Include="AtSpi2\AtSpiElement.cs" />
@@ -111,6 +112,7 @@
     <Compile Include="Uia\Win32\Win32TabControlItem.cs" />
     <Compile Include="Uia\Win32\Win32Trackbar.cs" />
     <Compile Include="Uia\Win32\Win32VirtualScrollbar.cs" />
+    <Compile Include="UiDom\IUiDomProvider.cs" />
     <Compile Include="UiDom\UiDomAdjustScrollbars.cs" />
     <Compile Include="AtSpi\AtSpiAttributes.cs" />
     <Compile Include="AtSpi\AtSpiConnection.cs" />

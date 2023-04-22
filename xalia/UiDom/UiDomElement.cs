@@ -21,6 +21,8 @@ namespace Xalia.UiDom
 
         public IReadOnlyCollection<string> Declarations => _activeDeclarations.Keys;
 
+        public List<IUiDomProvider> Providers { get; private set; } = new List<IUiDomProvider>();
+
         private Dictionary<string, (GudlDeclaration, UiDomValue)> _activeDeclarations = new Dictionary<string, (GudlDeclaration, UiDomValue)>();
 
         private Dictionary<string, UiDomValue> _assignedProperties = new Dictionary<string, UiDomValue>();
@@ -54,6 +56,10 @@ namespace Xalia.UiDom
                 }
                 else
                 {
+                    foreach (var provider in Providers)
+                    {
+                        provider.NotifyElementRemoved(this);
+                    }
                     disposing = true;
                     foreach (var watcher in _relationshipWatchers.Values)
                     {
@@ -187,6 +193,13 @@ namespace Xalia.UiDom
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            UiDomValue value;
+            foreach (var provider in Providers)
+            {
+                value = provider.EvaluateIdentifier(this, id, depends_on);
+                if (!(value is UiDomUndefined))
+                    return value;
+            }
             switch (id)
             {
                 case "this":
@@ -335,7 +348,13 @@ namespace Xalia.UiDom
                 return decl.Item2;
             if (_assignedProperties.TryGetValue(id, out result) && !(result is UiDomUndefined))
                 return result;
-            return base.EvaluateIdentifierCore(id, root, depends_on);
+            foreach (var provider in Providers)
+            {
+                value = provider.EvaluateIdentifierLate(this, id, depends_on);
+                if (!(value is UiDomUndefined))
+                    return value;
+            }
+            return UiDomUndefined.Instance;
         }
 
         private UiDomValue AdjustValueMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -393,7 +412,7 @@ namespace Xalia.UiDom
             obj.Element.AssignProperty(((UiDomString)obj.Arglist[0]).Value, obj.Arglist[1]);
         }
 
-        public virtual Task<(bool, int, int)> GetClickablePoint()
+        public virtual async Task<(bool, int, int)> GetClickablePoint()
         {
             int x, y;
             if (GetDeclaration("target_x") is UiDomInt tx &&
@@ -403,9 +422,15 @@ namespace Xalia.UiDom
             {
                 x = tx.Value + tw.Value / 2;
                 y = ty.Value + th.Value / 2;
-                return Task.FromResult((true, x, y));
+                return (true, x, y);
             }
-            return Task.FromResult((false, 0, 0));
+            foreach (var provider in Providers)
+            {
+                var result = await provider.GetClickablePointAsync(this);
+                if (result.Item1)
+                    return result;
+            }
+            return (false, 0, 0);
         }
 
         static GudlExpression debugCondition;
@@ -489,6 +514,10 @@ namespace Xalia.UiDom
 
         protected virtual void DumpProperties()
         {
+            foreach (var provider in Providers)
+            {
+                provider.DumpProperties(this);
+            }
             if (!(Parent is null))
             {
                 Utils.DebugWriteLine($"  parent: {Parent.DebugId}");
@@ -650,6 +679,11 @@ namespace Xalia.UiDom
             {
                 return;
             }
+            foreach (var provider in Providers)
+            {
+                if (provider.WatchProperty(this, expression))
+                    return;
+            }
             if (expression is ApplyExpression apply)
             {
                 if (apply.Left is IdentifierExpression prop &&
@@ -669,6 +703,11 @@ namespace Xalia.UiDom
             if (disposing)
             {
                 return;
+            }
+            foreach (var provider in Providers)
+            {
+                if (provider.UnwatchProperty(this, expression))
+                    return;
             }
             if (_relationshipWatchers.TryGetValue(expression, out var watcher))
             {
@@ -859,6 +898,27 @@ namespace Xalia.UiDom
 
         protected virtual void TrackedPropertyChanged(string name, UiDomValue new_value)
         {
+            foreach (var provider in Providers)
+            {
+                provider.TrackedPropertyChanged(this, name, new_value);
+            }
+        }
+
+        public void AddProvider(IUiDomProvider provider, int index)
+        {
+            Providers.Insert(index, provider);
+            if (!_updatingRules)
+            {
+                _updatingRules = true;
+                Utils.RunIdle(EvaluateRules);
+                if (MatchesDebugCondition())
+                    Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
+            }
+        }
+
+        public void AddProvider(IUiDomProvider provider)
+        {
+            AddProvider(provider, Providers.Count);
         }
     }
 }
