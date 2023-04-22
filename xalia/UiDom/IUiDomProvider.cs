@@ -24,5 +24,7 @@ namespace Xalia.UiDom
         void DumpProperties(UiDomElement element);
 
         Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element);
+
+        string[] GetTrackedProperties();
     }
 }
