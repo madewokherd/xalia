@@ -25,11 +25,195 @@ namespace Xalia.AtSpi2
 
         private static string[] _trackedProperties = new string[] { "recurse_method" };
 
+        private static readonly Dictionary<string, int> name_to_role;
+        private static readonly UiDomEnum[] role_to_enum;
+
+        internal static readonly string[] role_names =
+        {
+            "invalid",
+            "accelerator_label",
+            "alert",
+            "animation",
+            "arrow",
+            "calendar",
+            "canvas",
+            "check_box",
+            "check_menu_item",
+            "color_chooser",
+            "column_header",
+            "combo_box",
+            "date_editor",
+            "desktop_icon",
+            "desktop_frame",
+            "dial",
+            "dialog",
+            "directory_pane",
+            "drawing_area",
+            "file_chooser",
+            "filler",
+            "focus_traversable",
+            "font_chooser",
+            "frame",
+            "glass_pane",
+            "html_container",
+            "icon",
+            "image",
+            "internal_frame",
+            "label",
+            "layered_pane",
+            "list",
+            "list_item",
+            "menu",
+            "menu_bar",
+            "menu_item",
+            "option_pane",
+            "page_tab",
+            "page_tab_list",
+            "panel",
+            "password_text",
+            "popup_menu",
+            "progress_bar",
+            "push_button",
+            "radio_button",
+            "radio_menu_item",
+            "root_pane",
+            "row_header",
+            "scroll_bar",
+            "scroll_pane",
+            "separator",
+            "slider",
+            "spin_button",
+            "split_pane",
+            "status_bar",
+            "table",
+            "table_cell",
+            "table_column_header",
+            "table_row_header",
+            "tearoff_menu_item",
+            "terminal",
+            "text",
+            "toggle_button",
+            "tool_bar",
+            "tool_tip",
+            "tree",
+            "tree_table",
+            "unknown",
+            "viewport",
+            "window",
+            "extended",
+            "header",
+            "footer",
+            "paragraph",
+            "ruler",
+            "application",
+            "autocomplete",
+            "editbar",
+            "embedded",
+            "entry",
+            "chart",
+            "caption",
+            "document_frame",
+            "heading",
+            "page",
+            "section",
+            "redundant_object",
+            "form",
+            "link",
+            "input_method_window",
+            "table_row",
+            "tree_item",
+            "document_spreadsheet",
+            "document_presentation",
+            "document_text",
+            "document_web",
+            "document_email",
+            "comment",
+            "list_box",
+            "grouping",
+            "image_map",
+            "notification",
+            "info_bar",
+            "level_bar",
+            "title_bar",
+            "block_quote",
+            "audio",
+            "video",
+            "definition",
+            "article",
+            "landmark",
+            "log",
+            "marquee",
+            "math",
+            "rating",
+            "timer",
+            "static",
+            "math_fraction",
+            "math_root",
+            "subscript",
+            "superscript",
+            "description_list",
+            "description_term",
+            "description_value",
+            "footnote",
+            "content_deletion",
+            "content_insertion",
+            "mark",
+            "suggestion",
+        };
+
+        private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
+        {
+            { "role", "spi_role" },
+            { "control_type", "spi_role" },
+        };
+
+        static AccessibleProvider()
+        {
+            name_to_role = new Dictionary<string, int>();
+            role_to_enum = new UiDomEnum[role_names.Length];
+            for (int i=0; i<role_names.Length; i++)
+            {
+                string name = role_names[i];
+                string[] names;
+                if (name == "push_button")
+                    names = new[] { "push_button", "pushbutton", "button" };
+                else if (name == "page_tab")
+                    names = new[] { "page_tab", "pagetab", "tab" };
+                else if (name == "page_tab_list")
+                    names = new[] { "page_tab_list", "pagetablist", "tab_item", "tabitem" };
+                else if (name == "text")
+                    names = new[] { "text", "text_box", "textbox", "edit" };
+                else if (name.Contains("_"))
+                    names = new[] { name, name.Replace("_", "") };
+                else
+                    names = new[] { name };
+                role_to_enum[i] = new UiDomEnum(names);
+                foreach (string rolename in names)
+                    name_to_role[rolename] = i;
+            }
+        }
+
         private bool watching_children;
         private bool children_known;
 
+        public bool RoleKnown { get; private set; }
+        public int Role { get; private set; }
+        private bool fetching_role;
+
+        public static UiDomValue ValueFromRole(int role)
+        {
+            if (role > 0 && role < role_to_enum.Length)
+                return role_to_enum[role];
+            else
+                return new UiDomInt(role);
+        }
+
+        public UiDomValue RoleAsValue => RoleKnown ? ValueFromRole(Role) : UiDomUndefined.Instance;
+
         public void DumpProperties(UiDomElement element)
         {
+            if (RoleKnown)
+                Utils.DebugWriteLine($"  spi_role: {RoleAsValue}");
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -46,6 +230,9 @@ namespace Xalia.AtSpi2
                     return new UiDomString(Peer);
                 case "spi_path":
                     return new UiDomString(Path);
+                case "spi_role":
+                    depends_on.Add((element, new IdentifierExpression("spi_role")));
+                    return RoleAsValue;
             }
             return UiDomUndefined.Instance;
         }
@@ -58,6 +245,14 @@ namespace Xalia.AtSpi2
                     if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
                         return new UiDomString("spi_auto");
                     break;
+            }
+            if (property_aliases.TryGetValue(identifier, out var aliased))
+                return element.EvaluateIdentifier(aliased, Element.Root, depends_on);
+            if (name_to_role.TryGetValue(identifier, out var expected_role))
+            {
+                depends_on.Add((element, new IdentifierExpression("spi_role")));
+                if (RoleKnown)
+                    return UiDomBoolean.FromBool(Role == expected_role);
             }
             return UiDomUndefined.Instance;
         }
@@ -280,7 +475,71 @@ namespace Xalia.AtSpi2
 
         public bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "spi_role":
+                        if (!fetching_role)
+                        {
+                            fetching_role = true;
+                            Utils.RunTask(FetchRole());
+                        }
+                        return true;
+                }
+            }
             return false;
+        }
+
+        internal void AtSpiPropertyChange(string detail, object value)
+        {
+            switch (detail)
+            {
+                case "accessible-role":
+                    {
+                        if (value is uint uval)
+                            value = (int)uval;
+                        if (value is int ival && (!RoleKnown || ival != Role))
+                        {
+                            RoleKnown = true;
+                            Role = ival;
+                            if (Element.MatchesDebugCondition())
+                                Utils.DebugWriteLine($"{Element}.spi_role: {RoleAsValue}");
+                            Element.PropertyChanged("spi_role");
+                        }
+                        else if (value is null)
+                        {
+                            if (fetching_role || RoleKnown)
+                                Utils.RunTask(FetchRole());
+                        }
+                        else
+                        {
+                            Console.WriteLine($"WARNING: unexpected type for accessible-role: {value.GetType()}");
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+
+        private async Task FetchRole()
+        {
+            int result;
+            try
+            {
+                await Connection.RegisterEvent("object:property-change:accessible-role");
+
+                result = await CallMethod(Connection.Connection, Peer, Path,
+                    IFACE_ACCESSIBLE, "GetRole", ReadMessageInt32);
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiElement.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            AtSpiPropertyChange("accessible-role", result);
         }
     }
 }
