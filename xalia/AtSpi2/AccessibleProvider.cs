@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tmds.DBus.Protocol;
@@ -27,6 +28,8 @@ namespace Xalia.AtSpi2
 
         private static readonly Dictionary<string, int> name_to_role;
         private static readonly UiDomEnum[] role_to_enum;
+
+        internal static Dictionary<string, int> name_to_state;
 
         internal static readonly string[] role_names =
         {
@@ -161,10 +164,59 @@ namespace Xalia.AtSpi2
             "suggestion",
         };
 
+        internal static readonly string[] state_names =
+        {
+            "invalid",
+            "active",
+            "armed",
+            "busy",
+            "checked",
+            "collapsed",
+            "defunct",
+            "editable",
+            "enabled",
+            "expandable",
+            "expanded",
+            "focusable",
+            "focused",
+            "has_tooltip",
+            "horizontal",
+            "iconified",
+            "modal",
+            "multi_line",
+            "multiselectable",
+            "opaque",
+            "pressed",
+            "resizable",
+            "selectable",
+            "selected",
+            "sensitive",
+            "showing",
+            "single_line",
+            "stale",
+            "transient",
+            "vertical",
+            "visible",
+            "manages_descendants",
+            "indeterminate",
+            "required",
+            "truncated",
+            "animated",
+            "invalid_entry",
+            "supports_autocompletion",
+            "selectable_text",
+            "is_default",
+            "visited",
+            "checkable",
+            "has_popup",
+            "read_only",
+        };
+
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
             { "role", "spi_role" },
             { "control_type", "spi_role" },
+            { "state", "spi_state" },
         };
 
         static AccessibleProvider()
@@ -191,6 +243,11 @@ namespace Xalia.AtSpi2
                 foreach (string rolename in names)
                     name_to_role[rolename] = i;
             }
+            name_to_state = new Dictionary<string, int>();
+            for (int i=0; i<state_names.Length; i++)
+            {
+                name_to_state[state_names[i]] = i;
+            }
         }
 
         private bool watching_children;
@@ -199,6 +256,10 @@ namespace Xalia.AtSpi2
         public bool RoleKnown { get; private set; }
         public int Role { get; private set; }
         private bool fetching_role;
+
+        public bool StateKnown { get; private set; }
+        public uint[] State { get; private set; }
+        private bool fetching_state;
 
         public static UiDomValue ValueFromRole(int role)
         {
@@ -214,6 +275,8 @@ namespace Xalia.AtSpi2
         {
             if (RoleKnown)
                 Utils.DebugWriteLine($"  spi_role: {RoleAsValue}");
+            if (StateKnown)
+                Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -233,6 +296,11 @@ namespace Xalia.AtSpi2
                 case "spi_role":
                     depends_on.Add((element, new IdentifierExpression("spi_role")));
                     return RoleAsValue;
+                case "spi_state":
+                    depends_on.Add((element, new IdentifierExpression("spi_state")));
+                    if (StateKnown)
+                        return new AtSpiState(State);
+                    return UiDomUndefined.Instance;
             }
             return UiDomUndefined.Instance;
         }
@@ -253,6 +321,12 @@ namespace Xalia.AtSpi2
                 depends_on.Add((element, new IdentifierExpression("spi_role")));
                 if (RoleKnown)
                     return UiDomBoolean.FromBool(Role == expected_role);
+            }
+            if (name_to_state.TryGetValue(identifier, out var expected_state))
+            {
+                depends_on.Add((element, new IdentifierExpression("spi_state")));
+                if (StateKnown)
+                    return UiDomBoolean.FromBool(AtSpiState.IsStateSet(State, expected_state));
             }
             return UiDomUndefined.Instance;
         }
@@ -486,9 +560,44 @@ namespace Xalia.AtSpi2
                             Utils.RunTask(FetchRole());
                         }
                         return true;
+                    case "spi_state":
+                        if (!fetching_state)
+                        {
+                            fetching_state = true;
+                            Utils.RunTask(FetchState());
+                        }
+                        return true;
                 }
             }
             return false;
+        }
+
+        private async Task FetchState()
+        {
+            uint[] result;
+            try
+            {
+                await Connection.RegisterEvent("object:state-changed");
+
+                result = await CallMethod(Connection.Connection, Peer, Path,
+                    IFACE_ACCESSIBLE, "GetState", ReadMessageUint32Array);
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiElement.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (StateKnown)
+            {
+                if (StructuralComparisons.StructuralEqualityComparer.Equals(State, result))
+                    return;
+            }
+            StateKnown = true;
+            State = result;
+            if (Element.MatchesDebugCondition())
+                Utils.DebugWriteLine($"{Element}.spi_state: {new AtSpiState(State)}");
+            Element.PropertyChanged("spi_state");
         }
 
         internal void AtSpiPropertyChange(string detail, object value)
@@ -521,6 +630,24 @@ namespace Xalia.AtSpi2
                 default:
                     break;
             }
+        }
+
+        internal void AtSpiStateChanged(AtSpiSignal signal)
+        {
+            if (!StateKnown)
+                return;
+            var new_state = AtSpiState.SetState(State, signal.detail, signal.detail1 != 0);
+            if (new_state is null)
+                return;
+            if (StructuralComparisons.StructuralEqualityComparer.Equals(State, new_state))
+                return;
+            State = new_state;
+            if (Element.MatchesDebugCondition())
+            {
+                var action = (signal.detail1 != 0) ? "added" : "removed";
+                Utils.DebugWriteLine($"{Element}.spi_state: {new AtSpiState(State)} ({signal.detail} {action})");
+            }
+            Element.PropertyChanged("spi_state");
         }
 
         private async Task FetchRole()

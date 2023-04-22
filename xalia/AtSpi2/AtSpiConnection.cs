@@ -105,7 +105,14 @@ namespace Xalia.AtSpi2
             var element = LookupElement((signal.peer, signal.path));
             if (element is null)
                 return;
-            element.AtSpiStateChanged(signal);
+            foreach (var provider in element.Providers)
+            {
+                if (provider is AccessibleProvider acc)
+                {
+                    acc.AtSpiStateChanged(signal);
+                    break;
+                }
+            }
         }
 
         public Task RegisterEvent(string name)

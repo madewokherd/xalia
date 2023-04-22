@@ -51,7 +51,7 @@ namespace Xalia.AtSpi2
 
         public static uint[] SetState(uint[] flags, string state, bool value)
         {
-            if (AtSpiElement.name_to_state.TryGetValue(state, out var state_num))
+            if (AccessibleProvider.name_to_state.TryGetValue(state, out var state_num))
             {
                 return SetState(flags, state_num, value);
             }
@@ -67,7 +67,7 @@ namespace Xalia.AtSpi2
 
         public static bool IsStateSet(uint[] flags, string state)
         {
-            if (AtSpiElement.name_to_state.TryGetValue(state, out var state_num))
+            if (AccessibleProvider.name_to_state.TryGetValue(state, out var state_num))
             {
                 return IsStateSet(flags, state_num);
             }
@@ -80,7 +80,7 @@ namespace Xalia.AtSpi2
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
-            if (AtSpiElement.name_to_state.TryGetValue(id, out var state))
+            if (AccessibleProvider.name_to_state.TryGetValue(id, out var state))
                 return UiDomBoolean.FromBool(IsStateSet(state));
             return base.EvaluateIdentifierCore(id, root, depends_on);
         }
@@ -99,14 +99,14 @@ namespace Xalia.AtSpi2
             }
             sb.Append(") ");
             first_token = true;
-            for (int i=0; i<AtSpiElement.state_names.Length; i++)
+            for (int i=0; i<AccessibleProvider.state_names.Length; i++)
             {
                 if (IsStateSet(i))
                 {
                     if (!first_token)
                         sb.Append('|');
                     first_token = false;
-                    sb.Append(AtSpiElement.state_names[i]);
+                    sb.Append(AccessibleProvider.state_names[i]);
                 }
             }
             sb.Append('>');

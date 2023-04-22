@@ -25,13 +25,7 @@ namespace Xalia.AtSpi2
 
         static AtSpiElement()
         {
-            name_to_state = new Dictionary<string, int>();
-            for (int i=0; i<state_names.Length; i++)
-            {
-                name_to_state[state_names[i]] = i;
-            }
             string[] aliases = {
-                "state", "spi_state",
                 "x", "spi_abs_x",
                 "y", "spi_abs_y",
                 "width", "spi_abs_width",
@@ -53,10 +47,6 @@ namespace Xalia.AtSpi2
         public string Peer { get; }
         public string Path { get; }
 
-        public bool StateKnown { get; private set; }
-        public uint[] State { get; private set; }
-        private bool fetching_state;
-
         public bool AbsPosKnown { get; private set; }
         public int AbsX { get; private set; }
         public int AbsY { get; private set; }
@@ -68,57 +58,7 @@ namespace Xalia.AtSpi2
         public string[] Actions { get; private set; }
         private bool fetching_actions;
 
-        internal static readonly string[] state_names =
-        {
-            "invalid",
-            "active",
-            "armed",
-            "busy",
-            "checked",
-            "collapsed",
-            "defunct",
-            "editable",
-            "enabled",
-            "expandable",
-            "expanded",
-            "focusable",
-            "focused",
-            "has_tooltip",
-            "horizontal",
-            "iconified",
-            "modal",
-            "multi_line",
-            "multiselectable",
-            "opaque",
-            "pressed",
-            "resizable",
-            "selectable",
-            "selected",
-            "sensitive",
-            "showing",
-            "single_line",
-            "stale",
-            "transient",
-            "vertical",
-            "visible",
-            "manages_descendants",
-            "indeterminate",
-            "required",
-            "truncated",
-            "animated",
-            "invalid_entry",
-            "supports_autocompletion",
-            "selectable_text",
-            "is_default",
-            "visited",
-            "checkable",
-            "has_popup",
-            "read_only",
-        };
-
         internal static Dictionary<string, string> name_mapping;
-
-        internal static Dictionary<string, int> name_to_state;
 
         protected override void SetAlive(bool value)
         {
@@ -149,11 +89,6 @@ namespace Xalia.AtSpi2
 
             switch (id)
             {
-                case "spi_state":
-                    depends_on.Add((this, new IdentifierExpression("spi_state")));
-                    if (StateKnown)
-                        return new AtSpiState(State);
-                    return UiDomUndefined.Instance;
                 case "spi_abs_x":
                     depends_on.Add((this, new IdentifierExpression("spi_abs_pos")));
                     if (AbsPosKnown)
@@ -185,20 +120,11 @@ namespace Xalia.AtSpi2
             if (!value.Equals(UiDomUndefined.Instance))
                 return value;
 
-            if (name_to_state.TryGetValue(id, out var expected_state))
-            {
-                depends_on.Add((this, new IdentifierExpression("spi_state")));
-                if (StateKnown)
-                    return UiDomBoolean.FromBool(AtSpiState.IsStateSet(State, expected_state));
-            }
-
             return UiDomUndefined.Instance;
         }
 
         protected override void DumpProperties()
         {
-            if (StateKnown)
-                Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
             if (AbsPosKnown)
             {
                 Utils.DebugWriteLine($"  spi_abs_x: {AbsX}");
@@ -217,13 +143,6 @@ namespace Xalia.AtSpi2
             {
                 switch (id.Name)
                 {
-                    case "spi_state":
-                        if (!fetching_state)
-                        {
-                            fetching_state = true;
-                            Utils.RunTask(FetchState());
-                        }
-                        break;
                     case "spi_abs_pos":
                         if (!watching_abs_pos)
                         {
@@ -333,34 +252,6 @@ namespace Xalia.AtSpi2
             return Root.LimitPolling(Peer, value_known);
         }
 
-        private async Task FetchState()
-        {
-            uint[] result;
-            try
-            {
-                await Root.RegisterEvent("object:state-changed");
-
-                result = await CallMethod(Root.Connection, Peer, Path,
-                    IFACE_ACCESSIBLE, "GetState", ReadMessageUint32Array);
-            }
-            catch (DBusException e)
-            {
-                if (!IsExpectedException(e))
-                    throw;
-                return;
-            }
-            if (StateKnown)
-            {
-                if (StructuralComparisons.StructuralEqualityComparer.Equals(State, result))
-                    return;
-            }
-            StateKnown = true;
-            State = result;
-            if (MatchesDebugCondition())
-                Utils.DebugWriteLine($"{this}.spi_state: {new AtSpiState(State)}");
-            PropertyChanged("spi_state");
-        }
-
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
 
         internal static bool IsExpectedException(DBusException e, params string[] extra_errors)
@@ -396,24 +287,6 @@ namespace Xalia.AtSpi2
                     return true;
 #endif
             }
-        }
-
-        internal void AtSpiStateChanged(AtSpiSignal signal)
-        {
-            if (!StateKnown)
-                return;
-            var new_state = AtSpiState.SetState(State, signal.detail, signal.detail1 != 0);
-            if (new_state is null)
-                return;
-            if (StructuralComparisons.StructuralEqualityComparer.Equals(State, new_state))
-                return;
-            State = new_state;
-            if (MatchesDebugCondition())
-            {
-                var action = (signal.detail1 != 0) ? "added" : "removed";
-                Utils.DebugWriteLine($"{this}.spi_state: {new AtSpiState(State)} ({signal.detail} {action})");
-            }
-            PropertyChanged("spi_state");
         }
 
         private void AncestorBoundsChanged()
