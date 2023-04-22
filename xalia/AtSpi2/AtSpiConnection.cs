@@ -122,7 +122,14 @@ namespace Xalia.AtSpi2
             var element = LookupElement((signal.peer, signal.path));
             if (element is null)
                 return;
-            element.AtSpiChildrenChanged(signal);
+            foreach (var provider in element.Providers)
+            {
+                if (provider is AccessibleProvider acc)
+                {
+                    acc.AtSpiChildrenChanged(signal);
+                    break;
+                }
+            }
         }
 
         private void OnPropertyChange(AtSpiSignal signal)

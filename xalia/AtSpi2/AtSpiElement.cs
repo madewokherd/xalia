@@ -18,11 +18,9 @@ namespace Xalia.AtSpi2
             Root = root;
             Peer = peer;
             Path = path;
-            AddProvider(new AccessibleProvider(root, peer, path));
-            RegisterTrackedProperties(tracked_properties);
+            AddProvider(new AccessibleProvider(this, root, peer, path));
         }
 
-        private static string[] tracked_properties = { "recurse" };
         private static readonly Dictionary<string, string> property_aliases;
 
         static AtSpiElement()
@@ -86,9 +84,6 @@ namespace Xalia.AtSpi2
         public bool StateKnown { get; private set; }
         public uint[] State { get; private set; }
         private bool fetching_state;
-
-        private bool watching_children;
-        private bool children_known;
 
         public bool AbsPosKnown { get; private set; }
         public int AbsX { get; private set; }
@@ -297,8 +292,6 @@ namespace Xalia.AtSpi2
             }
             else
             {
-                watching_children = false;
-                children_known = false;
                 watching_abs_pos = false;
                 AbsPosKnown = false;
                 Root.NotifyElementDestroyed(this);
@@ -615,201 +608,6 @@ namespace Xalia.AtSpi2
                     }
                     return true;
 #endif
-            }
-        }
-
-        private async Task<List<(string, string)>> GetChildList()
-        {
-            try
-            {
-                var children = await CallMethod(Root.Connection, Peer, Path,
-                    IFACE_ACCESSIBLE, "GetChildren", ReadMessageElementList);
-
-                if (children.Count == 0)
-                {
-                    var child_count = (int)await GetProperty(Root.Connection, Peer, Path,
-                        IFACE_ACCESSIBLE, "ChildCount");
-                    if (child_count != 0)
-                    {
-                        // This happens for AtkSocket/AtkPlug
-                        // https://gitlab.gnome.org/GNOME/at-spi2-core/-/issues/98
-
-                        children = new List<(string, string)>(child_count);
-
-                        for (int i = 0; i < child_count; i++)
-                        {
-                            children.Add(await CallMethod(Root.Connection, Peer, Path,
-                                IFACE_ACCESSIBLE, "GetChildAtIndex", i, ReadMessageElement));
-                        }
-                    }
-                }
-
-                return children;
-            }
-            catch (DBusException e)
-            {
-                if (!IsExpectedException(e))
-                    throw;
-                return new List<(string, string)>();
-            }
-            catch (InvalidCastException)
-            {
-                return new List<(string, string)>();
-            }
-        }
-
-        private async Task PollChildrenTask()
-        {
-            if (!watching_children)
-                return;
-
-            await Root.RegisterEvent("object:children-changed");
-
-            List<(string, string)> children = await GetChildList();
-
-            // Ignore any duplicate children
-            HashSet<(string, string)> seen_children = new HashSet<(string, string)>();
-            int i = 0;
-            while (i < children.Count)
-            {
-                if (!seen_children.Add(children[i]))
-                {
-                    children.RemoveAt(i);
-                    continue;
-                }
-                i++;
-            }
-
-            // First remove any existing children that are missing or out of order
-            i = 0;
-            foreach (var new_child in children)
-            {
-                if (!Children.Exists((UiDomElement element) => ElementMatches(element, new_child)))
-                    continue;
-                while (!ElementMatches(Children[i], new_child))
-                {
-                    RemoveChild(i);
-                }
-                i++;
-            }
-
-            // Remove any remaining missing children
-            while (i < Children.Count && Children[i] is AtSpiElement)
-                RemoveChild(i);
-
-            // Add any new children
-            i = 0;
-            foreach (var new_child in children)
-            {
-                if (Children.Count <= i || !ElementMatches(Children[i], new_child))
-                {
-                    if (!(Root.LookupElement(new_child) is null))
-                    {
-                        // Child element is a duplicate of another element somewhere in the tree.
-                        continue;
-                    }
-                    AddChild(i, new AtSpiElement(Root, new_child.Item1, new_child.Item2));
-                }
-                i += 1;
-            }
-
-            children_known = true;
-        }
-
-        private bool ElementMatches(UiDomElement element, (string, string) new_child)
-        {
-            return element is AtSpiElement e && e.Peer == new_child.Item1 && e.Path == new_child.Item2;
-        }
-
-        internal void WatchChildren()
-        {
-            if (watching_children)
-                return;
-            if (MatchesDebugCondition())
-                Utils.DebugWriteLine($"WatchChildren for {this}");
-            watching_children = true;
-            children_known = false;
-            Utils.RunTask(PollChildrenTask());
-        }
-
-        internal void UnwatchChildren()
-        {
-            if (!watching_children)
-                return;
-            if (MatchesDebugCondition())
-                Utils.DebugWriteLine($"UnwatchChildren for {this}");
-            watching_children = false;
-            for (int i=Children.Count-1; i >= 0; i--)
-            {
-                if (Children[i] is AtSpiElement)
-                    RemoveChild(i);
-            }
-        }
-
-        protected override void TrackedPropertyChanged(string name, UiDomValue new_value)
-        {
-            switch (name)
-            {
-                case "recurse":
-                    {
-                        if (new_value.ToBool())
-                            WatchChildren();
-                        else
-                            UnwatchChildren();
-                        break;
-                    }
-            }
-            base.TrackedPropertyChanged(name, new_value);
-        }
-
-        internal void AtSpiChildrenChanged(AtSpiSignal signal)
-        {
-            if (!children_known)
-                return;
-            var index = signal.detail1;
-            var child = ((string, ObjectPath))signal.value;
-            var child_element = Root.LookupElement(child);
-            switch (signal.detail)
-            {
-                case "add":
-                    {
-                        if (!(child_element is null))
-                        {
-                            Console.WriteLine($"WARNING: {child_element} added to {this} but is already a child of {child_element.Parent}, ignoring.");
-                            return;
-                        }
-                        if (index > Children.Count || index < 0)
-                        {
-                            Console.WriteLine($"WARNING: {child.Item1}:{child.Item2} added to {this} at index {index}, but there are only {Children.Count} known children");
-                            index = Children.Count;
-                        }
-                        AddChild(index, new AtSpiElement(Root, child.Item1, child.Item2));
-                        break;
-                    }
-                case "remove":
-                    {
-                        if (child_element is null)
-                        {
-                            Console.WriteLine($"WARNING: {child.Item1}:{child.Item2} removed from {this}, but the element is unknown");
-                            return;
-                        }
-                        if (child_element.Parent != this)
-                        {
-                            Console.WriteLine($"WARNING: {child.Item1}:{child.Item2} removed from {this}, but is a child of {child_element.Parent}");
-                            return;
-                        }
-                        if (index >= Children.Count || index < 0 || Children[index] != child_element)
-                        {
-                            var real_index = Children.IndexOf(child_element);
-                            Console.WriteLine($"WARNING: {child.Item1}:{child.Item2} remove event has wrong index - got {index}, should be {real_index}");
-                            index = real_index;
-                        }
-                        RemoveChild(index);
-                        break;
-                    }
-                default:
-                    Console.WriteLine($"WARNING: unknown detail on ChildrenChanged event: {signal.detail}");
-                    break;
             }
         }
 

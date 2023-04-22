@@ -106,7 +106,7 @@ namespace Xalia.UiDom
                 throw new InvalidOperationException("UiDomObject constructor with no arguments can only be used by UiDomRoot");
         }
 
-        protected void AddChild(int index, UiDomElement child)
+        public void AddChild(int index, UiDomElement child)
         {
             if (MatchesDebugCondition())
                 Utils.DebugWriteLine($"Child {child} added to {this} at index {index}");
@@ -136,7 +136,7 @@ namespace Xalia.UiDom
             return UiDomUndefined.Instance;
         }
 
-        protected void RemoveChild(int index)
+        public void RemoveChild(int index)
         {
             var child = Children[index];
             if (MatchesDebugCondition() || child.MatchesDebugCondition())
@@ -907,6 +907,9 @@ namespace Xalia.UiDom
         public void AddProvider(IUiDomProvider provider, int index)
         {
             Providers.Insert(index, provider);
+            var tracked = provider.GetTrackedProperties();
+            if (!(tracked is null))
+                RegisterTrackedProperties(tracked);
             if (!_updatingRules)
             {
                 _updatingRules = true;
