@@ -54,6 +54,8 @@ namespace Xalia.Win32
 
             var element = new UiDomElement(element_name, Root);
 
+            element.AddProvider(new HwndProvider(hwnd, element));
+
             elements_by_id.Add(element_name, element);
 
             return element;
