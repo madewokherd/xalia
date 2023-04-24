@@ -22,6 +22,8 @@ namespace Xalia.Win32
 
         public UiDomRoot Root { get; }
 
+        public CommandThread CommandThread { get; } = new CommandThread();
+
         private void UpdateToplevels()
         {
             HashSet<IntPtr> toplevels_to_remove = new HashSet<IntPtr>(toplevel_hwnds);
@@ -54,7 +56,7 @@ namespace Xalia.Win32
 
             var element = new UiDomElement(element_name, Root);
 
-            element.AddProvider(new HwndProvider(hwnd, element));
+            element.AddProvider(new HwndProvider(hwnd, element, this));
 
             elements_by_id.Add(element_name, element);
 

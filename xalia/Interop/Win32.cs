@@ -306,6 +306,10 @@ namespace Xalia.Interop
             [Out, MarshalAs(UnmanagedType.Interface)] out IAccessible accessible,
             [Out, MarshalAs(UnmanagedType.Struct)] out object pvarChild);
 
+        [DllImport(OLEACC_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int ObjectFromLresult(IntPtr lResult,
+            [MarshalAs(UnmanagedType.LPStruct)] Guid riid, IntPtr wParam, out Accessibility.IAccessible ppvObject);
+
         [ComImport, Guid("6d5140c1-7436-11ce-8034-00aa006009fa")]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         public interface IServiceProvider
@@ -732,6 +736,7 @@ namespace Xalia.Interop
 
         public const int WM_DESTROY = 0x2;
         public const int WM_MOUSEACTIVATE = 0x21;
+        public const int WM_GETOBJECT = 0x3d;
         public const int WM_NCCREATE = 0x81;
         public const int WM_HSCROLL = 0x114;
         public const int WM_VSCROLL = 0x115;

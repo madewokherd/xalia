@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Accessibility;
+using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -9,19 +11,21 @@ namespace Xalia.Win32
 {
     internal class HwndProvider : IUiDomProvider
     {
-        public HwndProvider(IntPtr hwnd, UiDomElement element)
+        public HwndProvider(IntPtr hwnd, UiDomElement element, Win32Connection connection)
         {
             Hwnd = hwnd;
             Element = element;
-
+            Connection = connection;
             ClassName = RealGetWindowClass(hwnd);
             Tid = GetWindowThreadProcessId(hwnd, out var pid);
             Pid = pid;
+
+            Utils.RunTask(DiscoverProviders());
         }
 
         public IntPtr Hwnd { get; }
         public UiDomElement Element { get; private set; }
-
+        public Win32Connection Connection { get; }
         public string ClassName { get; }
         public int Pid { get; }
         public int Tid { get; }
@@ -33,6 +37,34 @@ namespace Xalia.Win32
             { "pid", "win32_pid" },
             { "tid", "win32_tid" },
         };
+
+        private async Task DiscoverProviders()
+        {
+            // TODO: Check if there's a UIA provider
+
+            var lr = await SendMessageAsync(Hwnd, WM_GETOBJECT, IntPtr.Zero, (IntPtr)OBJID_CLIENT);
+            if ((int)lr > 0)
+            {
+                try
+                {
+                    IAccessible acc = await Connection.CommandThread.OnBackgroundThread(() =>
+                    {
+                        int hr = ObjectFromLresult(lr, IID_IAccessible, IntPtr.Zero, out var obj);
+                        Marshal.ThrowExceptionForHR(hr);
+                        return obj;
+                    }, Tid + 1);
+                    Element.AddProvider(new AccessibleProvider(this, Element, acc, 0), 0);
+                    return;
+                }
+                catch (Exception e)
+                {
+                    if (!AccessibleProvider.IsExpectedException(e))
+                        throw;
+                }
+            }
+            
+            // TODO: Check for standard class names and OBJID_QUERYCLASSNAMEIDX?
+        }
 
         public void DumpProperties(UiDomElement element)
         {
