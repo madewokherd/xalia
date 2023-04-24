@@ -20,6 +20,7 @@ using Xalia.Sdl;
 using static SDL2.SDL;
 #if WINDOWS
 using static Xalia.Interop.Win32;
+using Xalia.Win32;
 #endif
 
 namespace Xalia
@@ -61,6 +62,13 @@ namespace Xalia
                 }
 
 #if WINDOWS
+                if (connection == null &&
+                    ((Environment.GetEnvironmentVariable("XALIA_EXPERIMENTAL_WIN32") ?? "0") != "0"))
+                {
+                    connection = new UiDomRoot(config, application);
+                    new Win32Connection(connection);
+                }
+
                 if (connection == null &&
                     (Environment.GetEnvironmentVariable("XALIA_USE_UIA2") ?? "0") != "0")
                 {

@@ -7,7 +7,7 @@ using Xalia.Gudl;
 
 namespace Xalia.UiDom
 {
-    public abstract class UiDomElement : UiDomValue
+    public class UiDomElement : UiDomValue
     {
         public string DebugId { get; }
 
@@ -51,12 +51,22 @@ namespace Xalia.UiDom
                 IsAlive = value;
                 if (value)
                 {
+                    foreach (var provider in Root.GlobalProviders)
+                    {
+                        var tracked = provider.GetTrackedProperties();
+                        if (!(tracked is null))
+                            RegisterTrackedProperties(tracked);
+                    }
                     _updatingRules = true;
                     Utils.RunIdle(EvaluateRules); // This could infinitely recurse for badly-coded rules if we did it immediately
                 }
                 else
                 {
                     foreach (var provider in Providers)
+                    {
+                        provider.NotifyElementRemoved(this);
+                    }
+                    foreach (var provider in Root.GlobalProviders)
                     {
                         provider.NotifyElementRemoved(this);
                     }
@@ -195,6 +205,12 @@ namespace Xalia.UiDom
         {
             UiDomValue value;
             foreach (var provider in Providers)
+            {
+                value = provider.EvaluateIdentifier(this, id, depends_on);
+                if (!(value is UiDomUndefined))
+                    return value;
+            }
+            foreach (var provider in Root.GlobalProviders)
             {
                 value = provider.EvaluateIdentifier(this, id, depends_on);
                 if (!(value is UiDomUndefined))
@@ -354,6 +370,12 @@ namespace Xalia.UiDom
                 if (!(value is UiDomUndefined))
                     return value;
             }
+            foreach (var provider in Root.GlobalProviders)
+            {
+                value = provider.EvaluateIdentifierLate(this, id, depends_on);
+                if (!(value is UiDomUndefined))
+                    return value;
+            }
             return UiDomUndefined.Instance;
         }
 
@@ -425,6 +447,12 @@ namespace Xalia.UiDom
                 return (true, x, y);
             }
             foreach (var provider in Providers)
+            {
+                var result = await provider.GetClickablePointAsync(this);
+                if (result.Item1)
+                    return result;
+            }
+            foreach (var provider in Root.GlobalProviders)
             {
                 var result = await provider.GetClickablePointAsync(this);
                 if (result.Item1)
@@ -515,6 +543,10 @@ namespace Xalia.UiDom
         protected virtual void DumpProperties()
         {
             foreach (var provider in Providers)
+            {
+                provider.DumpProperties(this);
+            }
+            foreach (var provider in Root.GlobalProviders)
             {
                 provider.DumpProperties(this);
             }
@@ -684,6 +716,11 @@ namespace Xalia.UiDom
                 if (provider.WatchProperty(this, expression))
                     return;
             }
+            foreach (var provider in Root.GlobalProviders)
+            {
+                if (provider.WatchProperty(this, expression))
+                    return;
+            }
             if (expression is ApplyExpression apply)
             {
                 if (apply.Left is IdentifierExpression prop &&
@@ -705,6 +742,11 @@ namespace Xalia.UiDom
                 return;
             }
             foreach (var provider in Providers)
+            {
+                if (provider.UnwatchProperty(this, expression))
+                    return;
+            }
+            foreach (var provider in Root.GlobalProviders)
             {
                 if (provider.UnwatchProperty(this, expression))
                     return;
@@ -902,6 +944,10 @@ namespace Xalia.UiDom
             {
                 provider.TrackedPropertyChanged(this, name, new_value);
             }
+            foreach (var provider in Root.GlobalProviders)
+            {
+                provider.TrackedPropertyChanged(this, name, new_value);
+            }
         }
 
         public void AddProvider(IUiDomProvider provider, int index)
@@ -922,6 +968,24 @@ namespace Xalia.UiDom
         public void AddProvider(IUiDomProvider provider)
         {
             AddProvider(provider, Providers.Count);
+        }
+
+        internal void AddedGlobalProvider(IUiDomProvider provider)
+        {
+            var tracked = provider.GetTrackedProperties();
+            if (!(tracked is null))
+                RegisterTrackedProperties(tracked);
+            if (!_updatingRules)
+            {
+                _updatingRules = true;
+                Utils.RunIdle(EvaluateRules);
+                if (MatchesDebugCondition())
+                    Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
+            }
+            foreach (var child in Children)
+            {
+                child.AddedGlobalProvider(provider);
+            }
         }
     }
 }
