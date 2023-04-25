@@ -191,6 +191,7 @@
     <Compile Include="Sdl\WindowingSystem.cs" />
     <Compile Include="external\SDL2-CS\src\SDL2.cs" />
     <Compile Include="Win32\AccessibleProvider.cs" />
+    <Compile Include="Win32\HwndDialogProvider.cs" />
     <Compile Include="Win32\HwndProvider.cs" />
     <Compile Include="Win32\CommandThread.cs" />
     <Compile Include="Win32\Win32Connection.cs" />

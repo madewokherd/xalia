@@ -760,6 +760,16 @@ namespace Xalia.Interop
 
         public const int SBS_VERT = 0x1;
 
+        public static int HIWORD(int dword)
+        {
+            return (dword >> 16) & 0xffff;
+        }
+
+        public static int LOWORD(int dword)
+        {
+            return dword & 0xffff;
+        }
+
         public static IntPtr MAKEWPARAM(ushort low, ushort high)
         {
             return new IntPtr((high << 16) | low);
@@ -858,6 +868,11 @@ namespace Xalia.Interop
 
             return info.info.win.window;
         }
+
+        // Dialog
+        public const int DM_GETDEFID = WM_USER;
+
+        public const int DC_HASDEFID = 0x534b;
 
         // List view
         public const int LVS_ICON = 0x0;

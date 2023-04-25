@@ -63,7 +63,14 @@ namespace Xalia.Win32
                 }
             }
             
-            // TODO: Check for standard class names and OBJID_QUERYCLASSNAMEIDX?
+            switch (ClassName)
+            {
+                case "#32770":
+                    Element.AddProvider(new HwndDialogProvider(this), 0);
+                    return;
+            }
+
+            // TODO: Check for OBJID_QUERYCLASSNAMEIDX?
         }
 
         public void DumpProperties(UiDomElement element)
