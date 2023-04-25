@@ -44,6 +44,19 @@ namespace Xalia.UiDom
         private Dictionary<string, UiDomValue> tracked_property_values = new Dictionary<string, UiDomValue>();
         private Dictionary<(UiDomElement, GudlExpression), IDisposable> tracked_property_notifiers = new Dictionary<(UiDomElement, GudlExpression), IDisposable>();
 
+        private bool QueueEvaluateRules()
+        {
+            if (!IsAlive)
+                return false;
+            bool was_updating = _updatingRules;
+            if (!was_updating)
+            {
+                _updatingRules = true;
+                Utils.RunIdle(EvaluateRules);
+            }
+            return !was_updating;
+        }
+
         protected virtual void SetAlive(bool value)
         {
             if (IsAlive != value)
@@ -57,8 +70,7 @@ namespace Xalia.UiDom
                         if (!(tracked is null))
                             RegisterTrackedProperties(tracked);
                     }
-                    _updatingRules = true;
-                    Utils.RunIdle(EvaluateRules); // This could infinitely recurse for badly-coded rules if we did it immediately
+                    QueueEvaluateRules();
                 }
                 else
                 {
@@ -633,13 +645,8 @@ namespace Xalia.UiDom
 
         private void OnDependencyPropertyChanged(UiDomElement element, GudlExpression property)
         {
-            if (!_updatingRules)
-            {
-                _updatingRules = true;
-                Utils.RunIdle(EvaluateRules);
-                if (MatchesDebugCondition())
-                    Utils.DebugWriteLine($"queued rule evaluation for {this} because {element}.{property} changed");
-            }
+            if (QueueEvaluateRules() && MatchesDebugCondition())
+                Utils.DebugWriteLine($"queued rule evaluation for {this} because {element}.{property} changed");
         }
 
         public delegate void PropertyChangeHandler(UiDomElement element, GudlExpression property);
@@ -956,13 +963,8 @@ namespace Xalia.UiDom
             var tracked = provider.GetTrackedProperties();
             if (!(tracked is null))
                 RegisterTrackedProperties(tracked);
-            if (!_updatingRules)
-            {
-                _updatingRules = true;
-                Utils.RunIdle(EvaluateRules);
-                if (MatchesDebugCondition())
-                    Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
-            }
+            if (QueueEvaluateRules() && MatchesDebugCondition())
+                Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
         }
 
         public void AddProvider(IUiDomProvider provider)
@@ -975,13 +977,8 @@ namespace Xalia.UiDom
             var tracked = provider.GetTrackedProperties();
             if (!(tracked is null))
                 RegisterTrackedProperties(tracked);
-            if (!_updatingRules)
-            {
-                _updatingRules = true;
-                Utils.RunIdle(EvaluateRules);
-                if (MatchesDebugCondition())
-                    Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
-            }
+            if (QueueEvaluateRules() && MatchesDebugCondition())
+                Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
             foreach (var child in Children)
             {
                 child.AddedGlobalProvider(provider);
