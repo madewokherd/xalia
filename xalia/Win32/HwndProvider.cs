@@ -30,6 +30,11 @@ namespace Xalia.Win32
         public int Pid { get; }
         public int Tid { get; }
 
+        private bool _watchingChildren;
+        private int _childCount;
+
+        private static string[] tracked_properties = new string[] { "recurse_method" };
+
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
             { "hwnd", "win32_hwnd" },
@@ -101,6 +106,13 @@ namespace Xalia.Win32
 
         public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            switch (identifier)
+            {
+                case "recurse_method":
+                    if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
+                        return new UiDomString("win32");
+                    break;
+            }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, element.Root, depends_on);
             return UiDomUndefined.Instance;
@@ -113,7 +125,7 @@ namespace Xalia.Win32
 
         public string[] GetTrackedProperties()
         {
-            return null;
+            return tracked_properties;
         }
 
         public void NotifyElementRemoved(UiDomElement element)
@@ -121,8 +133,87 @@ namespace Xalia.Win32
             Element = null;
         }
 
+        private void WatchChildren()
+        {
+            if (_watchingChildren)
+                return;
+            if (Element.MatchesDebugCondition())
+                Utils.DebugWriteLine($"WatchChildren for {Element} (win32)");
+            _watchingChildren = true;
+            Utils.RunIdle(PollChildren); // need to wait for any other providers to remove their children
+        }
+
+        private void PollChildren()
+        {
+            if (!_watchingChildren)
+                return;
+
+            var child_hwnds = EnumImmediateChildWindows(Hwnd);
+
+            // First remove any existing children that are missing or out of order
+            int i = 0;
+            foreach (var new_child in child_hwnds)
+            {
+                var child_name = $"hwnd-{new_child}";
+                if (!Element.Children.Exists((UiDomElement element) => element.DebugId == child_name))
+                    continue;
+                while (Element.Children[i].DebugId != child_name)
+                {
+                    Element.RemoveChild(i);
+                    _childCount--;
+                }
+                i++;
+            }
+
+            // Remove any remaining missing children
+            while (i < _childCount)
+            {
+                Element.RemoveChild(i);
+                _childCount--;
+            }
+
+            // Add any new children
+            i = 0;
+            foreach (var new_child in child_hwnds)
+            {
+                var child_name = $"hwnd-{new_child}";
+                if (_childCount <= i || Element.Children[i].DebugId != child_name)
+                {
+                    if (!(Connection.LookupElement(child_name) is null))
+                    {
+                        // Child element is a duplicate of another element somewhere in the tree.
+                        continue;
+                    }
+                    Element.AddChild(i, Connection.CreateElementFromHwnd(new_child));
+                    _childCount++;
+                }
+                i += 1;
+            }
+        }
+
+        private void UnwatchChildren()
+        {
+            if (!_watchingChildren)
+                return;
+            if (Element.MatchesDebugCondition())
+                Utils.DebugWriteLine($"UnwatchChildren for {Element} (win32)");
+            _watchingChildren = false;
+            for (int i = _childCount - 1; i >= 0; i--)
+                Element.RemoveChild(i);
+            _childCount = 0;
+        }
+
         public void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
         {
+            switch (name)
+            {
+                case "recurse_method":
+                    if (new_value is UiDomString st && st.Value == "win32")
+                        WatchChildren();
+                    else
+                        UnwatchChildren();
+                    break;
+            }
         }
 
         public bool UnwatchProperty(UiDomElement element, GudlExpression expression)

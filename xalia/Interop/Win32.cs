@@ -533,12 +533,36 @@ namespace Xalia.Interop
 
         private static WNDENUMPROC EnumWindowsToListDelegate = new WNDENUMPROC(EnumWindowsToList);
 
-        public static IEnumerable<IntPtr> EnumWindows()
+        public static List<IntPtr> EnumWindows()
         {
             var result = new List<IntPtr>();
             EnumWindowsList = result;
 
             EnumWindows(EnumWindowsToListDelegate, IntPtr.Zero);
+
+            EnumWindowsList = null;
+
+            return result;
+        }
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool EnumChildWindows(IntPtr hwndParent, WNDENUMPROC lpEnumProc, IntPtr lParam);
+
+        private static bool EnumChildWindowsToList(IntPtr hwnd, IntPtr lParam)
+        {
+            if (GetAncestor(hwnd, GA_PARENT) == lParam)
+                EnumWindowsList.Add(hwnd);
+            return true;
+        }
+
+        private static WNDENUMPROC EnumChildWindowsToListDelegate = new WNDENUMPROC(EnumChildWindowsToList);
+
+        public static List<IntPtr> EnumImmediateChildWindows(IntPtr hwndParent)
+        {
+            var result = new List<IntPtr>();
+            EnumWindowsList = result;
+
+            EnumChildWindows(hwndParent, EnumChildWindowsToListDelegate, hwndParent);
 
             EnumWindowsList = null;
 

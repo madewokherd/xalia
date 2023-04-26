@@ -50,7 +50,14 @@ namespace Xalia.Win32
             }
         }
 
-        private UiDomElement CreateElementFromHwnd(IntPtr hwnd)
+        public UiDomElement LookupElement(string element_name)
+        {
+            if (elements_by_id.TryGetValue(element_name, out var element))
+                return element;
+            return null;
+        }
+
+        internal UiDomElement CreateElementFromHwnd(IntPtr hwnd)
         {
             string element_name = $"hwnd-{hwnd}";
 
