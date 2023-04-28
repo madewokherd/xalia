@@ -133,9 +133,9 @@ namespace Xalia.Sdl
                 Quit();
         }
 
-        private void NotifyQueue()
+        private void NotifyQueue(bool force)
         {
-            if (Thread.CurrentThread == MainThread)
+            if (Thread.CurrentThread == MainThread && !force)
                 return;
             SDL_Event e = new SDL_Event();
             e.type = (SDL_EventType)_queue_updated_event;
@@ -145,7 +145,7 @@ namespace Xalia.Sdl
         public override void Post(SendOrPostCallback d, object state)
         {
             _posts.Enqueue((d, state));
-            NotifyQueue();
+            NotifyQueue(_posts.Count == 1);
         }
 
         public override void Send(SendOrPostCallback d, object state)
@@ -162,7 +162,7 @@ namespace Xalia.Sdl
 
             _sends.Enqueue(callback);
 
-            NotifyQueue();
+            NotifyQueue(false);
 
             callback.completed_event.WaitOne();
             callback.completed_event.Dispose();
