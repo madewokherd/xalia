@@ -270,9 +270,18 @@ namespace Xalia.Interop
             WINEVENTPROC pfnWinEventProc, int idProcess, int idThread, uint dwFlags);
 
         public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+        public const uint EVENT_SYSTEM_MENUSTART = 0x0004;
+        public const uint EVENT_SYSTEM_MENUEND = 0x0005;
+        public const uint EVENT_SYSTEM_MENUPOPUPSTART = 0x0006;
+        public const uint EVENT_SYSTEM_MENUPOPUPEND = 0x0007;
+        public const uint EVENT_SYSTEM_CAPTURESTART = 0x0008;
+        public const uint EVENT_SYSTEM_CAPTUREEND = 0x0009;
+        public const uint EVENT_SYSTEM_MOVESIZESTART = 0x000A;
+        public const uint EVENT_SYSTEM_MOVESIZEEND = 0x000B;
 
         public const uint EVENT_OBJECT_CREATE = 0x8000;
         public const uint EVENT_OBJECT_DESTROY = 0x8001;
+        public const uint EVENT_OBJECT_FOCUS = 0x8005;
         public const uint EVENT_OBJECT_STATECHANGE = 0x800A;
         public const uint EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
         public const uint EVENT_OBJECT_NAMECHANGE = 0x800C;
@@ -597,6 +606,12 @@ namespace Xalia.Interop
         {
             public int cx, cy;
         }
+
+        public const int GUI_CARETBLINKING = 0x1;
+        public const int GUI_INMOVESIZE = 0x2;
+        public const int GUI_INMENUMODE = 0x4;
+        public const int GUI_POPUPMENUMODE = 0x8;
+        public const int GUI_SYSTEMMENUMODE = 0x10;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct GUITHREADINFO

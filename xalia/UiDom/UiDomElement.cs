@@ -984,5 +984,15 @@ namespace Xalia.UiDom
                 child.AddedGlobalProvider(provider);
             }
         }
+
+        public T ProviderByType<T>() where T : IUiDomProvider
+        {
+            foreach (var provider in Providers)
+            {
+                if (provider is T result)
+                    return result;
+            }
+            return default;
+        }
     }
 }
