@@ -227,6 +227,8 @@ namespace Xalia.AtSpi2
         {
             // ActionProvider
             "action", "spi_action", "do_default_action", "spi_do_default_action",
+            // ApplicationProvider
+            "toolkit_name", "spi_toolkit_name",
             // ComponentProvider
             "x", "y", "width", "height",
             "abs_x", "abs_y", "abs_width", "abs_height",
@@ -277,6 +279,11 @@ namespace Xalia.AtSpi2
         public uint[] State { get; private set; }
         private bool fetching_state;
 
+        public bool ApplicationKnown { get; private set; }
+        public string ApplicationPeer { get; private set; }
+        public string ApplicationPath { get; private set; }
+        private bool fetching_application;
+
         public static UiDomValue ValueFromRole(int role)
         {
             if (role > 0 && role < role_to_enum.Length)
@@ -295,6 +302,8 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
             if (!(SupportedInterfaces is null))
                 Utils.DebugWriteLine($"  spi_supported: [{String.Join(",", SupportedInterfaces)}]");
+            if (ApplicationKnown)
+                Utils.DebugWriteLine($"  spi_application: {ApplicationPeer}:{ApplicationPath}");
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -326,6 +335,15 @@ namespace Xalia.AtSpi2
                         return new AtSpiSupported(SupportedInterfaces);
                     }
                     return UiDomUndefined.Instance;
+                case "spi_application":
+                    depends_on.Add((element, new IdentifierExpression("spi_application")));
+                    if (ApplicationKnown)
+                    {
+                        var application = Connection.LookupElement((ApplicationPeer, ApplicationPath));
+                        if (!(application is null))
+                            return application;
+                    }
+                    return UiDomUndefined.Instance;
             }
             if (other_interface_properties.Contains(identifier))
                 depends_on.Add((element, new IdentifierExpression("spi_supported")));
@@ -340,6 +358,15 @@ namespace Xalia.AtSpi2
                     if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
                         return new UiDomString("spi_auto");
                     break;
+                case "toolkit_name":
+                    depends_on.Add((element, new IdentifierExpression("spi_application")));
+                    if (ApplicationKnown)
+                    {
+                        var application = Connection.LookupElement((ApplicationPeer, ApplicationPath));
+                        if (!(application is null))
+                            return application.EvaluateIdentifier("spi_toolkit_name", element.Root, depends_on);
+                    }
+                    return UiDomUndefined.Instance;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, Element.Root, depends_on);
@@ -625,9 +652,38 @@ namespace Xalia.AtSpi2
                             Utils.RunTask(wait_for_supported_task);
                         }
                         break;
+                    case "spi_application":
+                        if (!fetching_application)
+                        {
+                            fetching_application = true;
+                            Utils.RunTask(FetchApplication());
+                        }
+                        break;
                 }
             }
             return false;
+        }
+
+        private async Task FetchApplication()
+        {
+            (string, string) result;
+            try
+            {
+                result = await CallMethod(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE,
+                    "GetApplication", ReadMessageElement);
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            ApplicationKnown = true;
+            ApplicationPeer = result.Item1;
+            ApplicationPath = result.Item2;
+            if (Element.MatchesDebugCondition())
+                Utils.DebugWriteLine($"{Element}.spi_application: {result.Item1}:{result.Item2}");
+            Element.PropertyChanged("spi_application");
         }
 
         private async Task FetchSupported()
@@ -649,6 +705,7 @@ namespace Xalia.AtSpi2
             foreach (var iface in SupportedInterfaces)
             {
                 bool seen_action = false;
+                bool seen_application = false;
                 bool seen_component = false;
                 switch (iface)
                 {
@@ -656,6 +713,11 @@ namespace Xalia.AtSpi2
                         if (!seen_action)
                             Element.AddProvider(new ActionProvider(this), 0);
                         seen_action = true;
+                        break;
+                    case IFACE_APPLICATION:
+                        if (!seen_application)
+                            Element.AddProvider(new ApplicationProvider(this), 0);
+                        seen_application = true;
                         break;
                     case IFACE_COMPONENT:
                         if (!seen_component)

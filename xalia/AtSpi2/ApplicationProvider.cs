@@ -1,0 +1,132 @@
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Tmds.DBus.Protocol;
+using Xalia.Gudl;
+using Xalia.UiDom;
+using static Xalia.AtSpi2.DBusUtils;
+
+namespace Xalia.AtSpi2
+{
+    internal class ApplicationProvider : IUiDomProvider
+    {
+        public ApplicationProvider(AccessibleProvider accessible)
+        {
+            Accessible = accessible;
+        }
+
+        public AccessibleProvider Accessible { get; }
+
+        public AtSpiConnection Connection => Accessible.Connection;
+        public string Peer => Accessible.Peer;
+        public string Path => Accessible.Path;
+        public UiDomElement Element => Accessible.Element;
+
+        public bool ToolkitNameKnown { get; private set; }
+        public string ToolkitName { get; private set; }
+        private bool fetching_toolkit_name;
+
+        // Sync with AccessibleProvider.other_interface_properties
+        private static readonly Dictionary<string, string> property_aliases = new Dictionary<string, string>
+        {
+            { "toolkit_name", "spi_toolkit_name" },
+        };
+
+        public void DumpProperties(UiDomElement element)
+        {
+            if (ToolkitNameKnown)
+                Utils.DebugWriteLine($"  spi_toolkit_name: \"{ToolkitName}\"");
+        }
+
+        public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            switch (identifier)
+            {
+                case "spi_toolkit_name":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (ToolkitNameKnown)
+                        return new UiDomString(ToolkitName);
+                    return UiDomUndefined.Instance;
+            }
+            return UiDomUndefined.Instance;
+        }
+
+        public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (property_aliases.TryGetValue(identifier, out var aliased))
+            {
+                return element.EvaluateIdentifier(aliased, element.Root, depends_on);
+            }
+            return UiDomUndefined.Instance;
+        }
+
+        public Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        {
+            return Task.FromResult((false, 0, 0));
+        }
+
+        public string[] GetTrackedProperties()
+        {
+            return null;
+        }
+
+        public void NotifyElementRemoved(UiDomElement element)
+        {
+        }
+
+        public void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
+        {
+        }
+
+        public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            return false;
+        }
+
+        private async Task FetchToolkitName()
+        {
+            object result;
+            try
+            {
+                result = await GetProperty(Connection.Connection, Peer, Path,
+                    IFACE_APPLICATION, "ToolkitName");
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (result is string st)
+            {
+                ToolkitNameKnown = true;
+                ToolkitName = st;
+                Element.PropertyChanged("spi_toolkit_name", ToolkitName);
+                return;
+            }
+
+            if (result is null)
+                Utils.DebugWriteLine($"WARNING: {Element} returned null for ToolkitName");
+            else
+                Utils.DebugWriteLine($"WARNING: {Element} returned {SignatureFromType(result.GetType())} for ToolkitName");
+        }
+
+        public bool WatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "spi_toolkit_name":
+                        if (!fetching_toolkit_name)
+                        {
+                            fetching_toolkit_name = true;
+                            Utils.RunTask(FetchToolkitName());
+                        }
+                        break;
+                }
+            }
+            return false;
+        }
+    }
+}
