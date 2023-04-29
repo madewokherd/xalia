@@ -382,7 +382,6 @@ namespace Xalia.AtSpi2
             Connection.NotifyElementDestroyed(this);
             watching_children = false;
             children_known = false;
-            Element = null;
         }
 
         private async Task<List<(string, string)>> GetChildList()
