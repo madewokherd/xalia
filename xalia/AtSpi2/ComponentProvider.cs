@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tmds.DBus.Protocol;
 using Xalia.Gudl;
@@ -32,6 +33,8 @@ namespace Xalia.AtSpi2
             { "abs_y", "spi_abs_y" },
             { "abs_width", "spi_abs_width" },
             { "abs_height", "spi_abs_height" },
+            { "set_focus", "spi_grab_focus" },
+            { "grab_focus", "spi_grab_focus" },
         };
 
         public bool AbsPosKnown { get; private set; }
@@ -77,8 +80,27 @@ namespace Xalia.AtSpi2
                     if (AbsPosKnown)
                         return new UiDomInt(AbsHeight);
                     return UiDomUndefined.Instance;
+                case "spi_grab_focus":
+                    return new UiDomRoutineAsync(element, "spi_grab_focus", GrabFocus);
             }
             return UiDomUndefined.Instance;
+        }
+
+        private static async Task GrabFocus(UiDomRoutineAsync obj)
+        {
+            var provider = obj.Element.ProviderByType<ComponentProvider>();
+            try
+            {
+                var success = await CallMethod(provider.Connection.Connection, provider.Peer, provider.Path,
+                    IFACE_COMPONENT, "GrabFocus", ReadMessageBoolean);
+                if (!success)
+                    Console.WriteLine($"WARNING: spi_grab_focus failed for {obj.Element}");
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+            }
         }
 
         public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
