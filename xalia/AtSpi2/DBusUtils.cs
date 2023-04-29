@@ -425,6 +425,7 @@ namespace Xalia.AtSpi2
         public const string PATH_REGISTRY = "/org/a11y/atspi/registry";
         public const string IFACE_ACCESSIBLE = "org.a11y.atspi.Accessible";
         public const string IFACE_ACTION = "org.a11y.atspi.Action";
+        public const string IFACE_APPLICATION = "org.a11y.atspi.Application";
         public const string IFACE_COMPONENT = "org.a11y.atspi.Component";
         public const string IFACE_REGISTRY = "org.a11y.atspi.Registry";
         public const string IFACE_EVENT_OBJECT = "org.a11y.atspi.Event.Object";
