@@ -231,6 +231,7 @@ namespace Xalia.AtSpi2
             "x", "y", "width", "height",
             "abs_x", "abs_y", "abs_width", "abs_height",
             "spi_abs_x", "spi_abs_y", "spi_abs_width", "spi_abs_height",
+            "grab_focus", "set_focus", "spi_grab_focus",
         };
 
         static AccessibleProvider()
