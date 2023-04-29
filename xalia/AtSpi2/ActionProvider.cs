@@ -26,6 +26,7 @@ namespace Xalia.AtSpi2
         private static readonly Dictionary<string, string> property_aliases = new Dictionary<string, string>
         {
             { "action", "spi_action" },
+            { "do_default_action", "spi_do_default_action" },
         };
 
         public string[] Actions { get; private set; }
@@ -46,8 +47,15 @@ namespace Xalia.AtSpi2
                     if (!(Actions is null))
                         return new AtSpiActionList(this);
                     return UiDomUndefined.Instance;
+                case "spi_do_default_action":
+                    return new UiDomRoutineAsync(element, "spi_do_default_action", DoDefaultAction);
             }
             return UiDomUndefined.Instance;
+        }
+
+        private static async Task DoDefaultAction(UiDomRoutineAsync obj)
+        {
+            await obj.Element.ProviderByType<ActionProvider>().DoAction(0);
         }
 
         public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
