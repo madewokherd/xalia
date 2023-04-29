@@ -10,9 +10,10 @@ using static Xalia.AtSpi2.DBusUtils;
 
 namespace Xalia.AtSpi2
 {
-    internal class AtSpiConnection : UiDomRoot
+    internal class AtSpiConnection : UiDomProviderBase
     {
         public Connection Connection { get; }
+        public UiDomRoot Root { get; }
         public UiDomElement DesktopFrame { get; private set; }
 
         private HashSet<string> registered_events = new HashSet<string>();
@@ -22,9 +23,10 @@ namespace Xalia.AtSpi2
         private Dictionary<string, Queue<TaskCompletionSource<IDisposable>>> poll_known_sources = new Dictionary<string, Queue<TaskCompletionSource<IDisposable>>>();
         private Dictionary<string, Queue<TaskCompletionSource<IDisposable>>> poll_unknown_sources = new Dictionary<string, Queue<TaskCompletionSource<IDisposable>>>();
 
-        private AtSpiConnection(Connection connection, GudlStatement[] rules, IUiDomApplication application) : base(rules, application)
+        private AtSpiConnection(Connection connection, UiDomRoot root)
         {
             Connection = connection;
+            Root = root;
         }
 
         private Dictionary<(string, string), UiDomElement> elements = new Dictionary<(string, string), UiDomElement>();
@@ -64,13 +66,13 @@ namespace Xalia.AtSpi2
 
         internal UiDomElement CreateElement(string peer, string path)
         {
-            UiDomElement result = new UiDomElement($"{peer}:{path}", this);
+            UiDomElement result = new UiDomElement($"{peer}:{path}", Root);
             result.AddProvider(new AccessibleProvider(result, this, peer, path));
             elements.Add((peer, path), result);
             return result;
         }
 
-        internal static async Task<AtSpiConnection> Connect(GudlStatement[] config, IUiDomApplication application)
+        internal static async Task<AtSpiConnection> Connect(UiDomRoot root)
         {
             string bus = await GetAtSpiBusAddress();
             if (string.IsNullOrWhiteSpace(bus))
@@ -82,7 +84,8 @@ namespace Xalia.AtSpi2
             var connection = new Connection(bus);
             await connection.ConnectAsync();
 
-            var result = new AtSpiConnection(connection, config, application);
+            var result = new AtSpiConnection(connection, root);
+            root.AddGlobalProvider(result);
 
             await CallMethod(connection, SERVICE_DBUS, PATH_DBUS, IFACE_DBUS,
                 "StartServiceByName", SERVICE_REGISTRY, (uint)0);
@@ -97,7 +100,7 @@ namespace Xalia.AtSpi2
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "BoundsChanged", result.OnBoundsChanged);
 
             result.DesktopFrame = result.CreateElement(registryClient, PATH_ACCESSIBLE_ROOT);
-            result.AddChild(0, result.DesktopFrame);
+            root.AddChild(0, result.DesktopFrame);
 
             return result;
         }

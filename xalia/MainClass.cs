@@ -52,7 +52,8 @@ namespace Xalia
 
                 if (((Environment.GetEnvironmentVariable("XALIA_EXPERIMENTAL_ATSPI") ?? "0") != "0"))
                 {
-                    connection = await Xalia.AtSpi2.AtSpiConnection.Connect(config, application);
+                    connection = new UiDomRoot(config, application);
+                    await Xalia.AtSpi2.AtSpiConnection.Connect(connection);
                 }
 
                 if (connection == null &&
