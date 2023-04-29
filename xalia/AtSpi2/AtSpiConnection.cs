@@ -13,7 +13,7 @@ namespace Xalia.AtSpi2
     internal class AtSpiConnection : UiDomRoot
     {
         public Connection Connection { get; }
-        public AtSpiElement DesktopFrame { get; private set; }
+        public UiDomElement DesktopFrame { get; private set; }
 
         private HashSet<string> registered_events = new HashSet<string>();
 
@@ -27,7 +27,7 @@ namespace Xalia.AtSpi2
             Connection = connection;
         }
 
-        private Dictionary<(string, string), AtSpiElement> elements = new Dictionary<(string, string), AtSpiElement>();
+        private Dictionary<(string, string), UiDomElement> elements = new Dictionary<(string, string), UiDomElement>();
 
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
 
@@ -62,6 +62,14 @@ namespace Xalia.AtSpi2
             return result;
         }
 
+        internal UiDomElement CreateElement(string peer, string path)
+        {
+            UiDomElement result = new UiDomElement($"{peer}:{path}", this);
+            result.AddProvider(new AccessibleProvider(result, this, peer, path));
+            elements.Add((peer, path), result);
+            return result;
+        }
+
         internal static async Task<AtSpiConnection> Connect(GudlStatement[] config, IUiDomApplication application)
         {
             string bus = await GetAtSpiBusAddress();
@@ -88,7 +96,7 @@ namespace Xalia.AtSpi2
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "StateChanged", result.OnStateChanged);
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "BoundsChanged", result.OnBoundsChanged);
 
-            result.DesktopFrame = new AtSpiElement(result, registryClient, PATH_ACCESSIBLE_ROOT);
+            result.DesktopFrame = result.CreateElement(registryClient, PATH_ACCESSIBLE_ROOT);
             result.AddChild(0, result.DesktopFrame);
 
             return result;
@@ -135,17 +143,12 @@ namespace Xalia.AtSpi2
             element.ProviderByType<AccessibleProvider>()?.AtSpiPropertyChange(signal.detail, signal.value);
         }
 
-        internal void NotifyElementCreated(AtSpiElement element)
+        internal void NotifyElementDestroyed(AccessibleProvider provider)
         {
-            elements.Add((element.Peer, element.Path), element);
+            elements.Remove((provider.Peer, provider.Path));
         }
 
-        internal void NotifyElementDestroyed(AtSpiElement element)
-        {
-            elements.Remove((element.Peer, element.Path));
-        }
-
-        internal AtSpiElement LookupElement((string, string) id)
+        internal UiDomElement LookupElement((string, string) id)
         {
             if (elements.TryGetValue(id, out var element))
                 return element;
