@@ -115,7 +115,7 @@ namespace Xalia.AtSpi2
             }
             catch (DBusException e)
             {
-                if (!AtSpiElement.IsExpectedException(e, "org.freedesktop.DBus.Error.Failed"))
+                if (!AtSpiConnection.IsExpectedException(e, "org.freedesktop.DBus.Error.Failed"))
                     throw;
                 return;
             }
@@ -135,7 +135,7 @@ namespace Xalia.AtSpi2
             }
             catch (DBusException e)
             {
-                if (!AtSpiElement.IsExpectedException(e))
+                if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return;
             }

@@ -413,7 +413,7 @@ namespace Xalia.AtSpi2
             }
             catch (DBusException e)
             {
-                if (!AtSpiElement.IsExpectedException(e))
+                if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return new List<(string, string)>();
             }
@@ -627,7 +627,7 @@ namespace Xalia.AtSpi2
             }
             catch (DBusException e)
             {
-                if (!AtSpiElement.IsExpectedException(e))
+                if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return;
             }
@@ -678,7 +678,7 @@ namespace Xalia.AtSpi2
             }
             catch (DBusException e)
             {
-                if (!AtSpiElement.IsExpectedException(e))
+                if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return;
             }
@@ -756,7 +756,7 @@ namespace Xalia.AtSpi2
             }
             catch (DBusException e)
             {
-                if (!AtSpiElement.IsExpectedException(e))
+                if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return;
             }

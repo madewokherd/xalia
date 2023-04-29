@@ -100,7 +100,7 @@ namespace Xalia.AtSpi2
             }
             catch (DBusException e)
             {
-                if (!AtSpiElement.IsExpectedException(e))
+                if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return (false, 0, 0);
             }
@@ -180,7 +180,7 @@ namespace Xalia.AtSpi2
                 }
                 catch (DBusException e)
                 {
-                    if (!AtSpiElement.IsExpectedException(e))
+                    if (!AtSpiConnection.IsExpectedException(e))
                         throw;
                     return;
                 }

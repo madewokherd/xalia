@@ -29,6 +29,8 @@ namespace Xalia.AtSpi2
 
         private Dictionary<(string, string), AtSpiElement> elements = new Dictionary<(string, string), AtSpiElement>();
 
+        static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
+
         internal static async Task<string> GetAtSpiBusAddress()
         {
             string result = Environment.GetEnvironmentVariable("AT_SPI_BUS_ADDRESS");
@@ -189,6 +191,41 @@ namespace Xalia.AtSpi2
             queue.Enqueue(source);
 
             return source.Task;
+        }
+
+        internal static bool IsExpectedException(DBusException e, params string[] extra_errors)
+        {
+#if DEBUG
+            if (DebugExceptions)
+            {
+                Utils.DebugWriteLine("WARNING: DBus exception:");
+                Utils.DebugWriteLine(e);
+            }
+#endif
+            switch (e.ErrorName)
+            {
+                case "org.freedesktop.DBus.Error.NoReply":
+                case "org.freedesktop.DBus.Error.UnknownObject":
+                case "org.freedesktop.DBus.Error.UnknownInterface":
+                case "org.freedesktop.DBus.Error.ServiceUnknown":
+                    return true;
+                default:
+                    foreach (var err in extra_errors)
+                    {
+                        if (e.ErrorName == err)
+                            return true;
+                    }
+#if DEBUG
+                    return false;
+#else
+                    if (DebugExceptions)
+                    {
+                        Utils.DebugWriteLine("WARNING: DBus exception ignored:");
+                        Utils.DebugWriteLine(e);
+                    }
+                    return true;
+#endif
+            }
         }
 
         private class PollDispoable : IDisposable

@@ -55,43 +55,6 @@ namespace Xalia.AtSpi2
             return Root.LimitPolling(Peer, value_known);
         }
 
-        static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
-
-        internal static bool IsExpectedException(DBusException e, params string[] extra_errors)
-        {
-#if DEBUG
-            if (DebugExceptions)
-            {
-                Utils.DebugWriteLine("WARNING: DBus exception:");
-                Utils.DebugWriteLine(e);
-            }
-#endif
-            switch (e.ErrorName)
-            {
-                case "org.freedesktop.DBus.Error.NoReply":
-                case "org.freedesktop.DBus.Error.UnknownObject":
-                case "org.freedesktop.DBus.Error.UnknownInterface":
-                case "org.freedesktop.DBus.Error.ServiceUnknown":
-                    return true;
-                default:
-                    foreach (var err in extra_errors)
-                    {
-                        if (e.ErrorName == err)
-                            return true;
-                    }
-#if DEBUG
-                    return false;
-#else
-                    if (DebugExceptions)
-                    {
-                        Utils.DebugWriteLine("WARNING: DBus exception ignored:");
-                        Utils.DebugWriteLine(e);
-                    }
-                    return true;
-#endif
-            }
-        }
-
         public async override Task<(bool, int, int)> GetClickablePoint()
         {
             var result = await base.GetClickablePoint();
@@ -106,7 +69,7 @@ namespace Xalia.AtSpi2
             }
             catch (DBusException e)
             {
-                if (!IsExpectedException(e))
+                if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return (false, 0, 0);
             }
