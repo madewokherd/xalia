@@ -957,14 +957,23 @@ namespace Xalia.UiDom
             }
         }
 
-        public void AddProvider(IUiDomProvider provider, int index)
+        private void ProviderAdded(IUiDomProvider provider)
         {
-            Providers.Insert(index, provider);
             var tracked = provider.GetTrackedProperties();
             if (!(tracked is null))
                 RegisterTrackedProperties(tracked);
             if (QueueEvaluateRules() && MatchesDebugCondition())
                 Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
+            foreach (var expression in _propertyChangeNotifiers.Keys)
+            {
+                provider.WatchProperty(this, expression);
+            }
+        }
+
+        public void AddProvider(IUiDomProvider provider, int index)
+        {
+            Providers.Insert(index, provider);
+            ProviderAdded(provider);
         }
 
         public void AddProvider(IUiDomProvider provider)
@@ -974,11 +983,7 @@ namespace Xalia.UiDom
 
         internal void AddedGlobalProvider(IUiDomProvider provider)
         {
-            var tracked = provider.GetTrackedProperties();
-            if (!(tracked is null))
-                RegisterTrackedProperties(tracked);
-            if (QueueEvaluateRules() && MatchesDebugCondition())
-                Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
+            ProviderAdded(provider);
             foreach (var child in Children)
             {
                 child.AddedGlobalProvider(provider);
