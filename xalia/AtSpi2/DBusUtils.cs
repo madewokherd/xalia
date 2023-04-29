@@ -277,6 +277,11 @@ namespace Xalia.AtSpi2
             result.detail1 = reader.ReadInt32();
             result.detail2 = reader.ReadInt32();
             result.value = reader.ReadVariant();
+            if (message.SignatureAsString == "siiv(so)")
+            {
+                // Qt does not include the array at the end and instead repeats the sender/path
+                return result;
+            }
             var arraystart = reader.ReadArrayStart(DBusType.Struct);
             if (reader.HasNext(arraystart))
             {
