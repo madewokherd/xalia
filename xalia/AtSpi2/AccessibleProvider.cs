@@ -226,7 +226,7 @@ namespace Xalia.AtSpi2
         private static readonly HashSet<string> other_interface_properties = new HashSet<string>()
         {
             // ActionProvider
-            "action", "spi_action",
+            "action", "spi_action", "do_default_action", "spi_do_default_action",
             // ComponentProvider
             "x", "y", "width", "height",
             "abs_x", "abs_y", "abs_width", "abs_height",
