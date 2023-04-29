@@ -224,6 +224,8 @@ namespace Xalia.AtSpi2
 
         private static readonly HashSet<string> other_interface_properties = new HashSet<string>()
         {
+            // ActionProvider
+            "action", "spi_action",
             // ComponentProvider
             "x", "y", "width", "height",
             "abs_x", "abs_y", "abs_width", "abs_height",
@@ -622,9 +624,15 @@ namespace Xalia.AtSpi2
             Element.PropertyChanged("spi_supported");
             foreach (var iface in SupportedInterfaces)
             {
+                bool seen_action = false;
                 bool seen_component = false;
                 switch (iface)
                 {
+                    case IFACE_ACTION:
+                        if (!seen_action)
+                            Element.AddProvider(new ActionProvider(this), 0);
+                        seen_action = true;
+                        break;
                     case IFACE_COMPONENT:
                         if (!seen_component)
                             Element.AddProvider(new ComponentProvider(this), 0);

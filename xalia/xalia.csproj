@@ -93,6 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AtSpi2\AccessibleProvider.cs" />
+    <Compile Include="AtSpi2\ActionProvider.cs" />
     <Compile Include="AtSpi2\AtSpiActionList.cs" />
     <Compile Include="AtSpi2\AtSpiConnection.cs" />
     <Compile Include="AtSpi2\AtSpiElement.cs" />

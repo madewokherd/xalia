@@ -21,26 +21,9 @@ namespace Xalia.AtSpi2
             AddProvider(new AccessibleProvider(this, root, peer, path));
         }
 
-        private static readonly Dictionary<string, string> property_aliases;
-
-        static AtSpiElement()
-        {
-            string[] aliases = {
-                "action", "spi_action",
-            };
-            property_aliases = new Dictionary<string, string>(aliases.Length / 2);
-            for (int i=0; i<aliases.Length; i+=2)
-            {
-                property_aliases[aliases[i]] = aliases[i + 1];
-            }
-        }
-
         public new AtSpiConnection Root { get; }
         public string Peer { get; }
         public string Path { get; }
-
-        public string[] Actions { get; private set; }
-        private bool fetching_actions;
 
         internal static Dictionary<string, string> name_mapping;
 
@@ -57,82 +40,9 @@ namespace Xalia.AtSpi2
             base.SetAlive(value);
         }
 
-        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
-        {
-            UiDomValue value;
-
-            if (property_aliases.TryGetValue(id, out string aliased))
-            {
-                value = base.EvaluateIdentifierCore(id, root, depends_on);
-                if (!value.Equals(UiDomUndefined.Instance))
-                    return value;
-                id = aliased;
-            }
-
-            switch (id)
-            {
-                case "spi_action":
-                    depends_on.Add((this, new IdentifierExpression("spi_action")));
-                    if (!(Actions is null))
-                        return new AtSpiActionList(this);
-                    return UiDomUndefined.Instance;
-            }
-
-            value = base.EvaluateIdentifierCore(id, root, depends_on);
-            if (!value.Equals(UiDomUndefined.Instance))
-                return value;
-
-            return UiDomUndefined.Instance;
-        }
-
-        protected override void DumpProperties()
-        {
-            if (!(Actions is null))
-                Utils.DebugWriteLine($"  spi_action: [{String.Join(",", Actions)}]");
-            base.DumpProperties();
-        }
-
         protected override void WatchProperty(GudlExpression expression)
         {
-            if (expression is IdentifierExpression id)
-            {
-                switch (id.Name)
-                {
-                    case "spi_action":
-                        if (!fetching_actions)
-                        {
-                            fetching_actions = true;
-                            Utils.RunTask(FetchActions());
-                        }
-                        break;
-                }
-            }
             base.WatchProperty(expression);
-        }
-
-        private async Task FetchActions()
-        {
-            string[] result;
-            try
-            {
-                int count = (int)await GetProperty(Root.Connection, Peer, Path, IFACE_ACTION, "NActions");
-                result = new string[count];
-                for (int i = 0; i < count; i++)
-                {
-                    result[i] = await CallMethod(Root.Connection, Peer, Path, IFACE_ACTION,
-                        "GetName", i, ReadMessageString);
-                }
-            }
-            catch (DBusException e)
-            {
-                if (!IsExpectedException(e, "org.freedesktop.DBus.Error.Failed"))
-                    throw;
-                return;
-            }
-            Actions = result;
-            if (MatchesDebugCondition())
-                Utils.DebugWriteLine($"{this}.spi_action: ({string.Join(",", Actions)})");
-            PropertyChanged("spi_action");
         }
 
         protected override void UnwatchProperty(GudlExpression expression)
@@ -199,26 +109,6 @@ namespace Xalia.AtSpi2
                 if (!IsExpectedException(e))
                     throw;
                 return (false, 0, 0);
-            }
-        }
-
-        public async Task DoAction(int index)
-        {
-            bool success;
-            try
-            {
-                success = await CallMethod(Root.Connection, Peer, Path,
-                    IFACE_ACTION, "DoAction", index, ReadMessageBoolean);
-            }
-            catch (DBusException e)
-            {
-                if (!IsExpectedException(e))
-                    throw;
-                return;
-            }
-            if (!success)
-            {
-                Utils.DebugWriteLine($"WARNING: {this}.spi_action({index}) failed");
             }
         }
     }

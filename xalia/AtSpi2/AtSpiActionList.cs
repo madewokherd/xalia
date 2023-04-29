@@ -9,12 +9,14 @@ namespace Xalia.AtSpi2
 {
     internal class AtSpiActionList : UiDomValue
     {
-        public AtSpiElement Element { get; private set; }
-
-        public AtSpiActionList(AtSpiElement element)
+        public AtSpiActionList(ActionProvider provider)
         {
-            Element = element;
+            Provider = provider;
         }
+
+        public ActionProvider Provider { get; }
+
+        public UiDomElement Element => Provider.Element;
 
         public override bool Equals(object obj)
         {
@@ -34,14 +36,14 @@ namespace Xalia.AtSpi2
 
         public override string ToString()
         {
-            return $"{Element}.spi_action [{string.Join(",",Element.Actions)}]";
+            return $"{Element}.spi_action [{string.Join(",",Provider.Actions)}]";
         }
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
-            for (int i=0; i < Element.Actions.Length; i++)
+            for (int i=0; i < Provider.Actions.Length; i++)
             {
-                if (Element.Actions[i] == id)
+                if (Provider.Actions[i] == id)
                 {
                     return new UiDomRoutineAsync(
                         Element, $"spi_action.{id}", HandleAction);
@@ -69,19 +71,20 @@ namespace Xalia.AtSpi2
 
         private static Task HandleApply(UiDomRoutineAsync obj)
         {
-            var element = (AtSpiElement)obj.Element;
+            var element = obj.Element;
             var index = ((UiDomInt)obj.Arglist[0]).Value;
-            return element.DoAction(index);
+            return element.ProviderByType<ActionProvider>().DoAction(index);
         }
 
         private static Task HandleAction(UiDomRoutineAsync obj)
         {
             string id = obj.Name.Substring(11);
-            var element = (AtSpiElement)obj.Element;
-            for (int i=0; i<element.Actions.Length; i++)
+            var element = obj.Element;
+            var provider = element.ProviderByType<ActionProvider>();
+            for (int i=0; i<provider.Actions.Length; i++)
             {
-                if (element.Actions[i] == id)
-                    return element.DoAction(i);
+                if (provider.Actions[i] == id)
+                    return provider.DoAction(i);
             }
             return Task.CompletedTask;
         }
