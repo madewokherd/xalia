@@ -26,6 +26,7 @@ namespace Xalia.AtSpi2
 
         public string[] SupportedInterfaces { get; private set; }
         private bool fetching_supported;
+        private Task wait_for_supported_task;
 
         private static string[] _trackedProperties = new string[] { "recurse_method" };
 
@@ -355,9 +356,19 @@ namespace Xalia.AtSpi2
             return UiDomUndefined.Instance;
         }
 
-        public Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        public async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
         {
-            return Task.FromResult((false, 0, 0));
+            if (SupportedInterfaces is null)
+            {
+                // This is implemented in ComponentAccessible, so wait for it to be created
+                await WaitForSupported();
+                var com = element.ProviderByType<ComponentProvider>();
+                if (!(com is null))
+                {
+                    return await com.GetClickablePointAsync(element);
+                }
+            }
+            return (false, 0, 0);
         }
 
         public string[] GetTrackedProperties()
@@ -598,7 +609,8 @@ namespace Xalia.AtSpi2
                         if (!fetching_supported)
                         {
                             fetching_supported = true;
-                            Utils.RunTask(FetchSupported());
+                            wait_for_supported_task = FetchSupported();
+                            Utils.RunTask(wait_for_supported_task);
                         }
                         break;
                 }
@@ -640,6 +652,18 @@ namespace Xalia.AtSpi2
                         break;
                 }
             }
+        }
+
+        private Task WaitForSupported()
+        {
+            if (!(SupportedInterfaces is null))
+                return Task.CompletedTask;
+            if (!fetching_supported)
+            {
+                fetching_supported = true;
+                wait_for_supported_task = FetchSupported();
+            }
+            return wait_for_supported_task;
         }
 
         private async Task FetchState()

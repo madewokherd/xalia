@@ -90,9 +90,21 @@ namespace Xalia.AtSpi2
             return UiDomUndefined.Instance;
         }
 
-        public Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        public async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
         {
-            return Task.FromResult((false, 0, 0));
+            (int, int, int, int) extents;
+            try
+            {
+                extents = await CallMethod(Connection.Connection, Peer, Path,
+                    IFACE_COMPONENT, "GetExtents", ATSPI_COORD_TYPE_SCREEN, ReadMessageExtents);
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiElement.IsExpectedException(e))
+                    throw;
+                return (false, 0, 0);
+            }
+            return (true, extents.Item1 + extents.Item3 / 2, extents.Item2 + extents.Item4 / 2);
         }
 
         public string[] GetTrackedProperties()
@@ -164,7 +176,7 @@ namespace Xalia.AtSpi2
                     await Connection.RegisterEvent("object:bounds-changed");
 
                     result = await CallMethod(Connection.Connection, Peer, Path,
-                        IFACE_COMPONENT, "GetExtents", (uint)0, ReadMessageExtents);
+                        IFACE_COMPONENT, "GetExtents", ATSPI_COORD_TYPE_SCREEN, ReadMessageExtents);
                 }
                 catch (DBusException e)
                 {
