@@ -50,6 +50,8 @@ namespace Xalia.Win32
                 case "role":
                 case "control_type":
                     return role;
+                case "dialog":
+                    return UiDomBoolean.True;
                 case "defid":
                     return element.EvaluateIdentifier("win32_dialog_defid", element.Root, depends_on);
             }
