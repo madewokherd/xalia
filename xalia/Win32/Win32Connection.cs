@@ -19,7 +19,7 @@ namespace Xalia.Win32
 
             event_proc_delegates.Add(eventprocdelegate);
 
-            SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_FOCUS, IntPtr.Zero,
+            SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_UNCLOAKED, IntPtr.Zero,
                 eventprocdelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
 
             Utils.RunIdle(UpdateToplevels);
@@ -332,7 +332,29 @@ namespace Xalia.Win32
                 case EVENT_OBJECT_FOCUS:
                     UpdateGuiThreadInfo();
                     break;
+                case EVENT_OBJECT_SHOW:
+                case EVENT_OBJECT_HIDE:
+                case EVENT_OBJECT_STATECHANGE:
+                case EVENT_OBJECT_CLOAKED:
+                case EVENT_OBJECT_UNCLOAKED:
+                    {
+                        var element = GetElementForMsaaEvent(hwnd, idObject, idChild);
+                        if (!(element is null))
+                        {
+                            element.ProviderByType<HwndProvider>()?.MsaaStateChange();
+                        }
+                        break;
+                    }
             }
+        }
+
+        private UiDomElement GetElementForMsaaEvent(IntPtr hwnd, int idObject, int idChild)
+        {
+            if ((idObject == OBJID_CLIENT || idObject == OBJID_WINDOW) && idChild == CHILDID_SELF)
+            {
+                return LookupElement(hwnd);
+            }
+            return null;
         }
     }
 }

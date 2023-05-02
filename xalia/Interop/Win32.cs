@@ -209,11 +209,20 @@ namespace Xalia.Interop
         public const int GWL_STYLE = -16;
         public const int GWL_EXSTYLE = -20;
 
+        public const int WS_MAXIMIZEBOX = 0x00010000;
+        public const int WS_TABSTOP = 0x00010000;
+        public const int WS_MINIMIZEBOX = 0x00020000;
+        public const int WS_GROUP = 0x00020000;
+        public const int WS_SYSMENU = 0x00080000;
         public const int WS_HSCROLL = 0x00100000;
         public const int WS_VSCROLL = 0x00200000;
+        public const int WS_DLGFRAME = 0x00400000;
+        public const int WS_BORDER = 0x00800000;
+        public const int WS_MAXIMIZE = 0x01000000;
         public const int WS_CLIPSIBLINGS = 0x04000000;
         public const int WS_DISABLED = 0x08000000;
         public const int WS_VISIBLE = 0x10000000;
+        public const int WS_MINIMIZE = 0x20000000;
         public const int WS_POPUP = -0x80000000;
 
         public const int WS_EX_TOPMOST = 0x00000008;
@@ -281,10 +290,14 @@ namespace Xalia.Interop
 
         public const uint EVENT_OBJECT_CREATE = 0x8000;
         public const uint EVENT_OBJECT_DESTROY = 0x8001;
+        public const uint EVENT_OBJECT_SHOW = 0x8002;
+        public const uint EVENT_OBJECT_HIDE = 0x8003;
         public const uint EVENT_OBJECT_FOCUS = 0x8005;
         public const uint EVENT_OBJECT_STATECHANGE = 0x800A;
         public const uint EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
         public const uint EVENT_OBJECT_NAMECHANGE = 0x800C;
+        public const uint EVENT_OBJECT_CLOAKED = 0x8017;
+        public const uint EVENT_OBJECT_UNCLOAKED = 0x8018;
 
         public const uint WINEVENT_OUTOFCONTEXT = 0;
 

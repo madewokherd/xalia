@@ -20,6 +20,8 @@ namespace Xalia.Win32
             Tid = GetWindowThreadProcessId(hwnd, out var pid);
             Pid = pid;
 
+            Style = unchecked((int)(long)GetWindowLong(Hwnd, GWL_STYLE));
+
             Utils.RunTask(DiscoverProviders());
         }
 
@@ -41,7 +43,43 @@ namespace Xalia.Win32
             { "class_name", "win32_class_name" },
             { "pid", "win32_pid" },
             { "tid", "win32_tid" },
+            { "style", "win32_style" },
         };
+
+        private static string[] win32_stylenames =
+        {
+            "popup",
+            "child",
+            "minimize",
+            "visible",
+            "disabled",
+            "clipsiblings",
+            "clipchildren",
+            "maximize",
+            "border",
+            "dlgframe",
+            "vscroll",
+            "hscroll",
+            "sysmenu",
+            "thickframe",
+            // The other styles are contextual
+        };
+
+        private static Dictionary<string, int> win32_styles_by_name = new Dictionary<string, int>();
+
+        public int Style { get; private set; }
+
+        static HwndProvider()
+        {
+            for (int i=0; i<win32_stylenames.Length; i++)
+            {
+                win32_styles_by_name[win32_stylenames[i]] = (int)(0x80000000 >> i);
+            }
+            win32_styles_by_name["group"] = WS_GROUP;
+            win32_styles_by_name["minimizebox"] = WS_MINIMIZEBOX;
+            win32_styles_by_name["tabstop"] = WS_TABSTOP;
+            win32_styles_by_name["maximizebox"] = WS_MAXIMIZEBOX;
+        }
 
         private async Task DiscoverProviders()
         {
@@ -78,12 +116,45 @@ namespace Xalia.Win32
             // TODO: Check for OBJID_QUERYCLASSNAMEIDX?
         }
 
+        public string FormatStyles()
+        {
+            List<string> styles = new List<string>();
+            for (int i=0; i<win32_stylenames.Length; i++)
+            {
+                int flag = (int)(0x80000000 >> i);
+                if ((Style & flag) != 0)
+                {
+                    styles.Add(win32_stylenames[i]);
+                }
+            }
+
+            if ((Style & (WS_SYSMENU|WS_MINIMIZEBOX)) == (WS_SYSMENU|WS_MINIMIZEBOX))
+            {
+                styles.Add("minimizebox");
+            }
+            if ((Style & (WS_SYSMENU|WS_MINIMIZEBOX)) == WS_GROUP)
+            {
+                styles.Add("group");
+            }
+            if ((Style & (WS_SYSMENU|WS_MAXIMIZEBOX)) == (WS_SYSMENU|WS_MAXIMIZEBOX))
+            {
+                styles.Add("maximizebox");
+            }
+            if ((Style & (WS_SYSMENU|WS_MAXIMIZEBOX)) == WS_TABSTOP)
+            {
+                styles.Add("tabstop");
+            }
+
+            return $"0x{unchecked((uint)Style):x} [{string.Join("|", styles)}]";
+        }
+
         public void DumpProperties(UiDomElement element)
         {
             Utils.DebugWriteLine($"  win32_hwnd: {Hwnd}");
             Utils.DebugWriteLine($"  win32_class_name: \"{ClassName}\"");
             Utils.DebugWriteLine($"  win32_pid: {Pid}");
             Utils.DebugWriteLine($"  win32_tid: {Tid}");
+            Utils.DebugWriteLine($"  win32_style: {FormatStyles()}");
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -100,6 +171,9 @@ namespace Xalia.Win32
                     return new UiDomInt(Pid);
                 case "win32_tid":
                     return new UiDomInt(Tid);
+                case "win32_style":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    return new UiDomInt(Style);
             }
             return UiDomUndefined.Instance;
         }
@@ -112,9 +186,20 @@ namespace Xalia.Win32
                     if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
                         return new UiDomString("win32");
                     break;
+                case "enabled":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    return UiDomBoolean.FromBool((Style & WS_DISABLED) == 0);
+                case "focusable":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    return UiDomBoolean.FromBool((Style & (WS_SYSMENU | WS_TABSTOP)) == WS_TABSTOP);
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, element.Root, depends_on);
+            if (win32_styles_by_name.TryGetValue(identifier, out var style))
+            {
+                depends_on.Add((element, new IdentifierExpression("win32_style")));
+                return UiDomBoolean.FromBool((Style & style) == style);
+            }
             return UiDomUndefined.Instance;
         }
 
@@ -224,6 +309,20 @@ namespace Xalia.Win32
         public bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
             return false;
+        }
+
+        public void MsaaStateChange()
+        {
+            int new_style = unchecked((int)(long)GetWindowLong(Hwnd, GWL_STYLE));
+            if (new_style != Style)
+            {
+                Style = new_style;
+                if (Element.MatchesDebugCondition())
+                {
+                    Utils.DebugWriteLine($"{Element}.win32_style: {FormatStyles()}");
+                }
+                Element.PropertyChanged("win32_style");
+            }
         }
     }
 }
