@@ -495,7 +495,7 @@ root (descendent_matches(in_list_navigation)) {
 }
 
 // Special win32 controls
-if (class_name == "SysListView32") {
+if (class_name == "SysListView32" and not is_hwnd_element) {
     win32_use_listview: ancestor_matches(toplevel_interactable);
     targetable: false;
     recurse: false;
@@ -528,7 +528,7 @@ if (is_win32_listview_item) {
     height: win32_selectbounds_height;
 }
 
-if (class_name == "SysTabControl32") {
+if (class_name == "SysTabControl32" and not is_hwnd_element) {
     win32_use_tabcontrol: ancestor_matches(toplevel_interactable);
     targetable: false;
     recurse: false;
@@ -796,7 +796,7 @@ if (parent.offset_target_y) {
     offset_target_y: parent.offset_target_y;
 }
 
-if (class_name == "msctls_trackbar32" and ancestor_matches(toplevel_interactable)) {
+if (class_name == "msctls_trackbar32" and not is_hwnd_element and ancestor_matches(toplevel_interactable)) {
     win32_use_trackbar: ancestor_matches(toplevel_interactable);
     targetable: false;
 }
@@ -989,7 +989,7 @@ if (targetable or is_current_view) {
         target_height: spi_abs_height;
     }
 
-    if (is_uia_element or is_win32_element or is_win32_subelement) {
+    if (is_uia_element or is_win32_element or is_win32_subelement or is_hwnd_element) {
         target_x: x + (offset_target_x or 0);
         target_y: y + (offset_target_y or 0);
         target_width: width;

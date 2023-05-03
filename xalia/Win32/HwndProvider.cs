@@ -44,6 +44,10 @@ namespace Xalia.Win32
             { "pid", "win32_pid" },
             { "tid", "win32_tid" },
             { "style", "win32_style" },
+            { "x", "win32_x" },
+            { "y", "win32_y" },
+            { "width", "win32_width" },
+            { "height", "win32_height" },
         };
 
         private static string[] win32_stylenames =
@@ -68,6 +72,14 @@ namespace Xalia.Win32
         private static Dictionary<string, int> win32_styles_by_name = new Dictionary<string, int>();
 
         public int Style { get; private set; }
+
+        private bool _watchingWindowRect;
+        internal RECT WindowRect { get; private set; }
+        public bool WindowRectKnown { get; private set; }
+        public int X => WindowRect.left;
+        public int Y => WindowRect.top;
+        public int Width => WindowRect.right - WindowRect.left;
+        public int Height => WindowRect.bottom - WindowRect.top;
 
         static HwndProvider()
         {
@@ -155,6 +167,13 @@ namespace Xalia.Win32
             Utils.DebugWriteLine($"  win32_pid: {Pid}");
             Utils.DebugWriteLine($"  win32_tid: {Tid}");
             Utils.DebugWriteLine($"  win32_style: {FormatStyles()}");
+            if (WindowRectKnown)
+            {
+                Utils.DebugWriteLine($"  win32_x: {X}");
+                Utils.DebugWriteLine($"  win32_y: {Y}");
+                Utils.DebugWriteLine($"  win32_width: {Width}");
+                Utils.DebugWriteLine($"  win32_height: {Height}");
+            }
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -174,6 +193,26 @@ namespace Xalia.Win32
                 case "win32_style":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return new UiDomInt(Style);
+                case "win32_x":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    if (WindowRectKnown)
+                        return new UiDomInt(X);
+                    break;
+                case "win32_y":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    if (WindowRectKnown)
+                        return new UiDomInt(Y);
+                    break;
+                case "win32_width":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    if (WindowRectKnown)
+                        return new UiDomInt(Width);
+                    break;
+                case "win32_height":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    if (WindowRectKnown)
+                        return new UiDomInt(Height);
+                    break;
             }
             return UiDomUndefined.Instance;
         }
@@ -303,11 +342,31 @@ namespace Xalia.Win32
 
         public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
         {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_pos":
+                        _watchingWindowRect = false;
+                        return true;
+                }
+            }
             return false;
         }
 
         public bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_pos":
+                        _watchingWindowRect = true;
+                        if (!WindowRectKnown)
+                            RefreshWindowRect();
+                        return true;
+                }
+            }
             return false;
         }
 
@@ -322,6 +381,33 @@ namespace Xalia.Win32
                     Utils.DebugWriteLine($"{Element}.win32_style: {FormatStyles()}");
                 }
                 Element.PropertyChanged("win32_style");
+            }
+        }
+
+        public void MsaaAncestorLocationChange()
+        {
+            if (_watchingWindowRect)
+            {
+                RefreshWindowRect();
+            }
+            else
+            {
+                WindowRectKnown = false;
+            }
+        }
+
+        private void RefreshWindowRect()
+        {
+            if (GetWindowRect(Hwnd, out var new_rect))
+            {
+                if (!WindowRectKnown || !new_rect.Equals(WindowRect))
+                {
+                    WindowRectKnown = true;
+                    WindowRect = new_rect;
+                    if (Element.MatchesDebugCondition())
+                        Utils.DebugWriteLine($"{Element}.win32_(x,y,width,height): {X},{Y},{Width},{Height}");
+                    Element.PropertyChanged("win32_pos");
+                }
             }
         }
     }

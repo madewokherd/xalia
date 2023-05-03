@@ -316,6 +316,15 @@ namespace Xalia.Win32
             // We don't have a way to get caret change notifications so we'll ignore that for now
         }
 
+        static void RecursiveLocationChange(UiDomElement element)
+        {
+            element.ProviderByType<HwndProvider>()?.MsaaAncestorLocationChange();
+            foreach (var child in element.Children)
+            {
+                RecursiveLocationChange(child);
+            }
+        }
+
         private void OnMsaaEvent(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject, int idChild, int idEventThread, int dwmsEventTime)
         {
             switch (eventId)
@@ -342,6 +351,15 @@ namespace Xalia.Win32
                         if (!(element is null))
                         {
                             element.ProviderByType<HwndProvider>()?.MsaaStateChange();
+                        }
+                        break;
+                    }
+                case EVENT_OBJECT_LOCATIONCHANGE:
+                    {
+                        var element = GetElementForMsaaEvent(hwnd, idObject, idChild);
+                        if (!(element is null))
+                        {
+                            RecursiveLocationChange(element);
                         }
                         break;
                     }
