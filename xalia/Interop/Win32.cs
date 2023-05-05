@@ -932,6 +932,8 @@ namespace Xalia.Interop
         public const int BS_BOTTOM = 0x800;
         public const int BS_VCENTER = 0xC00;
 
+        public const int BM_CLICK = 0xf5;
+
         // Dialog
         public const int DM_GETDEFID = WM_USER;
 

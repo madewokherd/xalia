@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xalia.Gudl;
@@ -77,6 +78,8 @@ namespace Xalia.Win32
         {
             { "role", "win32_button_role" },
             { "control_type", "win32_button_role" },
+            { "do_default_action", "win32_button_click" },
+            { "click", "win32_button_click" },
         };
 
         public void DumpProperties(UiDomElement element)
@@ -92,8 +95,16 @@ namespace Xalia.Win32
                 case "win32_button_role":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return button_roles[HwndProvider.Style & BS_TYPEMASK];
+                case "win32_button_click":
+                    return new UiDomRoutineAsync(element, "win32_button_click", SendClick);
             }
             return UiDomUndefined.Instance;
+        }
+
+        private static Task SendClick(UiDomRoutineAsync obj)
+        {
+            var provider = obj.Element.ProviderByType<HwndProvider>();
+            return SendMessageAsync(provider.Hwnd, BM_CLICK, IntPtr.Zero, IntPtr.Zero);
         }
 
         public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)

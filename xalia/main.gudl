@@ -1227,6 +1227,10 @@ if (interactable) {
         primary_action: send_click;
     }
 
+    if (is_hwnd_element and do_default_action) {
+        primary_action: do_default_action;
+    }
+
     if (spi_action.(click or Press or activate or toggle or Toggle)) {
         primary_action: spi_action.(click or Press or activate or toggle or Toggle);
     }
