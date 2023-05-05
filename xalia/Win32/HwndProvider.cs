@@ -51,6 +51,7 @@ namespace Xalia.Win32
             { "y", "win32_y" },
             { "width", "win32_width" },
             { "height", "win32_height" },
+            { "control_id", "win32_control_id" },
         };
 
         private static string[] win32_stylenames =
@@ -83,6 +84,21 @@ namespace Xalia.Win32
         public int Y => WindowRect.top;
         public int Width => WindowRect.right - WindowRect.left;
         public int Height => WindowRect.bottom - WindowRect.top;
+
+        private int _controlId;
+        private bool _controlIdKnown;
+        public int ControlId
+        {
+            get
+            {
+                if (!_controlIdKnown)
+                {
+                    _controlId = unchecked((int)(long)GetWindowLong(Hwnd, GWLP_ID));
+                    _controlIdKnown = true;
+                }
+                return _controlId;
+            }
+        }
 
         static HwndProvider()
         {
@@ -193,6 +209,10 @@ namespace Xalia.Win32
                 Utils.DebugWriteLine($"  win32_width: {Width}");
                 Utils.DebugWriteLine($"  win32_height: {Height}");
             }
+            if ((Style & WS_CHILD) != 0 && ControlId != 0)
+            {
+                Utils.DebugWriteLine($"  win32_control_id: {ControlId}");
+            }
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -233,6 +253,13 @@ namespace Xalia.Win32
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
                     if (WindowRectKnown)
                         return new UiDomInt(Height);
+                    break;
+                case "win32_control_id":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    if ((Style & WS_CHILD) != 0)
+                    {
+                        return new UiDomInt(ControlId);
+                    }
                     break;
             }
             return UiDomUndefined.Instance;

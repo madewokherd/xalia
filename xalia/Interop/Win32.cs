@@ -206,6 +206,7 @@ namespace Xalia.Interop
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
         public extern static bool SetWindowPos(IntPtr hwnd, IntPtr insert_after, int x, int y, int width, int height, uint flags);
 
+        public const int GWLP_ID = -12;
         public const int GWL_STYLE = -16;
         public const int GWL_EXSTYLE = -20;
 
@@ -223,6 +224,7 @@ namespace Xalia.Interop
         public const int WS_DISABLED = 0x08000000;
         public const int WS_VISIBLE = 0x10000000;
         public const int WS_MINIMIZE = 0x20000000;
+        public const int WS_CHILD = 0x40000000;
         public const int WS_POPUP = -0x80000000;
 
         public const int WS_EX_TOPMOST = 0x00000008;
