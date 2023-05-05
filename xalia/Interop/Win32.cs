@@ -938,6 +938,9 @@ namespace Xalia.Interop
         }
 
         // Button
+        public const int BS_DEFPUSHBUTTON = 0x1;
+        public const int BS_DEFSPLITBUTTON = 0xc;
+        public const int BS_DEFCOMMANDLINK = 0xf;
         public const int BS_TYPEMASK = 0xf;
 
         public const int BS_LEFT = 0x100;

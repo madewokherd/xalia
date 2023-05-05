@@ -80,10 +80,16 @@ namespace Xalia.Win32
             { "control_type", "win32_button_role" },
             { "do_default_action", "win32_button_click" },
             { "click", "win32_button_click" },
+            { "default", "win32_button_default" },
         };
 
         public void DumpProperties(UiDomElement element)
         {
+            var dialog = element.Parent?.ProviderByType<HwndDialogProvider>();
+            if (!(dialog is null) && dialog.DefIdKnown && dialog.DefId == HwndProvider.ControlId)
+            {
+                Utils.DebugWriteLine("  win32_button_default: true");
+            }
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -97,6 +103,26 @@ namespace Xalia.Win32
                     return button_roles[HwndProvider.Style & BS_TYPEMASK];
                 case "win32_button_click":
                     return new UiDomRoutineAsync(element, "win32_button_click", SendClick);
+                case "win32_button_default":
+                    if (!(element.Parent is null))
+                    {
+                        depends_on.Add((element.Parent, new IdentifierExpression("win32_dialog_defid")));
+                        var dialog = element.Parent.ProviderByType<HwndDialogProvider>();
+                        if (!(dialog is null) && dialog.DefIdKnown)
+                        {
+                            return UiDomBoolean.FromBool(HwndProvider.ControlId == dialog.DefId);
+                        }
+                    }
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    switch (HwndProvider.Style & BS_TYPEMASK)
+                    {
+                        case BS_DEFPUSHBUTTON:
+                        case BS_DEFSPLITBUTTON:
+                        case BS_DEFCOMMANDLINK:
+                            return UiDomBoolean.True;
+                        default:
+                            return UiDomBoolean.False;
+                    }
             }
             return UiDomUndefined.Instance;
         }

@@ -1172,7 +1172,7 @@ if (interactable) {
         menu_open_action_name: "Open Menu";
     }
 
-    button (name == "OK" or name == "Run" or name == "Play" or name == "PLAY" or name == "Yes")
+    button (default or name == "OK" or name == "Run" or name == "Play" or name == "PLAY" or name == "Yes")
     {
         confirm_action: primary_action or send_click;
         confirm_action_name: name;
