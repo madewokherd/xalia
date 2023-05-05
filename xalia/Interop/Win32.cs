@@ -658,6 +658,19 @@ namespace Xalia.Interop
         }
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode)]
+        public static extern int GetClassNameW(IntPtr hWnd, StringBuilder ptszClassName, int cchClassNameMax);
+
+        public static string GetClassName(IntPtr hwnd)
+        {
+            // According to WNDCLASS documentation, the maximum name length is 256
+            var sb = new StringBuilder(256);
+
+            GetClassNameW(hwnd, sb, 256);
+
+            return sb.ToString();
+        }
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode)]
         public static extern short VkKeyScanW(char ch);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode, SetLastError = true)]

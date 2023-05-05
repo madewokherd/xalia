@@ -16,7 +16,8 @@ namespace Xalia.Win32
             Hwnd = hwnd;
             Element = element;
             Connection = connection;
-            ClassName = RealGetWindowClass(hwnd);
+            RealClassName = RealGetWindowClass(hwnd);
+            ClassName = GetClassName(hwnd);
             Tid = GetWindowThreadProcessId(hwnd, out var pid);
             Pid = pid;
 
@@ -29,6 +30,7 @@ namespace Xalia.Win32
         public UiDomElement Element { get; private set; }
         public Win32Connection Connection { get; }
         public string ClassName { get; }
+        public string RealClassName { get; }
         public int Pid { get; }
         public int Tid { get; }
 
@@ -41,6 +43,7 @@ namespace Xalia.Win32
         {
             { "hwnd", "win32_hwnd" },
             { "class_name", "win32_class_name" },
+            { "real_class_name", "win32_real_class_name" },
             { "pid", "win32_pid" },
             { "tid", "win32_tid" },
             { "style", "win32_style" },
@@ -118,7 +121,7 @@ namespace Xalia.Win32
                 }
             }
             
-            switch (ClassName)
+            switch (RealClassName)
             {
                 case "#32770":
                     Element.AddProvider(new HwndDialogProvider(this), 0);
@@ -179,6 +182,7 @@ namespace Xalia.Win32
         {
             Utils.DebugWriteLine($"  win32_hwnd: {Hwnd}");
             Utils.DebugWriteLine($"  win32_class_name: \"{ClassName}\"");
+            Utils.DebugWriteLine($"  win32_real_class_name: \"{RealClassName}\"");
             Utils.DebugWriteLine($"  win32_pid: {Pid}");
             Utils.DebugWriteLine($"  win32_tid: {Tid}");
             Utils.DebugWriteLine($"  win32_style: {FormatStyles()}");
@@ -201,6 +205,8 @@ namespace Xalia.Win32
                     return new UiDomInt((int)Hwnd);
                 case "win32_class_name":
                     return new UiDomString(ClassName);
+                case "win32_real_class_name":
+                    return new UiDomString(RealClassName);
                 case "win32_pid":
                     return new UiDomInt(Pid);
                 case "win32_tid":
