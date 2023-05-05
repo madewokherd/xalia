@@ -303,6 +303,7 @@ namespace Xalia.Interop
 
         public const int OBJID_WINDOW = 0;
         public const int OBJID_CLIENT = -4;
+        public const int OBJID_QUERYCLASSNAMEIDX = -12;
 
         public const int CHILDID_SELF = 0;
 
@@ -920,6 +921,16 @@ namespace Xalia.Interop
 
             return info.info.win.window;
         }
+
+        // Button
+        public const int BS_TYPEMASK = 0xf;
+
+        public const int BS_LEFT = 0x100;
+        public const int BS_RIGHT = 0x200;
+        public const int BS_CENTER = 0x300;
+        public const int BS_TOP = 0x400;
+        public const int BS_BOTTOM = 0x800;
+        public const int BS_VCENTER = 0xC00;
 
         // Dialog
         public const int DM_GETDEFID = WM_USER;

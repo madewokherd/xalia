@@ -98,7 +98,7 @@ namespace Xalia.Win32
             // TODO: Check if there's a UIA provider
 
             var lr = await SendMessageAsync(Hwnd, WM_GETOBJECT, IntPtr.Zero, (IntPtr)OBJID_CLIENT);
-            if ((int)lr > 0)
+            if ((long)lr > 0)
             {
                 try
                 {
@@ -123,9 +123,18 @@ namespace Xalia.Win32
                 case "#32770":
                     Element.AddProvider(new HwndDialogProvider(this), 0);
                     return;
+                case "Button":
+                    Element.AddProvider(new HwndButtonProvider(this), 0);
+                    return;
             }
 
-            // TODO: Check for OBJID_QUERYCLASSNAMEIDX?
+            lr = await SendMessageAsync(Hwnd, WM_GETOBJECT, IntPtr.Zero, (IntPtr)OBJID_QUERYCLASSNAMEIDX);
+            switch((long)lr)
+            {
+                case 65536 + 2:
+                    Element.AddProvider(new HwndButtonProvider(this), 0);
+                    return;
+            }
         }
 
         public string FormatStyles()
@@ -155,6 +164,12 @@ namespace Xalia.Win32
             if ((Style & (WS_SYSMENU|WS_MAXIMIZEBOX)) == WS_TABSTOP)
             {
                 styles.Add("tabstop");
+            }
+
+            var style_provider = Element.ProviderByType<IWin32Styles>();
+            if (!(style_provider is null))
+            {
+                style_provider.GetStyleNames(Style, styles);
             }
 
             return $"0x{unchecked((uint)Style):x} [{string.Join("|", styles)}]";
