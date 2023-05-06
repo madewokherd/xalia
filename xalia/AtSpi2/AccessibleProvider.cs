@@ -269,7 +269,6 @@ namespace Xalia.AtSpi2
 
         private bool watching_children;
         private bool children_known;
-        private int child_count;
 
         public bool RoleKnown { get; private set; }
         public int Role { get; private set; }
@@ -479,56 +478,24 @@ namespace Xalia.AtSpi2
                     children.RemoveAt(i);
                     continue;
                 }
-                i++;
-            }
-
-            // First remove any existing children that are missing or out of order
-            i = 0;
-            foreach (var new_child in children)
-            {
-                if (!Element.Children.Exists((UiDomElement element) => ElementMatches(element, new_child)))
+                var existing = Connection.LookupElement(children[i]);
+                if (!(existing is null) && existing.Parent != Element)
+                {
+                    // duplicate elsewhere in tree
+                    children.RemoveAt(i);
                     continue;
-                while (!ElementMatches(Element.Children[i], new_child))
-                {
-                    Element.RemoveChild(i);
-                    child_count--;
                 }
                 i++;
             }
 
-            // Remove any remaining missing children
-            while (i < child_count)
-            {
-                Element.RemoveChild(i);
-                child_count--;
-            }
-
-            // Add any new children
-            i = 0;
-            foreach (var new_child in children)
-            {
-                if (child_count <= i || !ElementMatches(Element.Children[i], new_child))
-                {
-                    if (!(Connection.LookupElement(new_child) is null))
-                    {
-                        // Child element is a duplicate of another element somewhere in the tree.
-                        continue;
-                    }
-                    Element.AddChild(i, Connection.CreateElement(new_child.Item1, new_child.Item2));
-                    child_count++;
-                }
-                i += 1;
-            }
+            Element.SyncRecurseMethodChildren(children, KeyToElementId, Connection.CreateElement);
 
             children_known = true;
         }
 
-        private bool ElementMatches(UiDomElement element, (string, string) new_child)
+        private string KeyToElementId((string, string) arg)
         {
-            var provider = element.ProviderByType<AccessibleProvider>();
-            if (provider is null)
-                return false;
-            return provider.Peer == new_child.Item1 && provider.Path == new_child.Item2;
+            return $"{arg.Item1}:{arg.Item2}";
         }
 
         internal void WatchChildren()
@@ -537,6 +504,7 @@ namespace Xalia.AtSpi2
                 return;
             if (Element.MatchesDebugCondition())
                 Utils.DebugWriteLine($"WatchChildren for {Element}");
+            Element.SetRecurseMethodProvider(this);
             watching_children = true;
             children_known = false;
             Utils.RunTask(PollChildrenTask());
@@ -550,11 +518,7 @@ namespace Xalia.AtSpi2
             if (Element.MatchesDebugCondition())
                 Utils.DebugWriteLine($"UnwatchChildren for {Element}");
             watching_children = false;
-            while (child_count > 0)
-            {
-                Element.RemoveChild(child_count - 1);
-                child_count--;
-            }
+            Element.UnsetRecurseMethodProvider(this);
         }
 
         internal void AtSpiChildrenChanged(AtSpiSignal signal)
@@ -578,8 +542,7 @@ namespace Xalia.AtSpi2
                             Utils.DebugWriteLine($"WARNING: {child.Item1}:{child.Item2} added to {Element} at index {index}, but there are only {Element.Children.Count} known children");
                             index = Element.Children.Count;
                         }
-                        Element.AddChild(index, Connection.CreateElement(child.Item1, child.Item2));
-                        child_count++;
+                        Element.AddChild(index, Connection.CreateElement(child.Item1, child.Item2), true);
                         break;
                     }
                 case "remove":
@@ -600,8 +563,7 @@ namespace Xalia.AtSpi2
                             Utils.DebugWriteLine($"WARNING: {child.Item1}:{child.Item2} remove event has wrong index - got {index}, should be {real_index}");
                             index = real_index;
                         }
-                        Element.RemoveChild(index);
-                        child_count--;
+                        Element.RemoveChild(index, true);
                         break;
                     }
                 default:
