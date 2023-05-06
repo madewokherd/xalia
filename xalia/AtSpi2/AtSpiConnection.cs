@@ -72,6 +72,11 @@ namespace Xalia.AtSpi2
             return result;
         }
 
+        internal UiDomElement CreateElement((string, string) id)
+        {
+            return CreateElement(id.Item1, id.Item2);
+        }
+
         internal static async Task<AtSpiConnection> Connect(UiDomRoot root)
         {
             string bus = await GetAtSpiBusAddress();

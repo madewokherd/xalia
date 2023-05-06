@@ -13,6 +13,9 @@ namespace Xalia.UiDom
 
         public List<UiDomElement> Children { get; } = new List<UiDomElement> ();
 
+        private IUiDomProvider recurse_method_provider;
+        private int recurse_method_child_count;
+
         public UiDomElement Parent { get; private set; }
 
         public bool IsAlive { get; private set; }
@@ -101,9 +104,13 @@ namespace Xalia.UiDom
                     polling_refresh_tokens.Clear();
                     polling_properties.Clear();
                     _updatingRules = false;
+                    while (recurse_method_child_count < Children.Count)
+                    {
+                        RemoveChild(Children.Count - 1, false);
+                    }
                     while (Children.Count != 0)
                     {
-                        RemoveChild(Children.Count - 1);
+                        RemoveChild(Children.Count - 1, true);
                     }
                     Root?.RaiseElementDiedEvent(this);
                 }
@@ -128,14 +135,28 @@ namespace Xalia.UiDom
                 throw new InvalidOperationException("UiDomObject constructor with no arguments can only be used by UiDomRoot");
         }
 
-        public void AddChild(int index, UiDomElement child)
+        public void AddChild(int index, UiDomElement child, bool recurse_method=false)
         {
+            if (index < 0 || index > Children.Count)
+                throw new IndexOutOfRangeException();
+            if (recurse_method)
+            {
+                if (index > recurse_method_child_count)
+                    throw new IndexOutOfRangeException("index is too high to be used with recurse_method=true");
+            }
+            else
+            {
+                if (index < recurse_method_child_count)
+                    throw new IndexOutOfRangeException("index is too low to be used with recurse_method=false");
+            }
             if (MatchesDebugCondition())
                 Utils.DebugWriteLine($"Child {child} added to {this} at index {index}");
             if (child.Parent != null)
                 throw new InvalidOperationException(string.Format("Attempted to add child {0} to {1} but it already has a parent of {2}", child.DebugId, DebugId, child.Parent.DebugId));
             child.Parent = this;
             Children.Insert(index, child);
+            if (recurse_method)
+                recurse_method_child_count++;
             child.SetAlive(true);
             PropertyChanged("children");
         }
@@ -158,14 +179,28 @@ namespace Xalia.UiDom
             return UiDomUndefined.Instance;
         }
 
-        public void RemoveChild(int index)
+        public void RemoveChild(int index, bool recurse_method = false)
         {
+            if (index < 0 || index >= Children.Count)
+                throw new IndexOutOfRangeException();
+            if (recurse_method)
+            {
+                if (index > recurse_method_child_count - 1)
+                    throw new IndexOutOfRangeException("index too high to be used with recurse_method=true");
+            }
+            else
+            {
+                if (index < recurse_method_child_count)
+                    throw new IndexOutOfRangeException("index too low to be used with recurse_method=false");
+            }
             var child = Children[index];
             if (MatchesDebugCondition() || child.MatchesDebugCondition())
                 Utils.DebugWriteLine($"Child {child} removed from {this}");
             Children.RemoveAt(index);
             child.Parent = null;
             child.SetAlive(false);
+            if (recurse_method)
+                recurse_method_child_count--;
             if (IsAlive)
                 PropertyChanged("children");
         }
@@ -998,6 +1033,136 @@ namespace Xalia.UiDom
                     return result;
             }
             return default;
+        }
+
+        public void SetRecurseMethodProvider(IUiDomProvider provider)
+        {
+            recurse_method_provider = provider;
+        }
+
+        public void UnsetRecurseMethodProvider(IUiDomProvider provider)
+        {
+            if (recurse_method_provider == provider)
+            {
+                recurse_method_provider = null;
+                Utils.RunIdle(ClearRecurseMethodChildren);
+            }
+        }
+
+        private void ClearRecurseMethodChildren()
+        {
+            if (recurse_method_provider is null)
+            {
+                SyncRecurseMethodChildren(new int[] { }, throw_nie_string, throw_nie_element);
+            }
+        }
+
+        private static UiDomElement throw_nie_element(int arg)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static string throw_nie_string(int arg)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SyncRecurseMethodChildren<T>(IList<T> keys, Func<T,string> key_to_id,
+            Func<T,UiDomElement> key_to_element)
+        {
+            var new_ids = new string[keys.Count];
+            var new_elements = new UiDomElement[keys.Count];
+            var new_id_to_index = new Dictionary<string, int>(keys.Count);
+            bool changed = false;
+
+            for (int i=0; i<keys.Count; i++)
+            {
+                new_ids[i] = key_to_id(keys[i]);
+                try
+                {
+                    new_id_to_index.Add(new_ids[i], i);
+                }
+                catch (ArgumentException)
+                {
+                    throw new ArgumentException("keys list has a duplicate entry");
+                }
+            }
+
+            var old_elements = new UiDomElement[recurse_method_child_count];
+            Children.CopyTo(0, old_elements, 0, recurse_method_child_count);
+
+            for (int i=0; i<old_elements.Length; i++)
+            {
+                if (new_id_to_index.TryGetValue(old_elements[i].DebugId, out var new_index))
+                {
+                    if (new_index != i)
+                        changed = true;
+                    new_elements[new_index] = old_elements[i];
+                    old_elements[i] = null;
+                }
+                else
+                {
+                    // element will be removed
+                    changed = true;
+                    if (MatchesDebugCondition() || old_elements[i].MatchesDebugCondition())
+                        Utils.DebugWriteLine($"Child {old_elements[i]} removed from {this}");
+                }
+            }
+
+            if (!changed && keys.Count == recurse_method_child_count)
+            {
+                // All existing elements have same index, and the count hasn't increased, therefore nothing changed.
+                return;
+            }
+
+            for (int i=0; i<new_elements.Length; i++)
+            {
+                if (new_elements[i] is null)
+                {
+                    new_elements[i] = key_to_element(keys[i]);
+                    if (MatchesDebugCondition())
+                        Utils.DebugWriteLine($"Child {new_ids[i]} added to {this} at index {i}");
+                }
+            }
+
+            // Adjust the length of the list, and shift the other elements
+            if (keys.Count > recurse_method_child_count)
+            {
+                Children.InsertRange(recurse_method_child_count,
+                    new UiDomElement[keys.Count - recurse_method_child_count]);
+            }
+            else if (keys.Count < recurse_method_child_count)
+            {
+                Children.RemoveRange(keys.Count, recurse_method_child_count - keys.Count);
+            }
+            recurse_method_child_count = keys.Count;
+
+            // Update the list to ensure we're in a consistent state when we start calling user code
+            for (int i = 0; i < new_elements.Length; i++)
+                Children[i] = new_elements[i];
+
+            // Update parent links and alive state
+            foreach (var child in new_elements)
+            {
+                if (!child.IsAlive)
+                {
+                    child.Parent = this;
+                    child.SetAlive(true);
+                }
+            }
+
+            foreach (var old_child in old_elements)
+            {
+                if (!(old_child is null))
+                {
+                    old_child.Parent = null;
+                    old_child.SetAlive(false);
+                }
+            }
+
+            if (MatchesDebugCondition())
+                Utils.DebugWriteLine($"children of {this} changed");
+            PropertyChanged("children");
         }
     }
 }
