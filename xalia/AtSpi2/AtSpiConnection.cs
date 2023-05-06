@@ -97,14 +97,7 @@ namespace Xalia.AtSpi2
             var element = LookupElement((signal.peer, signal.path));
             if (element is null)
                 return;
-            foreach (var provider in element.Providers)
-            {
-                if (provider is AccessibleProvider acc)
-                {
-                    acc.AtSpiBoundsChanged(signal);
-                    break;
-                }
-            }
+            element.ProviderByType<AccessibleProvider>()?.AtSpiBoundsChanged(signal);
         }
 
         private void OnStateChanged(AtSpiSignal signal)
@@ -112,14 +105,7 @@ namespace Xalia.AtSpi2
             var element = LookupElement((signal.peer, signal.path));
             if (element is null)
                 return;
-            foreach (var provider in element.Providers)
-            {
-                if (provider is AccessibleProvider acc)
-                {
-                    acc.AtSpiStateChanged(signal);
-                    break;
-                }
-            }
+            element.ProviderByType<AccessibleProvider>()?.AtSpiStateChanged(signal);
         }
 
         public Task RegisterEvent(string name)
@@ -136,14 +122,7 @@ namespace Xalia.AtSpi2
             var element = LookupElement((signal.peer, signal.path));
             if (element is null)
                 return;
-            foreach (var provider in element.Providers)
-            {
-                if (provider is AccessibleProvider acc)
-                {
-                    acc.AtSpiChildrenChanged(signal);
-                    break;
-                }
-            }
+            element.ProviderByType<AccessibleProvider>()?.AtSpiChildrenChanged(signal);
         }
 
         private void OnPropertyChange(AtSpiSignal signal)
@@ -151,14 +130,7 @@ namespace Xalia.AtSpi2
             var element = LookupElement((signal.peer, signal.path));
             if (element is null)
                 return;
-            foreach (var provider in element.Providers)
-            {
-                if (provider is AccessibleProvider acc)
-                {
-                    acc.AtSpiPropertyChange(signal.detail, signal.value);
-                    break;
-                }
-            }
+            element.ProviderByType<AccessibleProvider>()?.AtSpiPropertyChange(signal.detail, signal.value);
         }
 
         internal void NotifyElementCreated(AtSpiElement element)

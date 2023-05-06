@@ -470,7 +470,10 @@ namespace Xalia.AtSpi2
 
         private bool ElementMatches(UiDomElement element, (string, string) new_child)
         {
-            return element is AtSpiElement e && e.Peer == new_child.Item1 && e.Path == new_child.Item2;
+            var provider = element.ProviderByType<AccessibleProvider>();
+            if (provider is null)
+                return false;
+            return provider.Peer == new_child.Item1 && provider.Path == new_child.Item2;
         }
 
         internal void WatchChildren()
@@ -732,24 +735,11 @@ namespace Xalia.AtSpi2
         {
             if (!(SupportedInterfaces is null))
             {
-                foreach (var provider in Element.Providers)
-                {
-                    if (provider is ComponentProvider component)
-                    {
-                        component.AncestorBoundsChanged();
-                        break;
-                    }
-                }
+                Element.ProviderByType<ComponentProvider>()?.AncestorBoundsChanged();
             }
             foreach (var child in Element.Children)
             {
-                foreach (var provider in child.Providers)
-                {
-                    if (provider is AccessibleProvider acc)
-                    {
-                        acc.AncestorBoundsChanged();
-                    }
-                }
+                child.ProviderByType<AccessibleProvider>()?.AncestorBoundsChanged();
             }
         }
 
