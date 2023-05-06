@@ -356,7 +356,12 @@ namespace Xalia.AtSpi2
             {
                 case "recurse_method":
                     if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
-                        return new UiDomString("spi_auto");
+                    {
+                        if (element.EvaluateIdentifier("poll_children", element.Root, depends_on).ToBool())
+                            return new UiDomString("spi_auto_poll");
+                        else
+                            return new UiDomString("spi_auto");
+                    }
                     break;
                 case "toolkit_name":
                     depends_on.Add((element, new IdentifierExpression("spi_application")));
@@ -541,6 +546,7 @@ namespace Xalia.AtSpi2
         {
             if (!watching_children)
                 return;
+            Element.EndPollProperty(new IdentifierExpression("spi_children"));
             if (Element.MatchesDebugCondition())
                 Utils.DebugWriteLine($"UnwatchChildren for {Element}");
             watching_children = false;
@@ -610,8 +616,23 @@ namespace Xalia.AtSpi2
             {
                 case "recurse_method":
                     {
-                        if (new_value is UiDomString st && st.Value == "spi_auto")
-                            WatchChildren();
+                        if (new_value is UiDomString st)
+                        {
+                            switch (st.Value)
+                            {
+                                case "spi_auto":
+                                    WatchChildren();
+                                    element.EndPollProperty(new IdentifierExpression("spi_children"));
+                                    break;
+                                case "spi_auto_poll":
+                                    WatchChildren();
+                                    element.PollProperty(new IdentifierExpression("spi_children"), PollChildrenTask, 2000);
+                                    break;
+                                default:
+                                    UnwatchChildren();
+                                    break;
+                            }
+                        }
                         else
                             UnwatchChildren();
                         break;
