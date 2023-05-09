@@ -3,6 +3,7 @@ using Interop.UIAutomationClient;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -849,7 +850,7 @@ namespace Xalia.Interop
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
         public delegate void SendAsyncProc(IntPtr hwnd, int msg, IntPtr userdata, IntPtr lresult);
 
-        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
         public extern static bool SendMessageCallbackW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam, SendAsyncProc lpResultCallBack, IntPtr dwData);
 
         private class SendMessageAsyncCallback
@@ -880,7 +881,8 @@ namespace Xalia.Interop
         public static Task<IntPtr> SendMessageAsync(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam)
         {
             var callback = new SendMessageAsyncCallback();
-            SendMessageCallbackW(hwnd, msg, wparam, lparam, SendMessageAsyncCallback.callback_fn, callback.gchandle);
+            if (!SendMessageCallbackW(hwnd, msg, wparam, lparam, SendMessageAsyncCallback.callback_fn, callback.gchandle))
+                return Task.FromException<IntPtr>(new Win32Exception());
             return callback.source.Task;
         }
 

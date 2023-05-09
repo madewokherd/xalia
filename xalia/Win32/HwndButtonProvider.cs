@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Xalia.Gudl;
@@ -127,10 +128,18 @@ namespace Xalia.Win32
             return UiDomUndefined.Instance;
         }
 
-        private static Task SendClick(UiDomRoutineAsync obj)
+        private static async Task SendClick(UiDomRoutineAsync obj)
         {
             var provider = obj.Element.ProviderByType<HwndProvider>();
-            return SendMessageAsync(provider.Hwnd, BM_CLICK, IntPtr.Zero, IntPtr.Zero);
+            try
+            {
+                await SendMessageAsync(provider.Hwnd, BM_CLICK, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+            }
         }
 
         public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)

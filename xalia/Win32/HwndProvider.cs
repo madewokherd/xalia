@@ -1,6 +1,7 @@
 ﻿using Accessibility;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xalia.Gudl;
@@ -116,7 +117,16 @@ namespace Xalia.Win32
         {
             // TODO: Check if there's a UIA provider
 
-            var lr = await SendMessageAsync(Hwnd, WM_GETOBJECT, IntPtr.Zero, (IntPtr)OBJID_CLIENT);
+            IntPtr lr = default;
+            try
+            {
+                lr = await SendMessageAsync(Hwnd, WM_GETOBJECT, IntPtr.Zero, (IntPtr)OBJID_CLIENT);
+            }
+            catch (Win32Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
             if ((long)lr > 0)
             {
                 try
@@ -147,7 +157,15 @@ namespace Xalia.Win32
                     return;
             }
 
-            lr = await SendMessageAsync(Hwnd, WM_GETOBJECT, IntPtr.Zero, (IntPtr)OBJID_QUERYCLASSNAMEIDX);
+            try
+            {
+                lr = await SendMessageAsync(Hwnd, WM_GETOBJECT, IntPtr.Zero, (IntPtr)OBJID_QUERYCLASSNAMEIDX);
+            }
+            catch (Win32Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
             switch((long)lr)
             {
                 case 65536 + 2:
@@ -416,6 +434,35 @@ namespace Xalia.Win32
                 }
             }
             return false;
+        }
+
+        static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
+
+        public static bool IsExpectedException(Win32Exception e)
+        {
+#if DEBUG
+            if (DebugExceptions)
+            {
+                Utils.DebugWriteLine($"WARNING: Win32 exception:");
+                Utils.DebugWriteLine(e);
+            }
+#endif
+            switch (e.NativeErrorCode)
+            {
+                case 5: // Access denied
+                    return true;
+                default:
+#if DEBUG
+                    return false;
+#else
+                    if (DebugExceptions)
+                    {
+                        Utils.DebugWriteLine("WARNING: Win32 exception ignored:");
+                        Utils.DebugWriteLine(e);
+                    }
+                    return true;
+#endif
+            }
         }
 
         public void MsaaStateChange()

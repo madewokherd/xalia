@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -101,7 +102,17 @@ namespace Xalia.Win32
 
         private async Task FetchDefId()
         {
-            var result = (int)await SendMessageAsync(HwndProvider.Hwnd, DM_GETDEFID, IntPtr.Zero, IntPtr.Zero);
+            int result;
+            try
+            {
+                result = (int)await SendMessageAsync(HwndProvider.Hwnd, DM_GETDEFID, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return;
+            }
             if (HIWORD(result) == DC_HASDEFID)
             {
                 DefId = LOWORD(result);
