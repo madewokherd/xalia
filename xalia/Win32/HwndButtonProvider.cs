@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -17,6 +18,10 @@ namespace Xalia.Win32
         }
 
         public HwndProvider HwndProvider { get; }
+
+        public IntPtr Hwnd => HwndProvider.Hwnd;
+
+        public UiDomElement Element => HwndProvider.Element;
 
         static UiDomEnum[] button_roles =
         {
@@ -84,6 +89,52 @@ namespace Xalia.Win32
             { "default", "win32_button_default" },
         };
 
+        public int ButtonState { get; private set; }
+        public bool ButtonStateKnown { get; private set; }
+        private bool _watchingButtonState;
+        private int _buttonStateChangeCount;
+
+        public bool CanBeChecked()
+        {
+            switch (HwndProvider.Style & BS_TYPEMASK)
+            {
+                case BS_AUTOCHECKBOX:
+                case BS_AUTORADIOBUTTON:
+                case BS_AUTO3STATE:
+                case BS_CHECKBOX:
+                case BS_RADIOBUTTON:
+                case BS_3STATE:
+                    return true;
+                default:
+                    return false; 
+            }
+        }
+
+        public List<string> ButtonStateAsStringList()
+        {
+            var result = new List<string>();
+            if ((ButtonState & BST_CHECKED) != 0)
+                result.Add("checked");
+            if ((ButtonState & BST_INDETERMINATE) != 0)
+                result.Add("indeterminate");
+            if ((ButtonState & (BST_CHECKED|BST_INDETERMINATE)) == 0 && CanBeChecked())
+                result.Add("unchecked");
+            if ((ButtonState & BST_PUSHED) != 0)
+                result.Add("pushed");
+            if ((ButtonState & BST_FOCUS) != 0)
+                result.Add("focus");
+            if ((ButtonState & BST_HOT) != 0)
+                result.Add("hot");
+            if ((ButtonState & BST_DROPDOWNPUSHED) != 0)
+                result.Add("dropdownpushed");
+            return result;
+        }
+
+        public string ButtonStateAsString()
+        {
+            return $"0x{ButtonState:x} [{string.Join("|", ButtonStateAsStringList())}]";
+        }
+
         public void DumpProperties(UiDomElement element)
         {
             var dialog = element.Parent?.ProviderByType<HwndDialogProvider>();
@@ -91,6 +142,8 @@ namespace Xalia.Win32
             {
                 Utils.DebugWriteLine("  win32_button_default: true");
             }
+            if (ButtonStateKnown)
+                Utils.DebugWriteLine($"  win32_button_state: {ButtonStateAsString()}");
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -124,6 +177,11 @@ namespace Xalia.Win32
                         default:
                             return UiDomBoolean.False;
                     }
+                case "win32_button_state":
+                    depends_on.Add((element, new IdentifierExpression("win32_button_state")));
+                    if (ButtonStateKnown)
+                        return new UiDomInt(ButtonState);
+                    break;
             }
             return UiDomUndefined.Instance;
         }
@@ -178,6 +236,53 @@ namespace Xalia.Win32
                 case "vcenter":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return UiDomBoolean.FromBool((HwndProvider.Style & BS_VCENTER) == BS_VCENTER);
+                case "unchecked":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    if (CanBeChecked())
+                    {
+                        depends_on.Add((element, new IdentifierExpression("win32_button_state")));
+                        if (ButtonStateKnown)
+                            return UiDomBoolean.FromBool((ButtonState & (BST_CHECKED | BST_INDETERMINATE)) == 0);
+                    }
+                    break;
+                case "checked":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    if (CanBeChecked())
+                    {
+                        depends_on.Add((element, new IdentifierExpression("win32_button_state")));
+                        if (ButtonStateKnown)
+                            return UiDomBoolean.FromBool((ButtonState & BST_CHECKED) != 0);
+                    }
+                    break;
+                case "indeterminate":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    if (CanBeChecked())
+                    {
+                        depends_on.Add((element, new IdentifierExpression("win32_button_state")));
+                        if (ButtonStateKnown)
+                            return UiDomBoolean.FromBool((ButtonState & BST_INDETERMINATE) != 0);
+                    }
+                    break;
+                case "pushed":
+                    depends_on.Add((element, new IdentifierExpression("win32_button_state")));
+                    if (ButtonStateKnown)
+                        return UiDomBoolean.FromBool((ButtonState & BST_PUSHED) != 0);
+                    break;
+                case "focus":
+                    depends_on.Add((element, new IdentifierExpression("win32_button_state")));
+                    if (ButtonStateKnown)
+                        return UiDomBoolean.FromBool((ButtonState & BST_FOCUS) != 0);
+                    break;
+                case "hot":
+                    depends_on.Add((element, new IdentifierExpression("win32_button_state")));
+                    if (ButtonStateKnown)
+                        return UiDomBoolean.FromBool((ButtonState & BST_HOT) != 0);
+                    break;
+                case "dropdownpushed":
+                    depends_on.Add((element, new IdentifierExpression("win32_button_state")));
+                    if (ButtonStateKnown)
+                        return UiDomBoolean.FromBool((ButtonState & BST_DROPDOWNPUSHED) != 0);
+                    break;
             }
             return UiDomUndefined.Instance;
         }
@@ -202,12 +307,58 @@ namespace Xalia.Win32
 
         public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
         {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_button_state":
+                        _watchingButtonState = false;
+                        return true;
+                }
+            }
             return false;
         }
 
         public bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_button_state":
+                        _watchingButtonState = true;
+                        if (!ButtonStateKnown)
+                            Utils.RunTask(FetchButtonState());
+                        return true;
+                }
+            }
             return false;
+        }
+
+        private async Task FetchButtonState()
+        {
+            var old_count = _buttonStateChangeCount;
+            int result;
+            try
+            {
+                result = unchecked((int)(long)await SendMessageAsync(Hwnd, BM_GETSTATE, IntPtr.Zero, IntPtr.Zero));
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (_buttonStateChangeCount != old_count)
+                return;
+            if (!ButtonStateKnown || ButtonState != result)
+            {
+                ButtonStateKnown = true;
+                ButtonState = result;
+                if (Element.MatchesDebugCondition())
+                    Utils.DebugWriteLine($"{Element}.win32_button_state: {ButtonStateAsString()}");
+                Element.PropertyChanged("win32_button_state");
+            }
         }
 
         public void GetStyleNames(int style, List<string> names)
@@ -246,6 +397,15 @@ namespace Xalia.Win32
                     names.Add(style_names[i]);
                 }
             }
+        }
+
+        public void MsaaStateChange()
+        {
+            _buttonStateChangeCount++;
+            if (_watchingButtonState)
+                Utils.RunTask(FetchButtonState());
+            else
+                ButtonStateKnown = false;
         }
     }
 }

@@ -538,6 +538,7 @@ namespace Xalia.Win32
                 }
                 Element.PropertyChanged("win32_style");
             }
+            Element.ProviderByType<HwndButtonProvider>()?.MsaaStateChange();
         }
 
         public void MsaaAncestorLocationChange()
