@@ -53,6 +53,8 @@ namespace Xalia.Win32
             { "width", "win32_width" },
             { "height", "win32_height" },
             { "control_id", "win32_control_id" },
+            { "name", "win32_window_text" },
+            { "window_text", "win32_window_text" },
         };
 
         private static string[] win32_stylenames =
@@ -100,6 +102,10 @@ namespace Xalia.Win32
                 return _controlId;
             }
         }
+
+        private bool _fetchingWindowText;
+        public string WindowText { get; private set; }
+        public bool WindowTextKnown { get; private set; }
 
         static HwndProvider()
         {
@@ -231,6 +237,10 @@ namespace Xalia.Win32
             {
                 Utils.DebugWriteLine($"  win32_control_id: {ControlId}");
             }
+            if (WindowTextKnown && WindowText != "")
+            {
+                Utils.DebugWriteLine($"  win32_window_text: \"{WindowText}\"");
+            }
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -277,6 +287,13 @@ namespace Xalia.Win32
                     if ((Style & WS_CHILD) != 0)
                     {
                         return new UiDomInt(ControlId);
+                    }
+                    break;
+                case "win32_window_text":
+                    depends_on.Add((element, new IdentifierExpression("win32_window_text")));
+                    if (WindowTextKnown)
+                    {
+                        return new UiDomString(WindowText);
                     }
                     break;
             }
@@ -431,9 +448,53 @@ namespace Xalia.Win32
                         if (!WindowRectKnown)
                             RefreshWindowRect();
                         return true;
+                    case "win32_window_text":
+                        if (!_fetchingWindowText)
+                        {
+                            _fetchingWindowText = true;
+                            Utils.RunTask(FetchWindowText());
+                        }
+                        break;
                 }
             }
             return false;
+        }
+
+        private async Task FetchWindowText()
+        {
+            string result;
+            try
+            {
+                result = await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    int buffer_size = 256;
+                    IntPtr buffer = Marshal.AllocCoTaskMem(buffer_size * 2);
+                    try
+                    {
+                        // For some reason SendMessageCallback refuses to send this
+                        int buffer_length = unchecked((int)(long)SendMessageW(Hwnd, WM_GETTEXT, (IntPtr)buffer_size, buffer));
+                        if (buffer_length >= 0 && buffer_length <= buffer_size)
+                            return Marshal.PtrToStringUni(buffer, buffer_length);
+                    }
+                    finally
+                    {
+                        Marshal.FreeCoTaskMem(buffer);
+                    }
+                    return null;
+                }, Tid+1);
+            }
+            catch (Win32Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (!(result is null))
+            {
+                WindowText = result;
+                WindowTextKnown = true;
+                Element.PropertyChanged("win32_window_text", result);
+            }
         }
 
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";

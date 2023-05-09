@@ -804,6 +804,7 @@ namespace Xalia.Interop
         }
 
         public const int WM_DESTROY = 0x2;
+        public const int WM_GETTEXT = 0xd;
         public const int WM_MOUSEACTIVATE = 0x21;
         public const int WM_GETOBJECT = 0x3d;
         public const int WM_NCCREATE = 0x81;
