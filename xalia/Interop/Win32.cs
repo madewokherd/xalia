@@ -942,6 +942,12 @@ namespace Xalia.Interop
 
         // Button
         public const int BS_DEFPUSHBUTTON = 0x1;
+        public const int BS_CHECKBOX = 0x2;
+        public const int BS_AUTOCHECKBOX = 0x3;
+        public const int BS_RADIOBUTTON = 0x4;
+        public const int BS_3STATE = 0x5;
+        public const int BS_AUTO3STATE = 0x6;
+        public const int BS_AUTORADIOBUTTON = 0x9;
         public const int BS_DEFSPLITBUTTON = 0xc;
         public const int BS_DEFCOMMANDLINK = 0xf;
         public const int BS_TYPEMASK = 0xf;
@@ -953,7 +959,15 @@ namespace Xalia.Interop
         public const int BS_BOTTOM = 0x800;
         public const int BS_VCENTER = 0xC00;
 
+        public const int BM_GETSTATE = 0xf2;
         public const int BM_CLICK = 0xf5;
+
+        public const int BST_CHECKED = 0x1;
+        public const int BST_INDETERMINATE = 0x2;
+        public const int BST_PUSHED = 0x4;
+        public const int BST_FOCUS = 0x8;
+        public const int BST_HOT = 0x200;
+        public const int BST_DROPDOWNPUSHED = 0x400;
 
         // Dialog
         public const int DM_GETDEFID = WM_USER;
