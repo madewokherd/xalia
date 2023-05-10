@@ -384,7 +384,7 @@ combo_box (uia_expand_collapse_state.expanded) {
 }
 
 // Win32 Combo list boxes
-if (parent.is_root and uia_control_type.list and uia_class_name == "ComboLBox"
+if (parent.is_root and class_name == "ComboLBox"
     and visible and enabled) {
     in_menu_navigation: true;
 
@@ -1020,10 +1020,10 @@ root (targeted_element) {
 
 // Rules that apply to controls in the active window
 if (interactable) {
-    combo_box (not uia_expand_collapse_state.leaf_node) {
+    combo_box (not (uia_expand_collapse_state.leaf_node or simple)) {
         targetable: true;
 
-        primary_action: spi_action.(press or Press) or uia_expand or uia_invoke or msaa_do_default_action;
+        primary_action: spi_action.(press or Press) or uia_expand or uia_invoke or do_default_action;
         primary_action_name: "Select";
 
         if (child_matches(text_box)) {
@@ -1227,8 +1227,12 @@ if (interactable) {
         primary_action: send_click;
     }
 
-    if ((is_hwnd_element or is_spi_element) and do_default_action) {
-        primary_action: do_default_action;
+    if (is_spi_element != false)
+    {
+        // This ignores the old Uia backend
+        if (do_default_action) {
+            primary_action: do_default_action;
+        }
     }
 
     if (spi_action.(click or Press or activate or toggle or Toggle)) {

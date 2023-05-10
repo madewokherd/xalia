@@ -976,6 +976,8 @@ namespace Xalia.Interop
 
         public const int CBS_TYPEMASK = 0x3; // not an SDK constant, just here for code clarity
 
+        public const int CB_SHOWDROPDOWN = 0x14f;
+
         // Dialog
         public const int DM_GETDEFID = WM_USER;
 

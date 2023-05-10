@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -15,9 +17,20 @@ namespace Xalia.Win32
 
         public HwndProvider HwndProvider { get; }
 
+        public IntPtr Hwnd => HwndProvider.Hwnd;
+
         public void DumpProperties(UiDomElement element)
         {
         }
+
+        private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
+        {
+            { "do_default_action", "win32_combo_box_show_drop_down" },
+            { "expand", "win32_combo_box_show_drop_down" },
+            { "show_drop_down", "win32_combo_box_show_drop_down" },
+            { "collapse", "win32_combo_box_hide_drop_down" },
+            { "hide_drop_down", "win32_combo_box_hide_drop_down" },
+        };
 
         static UiDomEnum role = new UiDomEnum(new string[] { "combo_box", "combobox" });
 
@@ -49,6 +62,8 @@ namespace Xalia.Win32
             }
         }
 
+        public bool CanShowDropDown => (HwndProvider.Style & CBS_TYPEMASK) != CBS_SIMPLE;
+
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
@@ -59,8 +74,48 @@ namespace Xalia.Win32
                 case "role":
                 case "control_type":
                     return role;
+                case "win32_combo_box_show_drop_down":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    if (CanShowDropDown)
+                    {
+                        return new UiDomRoutineAsync(element, "win32_combo_box_show_drop_down", ShowDropDown);
+                    }
+                    break;
+                case "win32_combo_box_hide_drop_down":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    if (CanShowDropDown)
+                    {
+                        return new UiDomRoutineAsync(element, "win32_combo_box_hide_drop_down", HideDropDown);
+                    }
+                    break;
             }
             return UiDomUndefined.Instance;
+        }
+
+        private async Task HideDropDown(UiDomRoutineAsync obj)
+        {
+            try
+            {
+                await SendMessageAsync(Hwnd, CB_SHOWDROPDOWN, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+            }
+        }
+
+        private async Task ShowDropDown(UiDomRoutineAsync obj)
+        {
+            try
+            {
+                await SendMessageAsync(Hwnd, CB_SHOWDROPDOWN, (IntPtr)1, IntPtr.Zero);
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+            }
         }
 
         public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -79,6 +134,10 @@ namespace Xalia.Win32
                 case "dropdownlist":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return UiDomBoolean.FromBool((HwndProvider.Style & CBS_TYPEMASK) == CBS_DROPDOWNLIST);
+            }
+            if (property_aliases.TryGetValue(identifier, out var aliased))
+            {
+                return element.EvaluateIdentifier(aliased, element.Root, depends_on);
             }
             if (style_flags.TryGetValue(identifier, out var flag))
             {
