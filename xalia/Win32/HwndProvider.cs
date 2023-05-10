@@ -161,6 +161,9 @@ namespace Xalia.Win32
                 case "Button":
                     Element.AddProvider(new HwndButtonProvider(this), 0);
                     return;
+                case "ComboBox":
+                    Element.AddProvider(new HwndComboBoxProvider(this), 0);
+                    return;
             }
 
             try
@@ -176,6 +179,9 @@ namespace Xalia.Win32
             {
                 case 65536 + 2:
                     Element.AddProvider(new HwndButtonProvider(this), 0);
+                    return;
+                case 65536 + 5:
+                    Element.AddProvider(new HwndComboBoxProvider(this), 0);
                     return;
             }
         }
