@@ -969,6 +969,13 @@ namespace Xalia.Interop
         public const int BST_HOT = 0x200;
         public const int BST_DROPDOWNPUSHED = 0x400;
 
+        // Combo Box
+        public const int CBS_SIMPLE = 0x1;
+        public const int CBS_DROPDOWN = 0x2;
+        public const int CBS_DROPDOWNLIST = 0x3;
+
+        public const int CBS_TYPEMASK = 0x3; // not an SDK constant, just here for code clarity
+
         // Dialog
         public const int DM_GETDEFID = WM_USER;
 
