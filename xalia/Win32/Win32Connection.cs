@@ -341,6 +341,39 @@ namespace Xalia.Win32
                 case EVENT_OBJECT_FOCUS:
                     UpdateGuiThreadInfo();
                     break;
+                case EVENT_OBJECT_CREATE:
+                    if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF)
+                    {
+                        var parent_hwnd = GetAncestor(hwnd, GA_PARENT);
+                        if (parent_hwnd == GetDesktopWindow())
+                        {
+                            UpdateToplevels();
+                        }
+                        else
+                        {
+                            var parent_element = LookupElement(parent_hwnd);
+                            if (!(parent_element is null))
+                            {
+                                parent_element.ProviderByType<HwndProvider>()?.MsaaChildWindowAdded();
+                            }
+                        }
+                    }
+                    break;
+                case EVENT_OBJECT_DESTROY:
+                    {
+                        var parent_element = GetElementForMsaaEvent(hwnd, idObject, idChild)?.Parent;
+                        if (!(parent_element is null))
+                        {
+                            if (parent_element is UiDomRoot)
+                                UpdateToplevels();
+                            else
+                            {
+                                if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF)
+                                    parent_element.ProviderByType<HwndProvider>()?.MsaaChildWindowRemoved();
+                            }
+                        }
+                        break;
+                    }
                 case EVENT_OBJECT_SHOW:
                 case EVENT_OBJECT_HIDE:
                 case EVENT_OBJECT_STATECHANGE:

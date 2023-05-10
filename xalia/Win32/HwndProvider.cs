@@ -553,6 +553,22 @@ namespace Xalia.Win32
             }
         }
 
+        public void MsaaChildWindowAdded()
+        {
+            if (_watchingChildren)
+            {
+                PollChildren();
+            }
+        }
+
+        public void MsaaChildWindowRemoved()
+        {
+            if (_watchingChildren)
+            {
+                PollChildren();
+            }
+        }
+
         private void RefreshWindowRect()
         {
             if (GetWindowRect(Hwnd, out var new_rect))
