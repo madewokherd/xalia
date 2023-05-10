@@ -384,7 +384,17 @@ combo_box (uia_expand_collapse_state.expanded) {
 }
 
 // Win32 Combo list boxes
-if (parent.is_root and class_name == "ComboLBox"
+if (is_hwnd_combo_box and expanded) {
+    in_menu_navigation: true;
+
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_select_action: collapse;
+    menu_back_action: collapse;
+    menu_close_action: collapse;
+}
+
+if (parent.is_root and uia_class_name == "ComboLBox"
     and visible and enabled) {
     in_menu_navigation: true;
 

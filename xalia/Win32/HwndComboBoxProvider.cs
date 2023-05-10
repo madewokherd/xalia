@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -18,6 +19,18 @@ namespace Xalia.Win32
         public HwndProvider HwndProvider { get; }
 
         public IntPtr Hwnd => HwndProvider.Hwnd;
+        public Win32Connection Connection => HwndProvider.Connection;
+        public UiDomElement Element => HwndProvider.Element;
+        public int Tid => HwndProvider.Tid;
+
+        public IntPtr HwndList { get; private set; }
+        private bool _fetchingComboBoxInfo;
+
+        public override void DumpProperties(UiDomElement element)
+        {
+            if (HwndList != IntPtr.Zero)
+                Utils.DebugWriteLine($"  win32_combo_box_list_element: hwnd-{HwndList}");
+        }
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
@@ -26,6 +39,9 @@ namespace Xalia.Win32
             { "show_drop_down", "win32_combo_box_show_drop_down" },
             { "collapse", "win32_combo_box_hide_drop_down" },
             { "hide_drop_down", "win32_combo_box_hide_drop_down" },
+            { "list_element", "win32_combo_box_list_element" },
+            { "expanded", "win32_combo_box_dropped_state" },
+            { "dropped_state", "win32_combo_box_dropped_state" },
         };
 
         static UiDomEnum role = new UiDomEnum(new string[] { "combo_box", "combobox" });
@@ -82,6 +98,31 @@ namespace Xalia.Win32
                     if (CanShowDropDown)
                     {
                         return new UiDomRoutineAsync(element, "win32_combo_box_hide_drop_down", HideDropDown);
+                    }
+                    break;
+                case "win32_combo_box_list_element":
+                    {
+                        depends_on.Add((element, new IdentifierExpression("win32_combo_box_info_static")));
+                        var list_element = Connection.LookupElement(HwndList);
+                        if (!(list_element is null))
+                            return list_element;
+                        break;
+                    }
+                case "win32_combo_box_dropped_state":
+                    depends_on.Add((element, new IdentifierExpression("win32_style")));
+                    if (CanShowDropDown)
+                    {
+                        // In theory, CB_GETDROPPEDSTATE would tell us this, but we don't get a notification
+                        // when it changes. So instead, we just watch the list to see if it's visible.
+                        depends_on.Add((element, new IdentifierExpression("win32_combo_box_info_static")));
+                        var list_element = Connection.LookupElement(HwndList);
+                        if (!(list_element is null))
+                        {
+                            depends_on.Add((list_element, new IdentifierExpression("win32_style")));
+                            var provider = list_element.ProviderByType<HwndProvider>();
+                            if (!(provider is null))
+                                return UiDomBoolean.FromBool((provider.Style & WS_VISIBLE) != 0);
+                        }
                     }
                     break;
             }
@@ -168,6 +209,60 @@ namespace Xalia.Win32
                     names.Add(style_names[i]);
                 }
             }
+        }
+
+        private unsafe COMBOBOXINFO FetchComboBoxInfoBackground()
+        {
+            COMBOBOXINFO info = new COMBOBOXINFO();
+            info.cbSize = Marshal.SizeOf<COMBOBOXINFO>();
+            IntPtr ptr = Marshal.AllocCoTaskMem(info.cbSize);
+            try
+            {
+                Marshal.StructureToPtr(info, ptr, false);
+                var ret = SendMessageW(Hwnd, CB_GETCOMBOBOXINFO, IntPtr.Zero, ptr);
+                if (ret == IntPtr.Zero)
+                    return default;
+                return Marshal.PtrToStructure<COMBOBOXINFO>(ptr);
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(ptr);
+            }
+        }
+
+        private async Task FetchComboBoxInfo()
+        {
+            COMBOBOXINFO info;
+            info = await Connection.CommandThread.OnBackgroundThread(() =>
+            {
+                return FetchComboBoxInfoBackground();
+            }, Tid + 1);
+            if (info.cbSize == 0)
+                // message failed
+                return;
+
+            HwndList = info.hwndList;
+            if (Element.MatchesDebugCondition())
+                Utils.DebugWriteLine($"{Element}.win32_combo_box_list_element: hwnd-{HwndList}");
+            Element.PropertyChanged("win32_combo_box_info_static");
+        }
+
+        public override bool WatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_combo_box_info_static":
+                        if (!_fetchingComboBoxInfo)
+                        {
+                            _fetchingComboBoxInfo = true;
+                            Utils.RunTask(FetchComboBoxInfo());
+                        }
+                        return true;
+                }
+            }
+            return false;
         }
     }
 }

@@ -980,6 +980,19 @@ namespace Xalia.Interop
         public const int CBS_TYPEMASK = 0x3; // not an SDK constant, just here for code clarity
 
         public const int CB_SHOWDROPDOWN = 0x14f;
+        public const int CB_GETCOMBOBOXINFO = 0x164;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct COMBOBOXINFO
+        {
+            public int cbSize;
+            public RECT rcItem;
+            public RECT rcButton;
+            public int stateButton;
+            public IntPtr hwndCombo;
+            public IntPtr hwndItem;
+            public IntPtr hwndList;
+        }
 
         // Dialog
         public const int DM_GETDEFID = WM_USER;
