@@ -117,6 +117,7 @@
     <Compile Include="Uia\Win32\Win32Trackbar.cs" />
     <Compile Include="Uia\Win32\Win32VirtualScrollbar.cs" />
     <Compile Include="UiDom\IUiDomProvider.cs" />
+    <Compile Include="UiDom\IUiDomValueProvider.cs" />
     <Compile Include="UiDom\UiDomAdjustScrollbars.cs" />
     <Compile Include="AtSpi\AtSpiAttributes.cs" />
     <Compile Include="AtSpi\AtSpiConnection.cs" />

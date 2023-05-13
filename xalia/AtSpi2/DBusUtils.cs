@@ -175,6 +175,18 @@ namespace Xalia.AtSpi2
                 });
         }
 
+        public static Task SetProperty(Connection connection, string peer, string path,
+            string iface, string prop, double value)
+        {
+            return CallMethod(connection, peer, path, IFACE_PROPERTIES,
+                "Set", "ssv", (ref MessageWriter writer) =>
+                {
+                    writer.WriteString(iface);
+                    writer.WriteString(prop);
+                    writer.WriteVariantDouble(value);
+                });
+        }
+
         public static string ReadMessageString(Message message, object state)
         {
             return message.GetBodyReader().ReadString();
