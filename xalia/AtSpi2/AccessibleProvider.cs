@@ -222,6 +222,7 @@ namespace Xalia.AtSpi2
             { "control_type", "spi_role" },
             { "state", "spi_state" },
             { "name", "spi_name" },
+            { "attributes", "spi_attributes" },
         };
 
         private static readonly HashSet<string> other_interface_properties = new HashSet<string>()
@@ -286,6 +287,11 @@ namespace Xalia.AtSpi2
         public string Name { get; private set; }
         private bool fetching_name;
 
+        public bool AttributesKnown { get; private set; }
+        public Dictionary<string,string> Attributes { get; private set; }
+        private bool watching_attributes;
+        private int attributes_change_count;
+
         public bool ApplicationKnown { get; private set; }
         public string ApplicationPeer { get; private set; }
         public string ApplicationPath { get; private set; }
@@ -309,6 +315,13 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
             if (NameKnown)
                 Utils.DebugWriteLine($"  spi_name: \"{Name}\"");
+            if (AttributesKnown)
+            {
+                foreach (var kvp in Attributes)
+                {
+                    Utils.DebugWriteLine($"  spi_attributes.{kvp.Key}: \"{kvp.Value}\"");
+                }
+            }
             if (!(SupportedInterfaces is null))
                 Utils.DebugWriteLine($"  spi_supported: [{String.Join(",", SupportedInterfaces)}]");
             if (ApplicationKnown)
@@ -357,6 +370,11 @@ namespace Xalia.AtSpi2
                         if (!(application is null))
                             return application;
                     }
+                    return UiDomUndefined.Instance;
+                case "spi_attributes":
+                    depends_on.Add((element, new IdentifierExpression("spi_attributes")));
+                    if (AttributesKnown)
+                        return new AtSpiAttributes(Attributes);
                     return UiDomUndefined.Instance;
             }
             if (other_interface_properties.Contains(identifier))
@@ -627,6 +645,20 @@ namespace Xalia.AtSpi2
             }
         }
 
+        public override bool UnwatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "spi_attributes":
+                        watching_attributes = false;
+                        return true;
+                }
+            }
+            return false;
+        }
+
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
@@ -669,9 +701,50 @@ namespace Xalia.AtSpi2
                             Utils.RunTask(FetchApplication());
                         }
                         break;
+                    case "spi_attributes":
+                        watching_attributes = true;
+                        if (!AttributesKnown)
+                            Utils.RunTask(FetchAttributes());
+                        return true;
                 }
             }
             return false;
+        }
+
+        private async Task FetchAttributes()
+        {
+            var old_change_count = attributes_change_count;
+            Dictionary<string, string> result;
+            try
+            {
+                await Connection.RegisterEvent("object:attributes-changed");
+
+                result = await CallMethod(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE,
+                    "GetAttributes", ReadMessageStringDictionary);
+            }
+            catch (DBusException e)
+            {
+                if (AtSpiConnection.IsExpectedException(e))
+                    return;
+                throw;
+            }
+
+            if (attributes_change_count != old_change_count)
+                return;
+
+            if (!AttributesKnown || !Utils.DictionariesEqual(Attributes, result))
+            {
+                AttributesKnown = true;
+                Attributes = result;
+                if (Element.MatchesDebugCondition())
+                {
+                    foreach (var kvp in Attributes)
+                    {
+                        Utils.DebugWriteLine($"{Element}.spi_attributes.{kvp.Key}: \"{kvp.Value}\"");
+                    }
+                }
+                Element.PropertyChanged("spi_attributes");
+            }
         }
 
         private async Task FetchApplication()
@@ -953,6 +1026,19 @@ namespace Xalia.AtSpi2
                 }
             }
             return false;
+        }
+
+        internal void AtSpiOnAttributesChanged(AtSpiSignal signal)
+        {
+            attributes_change_count++;
+            if (watching_attributes)
+            {
+                Utils.RunTask(FetchAttributes());
+            }
+            else
+            {
+                AttributesKnown = false;
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.Win32.SafeHandles;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -156,6 +157,18 @@ namespace Xalia
         internal static bool IsWindows()
         {
             return Environment.OSVersion.Platform == PlatformID.Win32NT;
+        }
+
+        internal static bool DictionariesEqual(Dictionary<string, string> a, Dictionary<string, string> b)
+        {
+            if (a.Count != b.Count)
+                return false;
+            foreach (var kvp in a)
+            {
+                if (!b.TryGetValue(kvp.Key, out var value) || kvp.Value != value)
+                    return false;
+            }
+            return true;
         }
     }
 }

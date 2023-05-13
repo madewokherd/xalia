@@ -99,6 +99,7 @@ namespace Xalia.AtSpi2
                 "GetNameOwner", SERVICE_REGISTRY,
                 ReadMessageString);
 
+            await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "AttributesChanged", result.OnAttributesChanged);
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "ChildrenChanged", result.OnChildrenChanged);
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "PropertyChange", result.OnPropertyChange);
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "StateChanged", result.OnStateChanged);
@@ -110,6 +111,14 @@ namespace Xalia.AtSpi2
             root.AddChild(0, result.DesktopFrame);
 
             return result;
+        }
+
+        private void OnAttributesChanged(AtSpiSignal signal)
+        {
+            var element = LookupElement((signal.peer, signal.path));
+            if (element is null)
+                return;
+            element.ProviderByType<AccessibleProvider>()?.AtSpiOnAttributesChanged(signal);
         }
 
         private void OnWindowActivate(AtSpiSignal signal)
