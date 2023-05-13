@@ -204,6 +204,20 @@ namespace Xalia.AtSpi2
             return result.ToArray();
         }
 
+        public static Dictionary<string,string> ReadMessageStringDictionary(Message message, object state)
+        {
+            var reader = message.GetBodyReader();
+            var result = new Dictionary<string, string>();
+            var array = reader.ReadArrayStart(DBusType.DictEntry);
+            while (reader.HasNext(array))
+            {
+                var key = reader.ReadString();
+                var value = reader.ReadString();
+                result[key] = value;
+            }
+            return result;
+        }
+
         public static int ReadMessageInt32(Message message, object state)
         {
             return message.GetBodyReader().ReadInt32();

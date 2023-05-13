@@ -96,6 +96,7 @@
     <Compile Include="AtSpi2\ActionProvider.cs" />
     <Compile Include="AtSpi2\ApplicationProvider.cs" />
     <Compile Include="AtSpi2\AtSpiActionList.cs" />
+    <Compile Include="AtSpi2\AtSpiAttributes.cs" />
     <Compile Include="AtSpi2\AtSpiConnection.cs" />
     <Compile Include="AtSpi2\AtSpiState.cs" />
     <Compile Include="AtSpi2\AtSpiSupported.cs" />
