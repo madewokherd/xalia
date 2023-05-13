@@ -234,6 +234,8 @@ namespace Xalia.AtSpi2
             "abs_x", "abs_y", "abs_width", "abs_height",
             "spi_abs_x", "spi_abs_y", "spi_abs_width", "spi_abs_height",
             "grab_focus", "set_focus", "spi_grab_focus",
+            // ValueProvider
+            "minimum_value", "spi_minimum_value",
         };
 
         static AccessibleProvider()
@@ -690,6 +692,7 @@ namespace Xalia.AtSpi2
                 bool seen_action = false;
                 bool seen_application = false;
                 bool seen_component = false;
+                bool seen_value = false;
                 switch (iface)
                 {
                     case IFACE_ACTION:
@@ -706,6 +709,11 @@ namespace Xalia.AtSpi2
                         if (!seen_component)
                             Element.AddProvider(new ComponentProvider(this), 0);
                         seen_component = true;
+                        break;
+                    case IFACE_VALUE:
+                        if (!seen_value)
+                            Element.AddProvider(new ValueProvider(this), 0);
+                        seen_value = true;
                         break;
                 }
             }
