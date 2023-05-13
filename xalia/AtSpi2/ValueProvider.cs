@@ -26,6 +26,8 @@ namespace Xalia.AtSpi2
         {
             { "minimum_value", "spi_minimum_value" },
             { "maximum_value", "spi_maximum_value" },
+            { "minimum_increment", "spi_minimum_increment" },
+            { "small_change", "spi_minimum_increment" },
         };
 
         public double MinimumValue { get; private set; }
@@ -36,12 +38,18 @@ namespace Xalia.AtSpi2
         public bool MaximumValueKnown { get; private set; }
         private bool _watchingMaximumValue;
 
+        public double MinimumIncrement { get; private set; }
+        public bool MinimumIncrementKnown { get; private set; }
+        private bool _watchingMinimumIncrement;
+
         public override void DumpProperties(UiDomElement element)
         {
             if (MinimumValueKnown)
                 Utils.DebugWriteLine($"  spi_minimum_value: {MinimumValue}");
             if (MaximumValueKnown)
                 Utils.DebugWriteLine($"  spi_maximum_value: {MaximumValue}");
+            if (MinimumIncrementKnown)
+                Utils.DebugWriteLine($"  spi_minimum_increment: {MinimumIncrement}");
         }
 
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -57,6 +65,11 @@ namespace Xalia.AtSpi2
                     depends_on.Add((element, new IdentifierExpression("spi_maximum_value")));
                     if (MaximumValueKnown)
                         return new UiDomDouble(MaximumValue);
+                    break;
+                case "spi_minimum_increment":
+                    depends_on.Add((element, new IdentifierExpression("spi_minimum_increment")));
+                    if (MinimumIncrementKnown)
+                        return new UiDomDouble(MinimumIncrement);
                     break;
             }
             return UiDomUndefined.Instance;
@@ -87,6 +100,11 @@ namespace Xalia.AtSpi2
                         _watchingMaximumValue = false;
                         element.EndPollProperty(new IdentifierExpression("spi_maximum_value"));
                         return true;
+                    case "spi_minimum_increment":
+                        MinimumIncrementKnown = false;
+                        _watchingMinimumIncrement = false;
+                        element.EndPollProperty(new IdentifierExpression("spi_minimum_increment"));
+                        return true;
                 }
             }
             return false;
@@ -105,6 +123,10 @@ namespace Xalia.AtSpi2
                     case "spi_maximum_value":
                         _watchingMaximumValue = true;
                         element.PollProperty(new IdentifierExpression("spi_maximum_value"), FetchMaximumValue, 2000);
+                        return true;
+                    case "spi_minimum_increment":
+                        _watchingMinimumIncrement = true;
+                        element.PollProperty(new IdentifierExpression("spi_minimum_increment"), FetchMinimumIncrement, 2000);
                         return true;
                 }
             }
@@ -156,6 +178,30 @@ namespace Xalia.AtSpi2
                 MaximumValueKnown = true;
                 MaximumValue = result;
                 Element.PropertyChanged("spi_maximum_value", MaximumValue);
+            }
+        }
+
+        private async Task FetchMinimumIncrement()
+        {
+            double result;
+            try
+            {
+                result = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumIncrement");
+            }
+            catch (DBusException e) {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (!_watchingMinimumIncrement)
+                return;
+
+            if (!MinimumIncrementKnown || MinimumIncrement != result)
+            {
+                MinimumIncrementKnown = true;
+                MinimumIncrement = result;
+                Element.PropertyChanged("spi_minimum_increment", MinimumIncrement);
             }
         }
     }
