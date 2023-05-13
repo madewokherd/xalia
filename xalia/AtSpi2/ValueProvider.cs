@@ -7,7 +7,7 @@ using static Xalia.AtSpi2.DBusUtils;
 
 namespace Xalia.AtSpi2
 {
-    internal class ValueProvider : UiDomProviderBase
+    internal class ValueProvider : UiDomProviderBase, IUiDomValueProvider
     {
         public ValueProvider(AccessibleProvider accessible)
         {
@@ -203,6 +203,57 @@ namespace Xalia.AtSpi2
                 MinimumIncrement = result;
                 Element.PropertyChanged("spi_minimum_increment", MinimumIncrement);
             }
+        }
+
+        public async Task<double> GetMinimumIncrementAsync(UiDomElement element)
+        {
+            try
+            {
+                return (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumIncrement");
+            }
+            catch (DBusException e) {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return 0;
+            }
+        }
+
+        public async Task<bool> OffsetValueAsync(UiDomElement element, double offset)
+        {
+            if (offset == 0)
+                return true;
+
+            try
+            {
+                var current_value = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "CurrentValue");
+
+                var new_value = current_value + offset;
+
+                if (offset > 0)
+                {
+                    var maximum_value = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MaximumValue");
+
+                    if (new_value > maximum_value)
+                        new_value = maximum_value;
+                }
+                else
+                {
+                    var minimum_value = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumValue");
+
+                    if (new_value < minimum_value)
+                        new_value = minimum_value;
+                }
+
+                if (new_value != current_value)
+                    await SetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "CurrentValue", new_value);
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return false;
+            }
+            return true;
         }
     }
 }

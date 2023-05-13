@@ -9,7 +9,7 @@ using static Xalia.AtSpi2.DBusUtils;
 
 namespace Xalia.AtSpi2
 {
-    internal class AccessibleProvider : UiDomProviderBase
+    internal class AccessibleProvider : UiDomProviderBase, IUiDomValueProvider
     {
         public AccessibleProvider(UiDomElement element, AtSpiConnection connection, string peer, string path)
         {
@@ -847,6 +847,36 @@ namespace Xalia.AtSpi2
         internal Task<IDisposable> LimitPolling(bool value_known)
         {
             return Connection.LimitPolling(Peer, value_known);
+        }
+
+        public async Task<double> GetMinimumIncrementAsync(UiDomElement element)
+        {
+            if (SupportedInterfaces is null)
+            {
+                // This is implemented in ValueProvider, so wait for it to be created
+                await WaitForSupported();
+                var value = element.ProviderByType<ValueProvider>();
+                if (!(value is null))
+                {
+                    return await value.GetMinimumIncrementAsync(element);
+                }
+            }
+            return 0;
+        }
+
+        public async Task<bool> OffsetValueAsync(UiDomElement element, double offset)
+        {
+            if (SupportedInterfaces is null)
+            {
+                // This is implemented in ValueProvider, so wait for it to be created
+                await WaitForSupported();
+                var value = element.ProviderByType<ValueProvider>();
+                if (!(value is null))
+                {
+                    return await value.OffsetValueAsync(element, offset);
+                }
+            }
+            return false;
         }
     }
 }

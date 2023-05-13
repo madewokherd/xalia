@@ -849,14 +849,47 @@ namespace Xalia.UiDom
             return UiDomUndefined.Instance;
         }
 
-        public virtual Task<double> GetMinimumIncrement()
+        public virtual async Task<double> GetMinimumIncrement()
         {
-            return Task.FromResult(25.0);
+            foreach (var provider in Providers)
+            {
+                if (provider is IUiDomValueProvider value)
+                {
+                    var result = await value.GetMinimumIncrementAsync(this);
+                    if (result != 0)
+                        return result;
+                }
+            }
+            foreach (var provider in Root.GlobalProviders)
+            {
+                if (provider is IUiDomValueProvider value)
+                {
+                    var result = await value.GetMinimumIncrementAsync(this);
+                    if (result != 0)
+                        return result;
+                }
+            }
+            return 25.0;
         }
 
-        public virtual Task OffsetValue(double ofs)
+        public virtual async Task OffsetValue(double ofs)
         {
-            return Task.CompletedTask;
+            foreach (var provider in Providers)
+            {
+                if (provider is IUiDomValueProvider value)
+                {
+                    if (await value.OffsetValueAsync(this, ofs))
+                        return;
+                }
+            }
+            foreach (var provider in Root.GlobalProviders)
+            {
+                if (provider is IUiDomValueProvider value)
+                {
+                    if (await value.OffsetValueAsync(this, ofs))
+                        return;
+                }
+            }
         }
 
         public void PollProperty(GudlExpression expression, Func<Task> refresh_function, int default_interval)
