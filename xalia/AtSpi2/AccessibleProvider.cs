@@ -235,7 +235,7 @@ namespace Xalia.AtSpi2
             "spi_abs_x", "spi_abs_y", "spi_abs_width", "spi_abs_height",
             "grab_focus", "set_focus", "spi_grab_focus",
             // ValueProvider
-            "minimum_value", "spi_minimum_value",
+            "minimum_value", "spi_minimum_value", "maximum_value", "spi_maximum_value",
         };
 
         static AccessibleProvider()
