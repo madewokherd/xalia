@@ -101,6 +101,7 @@
     <Compile Include="AtSpi2\AtSpiSupported.cs" />
     <Compile Include="AtSpi2\ComponentProvider.cs" />
     <Compile Include="AtSpi2\DBusUtils.cs" />
+    <Compile Include="AtSpi2\ValueProvider.cs" />
     <Compile Include="AtSpi\AtSpiActionList.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Interop\Win32RemoteProcessMemory.cs" />
