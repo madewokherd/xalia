@@ -767,6 +767,8 @@ namespace Xalia.AtSpi2
             try
             {
                 await Connection.RegisterEvent("object:state-changed");
+                await Connection.RegisterEvent("window:activate");
+                await Connection.RegisterEvent("window:deactivate");
 
                 result = await CallMethod(Connection.Connection, Peer, Path,
                     IFACE_ACCESSIBLE, "GetState", ReadMessageUint32Array);

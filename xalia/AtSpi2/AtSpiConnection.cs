@@ -103,11 +103,27 @@ namespace Xalia.AtSpi2
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "PropertyChange", result.OnPropertyChange);
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "StateChanged", result.OnStateChanged);
             await MatchAtSpiSignal(connection, IFACE_EVENT_OBJECT, "BoundsChanged", result.OnBoundsChanged);
+            await MatchAtSpiSignal(connection, IFACE_EVENT_WINDOW, "Activate", result.OnWindowActivate);
+            await MatchAtSpiSignal(connection, IFACE_EVENT_WINDOW, "Deactivate", result.OnWindowDeactivate);
 
             result.DesktopFrame = result.CreateElement(registryClient, PATH_ACCESSIBLE_ROOT);
             root.AddChild(0, result.DesktopFrame);
 
             return result;
+        }
+
+        private void OnWindowActivate(AtSpiSignal signal)
+        {
+            signal.detail = "active";
+            signal.detail1 = 1;
+            OnStateChanged(signal);
+        }
+
+        private void OnWindowDeactivate(AtSpiSignal signal)
+        {
+            signal.detail = "active";
+            signal.detail1 = 0;
+            OnStateChanged(signal);
         }
 
         private void OnBoundsChanged(AtSpiSignal signal)
