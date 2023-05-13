@@ -221,6 +221,7 @@ namespace Xalia.AtSpi2
             { "role", "spi_role" },
             { "control_type", "spi_role" },
             { "state", "spi_state" },
+            { "name", "spi_name" },
         };
 
         private static readonly HashSet<string> other_interface_properties = new HashSet<string>()
@@ -281,6 +282,10 @@ namespace Xalia.AtSpi2
         public uint[] State { get; private set; }
         private bool fetching_state;
 
+        public bool NameKnown { get; private set; }
+        public string Name { get; private set; }
+        private bool fetching_name;
+
         public bool ApplicationKnown { get; private set; }
         public string ApplicationPeer { get; private set; }
         public string ApplicationPath { get; private set; }
@@ -302,6 +307,8 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"  spi_role: {RoleAsValue}");
             if (StateKnown)
                 Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
+            if (NameKnown)
+                Utils.DebugWriteLine($"  spi_name: \"{Name}\"");
             if (!(SupportedInterfaces is null))
                 Utils.DebugWriteLine($"  spi_supported: [{String.Join(",", SupportedInterfaces)}]");
             if (ApplicationKnown)
@@ -329,6 +336,11 @@ namespace Xalia.AtSpi2
                     depends_on.Add((element, new IdentifierExpression("spi_state")));
                     if (StateKnown)
                         return new AtSpiState(State);
+                    return UiDomUndefined.Instance;
+                case "spi_name":
+                    depends_on.Add((element, new IdentifierExpression("spi_name")));
+                    if (NameKnown)
+                        return new UiDomString(Name);
                     return UiDomUndefined.Instance;
                 case "spi_supported":
                     depends_on.Add((element, new IdentifierExpression("spi_supported")));
@@ -630,6 +642,13 @@ namespace Xalia.AtSpi2
                             Utils.RunTask(FetchState());
                         }
                         return true;
+                    case "spi_name":
+                        if (!fetching_name)
+                        {
+                            fetching_name = true;
+                            Utils.RunTask(FetchName());
+                        }
+                        return true;
                     case "spi_supported":
                         if (!fetching_supported)
                         {
@@ -760,10 +779,55 @@ namespace Xalia.AtSpi2
             Element.PropertyChanged("spi_state");
         }
 
+        private async Task FetchName()
+        {
+            object result;
+            try
+            {
+                await Connection.RegisterEvent("object:property-change:accessible-name");
+
+                result = await GetProperty(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE, "Name");
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (result is null)
+            {
+                // This would infinitely recurse
+                return;
+            }
+            AtSpiPropertyChange("accessible-name", result);
+        }
+
         internal void AtSpiPropertyChange(string detail, object value)
         {
             switch (detail)
             {
+                case "accessible-name":
+                    {
+                        if (value is string sval)
+                        {
+                            if (!NameKnown || sval != Name)
+                            {
+                                NameKnown = true;
+                                Name = sval;
+                                Element.PropertyChanged("spi_name", sval);
+                            }
+                        }
+                        else if (value is null)
+                        {
+                            if (fetching_name || NameKnown)
+                                Utils.RunTask(FetchName());
+                        }
+                        else
+                        {
+                            Utils.DebugWriteLine($"WARNING: unexpected type for accessible-name: {value.GetType()}");
+                        }
+                        break;
+                    }
                 case "accessible-role":
                     {
                         if (value is uint uval)
