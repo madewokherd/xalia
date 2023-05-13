@@ -386,6 +386,16 @@ namespace Xalia.AtSpi2
                             return application.EvaluateIdentifier("spi_toolkit_name", element.Root, depends_on);
                     }
                     return UiDomUndefined.Instance;
+                case "application_name":
+                case "process_name":
+                    depends_on.Add((element, new IdentifierExpression("spi_application")));
+                    if (ApplicationKnown)
+                    {
+                        var application = Connection.LookupElement((ApplicationPeer, ApplicationPath));
+                        if (!(application is null))
+                            return application.EvaluateIdentifier("spi_name", element.Root, depends_on);
+                    }
+                    return UiDomUndefined.Instance;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, Element.Root, depends_on);
