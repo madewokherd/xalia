@@ -164,6 +164,9 @@ namespace Xalia.Win32
                 case "ComboBox":
                     Element.AddProvider(new HwndComboBoxProvider(this), 0);
                     return;
+                case "msctls_trackbar32":
+                    Element.AddProvider(new HwndTrackBarProvider(this), 0);
+                    return;
             }
 
             try
@@ -182,6 +185,9 @@ namespace Xalia.Win32
                     return;
                 case 65536 + 5:
                     Element.AddProvider(new HwndComboBoxProvider(this), 0);
+                    return;
+                case 65536 + 18:
+                    Element.AddProvider(new HwndTrackBarProvider(this), 0);
                     return;
             }
         }
