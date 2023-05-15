@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -14,8 +16,17 @@ namespace Xalia.Win32
         }
 
         public HwndProvider HwndProvider { get; }
+        public IntPtr Hwnd => HwndProvider.Hwnd;
+        public UiDomElement Element => HwndProvider.Element;
 
         static UiDomEnum role = new UiDomEnum(new string[] { "slider" });
+
+        private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
+        {
+            { "line_size", "win32_track_bar_line_size" },
+            { "minimum_increment", "win32_track_bar_line_size" },
+            { "small_change", "win32_track_bar_line_size" },
+        };
 
         static string[] style_names =
         {
@@ -44,8 +55,13 @@ namespace Xalia.Win32
             }
         }
 
+        public int LineSize { get; private set; }
+        public bool LineSizeKnown { get; private set; }
+
         public void DumpProperties(UiDomElement element)
         {
+            if (LineSizeKnown)
+                Utils.DebugWriteLine($"  win32_track_bar_line_size: {LineSize}");
         }
 
         public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -55,6 +71,11 @@ namespace Xalia.Win32
                 case "is_hwnd_track_bar":
                 case "is_hwnd_trackbar":
                     return UiDomBoolean.True;
+                case "win32_track_bar_line_size":
+                    depends_on.Add((element, new IdentifierExpression("win32_track_bar_line_size")));
+                    if (LineSizeKnown)
+                        return new UiDomInt(LineSize);
+                    return UiDomUndefined.Instance;
             }
             return UiDomUndefined.Instance;
         }
@@ -89,6 +110,10 @@ namespace Xalia.Win32
                 case "bottom":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return UiDomBoolean.FromBool((HwndProvider.Style & (TBS_VERT|TBS_TOP|TBS_BOTH)) == 0);
+            }
+            if (property_aliases.TryGetValue(identifier, out var aliased))
+            {
+                return element.EvaluateIdentifier(aliased, element.Root, depends_on);
             }
             if (style_flags.TryGetValue(identifier, out var flag))
             {
@@ -152,12 +177,57 @@ namespace Xalia.Win32
 
         public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
         {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_track_bar_line_size":
+                        Element.EndPollProperty(expression);
+                        return true;
+                }
+            }
             return false;
         }
 
         public bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_track_bar_line_size":
+                        Element.PollProperty(expression, RefreshLineSize, 2000);
+                        return true;
+                }
+            }
             return false;
+        }
+
+        private async Task RefreshLineSize()
+        {
+            int result;
+            try
+            {
+                result = (int)await SendMessageAsync(Hwnd, TBM_GETLINESIZE, IntPtr.Zero, IntPtr.Zero);
+                if (result == 0)
+                    result = 1;
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (!LineSizeKnown || LineSize != result)
+            {
+                LineSizeKnown = true;
+                LineSize = result;
+
+                if (Element.MatchesDebugCondition())
+                    Utils.DebugWriteLine($"{Element}.win32_track_bar_line_size: {LineSize}");
+
+                Element.PropertyChanged("win32_track_bar_line_size");
+            }
         }
     }
 }
