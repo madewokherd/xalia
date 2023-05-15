@@ -1036,7 +1036,11 @@ namespace Xalia.Interop
         public const int TCM_GETCURSEL = TCM_FIRST + 11;
 
         // Trackbar
+        public const int TBS_AUTOTICKS = 0x00000001;
         public const int TBS_VERT = 0x00000002;
+        public const int TBS_TOP = 0x00000004;
+        public const int TBS_LEFT = 0x00000004;
+        public const int TBS_BOTH = 0x00000008;
 
         public const int TBM_GETPOS = WM_USER;
         public const int TBM_GETRANGEMIN = WM_USER + 1;
