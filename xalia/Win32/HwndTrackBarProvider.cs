@@ -8,7 +8,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndTrackBarProvider : UiDomProviderBase, IWin32Styles
+    internal class HwndTrackBarProvider : UiDomProviderBase, IWin32Styles, IUiDomValueProvider
     {
         public HwndTrackBarProvider(HwndProvider hwndProvider)
         {
@@ -209,6 +209,80 @@ namespace Xalia.Win32
                     Utils.DebugWriteLine($"{Element}.win32_track_bar_line_size: {LineSize}");
 
                 Element.PropertyChanged("win32_track_bar_line_size");
+            }
+        }
+
+        public async Task<double> GetMinimumIncrementAsync(UiDomElement element)
+        {
+            try
+            {
+                int result = (int)await SendMessageAsync(Hwnd, TBM_GETLINESIZE, IntPtr.Zero, IntPtr.Zero);
+                if (result == 0)
+                    return 1;
+                return result;
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return 1;
+            }
+        }
+
+        private double remainder;
+
+        public async Task<bool> OffsetValueAsync(UiDomElement element, double offset)
+        {
+            try
+            {
+                int current_pos = (int)await SendMessageAsync(Hwnd, TBM_GETPOS, IntPtr.Zero, IntPtr.Zero);
+
+                double new_pos = current_pos + remainder + offset;
+
+                int pos_ofs = (int)Math.Truncate(new_pos - current_pos);
+
+                int new_pos_int = current_pos + pos_ofs;
+
+                if (new_pos_int != current_pos)
+                {
+                    if (pos_ofs < 0)
+                    {
+                        int min = (int)await SendMessageAsync(Hwnd, TBM_GETRANGEMIN, IntPtr.Zero, IntPtr.Zero);
+
+                        if (new_pos_int < min)
+                            new_pos = new_pos_int = min;
+                    }
+                    else
+                    {
+                        int max = (int)await SendMessageAsync(Hwnd, TBM_GETRANGEMAX, IntPtr.Zero, IntPtr.Zero);
+
+                        if (new_pos_int > max)
+                            new_pos = new_pos_int = max;
+                    }
+                }
+
+                if (new_pos_int != current_pos)
+                {
+                    await SendMessageAsync(Hwnd, TBM_SETPOS, new IntPtr(1), new IntPtr(new_pos_int));
+                    IntPtr parent = GetAncestor(Hwnd, GA_PARENT);
+                    bool vertical = ((int)GetWindowLong(Hwnd, GWL_STYLE) & TBS_VERT) == TBS_VERT;
+                    await SendMessageAsync(parent, vertical ? WM_VSCROLL : WM_HSCROLL,
+                        MAKEWPARAM(TB_THUMBTRACK, (ushort)new_pos_int), Hwnd);
+                    await SendMessageAsync(parent, vertical ? WM_VSCROLL : WM_HSCROLL,
+                        MAKEWPARAM(TB_THUMBPOSITION, (ushort)new_pos_int), Hwnd);
+                    await SendMessageAsync(parent, vertical ? WM_VSCROLL : WM_HSCROLL,
+                        MAKEWPARAM(TB_ENDTRACK, 0), Hwnd);
+                }
+
+                remainder = new_pos - new_pos_int;
+
+                return true;
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return false;
             }
         }
     }
