@@ -804,6 +804,7 @@ namespace Xalia.Interop
         }
 
         public const int WM_DESTROY = 0x2;
+        public const int WM_ACTIVATE = 0x6;
         public const int WM_GETTEXT = 0xd;
         public const int WM_MOUSEACTIVATE = 0x21;
         public const int WM_GETOBJECT = 0x3d;
@@ -811,6 +812,8 @@ namespace Xalia.Interop
         public const int WM_HSCROLL = 0x114;
         public const int WM_VSCROLL = 0x115;
         public const int WM_USER = 0x400;
+
+        public const int WA_ACTIVE = 1;
 
         public const int SB_LINEUP = 0;
         public const int SB_LINELEFT = 0;

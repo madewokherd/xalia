@@ -146,6 +146,8 @@ namespace Xalia.Win32
         {
             try
             {
+                await SendMessageAsync(Hwnd, WM_ACTIVATE, (IntPtr)WA_ACTIVE, Hwnd);
+
                 await SendMessageAsync(Hwnd, CB_SHOWDROPDOWN, (IntPtr)1, IntPtr.Zero);
             }
             catch (Win32Exception e)
