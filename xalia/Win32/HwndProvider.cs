@@ -10,7 +10,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndProvider : IUiDomProvider
+    internal class HwndProvider : UiDomProviderBase
     {
         public HwndProvider(IntPtr hwnd, UiDomElement element, Win32Connection connection)
         {
@@ -218,7 +218,7 @@ namespace Xalia.Win32
             return $"0x{unchecked((uint)Style):x} [{string.Join("|", styles)}]";
         }
 
-        public void DumpProperties(UiDomElement element)
+        public override void DumpProperties(UiDomElement element)
         {
             Utils.DebugWriteLine($"  win32_hwnd: {Hwnd}");
             Utils.DebugWriteLine($"  win32_class_name: \"{ClassName}\"");
@@ -243,7 +243,7 @@ namespace Xalia.Win32
             }
         }
 
-        public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
@@ -300,7 +300,7 @@ namespace Xalia.Win32
             return UiDomUndefined.Instance;
         }
 
-        public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
@@ -325,17 +325,12 @@ namespace Xalia.Win32
             return UiDomUndefined.Instance;
         }
 
-        public Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
-        {
-            return Task.FromResult((false, 0, 0));
-        }
-
-        public string[] GetTrackedProperties()
+        public override string[] GetTrackedProperties()
         {
             return tracked_properties;
         }
 
-        public void NotifyElementRemoved(UiDomElement element)
+        public override void NotifyElementRemoved(UiDomElement element)
         {
             Element = null;
         }
@@ -410,7 +405,7 @@ namespace Xalia.Win32
             _childCount = 0;
         }
 
-        public void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
+        public override void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
         {
             switch (name)
             {
@@ -423,7 +418,7 @@ namespace Xalia.Win32
             }
         }
 
-        public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
+        public override bool UnwatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
             {
@@ -437,7 +432,7 @@ namespace Xalia.Win32
             return false;
         }
 
-        public bool WatchProperty(UiDomElement element, GudlExpression expression)
+        public override bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
             {

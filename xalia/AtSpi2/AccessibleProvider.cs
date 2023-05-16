@@ -9,7 +9,7 @@ using static Xalia.AtSpi2.DBusUtils;
 
 namespace Xalia.AtSpi2
 {
-    internal class AccessibleProvider : IUiDomProvider
+    internal class AccessibleProvider : UiDomProviderBase
     {
         public AccessibleProvider(UiDomElement element, AtSpiConnection connection, string peer, string path)
         {
@@ -286,7 +286,7 @@ namespace Xalia.AtSpi2
 
         public UiDomValue RoleAsValue => RoleKnown ? ValueFromRole(Role) : UiDomUndefined.Instance;
 
-        public void DumpProperties(UiDomElement element)
+        public override void DumpProperties(UiDomElement element)
         {
             if (RoleKnown)
                 Utils.DebugWriteLine($"  spi_role: {RoleAsValue}");
@@ -296,7 +296,7 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"  spi_supported: [{String.Join(",", SupportedInterfaces)}]");
         }
 
-        public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
@@ -331,7 +331,7 @@ namespace Xalia.AtSpi2
             return UiDomUndefined.Instance;
         }
 
-        public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
@@ -357,7 +357,7 @@ namespace Xalia.AtSpi2
             return UiDomUndefined.Instance;
         }
 
-        public async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        public override async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
         {
             if (SupportedInterfaces is null)
             {
@@ -372,12 +372,12 @@ namespace Xalia.AtSpi2
             return (false, 0, 0);
         }
 
-        public string[] GetTrackedProperties()
+        public override string[] GetTrackedProperties()
         {
             return _trackedProperties;
         }
 
-        public void NotifyElementRemoved(UiDomElement element)
+        public override void NotifyElementRemoved(UiDomElement element)
         {
             Connection.NotifyElementDestroyed(this);
             watching_children = false;
@@ -577,7 +577,7 @@ namespace Xalia.AtSpi2
             }
         }
 
-        public void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
+        public override void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
         {
             switch (name)
             {
@@ -592,12 +592,7 @@ namespace Xalia.AtSpi2
             }
         }
 
-        public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
-        {
-            return false;
-        }
-
-        public bool WatchProperty(UiDomElement element, GudlExpression expression)
+        public override bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
             {

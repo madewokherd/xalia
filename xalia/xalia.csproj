@@ -169,6 +169,7 @@
     <Compile Include="UiDom\UiDomIsRelationship.cs" />
     <Compile Include="UiDom\UiDomMapDirections.cs" />
     <Compile Include="UiDom\UiDomMethod.cs" />
+    <Compile Include="UiDom\UiDomProviderBase.cs" />
     <Compile Include="UiDom\UiDomRadialDeadzone.cs" />
     <Compile Include="UiDom\UiDomRoutinePress.cs" />
     <Compile Include="UiDom\UiDomRelationship.cs" />

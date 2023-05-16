@@ -7,7 +7,7 @@ using static Xalia.AtSpi2.DBusUtils;
 
 namespace Xalia.AtSpi2
 {
-    internal class ComponentProvider : IUiDomProvider
+    internal class ComponentProvider : UiDomProviderBase
     {
         public ComponentProvider(AccessibleProvider accessible)
         {
@@ -42,7 +42,7 @@ namespace Xalia.AtSpi2
         private bool watching_abs_pos;
         private int abs_pos_change_count;
 
-        public void DumpProperties(UiDomElement element)
+        public override void DumpProperties(UiDomElement element)
         {
             if (AbsPosKnown)
             {
@@ -53,7 +53,7 @@ namespace Xalia.AtSpi2
             }
         }
 
-        public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
@@ -81,7 +81,7 @@ namespace Xalia.AtSpi2
             return UiDomUndefined.Instance;
         }
 
-        public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (property_aliases.TryGetValue(identifier, out var aliased))
             {
@@ -90,7 +90,7 @@ namespace Xalia.AtSpi2
             return UiDomUndefined.Instance;
         }
 
-        public async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        public override async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
         {
             (int, int, int, int) extents;
             try
@@ -107,22 +107,13 @@ namespace Xalia.AtSpi2
             return (true, extents.Item1 + extents.Item3 / 2, extents.Item2 + extents.Item4 / 2);
         }
 
-        public string[] GetTrackedProperties()
-        {
-            return null;
-        }
-
-        public void NotifyElementRemoved(UiDomElement element)
+        public override void NotifyElementRemoved(UiDomElement element)
         {
             watching_abs_pos = false;
             AbsPosKnown = false;
         }
 
-        public void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
-        {
-        }
-
-        public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
+        public override bool UnwatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
             {
@@ -138,7 +129,7 @@ namespace Xalia.AtSpi2
             return false;
         }
 
-        public bool WatchProperty(UiDomElement element, GudlExpression expression)
+        public override bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
             {

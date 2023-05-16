@@ -9,7 +9,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class AccessibleProvider : IUiDomProvider
+    internal class AccessibleProvider : UiDomProviderBase
     {
         public AccessibleProvider(HwndProvider root_hwnd, UiDomElement element,
             IAccessible accessible, int child_id)
@@ -187,13 +187,13 @@ namespace Xalia.Win32
             }
         }
 
-        public void DumpProperties(UiDomElement element)
+        public override void DumpProperties(UiDomElement element)
         {
             if (RoleKnown)
                 Utils.DebugWriteLine($"  {Element}.msaa_role: {RoleAsValue}");
         }
 
-        public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
@@ -206,7 +206,7 @@ namespace Xalia.Win32
             return UiDomUndefined.Instance;
         }
 
-        public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (property_aliases.TryGetValue(identifier, out var aliased))
             {
@@ -223,32 +223,13 @@ namespace Xalia.Win32
             return UiDomUndefined.Instance;
         }
 
-        public Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
-        {
-            return Task.FromResult((false, 0, 0));
-        }
-
-        public string[] GetTrackedProperties()
-        {
-            return null;
-        }
-
-        public void NotifyElementRemoved(UiDomElement element)
+        public override void NotifyElementRemoved(UiDomElement element)
         {
             Element = null;
             IAccessible = null;
         }
 
-        public void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
-        {
-        }
-
-        public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
-        {
-            return false;
-        }
-
-        public bool WatchProperty(UiDomElement element, GudlExpression expression)
+        public override bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
             {

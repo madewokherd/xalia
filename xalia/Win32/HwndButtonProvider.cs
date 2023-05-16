@@ -9,7 +9,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndButtonProvider : IUiDomProvider, IWin32Styles
+    internal class HwndButtonProvider : UiDomProviderBase, IWin32Styles
     {
         public HwndButtonProvider(HwndProvider hwndProvider)
         {
@@ -84,7 +84,7 @@ namespace Xalia.Win32
             { "default", "win32_button_default" },
         };
 
-        public void DumpProperties(UiDomElement element)
+        public override void DumpProperties(UiDomElement element)
         {
             var dialog = element.Parent?.ProviderByType<HwndDialogProvider>();
             if (!(dialog is null) && dialog.DefIdKnown && dialog.DefId == HwndProvider.ControlId)
@@ -93,7 +93,7 @@ namespace Xalia.Win32
             }
         }
 
-        public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
@@ -142,7 +142,7 @@ namespace Xalia.Win32
             }
         }
 
-        public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (property_aliases.TryGetValue(identifier, out var aliased))
             {
@@ -180,34 +180,6 @@ namespace Xalia.Win32
                     return UiDomBoolean.FromBool((HwndProvider.Style & BS_VCENTER) == BS_VCENTER);
             }
             return UiDomUndefined.Instance;
-        }
-
-        public Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
-        {
-            return Task.FromResult((false, 0, 0));
-        }
-
-        public string[] GetTrackedProperties()
-        {
-            return null;
-        }
-
-        public void NotifyElementRemoved(UiDomElement element)
-        {
-        }
-
-        public void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
-        {
-        }
-
-        public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
-        {
-            return false;
-        }
-
-        public bool WatchProperty(UiDomElement element, GudlExpression expression)
-        {
-            return false;
         }
 
         public void GetStyleNames(int style, List<string> names)

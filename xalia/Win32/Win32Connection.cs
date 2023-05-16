@@ -8,7 +8,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class Win32Connection : IUiDomProvider
+    internal class Win32Connection : UiDomProviderBase
     {
         public Win32Connection(UiDomRoot root)
         {
@@ -98,22 +98,12 @@ namespace Xalia.Win32
             return element;
         }
 
-        public void NotifyElementRemoved(UiDomElement element)
+        public override void NotifyElementRemoved(UiDomElement element)
         {
             elements_by_id.Remove(element.DebugId);
         }
 
-        public bool WatchProperty(UiDomElement element, GudlExpression expression)
-        {
-            return false;
-        }
-
-        public bool UnwatchProperty(UiDomElement element, GudlExpression expression)
-        {
-            return false;
-        }
-
-        public UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
@@ -198,18 +188,14 @@ namespace Xalia.Win32
             return UiDomUndefined.Instance;
         }
 
-        public UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, element.Root, depends_on);
             return UiDomUndefined.Instance;
         }
 
-        public void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
-        {
-        }
-
-        public void DumpProperties(UiDomElement element)
+        public override void DumpProperties(UiDomElement element)
         {
             if (element is UiDomRoot)
             {
@@ -246,16 +232,6 @@ namespace Xalia.Win32
                 if (hwnd.Hwnd == guithreadinfo.hwndMoveSize)
                     Utils.DebugWriteLine($"  win32_gui_movesize: true");
             }
-        }
-
-        public Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
-        {
-            return Task.FromResult((false, 0, 0));
-        }
-
-        public string[] GetTrackedProperties()
-        {
-            return null;
         }
 
         private void UpdateGuiThreadInfo()
