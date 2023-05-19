@@ -225,6 +225,7 @@ namespace Xalia.AtSpi2
             { "name", "spi_name" },
             { "attributes", "spi_attributes" },
             { "select", "spi_select" },
+            { "deselect", "spi_deselect" },
         };
 
         private static readonly HashSet<string> other_interface_properties = new HashSet<string>()
@@ -394,6 +395,15 @@ namespace Xalia.AtSpi2
                             return new UiDomRoutineAsync(element, "spi_select", SelectAsync);
                     }
                     break;
+                case "spi_deselect":
+                    if (!(element.Parent is null)) {
+                        depends_on.Add((element.Parent, new IdentifierExpression("spi_supported")));
+                        var parent_acc = element.Parent.ProviderByType<AccessibleProvider>();
+                        if (!(parent_acc is null) && !(parent_acc.SupportedInterfaces is null) &&
+                            parent_acc.SupportedInterfaces.Contains(IFACE_SELECTION))
+                            return new UiDomRoutineAsync(element, "spi_deselect", DeselectAsync);
+                    }
+                    break;
             }
             if (other_interface_properties.Contains(identifier))
                 depends_on.Add((element, new IdentifierExpression("spi_supported")));
@@ -417,6 +427,33 @@ namespace Xalia.AtSpi2
                 if (!success)
                 {
                     Utils.DebugWriteLine($"WARNING: SelectChild failed for {obj.Element}");
+                }
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+            }
+        }
+
+
+        private static async Task DeselectAsync(UiDomRoutineAsync obj)
+        {
+            var acc = obj.Element.ProviderByType<AccessibleProvider>();
+            var parent_acc = obj.Element.Parent?.ProviderByType<AccessibleProvider>();
+            if (parent_acc is null)
+                return;
+            try
+            {
+                var index = await CallMethod(acc.Connection.Connection, acc.Peer, acc.Path, IFACE_ACCESSIBLE,
+                    "GetIndexInParent", ReadMessageInt32);
+
+                var success = await CallMethod(parent_acc.Connection.Connection, parent_acc.Peer, parent_acc.Path, IFACE_SELECTION,
+                    "DeselectChild", index, ReadMessageBoolean);
+
+                if (!success)
+                {
+                    Utils.DebugWriteLine($"WARNING: DeselectChild failed for {obj.Element}");
                 }
             }
             catch (DBusException e)
