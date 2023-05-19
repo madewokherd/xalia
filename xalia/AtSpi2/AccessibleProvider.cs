@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Tmds.DBus.Protocol;
 using Xalia.Gudl;
@@ -223,6 +224,7 @@ namespace Xalia.AtSpi2
             { "state", "spi_state" },
             { "name", "spi_name" },
             { "attributes", "spi_attributes" },
+            { "select", "spi_select" },
         };
 
         private static readonly HashSet<string> other_interface_properties = new HashSet<string>()
@@ -383,10 +385,45 @@ namespace Xalia.AtSpi2
                     if (AttributesKnown)
                         return new AtSpiAttributes(Attributes);
                     return UiDomUndefined.Instance;
+                case "spi_select":
+                    if (!(element.Parent is null)) {
+                        depends_on.Add((element.Parent, new IdentifierExpression("spi_supported")));
+                        var parent_acc = element.Parent.ProviderByType<AccessibleProvider>();
+                        if (!(parent_acc is null) && !(parent_acc.SupportedInterfaces is null) &&
+                            parent_acc.SupportedInterfaces.Contains(IFACE_SELECTION))
+                            return new UiDomRoutineAsync(element, "spi_select", SelectAsync);
+                    }
+                    break;
             }
             if (other_interface_properties.Contains(identifier))
                 depends_on.Add((element, new IdentifierExpression("spi_supported")));
             return UiDomUndefined.Instance;
+        }
+
+        private static async Task SelectAsync(UiDomRoutineAsync obj)
+        {
+            var acc = obj.Element.ProviderByType<AccessibleProvider>();
+            var parent_acc = obj.Element.Parent?.ProviderByType<AccessibleProvider>();
+            if (parent_acc is null)
+                return;
+            try
+            {
+                var index = await CallMethod(acc.Connection.Connection, acc.Peer, acc.Path, IFACE_ACCESSIBLE,
+                    "GetIndexInParent", ReadMessageInt32);
+
+                var success = await CallMethod(parent_acc.Connection.Connection, parent_acc.Peer, parent_acc.Path, IFACE_SELECTION,
+                    "SelectChild", index, ReadMessageBoolean);
+
+                if (!success)
+                {
+                    Utils.DebugWriteLine($"WARNING: SelectChild failed for {obj.Element}");
+                }
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+            }
         }
 
         public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -421,6 +458,11 @@ namespace Xalia.AtSpi2
                             return application.EvaluateIdentifier("spi_name", element.Root, depends_on);
                     }
                     return UiDomUndefined.Instance;
+                case "do_default_action":
+                    depends_on.Add((element, new IdentifierExpression("spi_state")));
+                    if (StateKnown && AtSpiState.IsStateSet(State, "selectable"))
+                        return element.EvaluateIdentifier("spi_select", element.Root, depends_on);
+                    break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, Element.Root, depends_on);

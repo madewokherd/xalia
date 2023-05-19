@@ -456,6 +456,7 @@ namespace Xalia.AtSpi2
         public const string IFACE_REGISTRY = "org.a11y.atspi.Registry";
         public const string IFACE_EVENT_OBJECT = "org.a11y.atspi.Event.Object";
         public const string IFACE_EVENT_WINDOW = "org.a11y.atspi.Event.Window";
+        public const string IFACE_SELECTION = "org.a11y.atspi.Selection";
         public const string IFACE_VALUE = "org.a11y.atspi.Value";
 
         public const uint ATSPI_COORD_TYPE_SCREEN = 0;
