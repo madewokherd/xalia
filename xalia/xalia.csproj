@@ -71,10 +71,6 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="Tmds.DBus, Version=0.10.0.0, Culture=neutral, PublicKeyToken=9abd76e9812c1bca, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\external\Tmds.Dbus\src\Tmds.DBus\bin\Release\netstandard2.0\Tmds.DBus.dll</HintPath>
-    </Reference>
     <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />
@@ -104,7 +100,6 @@
     <Compile Include="AtSpi2\DBusUtils.cs" />
     <Compile Include="AtSpi2\SelectionProvider.cs" />
     <Compile Include="AtSpi2\ValueProvider.cs" />
-    <Compile Include="AtSpi\AtSpiActionList.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Interop\Win32RemoteProcessMemory.cs" />
     <Compile Include="Interop\Win32WaitHandle.cs" />
@@ -121,13 +116,6 @@
     <Compile Include="UiDom\IUiDomProvider.cs" />
     <Compile Include="UiDom\IUiDomValueProvider.cs" />
     <Compile Include="UiDom\UiDomAdjustScrollbars.cs" />
-    <Compile Include="AtSpi\AtSpiAttributes.cs" />
-    <Compile Include="AtSpi\AtSpiConnection.cs" />
-    <Compile Include="AtSpi\AtSpiElement.cs" />
-    <Compile Include="AtSpi\AtSpiState.cs" />
-    <Compile Include="AtSpi\AtSpiSupported.cs" />
-    <Compile Include="AtSpi\Gazelle.AtSpi.DBus.cs" />
-    <Compile Include="AtSpi\Gazelle.AtSpi.DBus.Launcher.cs" />
     <Compile Include="Gudl\ApplyExpression.cs" />
     <Compile Include="Gudl\BinaryExpression.cs" />
     <Compile Include="Gudl\DoubleExpression.cs" />

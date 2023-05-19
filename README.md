@@ -48,8 +48,6 @@ If you are using 32-bit Windows, you will need to use the net48-mono build and r
 
 I do my development on Windows using Visual Studio.
 
-We need a special build of Tmds.DBus to work around an incompatibility with Mono: https://github.com/tmds/Tmds.DBus/issues/155. A submodule of Tmds.DBus is provided for this reason, but it needs to be manually built before Xalia.
-
 SDL.dll and README-SDL.txt from http://libsdl.org/download-2.0.php need to be dropped into the `xalia` project directory before building.
 
 Mono should hopefully also be able to build the project, but I have not tried it.

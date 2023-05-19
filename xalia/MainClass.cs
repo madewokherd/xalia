@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Xalia.AtSpi;
 using Xalia.Gudl;
 using Xalia.Ui;
 using Xalia.UiDom;
@@ -50,16 +49,11 @@ namespace Xalia
 
                 UiDomRoot connection = null;
 
-                if (((Environment.GetEnvironmentVariable("XALIA_EXPERIMENTAL_ATSPI") ?? "0") != "0"))
-                {
-                    connection = new UiDomRoot(config, application);
-                    await Xalia.AtSpi2.AtSpiConnection.Connect(connection);
-                }
-
                 if (connection == null &&
                     ((Environment.GetEnvironmentVariable("XALIA_USE_ATSPI") ?? (Utils.IsUnix() ? "1" : "0")) != "0"))
                 {
-                    connection = await AtSpiConnection.Connect(config, application);
+                    connection = new UiDomRoot(config, application);
+                    await Xalia.AtSpi2.AtSpiConnection.Connect(connection);
                 }
 
 #if WINDOWS
