@@ -239,6 +239,8 @@ namespace Xalia.AtSpi2
             "abs_x", "abs_y", "abs_width", "abs_height",
             "spi_abs_x", "spi_abs_y", "spi_abs_width", "spi_abs_height",
             "grab_focus", "set_focus", "spi_grab_focus",
+            // SelectionProvider
+            "clear_selection", "spi_clear_selection",
             // ValueProvider
             "minimum_value", "spi_minimum_value", "maximum_value", "spi_maximum_value",
             "minimum_increment", "small_change", "spi_minimum_increment",
@@ -933,6 +935,7 @@ namespace Xalia.AtSpi2
                 bool seen_action = false;
                 bool seen_application = false;
                 bool seen_component = false;
+                bool seen_selection = false;
                 bool seen_value = false;
                 switch (iface)
                 {
@@ -950,6 +953,11 @@ namespace Xalia.AtSpi2
                         if (!seen_component)
                             Element.AddProvider(new ComponentProvider(this), 0);
                         seen_component = true;
+                        break;
+                    case IFACE_SELECTION:
+                        if (!seen_selection)
+                            Element.AddProvider(new SelectionProvider(this), 0);
+                        seen_selection = true;
                         break;
                     case IFACE_VALUE:
                         if (!seen_value)
