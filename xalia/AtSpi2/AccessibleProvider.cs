@@ -273,6 +273,13 @@ namespace Xalia.AtSpi2
         }
 
         private bool watching_children;
+        private enum GetChildrenMethod
+        {
+            Auto,
+            GetChildren,
+            GetChildAtIndex
+        }
+        private GetChildrenMethod recurse_method;
         private bool children_known;
 
         public bool RoleKnown { get; private set; }
@@ -390,9 +397,9 @@ namespace Xalia.AtSpi2
                     if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
                     {
                         if (element.EvaluateIdentifier("poll_children", element.Root, depends_on).ToBool())
-                            return new UiDomString("spi_auto_poll");
+                            return new UiDomString("spi_get_children_poll");
                         else
-                            return new UiDomString("spi_auto");
+                            return new UiDomString("spi_get_children");
                     }
                     break;
                 case "toolkit_name":
@@ -459,30 +466,36 @@ namespace Xalia.AtSpi2
             children_known = false;
         }
 
-        private async Task<List<(string, string)>> GetChildList()
+        private async Task<List<(string, string)>> GetChildListGetChildren()
         {
             try
             {
-                var children = await CallMethod(Connection.Connection, Peer, Path,
+                return await CallMethod(Connection.Connection, Peer, Path,
                     IFACE_ACCESSIBLE, "GetChildren", ReadMessageElementList);
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return new List<(string, string)>();
+            }
+            catch (InvalidCastException)
+            {
+                return new List<(string, string)>();
+            }
+        }
 
-                if (children.Count == 0)
+        private async Task<List<(string, string)>> GetChildListGetChildAtIndex()
+        {
+            try
+            {
+                var child_count = (int)await GetProperty(Connection.Connection, Peer, Path,
+                    IFACE_ACCESSIBLE, "ChildCount");
+                var children = new List<(string, string)>(child_count);
+                for (int i = 0; i < child_count; i++)
                 {
-                    var child_count = (int)await GetProperty(Connection.Connection, Peer, Path,
-                        IFACE_ACCESSIBLE, "ChildCount");
-                    if (child_count != 0)
-                    {
-                        // This happens for AtkSocket/AtkPlug
-                        // https://gitlab.gnome.org/GNOME/at-spi2-core/-/issues/98
-
-                        children = new List<(string, string)>(child_count);
-
-                        for (int i = 0; i < child_count; i++)
-                        {
-                            children.Add(await CallMethod(Connection.Connection, Peer, Path,
-                                IFACE_ACCESSIBLE, "GetChildAtIndex", i, ReadMessageElement));
-                        }
-                    }
+                    children.Add(await CallMethod(Connection.Connection, Peer, Path,
+                        IFACE_ACCESSIBLE, "GetChildAtIndex", i, ReadMessageElement));
                 }
 
                 return children;
@@ -497,6 +510,33 @@ namespace Xalia.AtSpi2
             {
                 return new List<(string, string)>();
             }
+        }
+
+        private async Task<List<(string, string)>> GetChildListAuto()
+        {
+            var children = await GetChildListGetChildren();
+            if (children.Count == 0)
+            {
+                // This happens for AtkSocket/AtkPlug
+                // https://gitlab.gnome.org/GNOME/at-spi2-core/-/issues/98
+
+                children = await GetChildListGetChildAtIndex();
+            }
+            return children;
+        }
+
+        private async Task<List<(string, string)>> GetChildList()
+        {
+            switch (recurse_method)
+            {
+                case GetChildrenMethod.Auto:
+                    return await GetChildListAuto();
+                case GetChildrenMethod.GetChildren:
+                    return await GetChildListGetChildren();
+                case GetChildrenMethod.GetChildAtIndex:
+                    return await GetChildListGetChildAtIndex();
+            }
+            throw new InvalidOperationException("recurse_method is invalid"); // shouldn't happen
         }
 
         private async Task PollChildrenTask()
@@ -541,10 +581,14 @@ namespace Xalia.AtSpi2
             return $"{arg.Item1}:{arg.Item2}";
         }
 
-        internal void WatchChildren()
+        internal void WatchChildren(bool method_changed)
         {
             if (watching_children)
+            {
+                if (method_changed)
+                    Utils.RunTask(PollChildrenTask());
                 return;
+            }
             if (Element.MatchesDebugCondition())
                 Utils.DebugWriteLine($"WatchChildren for {Element}");
             Element.SetRecurseMethodProvider(this);
@@ -623,20 +667,40 @@ namespace Xalia.AtSpi2
                     {
                         if (new_value is UiDomString st)
                         {
+                            GetChildrenMethod new_method;
+                            bool poll = true;
                             switch (st.Value)
                             {
                                 case "spi_auto":
-                                    WatchChildren();
-                                    element.EndPollProperty(new IdentifierExpression("spi_children"));
-                                    break;
+                                    poll = false;
+                                    goto case "spi_auto_poll";
                                 case "spi_auto_poll":
-                                    WatchChildren();
-                                    element.PollProperty(new IdentifierExpression("spi_children"), PollChildrenTask, 2000);
+                                    new_method = GetChildrenMethod.Auto;
+                                    break;
+                                case "spi_get_children":
+                                    poll = false;
+                                    goto case "spi_get_children_poll";
+                                case "spi_get_children_poll":
+                                    new_method = GetChildrenMethod.GetChildren;
+                                    break;
+                                case "spi_child_at_index":
+                                    poll = false;
+                                    goto case "spi_child_at_index_poll";
+                                case "spi_child_at_index_poll":
+                                    new_method = GetChildrenMethod.GetChildAtIndex;
                                     break;
                                 default:
                                     UnwatchChildren();
-                                    break;
+                                    return;
                             }
+
+                            bool method_changed = (new_method != recurse_method);
+                            recurse_method = new_method;
+                            WatchChildren(method_changed);
+                            if (poll)
+                                element.PollProperty(new IdentifierExpression("spi_children"), PollChildrenTask, 2000);
+                            else
+                                element.EndPollProperty(new IdentifierExpression("spi_children"));
                         }
                         else
                             UnwatchChildren();

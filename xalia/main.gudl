@@ -587,6 +587,11 @@ if (role.(window or frame or dialog or alert or color_chooser or file_chooser or
     recurse: true;
 }
 
+if (is_spi_element and role.filler) {
+    // This could be a plug/socket which can crash when GetChildren is called (TODO: write test program and file bug)
+    recurse_method: "spi_child_at_index";
+}
+
 // List children of containers
 if (role.(filler or internal_frame or panel or html_container or
               layered_pane or option_pane or root_pane or scroll_pane or
