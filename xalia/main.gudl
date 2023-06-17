@@ -588,7 +588,10 @@ if (role.(window or frame or dialog or alert or color_chooser or file_chooser or
 }
 
 if (is_spi_element and role.filler) {
-    // This could be a plug/socket which can crash when GetChildren is called (TODO: write test program and file bug)
+    // This could be a plug/socket which caused some atk versions to crash when GetChildren is called
+    // The crash was introduced in at-spi2-core 2.47.1 and fixed in 2.48.3.
+    // In versions before 2.47.1, GetChildren incorrectly returned no children.
+    // ref: https://gitlab.gnome.org/GNOME/at-spi2-core/-/issues/98
     recurse_method: "spi_child_at_index";
 }
 
