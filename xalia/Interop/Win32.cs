@@ -1030,6 +1030,13 @@ namespace Xalia.Interop
         public const int LVIR_SELECTBOUNDS = 3;
 
         // Tab Control
+        public const int TCS_BOTTOM = 0x0002;
+        public const int TCS_RIGHT = 0x0002;
+        public const int TCS_VERTICAL = 0x0080;
+        public const int TCS_BUTTONS = 0x0100;
+        public const int TCS_MULTILINE = 0x0200;
+        public const int TCS_RAGGEDRIGHT = 0x0800;
+
         public const int TCM_FIRST = 0x1300;
         public const int TCM_GETITEMCOUNT = TCM_FIRST + 4;
         public const int TCM_GETITEMRECT = TCM_FIRST + 10;

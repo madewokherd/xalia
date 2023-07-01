@@ -190,6 +190,7 @@
     <Compile Include="Win32\HwndDialogProvider.cs" />
     <Compile Include="Win32\HwndProvider.cs" />
     <Compile Include="Win32\CommandThread.cs" />
+    <Compile Include="Win32\HwndTabProvider.cs" />
     <Compile Include="Win32\HwndTrackBarProvider.cs" />
     <Compile Include="Win32\IWin32Styles.cs" />
     <Compile Include="Win32\Win32Connection.cs" />
