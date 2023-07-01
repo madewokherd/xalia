@@ -518,6 +518,7 @@ namespace Xalia.Win32
             switch (e.NativeErrorCode)
             {
                 case 5: // Access denied
+                case 1400: // Invalid window handle
                     return true;
                 default:
 #if DEBUG
