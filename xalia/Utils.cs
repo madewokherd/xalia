@@ -170,5 +170,10 @@ namespace Xalia
             }
             return true;
         }
+
+        internal static int TruncatePtr(IntPtr i)
+        {
+            return unchecked((int)i.ToInt64());
+        }
     }
 }

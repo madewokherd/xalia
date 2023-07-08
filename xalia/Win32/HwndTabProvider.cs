@@ -1,21 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndTabProvider : UiDomProviderBase, IWin32Styles
+    internal class HwndTabProvider : HwndItemListProvider, IWin32Styles
     {
-        public HwndTabProvider(HwndProvider hwndProvider)
+        public HwndTabProvider(HwndProvider hwndProvider) : base(hwndProvider)
         {
-            HwndProvider = hwndProvider;
         }
-
-        public HwndProvider HwndProvider { get; }
-        public IntPtr Hwnd => HwndProvider.Hwnd;
-        public UiDomElement Element => HwndProvider.Element;
 
         static readonly UiDomEnum role = new UiDomEnum(new[] { "tab", "page_tab_list", "pagetablist" });
 
@@ -136,6 +132,12 @@ namespace Xalia.Win32
                     names.Add(style_names[i]);
                 }
             }
+        }
+
+        protected async override Task<int> FetchItemCount()
+        {
+            var result = await SendMessageAsync(Hwnd, TCM_GETITEMCOUNT, IntPtr.Zero, IntPtr.Zero);
+            return Utils.TruncatePtr(result);
         }
     }
 }
