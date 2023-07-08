@@ -384,6 +384,15 @@ namespace Xalia.Win32
                         }
                         break;
                     }
+                case EVENT_OBJECT_SELECTION:
+                    {
+                        var hwnd_element = GetElementForMsaaEvent(hwnd, idObject, CHILDID_SELF);
+                        if (!(hwnd_element is null))
+                        {
+                            hwnd_element.ProviderByType<HwndTabProvider>()?.MsaaSelectionChange(idChild);
+                        }
+                        break;
+                    }
             }
         }
 

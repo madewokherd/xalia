@@ -15,6 +15,11 @@ namespace Xalia.Win32
 
         static readonly UiDomEnum role = new UiDomEnum(new[] { "tab", "page_tab_list", "pagetablist" });
 
+        private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
+        {
+            { "selection_index", "win32_selection_index" },
+        };
+
         static string[] style_names =
         {
             "scrollopposite",
@@ -46,6 +51,17 @@ namespace Xalia.Win32
                     continue;
                 style_flags[style_names[i]] = 0x1 << i;
             }
+        }
+
+        public int SelectionIndex { get; private set; }
+        public bool SelectionIndexKnown { get; private set; }
+        private bool fetching_selection_index;
+
+        public override void DumpProperties(UiDomElement element)
+        {
+            if (SelectionIndexKnown)
+                Utils.DebugWriteLine($"  win32_selection_index: {SelectionIndex}");
+            base.DumpProperties(element);
         }
 
         public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -86,6 +102,8 @@ namespace Xalia.Win32
                 depends_on.Add((element, new IdentifierExpression("win32_style")));
                 return UiDomBoolean.FromBool((HwndProvider.Style & flag) != 0);
             }
+            if (property_aliases.TryGetValue(identifier, out var aliased))
+                return element.EvaluateIdentifier(aliased, element.Root, depends_on);
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
 
@@ -96,6 +114,11 @@ namespace Xalia.Win32
                 case "is_hwnd_tab_control":
                 case "is_hwnd_tabcontrol":
                     return UiDomBoolean.True;
+                case "win32_selection_index":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (SelectionIndexKnown)
+                        return new UiDomInt(SelectionIndex);
+                    break;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
         }
@@ -138,6 +161,46 @@ namespace Xalia.Win32
         {
             var result = await SendMessageAsync(Hwnd, TCM_GETITEMCOUNT, IntPtr.Zero, IntPtr.Zero);
             return Utils.TruncatePtr(result);
+        }
+
+        public override bool WatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_selection_index":
+                        if (!SelectionIndexKnown && !fetching_selection_index)
+                        {
+                            fetching_selection_index = true;
+                            Utils.RunTask(FetchSelectionIndex());
+                        }
+                        return true;
+                }
+            }
+            return base.WatchProperty(element, expression);
+        }
+
+        private async Task FetchSelectionIndex()
+        {
+            var res = await SendMessageAsync(Hwnd, TCM_GETCURSEL, IntPtr.Zero, IntPtr.Zero);
+            if (SelectionIndexKnown)
+            {
+                // If we already know this, it must have come from an MSAA event and can be
+                // assumed to be up to date
+                return;
+            }
+
+            SelectionIndexKnown = true;
+            SelectionIndex = Utils.TruncatePtr(res);
+            Element.PropertyChanged("win32_selection_index", SelectionIndex);
+        }
+
+        internal void MsaaSelectionChange(int idChild)
+        {
+            SelectionIndex = idChild - 1;
+            SelectionIndexKnown = true;
+            Element.PropertyChanged("win32_selection_index", SelectionIndex);
         }
     }
 }
