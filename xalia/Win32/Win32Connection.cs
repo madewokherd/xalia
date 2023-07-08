@@ -334,6 +334,12 @@ namespace Xalia.Win32
                             }
                         }
                     }
+                    if (idObject == OBJID_CLIENT && idChild > 0)
+                    {
+                        var hwnd_element = LookupElement(hwnd);
+                        if (!(hwnd_element is null))
+                            hwnd_element.ProviderByType<HwndItemListProvider>()?.MsaaChildAdded(idChild);
+                    }
                     break;
                 case EVENT_OBJECT_DESTROY:
                     {
@@ -347,6 +353,12 @@ namespace Xalia.Win32
                                 if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF)
                                     parent_element.ProviderByType<HwndProvider>()?.MsaaChildWindowRemoved();
                             }
+                        }
+                        if (idObject == OBJID_CLIENT && idChild > 0)
+                        {
+                            var hwnd_element = LookupElement(hwnd);
+                            if (!(hwnd_element is null))
+                                hwnd_element.ProviderByType<HwndItemListProvider>()?.MsaaChildDestroyed(idChild);
                         }
                         break;
                     }
