@@ -14,7 +14,7 @@ namespace Xalia.UiDom
         public List<UiDomElement> Children { get; } = new List<UiDomElement> ();
 
         private IUiDomProvider recurse_method_provider;
-        private int recurse_method_child_count;
+        public int RecurseMethodChildCount { get; private set; }
 
         public UiDomElement Parent { get; private set; }
 
@@ -104,7 +104,7 @@ namespace Xalia.UiDom
                     polling_refresh_tokens.Clear();
                     polling_properties.Clear();
                     _updatingRules = false;
-                    while (recurse_method_child_count < Children.Count)
+                    while (RecurseMethodChildCount < Children.Count)
                     {
                         RemoveChild(Children.Count - 1, false);
                     }
@@ -141,12 +141,12 @@ namespace Xalia.UiDom
                 throw new IndexOutOfRangeException();
             if (recurse_method)
             {
-                if (index > recurse_method_child_count)
+                if (index > RecurseMethodChildCount)
                     throw new IndexOutOfRangeException("index is too high to be used with recurse_method=true");
             }
             else
             {
-                if (index < recurse_method_child_count)
+                if (index < RecurseMethodChildCount)
                     throw new IndexOutOfRangeException("index is too low to be used with recurse_method=false");
             }
             if (MatchesDebugCondition())
@@ -156,7 +156,7 @@ namespace Xalia.UiDom
             child.Parent = this;
             Children.Insert(index, child);
             if (recurse_method)
-                recurse_method_child_count++;
+                RecurseMethodChildCount++;
             child.SetAlive(true);
             PropertyChanged("children");
         }
@@ -185,12 +185,12 @@ namespace Xalia.UiDom
                 throw new IndexOutOfRangeException();
             if (recurse_method)
             {
-                if (index > recurse_method_child_count - 1)
+                if (index > RecurseMethodChildCount - 1)
                     throw new IndexOutOfRangeException("index too high to be used with recurse_method=true");
             }
             else
             {
-                if (index < recurse_method_child_count)
+                if (index < RecurseMethodChildCount)
                     throw new IndexOutOfRangeException("index too low to be used with recurse_method=false");
             }
             var child = Children[index];
@@ -200,7 +200,7 @@ namespace Xalia.UiDom
             child.Parent = null;
             child.SetAlive(false);
             if (recurse_method)
-                recurse_method_child_count--;
+                RecurseMethodChildCount--;
             if (IsAlive)
                 PropertyChanged("children");
         }
@@ -1121,8 +1121,8 @@ namespace Xalia.UiDom
                 }
             }
 
-            var old_elements = new UiDomElement[recurse_method_child_count];
-            Children.CopyTo(0, old_elements, 0, recurse_method_child_count);
+            var old_elements = new UiDomElement[RecurseMethodChildCount];
+            Children.CopyTo(0, old_elements, 0, RecurseMethodChildCount);
 
             for (int i=0; i<old_elements.Length; i++)
             {
@@ -1142,7 +1142,7 @@ namespace Xalia.UiDom
                 }
             }
 
-            if (!changed && keys.Count == recurse_method_child_count)
+            if (!changed && keys.Count == RecurseMethodChildCount)
             {
                 // All existing elements have same index, and the count hasn't increased, therefore nothing changed.
                 return;
@@ -1159,16 +1159,16 @@ namespace Xalia.UiDom
             }
 
             // Adjust the length of the list, and shift the other elements
-            if (keys.Count > recurse_method_child_count)
+            if (keys.Count > RecurseMethodChildCount)
             {
-                Children.InsertRange(recurse_method_child_count,
-                    new UiDomElement[keys.Count - recurse_method_child_count]);
+                Children.InsertRange(RecurseMethodChildCount,
+                    new UiDomElement[keys.Count - RecurseMethodChildCount]);
             }
-            else if (keys.Count < recurse_method_child_count)
+            else if (keys.Count < RecurseMethodChildCount)
             {
-                Children.RemoveRange(keys.Count, recurse_method_child_count - keys.Count);
+                Children.RemoveRange(keys.Count, RecurseMethodChildCount - keys.Count);
             }
-            recurse_method_child_count = keys.Count;
+            RecurseMethodChildCount = keys.Count;
 
             // Update the list to ensure we're in a consistent state when we start calling user code
             for (int i = 0; i < new_elements.Length; i++)

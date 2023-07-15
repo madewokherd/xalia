@@ -36,7 +36,6 @@ namespace Xalia.Win32
         public int Tid { get; }
 
         private bool _watchingChildren;
-        private int _childCount;
 
         private static string[] tracked_properties = new string[] { "recurse_method" };
 
@@ -354,6 +353,7 @@ namespace Xalia.Win32
                 return;
             if (Element.MatchesDebugCondition())
                 Utils.DebugWriteLine($"WatchChildren for {Element} (win32)");
+            Element.SetRecurseMethodProvider(this);
             _watchingChildren = true;
             Utils.RunIdle(PollChildren); // need to wait for any other providers to remove their children
         }
@@ -365,44 +365,63 @@ namespace Xalia.Win32
 
             var child_hwnds = EnumImmediateChildWindows(Hwnd);
 
-            // First remove any existing children that are missing or out of order
+            // Remove or ignore any existing children
             int i = 0;
-            foreach (var new_child in child_hwnds)
+            while (i < child_hwnds.Count)
             {
-                var child_name = $"hwnd-{new_child}";
-                if (!Element.Children.Exists((UiDomElement element) => element.DebugId == child_name))
-                    continue;
-                while (Element.Children[i].DebugId != child_name)
+                var existing = Connection.LookupElement(child_hwnds[i]);
+                if (!(existing is null) && existing.Parent != Element)
                 {
-                    Element.RemoveChild(i);
-                    _childCount--;
+                    // duplicate elsewhere in tree
+                    var hwnd_existing_parent = existing.Parent.ProviderByType<HwndProvider>();
+                    if (!(hwnd_existing_parent is null))
+                    {
+                        // try asking the other parent to remove it
+                        hwnd_existing_parent.ReleaseChildren();
+                        if (!existing.IsAlive)
+                        {
+                            i++;
+                            continue;
+                        }
+                    }
+                    child_hwnds.RemoveAt(i);
+                    continue;
                 }
                 i++;
             }
 
-            // Remove any remaining missing children
-            while (i < _childCount)
-            {
-                Element.RemoveChild(i);
-                _childCount--;
-            }
+            Element.SyncRecurseMethodChildren(child_hwnds, (IntPtr hwnd) => $"hwnd-{hwnd}",
+                Connection.CreateElementFromHwnd);
+        }
 
-            // Add any new children
-            i = 0;
-            foreach (var new_child in child_hwnds)
+        private void ReleaseChildren()
+        {
+            // Remove any child HWNDs that no longer belong to this element
+            if (!_watchingChildren)
+                return;
+            List<IntPtr> new_children = new List<IntPtr>(Element.RecurseMethodChildCount);
+            bool changed = false;
+            for (int i = 0; i < Element.RecurseMethodChildCount; i++)
             {
-                var child_name = $"hwnd-{new_child}";
-                if (_childCount <= i || Element.Children[i].DebugId != child_name)
+                var child_provider = Element.Children[i].ProviderByType<HwndProvider>();
+                if (child_provider is null)
+                    continue;
+                var child_hwnd = child_provider.Hwnd;
+                var child_parent_hwnd = GetAncestor(child_hwnd, GA_PARENT);
+                if (child_parent_hwnd != Hwnd)
                 {
-                    if (!(Connection.LookupElement(child_name) is null))
-                    {
-                        // Child element is a duplicate of another element somewhere in the tree.
-                        continue;
-                    }
-                    Element.AddChild(i, Connection.CreateElementFromHwnd(new_child));
-                    _childCount++;
+                    changed = true;
+                    continue;
                 }
-                i += 1;
+                new_children.Add(child_hwnd);
+            }
+            if (changed)
+            {
+                Element.SyncRecurseMethodChildren(new_children, (IntPtr hwnd) => $"hwnd-{hwnd}",
+                    (IntPtr hwnd) =>
+                    {
+                        throw new Exception("ReleaseChildren should not create new children");
+                    });
             }
         }
 
@@ -413,9 +432,7 @@ namespace Xalia.Win32
             if (Element.MatchesDebugCondition())
                 Utils.DebugWriteLine($"UnwatchChildren for {Element} (win32)");
             _watchingChildren = false;
-            for (int i = _childCount - 1; i >= 0; i--)
-                Element.RemoveChild(i);
-            _childCount = 0;
+            Element.UnsetRecurseMethodProvider(this);
         }
 
         public override void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
