@@ -223,6 +223,7 @@ namespace Xalia.AtSpi2
             { "control_type", "spi_role" },
             { "state", "spi_state" },
             { "name", "spi_name" },
+            { "description", "spi_description" },
             { "attributes", "spi_attributes" },
             { "select", "spi_select" },
             { "deselect", "spi_deselect" },
@@ -299,6 +300,10 @@ namespace Xalia.AtSpi2
         public string Name { get; private set; }
         private bool fetching_name;
 
+        public bool DescriptionKnown { get; private set; }
+        public string Description { get; private set; }
+        private bool fetching_description;
+
         public bool AttributesKnown { get; private set; }
         public Dictionary<string,string> Attributes { get; private set; }
         private bool watching_attributes;
@@ -327,6 +332,8 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"  spi_state: {new AtSpiState(State)}");
             if (NameKnown)
                 Utils.DebugWriteLine($"  spi_name: \"{Name}\"");
+            if (DescriptionKnown && Description != string.Empty)
+                Utils.DebugWriteLine($"  spi_description: \"{Description}\"");
             if (AttributesKnown)
             {
                 foreach (var kvp in Attributes)
@@ -366,6 +373,11 @@ namespace Xalia.AtSpi2
                     depends_on.Add((element, new IdentifierExpression("spi_name")));
                     if (NameKnown)
                         return new UiDomString(Name);
+                    return UiDomUndefined.Instance;
+                case "spi_description":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (DescriptionKnown)
+                        return new UiDomString(Description);
                     return UiDomUndefined.Instance;
                 case "spi_supported":
                     depends_on.Add((element, new IdentifierExpression("spi_supported")));
@@ -831,6 +843,13 @@ namespace Xalia.AtSpi2
                             Utils.RunTask(FetchName());
                         }
                         return true;
+                    case "spi_description":
+                        if (!fetching_description)
+                        {
+                            fetching_description = true;
+                            Utils.RunTask(FetchDescription());
+                        }
+                        return true;
                     case "spi_supported":
                         if (!fetching_supported)
                         {
@@ -1033,6 +1052,29 @@ namespace Xalia.AtSpi2
             AtSpiPropertyChange("accessible-name", result);
         }
 
+        private async Task FetchDescription()
+        {
+            object result;
+            try
+            {
+                await Connection.RegisterEvent("object:property-change:accessible-description");
+
+                result = await GetProperty(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE, "Description");
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return;
+            }
+            if (result is null)
+            {
+                // This would infinitely recurse
+                return;
+            }
+            AtSpiPropertyChange("accessible-description", result);
+        }
+
         internal void AtSpiPropertyChange(string detail, object value)
         {
             switch (detail)
@@ -1056,6 +1098,28 @@ namespace Xalia.AtSpi2
                         else
                         {
                             Utils.DebugWriteLine($"WARNING: unexpected type for accessible-name: {value.GetType()}");
+                        }
+                        break;
+                    }
+                case "accessible-description":
+                    {
+                        if (value is string sval)
+                        {
+                            if (!DescriptionKnown || sval != Description)
+                            {
+                                DescriptionKnown = true;
+                                Description = sval;
+                                Element.PropertyChanged("spi_description", sval);
+                            }
+                        }
+                        else if (value is null)
+                        {
+                            if (fetching_description || DescriptionKnown)
+                                Utils.RunTask(FetchDescription());
+                        }
+                        else
+                        {
+                            Utils.DebugWriteLine($"WARNING: unexpected type for accessible-description: {value.GetType()}");
                         }
                         break;
                     }
