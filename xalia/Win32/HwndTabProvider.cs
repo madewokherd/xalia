@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
+using Xalia.Util;
 using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
@@ -55,7 +56,10 @@ namespace Xalia.Win32
 
         public int SelectionIndex { get; private set; }
         public bool SelectionIndexKnown { get; private set; }
+
         private bool fetching_selection_index;
+
+        bool watching_children;
 
         public override void DumpProperties(UiDomElement element)
         {
@@ -96,6 +100,10 @@ namespace Xalia.Win32
                 case "rightjustify":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return UiDomBoolean.FromBool((HwndProvider.Style & (TCS_MULTILINE|TCS_RAGGEDRIGHT)) == TCS_MULTILINE);
+                case "recurse_method":
+                    if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
+                        return new UiDomString("win32_tab");
+                    break;
             }
             if (style_flags.TryGetValue(identifier, out var flag))
             {
@@ -121,6 +129,67 @@ namespace Xalia.Win32
                     break;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
+        }
+
+        static string[] tracked_properties = { "recurse_method" };
+
+        public override string[] GetTrackedProperties()
+        {
+            return tracked_properties;
+        }
+
+        public override void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
+        {
+            if (name == "recurse_method")
+            {
+                bool new_watching_children = new_value is UiDomString id && id.Value == "win32_tab";
+                if (new_watching_children != watching_children)
+                {
+                    watching_children = new_watching_children;
+                    if (new_watching_children)
+                        WatchChildren();
+                    else
+                        UnwatchChildren();
+                }
+            }
+            base.TrackedPropertyChanged(element, name, new_value);
+        }
+
+        private void WatchChildren()
+        {
+            Element.SetRecurseMethodProvider(this);
+            if (ItemCountKnown)
+                SetUiDomChildCount(ItemCount);
+            else
+                Utils.RunTask(DoFetchItemCount());
+        }
+
+        private void UnwatchChildren()
+        {
+            Element.UnsetRecurseMethodProvider(this);
+        }
+
+        protected override void ItemCountChanged(int newCount)
+        {
+            if (watching_children)
+                SetUiDomChildCount(newCount);
+            base.ItemCountChanged(newCount);
+        }
+
+        private void SetUiDomChildCount(int newCount)
+        {
+            if (Element.RecurseMethodChildCount == newCount)
+                return;
+
+            Element.SyncRecurseMethodChildren(new Range(1, newCount + 1),
+                (int key) => $"hwnd-{Hwnd}-{key}", CreateChildElement);
+        }
+
+        private UiDomElement CreateChildElement(int childId)
+        {
+            var element = Connection.CreateElementFromHwnd(Hwnd, childId);
+            element.AddProvider(new HwndTabItemProvider(this, childId), 0);
+            return element;
         }
 
         public void GetStyleNames(int style, List<string> names)

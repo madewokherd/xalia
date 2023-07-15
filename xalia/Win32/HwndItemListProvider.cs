@@ -16,6 +16,7 @@ namespace Xalia.Win32
         public HwndProvider HwndProvider { get; }
         public IntPtr Hwnd => HwndProvider.Hwnd;
         public UiDomElement Element => HwndProvider.Element;
+        public Win32Connection Connection => HwndProvider.Connection;
 
         public bool ItemCountKnown;
         public int ItemCount;
@@ -60,7 +61,7 @@ namespace Xalia.Win32
             return base.WatchProperty(element, expression);
         }
 
-        private async Task DoFetchItemCount()
+        public async Task DoFetchItemCount()
         {
             int result = await FetchItemCount();
             if (ItemCountKnown)

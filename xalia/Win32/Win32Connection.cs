@@ -97,6 +97,26 @@ namespace Xalia.Win32
             return element;
         }
 
+        internal UiDomElement CreateElementFromHwnd(IntPtr hwnd, int childId)
+        {
+            if (childId == CHILDID_SELF)
+                return CreateElementFromHwnd(hwnd);
+
+            var hwnd_ancestor = LookupElement(hwnd)?.ProviderByType<HwndProvider>();
+            if (hwnd_ancestor is null)
+                throw new InvalidOperationException("hwnd element must be created before child element");
+
+            string element_name = $"hwnd-{hwnd}-{childId}";
+
+            var element = new UiDomElement(element_name, Root);
+
+            element.AddProvider(new HwndMsaaChildProvider(element, hwnd_ancestor, childId));
+
+            elements_by_id.Add(element_name, element);
+
+            return element;
+        }
+
         public override void NotifyElementRemoved(UiDomElement element)
         {
             elements_by_id.Remove(element.DebugId);
@@ -400,6 +420,10 @@ namespace Xalia.Win32
             if ((idObject == OBJID_CLIENT || idObject == OBJID_WINDOW) && idChild == CHILDID_SELF)
             {
                 return LookupElement(hwnd);
+            }
+            if (idObject == OBJID_CLIENT && elements_by_id.TryGetValue($"hwnd-{hwnd}-{idChild}", out var element))
+            {
+                return element;
             }
             return null;
         }

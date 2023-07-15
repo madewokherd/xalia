@@ -39,13 +39,17 @@ namespace Xalia.Win32
 
         private static string[] tracked_properties = new string[] { "recurse_method" };
 
-        private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
+        private static Dictionary<string, string> child_property_aliases = new Dictionary<string, string>()
         {
             { "hwnd", "win32_hwnd" },
-            { "class_name", "win32_class_name" },
-            { "real_class_name", "win32_real_class_name" },
             { "pid", "win32_pid" },
             { "tid", "win32_tid" },
+        };
+
+        private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
+        {
+            { "class_name", "win32_class_name" },
+            { "real_class_name", "win32_real_class_name" },
             { "style", "win32_style" },
             { "x", "win32_x" },
             { "y", "win32_y" },
@@ -237,11 +241,9 @@ namespace Xalia.Win32
 
         public override void DumpProperties(UiDomElement element)
         {
-            Utils.DebugWriteLine($"  win32_hwnd: {Hwnd}");
+            ChildDumpProperties();
             Utils.DebugWriteLine($"  win32_class_name: \"{ClassName}\"");
             Utils.DebugWriteLine($"  win32_real_class_name: \"{RealClassName}\"");
-            Utils.DebugWriteLine($"  win32_pid: {Pid}");
-            Utils.DebugWriteLine($"  win32_tid: {Tid}");
             Utils.DebugWriteLine($"  win32_style: {FormatStyles()}");
             if (WindowRectKnown)
             {
@@ -260,22 +262,23 @@ namespace Xalia.Win32
             }
         }
 
+        internal void ChildDumpProperties()
+        {
+            Utils.DebugWriteLine($"  win32_hwnd: {Hwnd}");
+            Utils.DebugWriteLine($"  win32_pid: {Pid}");
+            Utils.DebugWriteLine($"  win32_tid: {Tid}");
+        }
+
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
             {
                 case "is_hwnd_element":
                     return UiDomBoolean.True;
-                case "win32_hwnd":
-                    return new UiDomInt((int)Hwnd);
                 case "win32_class_name":
                     return new UiDomString(ClassName);
                 case "win32_real_class_name":
                     return new UiDomString(RealClassName);
-                case "win32_pid":
-                    return new UiDomInt(Pid);
-                case "win32_tid":
-                    return new UiDomInt(Tid);
                 case "win32_style":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return new UiDomInt(Style);
@@ -314,6 +317,20 @@ namespace Xalia.Win32
                     }
                     break;
             }
+            return ChildEvaluateIdentifier(identifier, depends_on);
+        }
+
+        internal UiDomValue ChildEvaluateIdentifier(string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            switch (identifier)
+            {
+                case "win32_hwnd":
+                    return new UiDomInt((int)Hwnd);
+                case "win32_pid":
+                    return new UiDomInt(Pid);
+                case "win32_tid":
+                    return new UiDomInt(Tid);
+            }
             return UiDomUndefined.Instance;
         }
 
@@ -339,6 +356,13 @@ namespace Xalia.Win32
                 depends_on.Add((element, new IdentifierExpression("win32_style")));
                 return UiDomBoolean.FromBool((Style & style) == style);
             }
+            return ChildEvaluateIdentifierLate(identifier, depends_on);
+        }
+
+        internal UiDomValue ChildEvaluateIdentifierLate(string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (child_property_aliases.TryGetValue(identifier, out var aliased))
+                return Element.EvaluateIdentifier(identifier, Element.Root, depends_on);
             return UiDomUndefined.Instance;
         }
 
