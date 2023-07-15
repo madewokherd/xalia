@@ -28,7 +28,7 @@ namespace Xalia.Win32
         }
 
         public IntPtr Hwnd { get; }
-        public UiDomElement Element { get; private set; }
+        public UiDomElement Element { get; }
         public Win32Connection Connection { get; }
         public string ClassName { get; }
         public string RealClassName { get; }
@@ -346,11 +346,6 @@ namespace Xalia.Win32
         public override string[] GetTrackedProperties()
         {
             return tracked_properties;
-        }
-
-        public override void NotifyElementRemoved(UiDomElement element)
-        {
-            Element = null;
         }
 
         private void WatchChildren()
