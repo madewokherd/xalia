@@ -399,6 +399,7 @@ namespace Xalia.Win32
                         var element = GetElementForMsaaEvent(hwnd, idObject, idChild);
                         if (!(element is null))
                         {
+                            element.ProviderByType<HwndTabProvider>()?.MsaaLocationChange();
                             RecursiveLocationChange(element);
                         }
                         break;

@@ -17,6 +17,7 @@ namespace Xalia.Win32
         public IntPtr Hwnd => HwndProvider.Hwnd;
         public UiDomElement Element => HwndProvider.Element;
         public Win32Connection Connection => HwndProvider.Connection;
+        public int Pid => HwndProvider.Pid;
 
         public bool ItemCountKnown;
         public int ItemCount;

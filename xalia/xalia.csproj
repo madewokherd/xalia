@@ -198,6 +198,8 @@
     <Compile Include="Win32\HwndTrackBarProvider.cs" />
     <Compile Include="Win32\IWin32Styles.cs" />
     <Compile Include="Win32\Win32Connection.cs" />
+    <Compile Include="Win32\Win32ItemRects.cs" />
+    <Compile Include="Win32\Win32Rect.cs" />
     <Compile Include="XKeyCodes.cs" />
   </ItemGroup>
   <ItemGroup>

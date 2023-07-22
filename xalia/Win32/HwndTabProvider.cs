@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xalia.Gudl;
+using Xalia.Interop;
 using Xalia.UiDom;
 using Xalia.Util;
 using static Xalia.Interop.Win32;
@@ -61,6 +62,11 @@ namespace Xalia.Win32
 
         bool watching_children;
 
+        public RECT[] ItemRects { get; private set; }
+        public bool ItemRectsKnown { get; private set; }
+        private bool watching_item_rects;
+        private int item_rects_change_count;
+
         public override void DumpProperties(UiDomElement element)
         {
             if (SelectionIndexKnown)
@@ -115,6 +121,21 @@ namespace Xalia.Win32
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
 
+        public RECT[] GetItemRects(HashSet<(UiDomElement,GudlExpression)> depends_on)
+        {
+            if (!ItemCountKnown)
+            {
+                depends_on.Add((Element, new IdentifierExpression("win32_item_count")));
+                return null;
+            }
+
+            depends_on.Add((Element, new IdentifierExpression("win32_item_rects")));
+            if (ItemRectsKnown)
+                return ItemRects;
+
+            return null;
+        }
+
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
@@ -127,6 +148,13 @@ namespace Xalia.Win32
                     if (SelectionIndexKnown)
                         return new UiDomInt(SelectionIndex);
                     break;
+                case "win32_item_rects":
+                    {
+                        var rects = GetItemRects(depends_on);
+                        if (rects != null)
+                            return new Win32ItemRects(rects);
+                        break;
+                    }
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
         }
@@ -171,6 +199,7 @@ namespace Xalia.Win32
 
         protected override void ItemCountChanged(int newCount)
         {
+            InvalidateItemRects();
             if (watching_children)
                 SetUiDomChildCount(newCount);
             base.ItemCountChanged(newCount);
@@ -245,9 +274,70 @@ namespace Xalia.Win32
                             Utils.RunTask(FetchSelectionIndex());
                         }
                         return true;
+                    case "win32_item_rects":
+                        watching_item_rects = true;
+                        if (!ItemRectsKnown)
+                        {
+                            Utils.RunTask(FetchItemRects());
+                        }
+                        return true;
                 }
             }
             return base.WatchProperty(element, expression);
+        }
+
+        private async Task FetchItemRects()
+        {
+            int prev_change_count = item_rects_change_count;
+            RECT[] result = new RECT[ItemCount];
+            var mem = Win32RemoteProcessMemory.FromPid(Pid);
+            try {
+                using (var mem_result = mem.Alloc<RECT>())
+                {
+                    for (int i = 0; i < ItemCount; i++)
+                    {
+                        var msg_result = await SendMessageAsync(Hwnd, TCM_GETITEMRECT,
+                            new IntPtr(i), new IntPtr(unchecked((long)mem_result.Address)));
+                        if (item_rects_change_count != prev_change_count)
+                            return;
+                        if (msg_result == IntPtr.Zero)
+                            continue;
+                        result[i] = mem_result.Read<RECT>();
+                    }
+                }
+            }
+            finally
+            {
+                mem.Unref();
+            }
+            ItemRectsKnown = true;
+            ItemRects = result;
+            if (Element.MatchesDebugCondition())
+                Utils.DebugWriteLine($"{Element}.win32_item_rects: {new Win32ItemRects(result)}");
+            Element.PropertyChanged("win32_item_rects");
+        }
+
+        public void InvalidateItemRects()
+        {
+            item_rects_change_count++;
+            if (watching_item_rects)
+                Utils.RunTask(FetchItemRects());
+            else
+                ItemRectsKnown = false;
+        }
+
+        public override bool UnwatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_item_rects":
+                        watching_item_rects = false;
+                        return true;
+                }
+            }
+            return base.UnwatchProperty(element, expression);
         }
 
         private async Task FetchSelectionIndex()
@@ -267,9 +357,30 @@ namespace Xalia.Win32
 
         internal void MsaaSelectionChange(int idChild)
         {
-            SelectionIndex = idChild - 1;
+            // If the selection changed to a different row, item rects may have changed.
+            int new_selection_index = idChild - 1;
+            if (ItemRectsKnown &&
+                0 < SelectionIndex && SelectionIndex < ItemRects.Length &&
+                0 < new_selection_index && new_selection_index < ItemRects.Length)
+            {
+                var old_r = ItemRects[SelectionIndex];
+                var new_r = ItemRects[new_selection_index];
+                if ((HwndProvider.Style & TCS_VERTICAL) != 0 ?
+                    (old_r.left != new_r.left) :
+                    (old_r.top != new_r.top))
+                    InvalidateItemRects();
+            }
+            else
+                InvalidateItemRects();
+
+            SelectionIndex = new_selection_index;
             SelectionIndexKnown = true;
             Element.PropertyChanged("win32_selection_index", SelectionIndex);
+        }
+
+        internal void MsaaLocationChange()
+        {
+            InvalidateItemRects();
         }
     }
 }
