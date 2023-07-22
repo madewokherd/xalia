@@ -19,6 +19,10 @@ namespace Xalia.Win32
         {
             if (Parent.SelectionIndexKnown)
                 Utils.DebugWriteLine($"  selected: {Parent.SelectionIndex == ChildId - 1}");
+            if (Parent.ItemRectsKnown && ChildId <= Parent.ItemRects.Length)
+            {
+                Utils.DebugWriteLine($"  rect: {new Win32Rect(Parent.ItemRects[ChildId - 1])}");
+            }
             base.DumpProperties(element);
         }
 
@@ -41,6 +45,43 @@ namespace Xalia.Win32
                     if (Parent.SelectionIndexKnown)
                         return UiDomBoolean.FromBool(Parent.SelectionIndex == ChildId - 1);
                     break;
+                case "x":
+                    {
+                        depends_on.Add((Parent.Element, new IdentifierExpression("win32_pos")));
+                        var rects = Parent.GetItemRects(depends_on);
+                        if (ChildId <= rects.Length && Parent.HwndProvider.WindowRectKnown)
+                            return new UiDomInt(Parent.HwndProvider.X + rects[ChildId - 1].left);
+                        break;
+                    }
+                case "y":
+                    {
+                        depends_on.Add((Parent.Element, new IdentifierExpression("win32_pos")));
+                        var rects = Parent.GetItemRects(depends_on);
+                        if (ChildId <= rects.Length && Parent.HwndProvider.WindowRectKnown)
+                            return new UiDomInt(Parent.HwndProvider.Y + rects[ChildId - 1].top);
+                        break;
+                    }
+                case "width":
+                    {
+                        var rects = Parent.GetItemRects(depends_on);
+                        if (ChildId <= rects.Length)
+                            return new UiDomInt(rects[ChildId - 1].right - rects[ChildId - 1].left);
+                        break;
+                    }
+                case "height":
+                    {
+                        var rects = Parent.GetItemRects(depends_on);
+                        if (ChildId <= rects.Length)
+                            return new UiDomInt(rects[ChildId - 1].bottom - rects[ChildId - 1].top);
+                        break;
+                    }
+                case "rect":
+                    {
+                        var rects = Parent.GetItemRects(depends_on);
+                        if (ChildId <= rects.Length)
+                            return new Win32Rect(rects[ChildId - 1]);
+                        break;
+                    }
             }
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
