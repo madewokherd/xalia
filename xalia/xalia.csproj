@@ -54,11 +54,15 @@
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <None Include="..\.editorconfig">
       <Link>.editorconfig</Link>
     </None>
     <None Include="App.config" />
+    <None Include="app.manifest" />
     <None Include="main.gudl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
