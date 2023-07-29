@@ -33,6 +33,7 @@ namespace Xalia.Win32
             switch (identifier)
             {
                 case "is_hwnd_tab_item":
+                case "is_hwnd_subelement":
                     return UiDomBoolean.True;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
@@ -88,6 +89,8 @@ namespace Xalia.Win32
                 case "tabitem":
                 case "page_tab":
                 case "pagetab":
+                case "enabled":
+                case "visible":
                     return UiDomBoolean.True;
                 case "role":
                 case "control_type":
