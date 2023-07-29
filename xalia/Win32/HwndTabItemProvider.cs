@@ -26,6 +26,8 @@ namespace Xalia.Win32
             base.DumpProperties(element);
         }
 
+        static readonly UiDomEnum role = new UiDomEnum(new[] { "tab_item", "tabitem", "page_tab", "pagetab" });
+
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
@@ -82,6 +84,14 @@ namespace Xalia.Win32
                             return new Win32Rect(rects[ChildId - 1]);
                         break;
                     }
+                case "tab_item":
+                case "tabitem":
+                case "page_tab":
+                case "pagetab":
+                    return UiDomBoolean.True;
+                case "role":
+                case "control_type":
+                    return role;
             }
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
