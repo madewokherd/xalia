@@ -258,9 +258,9 @@ namespace Xalia.AtSpi2
                 if (name == "push_button")
                     names = new[] { "push_button", "pushbutton", "button" };
                 else if (name == "page_tab")
-                    names = new[] { "page_tab", "pagetab", "tab" };
+                    names = new[] { "page_tab", "pagetab", "tab_item", "tabitem" };
                 else if (name == "page_tab_list")
-                    names = new[] { "page_tab_list", "pagetablist", "tab_item", "tabitem" };
+                    names = new[] { "page_tab_list", "pagetablist", "tab" };
                 else if (name == "text")
                     names = new[] { "text", "text_box", "textbox", "edit" };
                 else if (name.Contains("_"))
