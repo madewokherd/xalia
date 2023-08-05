@@ -202,6 +202,8 @@
     <Compile Include="Win32\HwndTabProvider.cs" />
     <Compile Include="Win32\HwndTrackBarProvider.cs" />
     <Compile Include="Win32\IWin32Styles.cs" />
+    <Compile Include="Win32\NonclientProvider.cs" />
+    <Compile Include="Win32\NonclientScrollProvider.cs" />
     <Compile Include="Win32\Win32Connection.cs" />
     <Compile Include="Win32\Win32ItemRects.cs" />
     <Compile Include="Win32\Win32Rect.cs" />

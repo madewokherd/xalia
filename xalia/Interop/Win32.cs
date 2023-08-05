@@ -307,6 +307,8 @@ namespace Xalia.Interop
 
         public const int OBJID_WINDOW = 0;
         public const int OBJID_CLIENT = -4;
+        public const int OBJID_VSCROLL = -5;
+        public const int OBJID_HSCROLL = -6;
         public const int OBJID_QUERYCLASSNAMEIDX = -12;
 
         public const int CHILDID_SELF = 0;

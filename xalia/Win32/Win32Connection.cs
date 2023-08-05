@@ -56,6 +56,10 @@ namespace Xalia.Win32
                     if (idChild == CHILDID_SELF)
                         goto case OBJID_WINDOW;
                     return $"hwnd-{hwnd}-{idChild}";
+                case OBJID_VSCROLL:
+                    return $"NonclientVScroll-{hwnd}";
+                case OBJID_HSCROLL:
+                    return $"NonclientHScroll-{hwnd}";
             }
             return null;
         }
@@ -123,6 +127,16 @@ namespace Xalia.Win32
                             throw new InvalidOperationException("hwnd element must be created before child element");
 
                         element.AddProvider(new HwndMsaaChildProvider(element, hwnd_ancestor, idChild));
+                        break;
+                    }
+                case OBJID_VSCROLL:
+                case OBJID_HSCROLL:
+                    {
+                        var hwnd_ancestor = LookupElement(hwnd)?.ProviderByType<HwndProvider>();
+                        if (hwnd_ancestor is null)
+                            throw new InvalidOperationException("hwnd element must be created before child element");
+
+                        element.AddProvider(new NonclientScrollProvider(hwnd_ancestor, element, idObject == OBJID_VSCROLL));
                         break;
                     }
             }

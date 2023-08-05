@@ -40,7 +40,9 @@ namespace Xalia.Win32
 
         private bool _watchingChildren;
 
-        private static string[] tracked_properties = new string[] { "recurse_method" };
+        private bool _useNonclient;
+
+        private static string[] tracked_properties = new string[] { "recurse_method", "win32_use_nonclient" };
 
         private static Dictionary<string, string> child_property_aliases = new Dictionary<string, string>()
         {
@@ -351,6 +353,8 @@ namespace Xalia.Win32
                     if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
                         return new UiDomString("win32");
                     break;
+                case "win32_use_nonclient":
+                    return element.EvaluateIdentifier("recurse", element.Root, depends_on);
                 case "enabled":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return UiDomBoolean.FromBool((Style & WS_DISABLED) == 0);
@@ -489,6 +493,10 @@ namespace Xalia.Win32
                     else
                         UnwatchChildren();
                     break;
+                case "win32_use_nonclient":
+                    _useNonclient = new_value.ToBool();
+                    RefreshNonclientChildren();
+                    break;
             }
         }
 
@@ -607,6 +615,8 @@ namespace Xalia.Win32
                     Utils.DebugWriteLine($"{Element}.win32_style: {FormatStyles()}");
                 }
                 Element.PropertyChanged("win32_style");
+                if (_useNonclient)
+                    RefreshNonclientChildren();
             }
             Element.ProviderByType<HwndButtonProvider>()?.MsaaStateChange();
         }
@@ -650,6 +660,39 @@ namespace Xalia.Win32
                     if (Element.MatchesDebugCondition())
                         Utils.DebugWriteLine($"{Element}.win32_(x,y,width,height): {X},{Y},{Width},{Height}");
                     Element.PropertyChanged("win32_pos");
+                }
+            }
+        }
+
+        private void RefreshNonclientChildren()
+        {
+            bool hasVScrollChild = _useNonclient && (Style & WS_VSCROLL) != 0;
+            var vs = Connection.LookupElement(Hwnd, OBJID_VSCROLL);
+            if (hasVScrollChild != !(vs is null))
+            {
+                if (hasVScrollChild)
+                {
+                    var child = Connection.CreateElement(Hwnd, OBJID_VSCROLL);
+                    Element.AddChild(Element.Children.Count, child);
+                }
+                else
+                {
+                    Element.RemoveChild(Element.Children.IndexOf(vs));
+                }
+            }
+
+            bool hasHScrollChild = _useNonclient && (Style & WS_HSCROLL) != 0;
+            var hs = Connection.LookupElement(Hwnd, OBJID_HSCROLL);
+            if (hasHScrollChild != !(hs is null))
+            {
+                if (hasHScrollChild)
+                {
+                    var child = Connection.CreateElement(Hwnd, OBJID_HSCROLL);
+                    Element.AddChild(Element.Children.Count, child);
+                }
+                else
+                {
+                    Element.RemoveChild(Element.Children.IndexOf(hs));
                 }
             }
         }
