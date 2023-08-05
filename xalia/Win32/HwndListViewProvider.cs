@@ -12,6 +12,13 @@ namespace Xalia.Win32
     {
         internal HwndListViewProvider(HwndProvider hwndProvider) : base(hwndProvider) { }
 
+        private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
+        {
+            { "view", "win32_view" },
+            { "control_type", "win32_view" },
+            { "role", "win32_view" },
+        };
+
         static string[] style_names =
         {
             "nosortheader",
@@ -41,6 +48,38 @@ namespace Xalia.Win32
                     continue;
                 style_flags[style_names[i]] = 0x8000 >> i;
             }
+        }
+
+        bool CheckingComCtl6;
+        bool IsComCtl6;
+        bool IsComCtl6Known;
+
+        // TODO: Watch for notification of view change?
+        bool fetching_view;
+        int ViewInt;
+        bool ViewKnown;
+
+        private static UiDomValue ViewFromInt(int view)
+        {
+            switch (view)
+            {
+                case LV_VIEW_ICON:
+                    return new UiDomEnum(new string[] { "icon" });
+                case LV_VIEW_DETAILS:
+                    return new UiDomEnum(new string[] { "report", "details", "table" });
+                case LV_VIEW_SMALLICON:
+                    return new UiDomEnum(new string[] { "small_icon", "smallicon" });
+                case LV_VIEW_LIST:
+                    return new UiDomEnum(new string[] { "list" });
+                case LV_VIEW_TILE:
+                    return new UiDomEnum(new string[] { "tile" });
+            }
+            return UiDomUndefined.Instance;
+        }
+
+        private static UiDomValue ViewFromStyle(int style)
+        {
+            return ViewFromInt(style & LVS_TYPEMASK);
         }
 
         public void GetStyleNames(int style, List<string> names)
@@ -73,6 +112,24 @@ namespace Xalia.Win32
             }
         }
 
+        public override void DumpProperties(UiDomElement element)
+        {
+            if (IsComCtl6Known)
+            {
+                Utils.DebugWriteLine($"  win32_is_comctl6: {IsComCtl6}");
+                if (IsComCtl6)
+                {
+                    if (ViewKnown)
+                        Utils.DebugWriteLine($"  win32_view: {ViewFromInt(ViewInt)}");
+                }
+                else
+                {
+                    Utils.DebugWriteLine($"  win32_view: {ViewFromStyle(HwndProvider.Style)}");
+                }
+            }
+            base.DumpProperties(element);
+        }
+
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
@@ -80,6 +137,27 @@ namespace Xalia.Win32
                 case "is_hwnd_listview":
                 case "is_hwnd_list_view":
                     return UiDomBoolean.True;
+                case "win32_is_comctl6":
+                    if (IsComCtl6Known)
+                        return UiDomBoolean.FromBool(IsComCtl6);
+                    return UiDomUndefined.Instance;
+                case "win32_view":
+                    if (!IsComCtl6Known)
+                    {
+                        depends_on.Add((element, new IdentifierExpression("win32_is_comctl6")));
+                        return UiDomUndefined.Instance;
+                    }
+                    if (!IsComCtl6)
+                    {
+                        depends_on.Add((element, new IdentifierExpression("win32_style")));
+                        return ViewFromStyle(HwndProvider.Style);
+                    }
+                    depends_on.Add((element, new IdentifierExpression("win32_view")));
+                    if (ViewKnown)
+                    {
+                        return ViewFromInt(ViewInt);
+                    }
+                    return UiDomUndefined.Instance;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
         }
@@ -91,6 +169,20 @@ namespace Xalia.Win32
                 case "aligntop":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return UiDomBoolean.FromBool((HwndProvider.Style & LVS_ALIGNMASK) == LVS_ALIGNTOP);
+                case "icon":
+                case "report":
+                case "details":
+                case "table":
+                case "smallicon":
+                case "small_icon":
+                case "list":
+                case "tile":
+                    return element.EvaluateIdentifier("win32_view", element.Root, depends_on).
+                        EvaluateIdentifier(identifier, element.Root, depends_on);
+            }
+            if (property_aliases.TryGetValue(identifier, out var aliased))
+            {
+                return element.EvaluateIdentifier(aliased, element.Root, depends_on);
             }
             if (style_flags.TryGetValue(identifier, out var flag))
             {
@@ -114,6 +206,78 @@ namespace Xalia.Win32
                 return 0;
             }
             return Utils.TruncatePtr(result);
+        }
+        public override bool WatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_is_comctl6":
+                        if (!CheckingComCtl6)
+                        {
+                            Utils.RunTask(CheckComCtl6());
+                            CheckingComCtl6 = true;
+                        }
+                        return true;
+                    case "win32_view":
+                        if (!fetching_view)
+                        {
+                            Utils.RunTask(FetchView());
+                            fetching_view = true;
+                        }
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        private async Task CheckComCtl6()
+        {
+            // comctl6 will return -1 to indicate error, earlier versions should not recognize the message and return 0
+            IntPtr result;
+            try
+            {
+                result = await SendMessageAsync(Hwnd, LVM_SETVIEW, new IntPtr(-1), IntPtr.Zero);
+            }
+            catch (Win32Exception ex)
+            {
+                if (!HwndProvider.IsExpectedException(ex))
+                    throw;
+                return;
+            }
+
+            if (result == IntPtr.Zero)
+            {
+                IsComCtl6 = false;
+                IsComCtl6Known = true;
+                Element.PropertyChanged("win32_is_comctl6", "false");
+            }
+            else
+            {
+                IsComCtl6 = true;
+                IsComCtl6Known = true;
+                Element.PropertyChanged("win32_is_comctl6", "true");
+            }
+        }
+
+        private async Task FetchView()
+        {
+            IntPtr result;
+            try
+            {
+                result = await SendMessageAsync(Hwnd, LVM_GETVIEW, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch (Win32Exception ex)
+            {
+                if (!HwndProvider.IsExpectedException(ex))
+                    throw;
+                return;
+            }
+
+            ViewKnown = true;
+            ViewInt = Utils.TruncatePtr(result);
+            Element.PropertyChanged("win32_view", ViewFromInt(ViewInt));
         }
     }
 }
