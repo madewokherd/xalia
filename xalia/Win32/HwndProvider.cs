@@ -27,6 +27,9 @@ namespace Xalia.Win32
             Utils.RunTask(DiscoverProviders());
         }
 
+        private static readonly UiDomEnum window_role = new UiDomEnum(new string[] { "window" });
+        private static readonly UiDomEnum pane_role = new UiDomEnum(new string[] { "pane" });
+
         public IntPtr Hwnd { get; }
         public UiDomElement Element { get; }
         public Win32Connection Connection { get; }
@@ -348,6 +351,17 @@ namespace Xalia.Win32
                 case "focusable":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return UiDomBoolean.FromBool((Style & (WS_SYSMENU | WS_TABSTOP)) == WS_TABSTOP);
+                case "control_type":
+                case "role":
+                    // FIXME: Account for window styles?
+                    if (element.Parent is UiDomRoot)
+                        return window_role;
+                    else
+                        return pane_role;
+                case "window":
+                case "pane":
+                    return element.EvaluateIdentifier("role", element.Root, depends_on).
+                        EvaluateIdentifier(identifier, element.Root, depends_on);
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, element.Root, depends_on);
