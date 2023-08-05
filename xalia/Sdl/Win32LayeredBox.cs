@@ -32,6 +32,8 @@ namespace Xalia.Sdl
             // For some reason, window creation messes with the styles we passed in.
             SetWindowLong(_hwnd, GWL_EXSTYLE, (IntPtr)exstyle);
             SetWindowLong(_hwnd, GWL_STYLE, (IntPtr)style);
+            // Set HWND_TOPMOST early because, if we're not started with UIAccess,
+            // this will probably be the only time we have permission to do that.
             SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         }
 
