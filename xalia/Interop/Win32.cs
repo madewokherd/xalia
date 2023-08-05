@@ -613,6 +613,13 @@ namespace Xalia.Interop
         public struct RECT
         {
             public int left, top, right, bottom;
+            public int width => right - left;
+            public int height => bottom - top;
+
+            public bool IsEmpty()
+            {
+                return right <= left || bottom <= top;
+            }
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -901,6 +908,19 @@ namespace Xalia.Interop
         public const int SIF_ALL = SIF_RANGE|SIF_PAGE|SIF_POS|SIF_TRACKPOS;
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct SCROLLBARINFO
+        {
+            public int cbSize;
+            public RECT rcScrollBar;
+            public int dxyLineButton;
+            public int xyThumbTop;
+            public int xyThumbBottom;
+            public int reserved;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst=6)]
+            public int[] rgstate;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         public struct SCROLLINFO
         {
             public int cbSize;
@@ -918,6 +938,9 @@ namespace Xalia.Interop
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public extern static bool GetScrollInfo(IntPtr hwnd, int nBar, ref SCROLLINFO si);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        public extern static bool GetScrollBarInfo(IntPtr hwnd, int idObject, ref SCROLLBARINFO sbi);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public extern static int SetScrollInfo(IntPtr hwnd, int nBar, ref SCROLLINFO lpsi, bool redraw);

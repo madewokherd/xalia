@@ -631,6 +631,15 @@ namespace Xalia.Win32
             {
                 WindowRectKnown = false;
             }
+            if (_useNonclient)
+            {
+                Connection.LookupElement(Hwnd, OBJID_VSCROLL)?.
+                    ProviderByType<NonclientScrollProvider>()?.
+                    ParentLocationChanged();
+                Connection.LookupElement(Hwnd, OBJID_HSCROLL)?.
+                    ProviderByType<NonclientScrollProvider>()?.
+                    ParentLocationChanged();
+            }
         }
 
         public void MsaaChildWindowAdded()
