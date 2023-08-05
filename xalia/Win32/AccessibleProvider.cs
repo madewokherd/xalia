@@ -223,12 +223,6 @@ namespace Xalia.Win32
             return UiDomUndefined.Instance;
         }
 
-        public override void NotifyElementRemoved(UiDomElement element)
-        {
-            Element = null;
-            IAccessible = null;
-        }
-
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
