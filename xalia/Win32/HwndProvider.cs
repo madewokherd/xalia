@@ -173,6 +173,9 @@ namespace Xalia.Win32
                 case "msctls_trackbar32":
                     Element.AddProvider(new HwndTrackBarProvider(this), 0);
                     return;
+                case "SysListView32":
+                    Element.AddProvider(new HwndListViewProvider(this), 0);
+                    return;
                 case "SysTabControl32":
                     Element.AddProvider(new HwndTabProvider(this), 0);
                     return;
@@ -200,6 +203,9 @@ namespace Xalia.Win32
                     return;
                 case 65536 + 18:
                     Element.AddProvider(new HwndTrackBarProvider(this), 0);
+                    return;
+                case 65536 + 19:
+                    Element.AddProvider(new HwndListViewProvider(this), 0);
                     return;
             }
         }

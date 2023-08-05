@@ -1006,6 +1006,8 @@ namespace Xalia.Interop
         public const int LVS_SMALLICON = 0x2;
         public const int LVS_LIST = 0x3;
         public const int LVS_TYPEMASK = 0x3;
+        public const int LVS_ALIGNTOP = 0x0;
+        public const int LVS_ALIGNMASK = 0xc00;
 
         public const int LVM_FIRST = 0x1000;
         public const int LVM_GETITEMCOUNT = LVM_FIRST + 4;

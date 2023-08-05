@@ -193,6 +193,7 @@
     <Compile Include="Win32\HwndButtonProvider.cs" />
     <Compile Include="Win32\HwndComboBoxProvider.cs" />
     <Compile Include="Win32\HwndDialogProvider.cs" />
+    <Compile Include="Win32\HwndListViewProvider.cs" />
     <Compile Include="Win32\HwndMsaaChildProvider.cs" />
     <Compile Include="Win32\HwndProvider.cs" />
     <Compile Include="Win32\CommandThread.cs" />
