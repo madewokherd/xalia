@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.Interop;
@@ -257,7 +258,17 @@ namespace Xalia.Win32
 
         protected async override Task<int> FetchItemCount()
         {
-            var result = await SendMessageAsync(Hwnd, TCM_GETITEMCOUNT, IntPtr.Zero, IntPtr.Zero);
+            IntPtr result;
+            try
+            {
+                result = await SendMessageAsync(Hwnd, TCM_GETITEMCOUNT, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch (Win32Exception ex)
+            {
+                if (!HwndProvider.IsExpectedException(ex))
+                    throw;
+                return 0;
+            }
             return Utils.TruncatePtr(result);
         }
 
@@ -306,6 +317,12 @@ namespace Xalia.Win32
                     }
                 }
             }
+            catch (Win32Exception ex)
+            {
+                if (!HwndProvider.IsExpectedException(ex))
+                    throw;
+                return;
+            }
             finally
             {
                 mem.Unref();
@@ -342,7 +359,17 @@ namespace Xalia.Win32
 
         private async Task FetchSelectionIndex()
         {
-            var res = await SendMessageAsync(Hwnd, TCM_GETCURSEL, IntPtr.Zero, IntPtr.Zero);
+            IntPtr res;
+            try
+            {
+                res = await SendMessageAsync(Hwnd, TCM_GETCURSEL, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch (Win32Exception ex)
+            {
+                if (!HwndProvider.IsExpectedException(ex))
+                    throw;
+                return;
+            }
             if (SelectionIndexKnown)
             {
                 // If we already know this, it must have come from an MSAA event and can be
