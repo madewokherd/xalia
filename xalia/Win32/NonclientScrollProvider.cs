@@ -9,7 +9,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class NonclientScrollProvider : NonclientProvider
+    internal class NonclientScrollProvider : NonclientProvider, IUiDomValueProvider
     {
         public NonclientScrollProvider(HwndProvider hwndProvider, UiDomElement element, bool vertical) : base(hwndProvider, element)
         {
@@ -179,7 +179,7 @@ namespace Xalia.Win32
                     // win32 does not provide a way to determine this, so guess based on the size and nPage
                     if (SbiKnown(SBI_LOCATION) && _siKnown)
                     {
-                        return new UiDomInt(CalculateMinimumIncrement());
+                        return new UiDomInt(CalculateMinimumIncrement(_sbi, _si));
                     }
                     return UiDomUndefined.Instance;
             }
@@ -188,13 +188,13 @@ namespace Xalia.Win32
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
 
-        private int CalculateMinimumIncrement()
+        private int CalculateMinimumIncrement(SCROLLBARINFO sbi, SCROLLINFO si)
         {
-            var scrollbar_size = Vertical ? _sbi.rcScrollBar.height : _sbi.rcScrollBar.width;
+            var scrollbar_size = Vertical ? sbi.rcScrollBar.height : sbi.rcScrollBar.width;
 
             var desired_scroll_pixels = 25.0 * HwndProvider.GetWindowMonitorDpi(Vertical) / 96.0;
 
-            var result = (int)Math.Round(desired_scroll_pixels * _si.nPage / scrollbar_size);
+            var result = (int)Math.Round(desired_scroll_pixels * si.nPage / scrollbar_size);
 
             if (result == 0)
                 return 1;
@@ -408,6 +408,88 @@ namespace Xalia.Win32
                 Utils.RunTask(RefreshScrollInfo());
             else
                 _siKnown = false;
+        }
+
+        public async Task<double> GetMinimumIncrementAsync(UiDomElement element)
+        {
+            try
+            {
+                return await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    var sbi = new SCROLLBARINFO();
+                    sbi.cbSize = Marshal.SizeOf<SCROLLBARINFO>();
+                    if (!GetScrollBarInfo(Hwnd, Vertical ? OBJID_VSCROLL : OBJID_HSCROLL, ref sbi))
+                        throw new Win32Exception();
+
+                    var si = new SCROLLINFO();
+                    si.cbSize = Marshal.SizeOf<SCROLLINFO>();
+                    si.fMask = SIF_PAGE;
+                    if (!GetScrollInfo(Hwnd, Vertical ? SB_VERT : SB_HORZ, ref si))
+                        throw new Win32Exception();
+
+                    return CalculateMinimumIncrement(sbi, si);
+                }, Tid);
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return 1.0;
+            }
+        }
+
+        public async Task SetValueAsync(int value)
+        {
+            int msg = Vertical ? WM_VSCROLL : WM_HSCROLL;
+            await SendMessageAsync(Hwnd, msg, MAKEWPARAM(SB_THUMBTRACK, unchecked((ushort)value)), IntPtr.Zero);
+            await SendMessageAsync(Hwnd, msg, MAKEWPARAM(SB_THUMBPOSITION, unchecked((ushort)value)), IntPtr.Zero); ;
+            await SendMessageAsync(Hwnd, msg, MAKEWPARAM(SB_ENDSCROLL, 0), IntPtr.Zero);
+        }
+
+        double _offsetRemainder;
+
+        public async Task<bool> OffsetValueAsync(UiDomElement element, double offset)
+        {
+            try
+            {
+                SCROLLINFO si = await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    var bg_si = new SCROLLINFO();
+                    bg_si.cbSize = Marshal.SizeOf<SCROLLINFO>();
+                    bg_si.fMask = SIF_POS | SIF_PAGE | SIF_RANGE;
+                    if (!GetScrollInfo(Hwnd, Vertical ? SB_VERT : SB_HORZ, ref bg_si))
+                        throw new Win32Exception();
+
+                    return bg_si;
+                }, Tid);
+
+                if (si.max_value <= si.nMin)
+                    return false;
+
+                double new_pos = si.nPos + offset + _offsetRemainder;
+
+                if (new_pos < si.nMin)
+                    new_pos = si.nMin;
+                else if (new_pos > si.max_value)
+                    new_pos = si.max_value;
+
+                int new_pos_int = (int)Math.Round(new_pos);
+
+                if (new_pos_int != si.nPos)
+                {
+                    await SetValueAsync(new_pos_int);
+                }
+
+                _offsetRemainder = new_pos - new_pos_int;
+
+                return true;
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return false;
+            }
         }
     }
 }
