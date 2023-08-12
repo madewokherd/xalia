@@ -17,6 +17,7 @@ namespace Xalia.Interop
         const string KERNEL_LIB = "kernel32";
         const string GDI_LIB = "gdi32";
         const string USER_LIB = "user32";
+        const string SHCORE_LIB = "shcore";
         const string OLEACC_LIB = "oleacc";
 
         // Wine extension
@@ -249,6 +250,21 @@ namespace Xalia.Interop
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern bool SetForegroundWindow(IntPtr hwnd);
 
+        public const int MONITOR_DEFAULTTONULL = 0;
+        public const int MONITOR_DEFAULTTOPRIMARY = 1;
+        public const int MONITOR_DEFAULTTONEAREST = 2;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr MonitorFromWindow(IntPtr hwnd, int dwFlags);
+
+        public const int MDT_EFFECTIVE_DPI = 0;
+        public const int MDT_ANGULAR_DPI = 1;
+        public const int MDT_RAW_DPI = 2;
+        public const int MDT_DEFAULT = MDT_EFFECTIVE_DPI;
+
+        [DllImport(SHCORE_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType, out int dpix, out int dpiy);
+
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
         public delegate void WINEVENTPROC(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject,
             int idChild, int idEventThread, int dwmsEventTime);
@@ -300,6 +316,7 @@ namespace Xalia.Interop
         public const uint EVENT_OBJECT_STATECHANGE = 0x800A;
         public const uint EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
         public const uint EVENT_OBJECT_NAMECHANGE = 0x800C;
+        public const uint EVENT_OBJECT_VALUECHANGE = 0x800E;
         public const uint EVENT_OBJECT_CLOAKED = 0x8017;
         public const uint EVENT_OBJECT_UNCLOAKED = 0x8018;
 
@@ -934,6 +951,7 @@ namespace Xalia.Interop
             public int nPage;
             public int nPos;
             public int nTrackPos;
+            public int max_value => nMax - nPage + 1; // The actual maximum value of nPos
         }
 
         public const int SB_HORZ = 0;

@@ -705,5 +705,25 @@ namespace Xalia.Win32
                 }
             }
         }
+
+        internal int GetWindowMonitorDpi(bool vertical)
+        {
+            IntPtr monitor = MonitorFromWindow(Hwnd, MONITOR_DEFAULTTONEAREST);
+
+            try
+            {
+                int hr = GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, out int dpix, out int dpiy);
+
+                Marshal.ThrowExceptionForHR(hr);
+
+                return vertical ? dpiy : dpix;
+            }
+            catch (Win32Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return 96;
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -26,6 +27,10 @@ namespace Xalia.Win32
             { "width", "win32_width" },
             { "height", "win32_height" },
             { "state", "win32_state" },
+            { "minimum_value", "win32_minimum_value" },
+            { "maximum_value", "win32_maximum_value" },
+            { "large_change", "win32_page" },
+            { "value", "win32_value" },
         };
 
         public bool Vertical { get; }
@@ -38,6 +43,11 @@ namespace Xalia.Win32
         private int _sbiKnown; // bitfield of 1<<SBI_*
         private int[] _sbiChangeCount = new int[SBI_NUM_CONSTANTS]; // indexed by SBI_*
         private SCROLLBARINFO _sbi;
+
+        private bool _watchingSi;
+        private bool _siKnown;
+        private int _siChangeCount;
+        private SCROLLINFO _si;
 
         private bool SbiKnown(int which)
         {
@@ -75,6 +85,13 @@ namespace Xalia.Win32
                 Utils.DebugWriteLine($"  win32_pos: ({_sbi.rcScrollBar.left},{_sbi.rcScrollBar.top})-({_sbi.rcScrollBar.right},{_sbi.rcScrollBar.bottom})");
             if (SbiKnown(SBI_STATE))
                 Utils.DebugWriteLine($"  win32_state: {_sbi.rgstate[0]}");
+            if (_siKnown)
+            {
+                Utils.DebugWriteLine($"  win32_minimum_value: {_si.nMin}");
+                Utils.DebugWriteLine($"  win32_maximum_value: {_si.max_value}");
+                Utils.DebugWriteLine($"  win32_page: {_si.nPage}");
+                Utils.DebugWriteLine($"  win32_value: {_si.nPos}");
+            }
             base.DumpProperties(element);
         }
 
@@ -114,6 +131,26 @@ namespace Xalia.Win32
                     if (SbiKnown(SBI_STATE))
                         return new UiDomInt(_sbi.rgstate[0]);
                     return UiDomUndefined.Instance;
+                case "win32_minimum_value":
+                    depends_on.Add((element, new IdentifierExpression("win32_value")));
+                    if (_siKnown)
+                        return new UiDomInt(_si.nMin);
+                    return UiDomUndefined.Instance;
+                case "win32_maximum_value":
+                    depends_on.Add((element, new IdentifierExpression("win32_value")));
+                    if (_siKnown)
+                        return new UiDomInt(_si.max_value);
+                    return UiDomUndefined.Instance;
+                case "win32_page":
+                    depends_on.Add((element, new IdentifierExpression("win32_value")));
+                    if (_siKnown)
+                        return new UiDomInt(_si.nPage);
+                    return UiDomUndefined.Instance;
+                case "win32_value":
+                    depends_on.Add((element, new IdentifierExpression("win32_value")));
+                    if (_siKnown)
+                        return new UiDomInt(_si.nPos);
+                    return UiDomUndefined.Instance;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
         }
@@ -135,10 +172,34 @@ namespace Xalia.Win32
                     if (SbiKnown(SBI_STATE))
                         return UiDomBoolean.FromBool((_sbi.rgstate[0] & (STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN)) == 0);
                     return UiDomUndefined.Instance;
+                case "minimum_increment":
+                case "small_change":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    depends_on.Add((element, new IdentifierExpression("win32_value")));
+                    // win32 does not provide a way to determine this, so guess based on the size and nPage
+                    if (SbiKnown(SBI_LOCATION) && _siKnown)
+                    {
+                        return new UiDomInt(CalculateMinimumIncrement());
+                    }
+                    return UiDomUndefined.Instance;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, element.Root, depends_on);
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
+        }
+
+        private int CalculateMinimumIncrement()
+        {
+            var scrollbar_size = Vertical ? _sbi.rcScrollBar.height : _sbi.rcScrollBar.width;
+
+            var desired_scroll_pixels = 25.0 * HwndProvider.GetWindowMonitorDpi(Vertical) / 96.0;
+
+            var result = (int)Math.Round(desired_scroll_pixels * _si.nPage / scrollbar_size);
+
+            if (result == 0)
+                return 1;
+
+            return result;
         }
 
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)
@@ -161,6 +222,13 @@ namespace Xalia.Win32
                                 Utils.RunTask(RefreshScrollBarInfo());
                             return true;
                         }
+                    case "win32_value":
+                        {
+                            _watchingSi = true;
+                            if (!_siKnown)
+                                Utils.RunTask(RefreshScrollInfo());
+                            return true;
+                        }
                 }
             }
             return base.WatchProperty(element, expression);
@@ -180,6 +248,11 @@ namespace Xalia.Win32
                     case "win32_state":
                         {
                             ClearWatchingSbi(SBI_STATE);
+                            return true;
+                        }
+                    case "win32_value":
+                        {
+                            _watchingSi = false;
                             return true;
                         }
                 }
@@ -272,12 +345,69 @@ namespace Xalia.Win32
         public void ParentLocationChanged()
         {
             SbiChanged(SBI_LOCATION);
-            SbiChanged(SBI_STATE); // Sometimes resizing enables/disables scrollbar with no state changed event
         }
 
         public void MsaaStateChange()
         {
             SbiChanged(SBI_STATE);
+        }
+
+        private async Task RefreshScrollInfo()
+        {
+            int old_change_count = _siChangeCount;
+            SCROLLINFO new_si;
+            try
+            {
+                new_si = await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    if (old_change_count != _siChangeCount)
+                        return default;
+                    var si = new SCROLLINFO();
+                    si.cbSize = Marshal.SizeOf<SCROLLINFO>();
+                    si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
+                    if (!GetScrollInfo(Hwnd, Vertical ? SB_VERT : SB_HORZ, ref si))
+                        throw new Win32Exception();
+
+                    return si;
+                }, Tid);
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (new_si.cbSize == 0)
+                return;
+
+            var old_si = _si;
+            _si = new_si;
+
+            if (Element.MatchesDebugCondition())
+            {
+                if (!_siKnown || old_si.nMin != new_si.nMin)
+                    Utils.DebugWriteLine($"{Element}.win32_minimum_value: {new_si.nMin}");
+                if (!_siKnown || old_si.max_value != new_si.max_value)
+                    Utils.DebugWriteLine($"{Element}.win32_maximum_value: {new_si.max_value}");
+                if (!_siKnown || old_si.nPage != new_si.nPage)
+                    Utils.DebugWriteLine($"{Element}.win32_page: {new_si.nPage}");
+                if (!_siKnown || old_si.nPos != new_si.nPos)
+                    Utils.DebugWriteLine($"{Element}.win32_value: {new_si.nPos}");
+            }
+
+            _siKnown = true;
+            Element.PropertyChanged("win32_value");
+        }
+
+        internal void MsaaValueChange()
+        {
+            SbiChanged(SBI_STATE); // Sometimes resizing enables/disables scrollbar with no state changed event
+            _siChangeCount++;
+            if (_watchingSi)
+                Utils.RunTask(RefreshScrollInfo());
+            else
+                _siKnown = false;
         }
     }
 }

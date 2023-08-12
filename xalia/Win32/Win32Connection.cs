@@ -460,6 +460,20 @@ namespace Xalia.Win32
                         }
                         break;
                     }
+                case EVENT_OBJECT_VALUECHANGE:
+                    {
+                        switch (idObject)
+                        {
+                            case OBJID_VSCROLL:
+                            case OBJID_HSCROLL:
+                                {
+                                    var element = LookupElement(hwnd, idObject, idChild);
+                                    element?.ProviderByType<NonclientScrollProvider>()?.MsaaValueChange();
+                                }
+                                break;
+                        }
+                        break;
+                    }
             }
         }
     }
