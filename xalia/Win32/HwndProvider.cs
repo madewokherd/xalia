@@ -434,8 +434,8 @@ namespace Xalia.Win32
                 i++;
             }
 
-            Element.SyncRecurseMethodChildren(child_hwnds, (IntPtr hwnd) => $"hwnd-{hwnd}",
-                Connection.CreateElementFromHwnd);
+            Element.SyncRecurseMethodChildren(child_hwnds, (IntPtr hwnd) => Connection.GetElementName(hwnd),
+                (IntPtr hwnd) => Connection.CreateElement(hwnd));
         }
 
         private void ReleaseChildren()
@@ -461,7 +461,7 @@ namespace Xalia.Win32
             }
             if (changed)
             {
-                Element.SyncRecurseMethodChildren(new_children, (IntPtr hwnd) => $"hwnd-{hwnd}",
+                Element.SyncRecurseMethodChildren(new_children, (IntPtr hwnd) => Connection.GetElementName(hwnd),
                     (IntPtr hwnd) =>
                     {
                         throw new Exception("ReleaseChildren should not create new children");

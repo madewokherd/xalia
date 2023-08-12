@@ -212,12 +212,12 @@ namespace Xalia.Win32
                 return;
 
             Element.SyncRecurseMethodChildren(new Range(1, newCount + 1),
-                (int key) => $"hwnd-{Hwnd}-{key}", CreateChildElement);
+                (int key) => Connection.GetElementName(Hwnd, OBJID_CLIENT, key), CreateChildElement);
         }
 
         private UiDomElement CreateChildElement(int childId)
         {
-            var element = Connection.CreateElementFromHwnd(Hwnd, childId);
+            var element = Connection.CreateElement(Hwnd, OBJID_CLIENT, childId);
             element.AddProvider(new HwndTabItemProvider(this, childId), 0);
             return element;
         }

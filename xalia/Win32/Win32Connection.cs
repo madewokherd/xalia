@@ -46,6 +46,20 @@ namespace Xalia.Win32
             { "inmovesize", "win32_gui_movesize" },
         };
 
+        public string GetElementName(IntPtr hwnd, int idObject=OBJID_CLIENT, int idChild=CHILDID_SELF)
+        {
+            switch (idObject)
+            {
+                case OBJID_WINDOW:
+                    return $"hwnd-{hwnd}";
+                case OBJID_CLIENT:
+                    if (idChild == CHILDID_SELF)
+                        goto case OBJID_WINDOW;
+                    return $"hwnd-{hwnd}-{idChild}";
+            }
+            return null;
+        }
+
         private void UpdateToplevels()
         {
             HashSet<IntPtr> toplevels_to_remove = new HashSet<IntPtr>(toplevel_hwnds);
@@ -59,7 +73,7 @@ namespace Xalia.Win32
                     continue;
                 }
 
-                var element = CreateElementFromHwnd(hwnd);
+                var element = CreateElement(hwnd);
                 Root.AddChild(Root.Children.Count, element);
                 toplevel_hwnds.Add(hwnd);
             }
@@ -67,7 +81,7 @@ namespace Xalia.Win32
             foreach (var hwnd in toplevels_to_remove)
             {
                 toplevel_hwnds.Remove(hwnd);
-                var element = elements_by_id[$"hwnd-{hwnd}"];
+                var element = elements_by_id[GetElementName(hwnd)];
                 Root.RemoveChild(Root.Children.IndexOf(element));
             }
         }
@@ -79,38 +93,39 @@ namespace Xalia.Win32
             return null;
         }
 
-        public UiDomElement LookupElement(IntPtr hwnd)
+        public UiDomElement LookupElement(IntPtr hwnd, int idObject=OBJID_CLIENT, int idChild=CHILDID_SELF)
         {
-            return LookupElement($"hwnd-{hwnd}");
+            var element_name = GetElementName(hwnd, idObject, idChild);
+            if (element_name is null)
+                return null;
+            return LookupElement(element_name);
         }
 
-        internal UiDomElement CreateElementFromHwnd(IntPtr hwnd)
+        internal UiDomElement CreateElement(IntPtr hwnd, int idObject = OBJID_CLIENT, int idChild = CHILDID_SELF)
         {
-            string element_name = $"hwnd-{hwnd}";
+            var element_name = GetElementName(hwnd, idObject, idChild);
+            if (element_name is null)
+                throw new InvalidOperationException($"cannot create element for {idObject}/{idChild}");
 
             var element = new UiDomElement(element_name, Root);
+            switch (idObject)
+            {
+                case OBJID_WINDOW:
+                    element.AddProvider(new HwndProvider(hwnd, element, this));
+                    break;
+                case OBJID_CLIENT:
+                    {
+                        if (idChild == CHILDID_SELF)
+                            goto case OBJID_WINDOW;
 
-            element.AddProvider(new HwndProvider(hwnd, element, this));
+                        var hwnd_ancestor = LookupElement(hwnd)?.ProviderByType<HwndProvider>();
+                        if (hwnd_ancestor is null)
+                            throw new InvalidOperationException("hwnd element must be created before child element");
 
-            elements_by_id.Add(element_name, element);
-
-            return element;
-        }
-
-        internal UiDomElement CreateElementFromHwnd(IntPtr hwnd, int childId)
-        {
-            if (childId == CHILDID_SELF)
-                return CreateElementFromHwnd(hwnd);
-
-            var hwnd_ancestor = LookupElement(hwnd)?.ProviderByType<HwndProvider>();
-            if (hwnd_ancestor is null)
-                throw new InvalidOperationException("hwnd element must be created before child element");
-
-            string element_name = $"hwnd-{hwnd}-{childId}";
-
-            var element = new UiDomElement(element_name, Root);
-
-            element.AddProvider(new HwndMsaaChildProvider(element, hwnd_ancestor, childId));
+                        element.AddProvider(new HwndMsaaChildProvider(element, hwnd_ancestor, idChild));
+                        break;
+                    }
+            }
 
             elements_by_id.Add(element_name, element);
 
@@ -362,7 +377,7 @@ namespace Xalia.Win32
                     break;
                 case EVENT_OBJECT_DESTROY:
                     {
-                        var parent_element = GetElementForMsaaEvent(hwnd, idObject, idChild)?.Parent;
+                        var parent_element = LookupElement(hwnd, idObject, idChild)?.Parent;
                         if (!(parent_element is null))
                         {
                             if (parent_element is UiDomRoot)
@@ -387,7 +402,7 @@ namespace Xalia.Win32
                 case EVENT_OBJECT_CLOAKED:
                 case EVENT_OBJECT_UNCLOAKED:
                     {
-                        var element = GetElementForMsaaEvent(hwnd, idObject, idChild);
+                        var element = LookupElement(hwnd, idObject, idChild);
                         if (!(element is null))
                         {
                             element.ProviderByType<HwndProvider>()?.MsaaStateChange();
@@ -396,7 +411,7 @@ namespace Xalia.Win32
                     }
                 case EVENT_OBJECT_LOCATIONCHANGE:
                     {
-                        var element = GetElementForMsaaEvent(hwnd, idObject, idChild);
+                        var element = LookupElement(hwnd, idObject, idChild);
                         if (!(element is null))
                         {
                             element.ProviderByType<HwndTabProvider>()?.MsaaLocationChange();
@@ -406,7 +421,7 @@ namespace Xalia.Win32
                     }
                 case EVENT_OBJECT_SELECTION:
                     {
-                        var hwnd_element = GetElementForMsaaEvent(hwnd, idObject, CHILDID_SELF);
+                        var hwnd_element = LookupElement(hwnd, idObject, CHILDID_SELF);
                         if (!(hwnd_element is null))
                         {
                             hwnd_element.ProviderByType<HwndTabProvider>()?.MsaaSelectionChange(idChild);
@@ -414,19 +429,6 @@ namespace Xalia.Win32
                         break;
                     }
             }
-        }
-
-        private UiDomElement GetElementForMsaaEvent(IntPtr hwnd, int idObject, int idChild)
-        {
-            if ((idObject == OBJID_CLIENT || idObject == OBJID_WINDOW) && idChild == CHILDID_SELF)
-            {
-                return LookupElement(hwnd);
-            }
-            if (idObject == OBJID_CLIENT && elements_by_id.TryGetValue($"hwnd-{hwnd}-{idChild}", out var element))
-            {
-                return element;
-            }
-            return null;
         }
     }
 }
