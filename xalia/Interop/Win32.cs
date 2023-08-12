@@ -303,6 +303,10 @@ namespace Xalia.Interop
         public const uint EVENT_OBJECT_CLOAKED = 0x8017;
         public const uint EVENT_OBJECT_UNCLOAKED = 0x8018;
 
+        public const uint STATE_SYSTEM_UNAVAILABLE = 0x1;
+        public const uint STATE_SYSTEM_INVISIBLE = 0x8000;
+        public const uint STATE_SYSTEM_OFFSCREEN = 0x10000;
+
         public const uint WINEVENT_OUTOFCONTEXT = 0;
 
         public const int OBJID_WINDOW = 0;

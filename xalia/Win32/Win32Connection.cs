@@ -416,10 +416,28 @@ namespace Xalia.Win32
                 case EVENT_OBJECT_CLOAKED:
                 case EVENT_OBJECT_UNCLOAKED:
                     {
-                        var element = LookupElement(hwnd, idObject, idChild);
-                        if (!(element is null))
+                        switch (idObject)
                         {
-                            element.ProviderByType<HwndProvider>()?.MsaaStateChange();
+                            case OBJID_WINDOW:
+                            case OBJID_CLIENT:
+                                {
+                                    var element = LookupElement(hwnd, idObject, idChild);
+                                    if (!(element is null))
+                                    {
+                                        element.ProviderByType<HwndProvider>()?.MsaaStateChange();
+                                    }
+                                    break;
+                                }
+                            case OBJID_HSCROLL:
+                            case OBJID_VSCROLL:
+                                {
+                                    var element = LookupElement(hwnd, idObject, idChild);
+                                    if (!(element is null))
+                                    {
+                                        element.ProviderByType<NonclientScrollProvider>()?.MsaaStateChange();
+                                    }
+                                    break;
+                                }
                         }
                         break;
                     }

@@ -25,19 +25,56 @@ namespace Xalia.Win32
             { "y", "win32_y" },
             { "width", "win32_width" },
             { "height", "win32_height" },
+            { "state", "win32_state" },
         };
 
         public bool Vertical { get; }
 
-        private bool _watchingLocation;
-        private bool _locationKnown;
-        private int _sbiChangeCount;
+        const int SBI_LOCATION = 0;
+        const int SBI_STATE = 1;
+        const int SBI_NUM_CONSTANTS = 2;
+
+        private int _watchingSbi; // bitfield of 1<<SBI_*
+        private int _sbiKnown; // bitfield of 1<<SBI_*
+        private int[] _sbiChangeCount = new int[SBI_NUM_CONSTANTS]; // indexed by SBI_*
         private SCROLLBARINFO _sbi;
+
+        private bool SbiKnown(int which)
+        {
+            return (_sbiKnown & (1 << which)) != 0;
+        }
+
+        private void SetSbiKnown(int which)
+        {
+            _sbiKnown |= 1 << which;
+        }
+
+        private void ClearSbiKnown(int which)
+        {
+            _sbiKnown &= ~(1 << which);
+        }
+
+        private bool WatchingSbi(int which)
+        {
+            return (_watchingSbi & (1 << which)) != 0;
+        }
+
+        private void SetWatchingSbi(int which)
+        {
+            _watchingSbi |= 1 << which;
+        }
+
+        private void ClearWatchingSbi(int which)
+        {
+            _watchingSbi &= ~(1 << which);
+        }
 
         public override void DumpProperties(UiDomElement element)
         {
-            if (_locationKnown)
+            if (SbiKnown(SBI_LOCATION))
                 Utils.DebugWriteLine($"  win32_pos: ({_sbi.rcScrollBar.left},{_sbi.rcScrollBar.top})-({_sbi.rcScrollBar.right},{_sbi.rcScrollBar.bottom})");
+            if (SbiKnown(SBI_STATE))
+                Utils.DebugWriteLine($"  win32_state: {_sbi.rgstate[0]}");
             base.DumpProperties(element);
         }
 
@@ -54,23 +91,28 @@ namespace Xalia.Win32
                     return UiDomBoolean.FromBool(!Vertical);
                 case "win32_x":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
-                    if (_locationKnown)
+                    if (SbiKnown(SBI_LOCATION))
                         return new UiDomInt(_sbi.rcScrollBar.left);
                     return UiDomUndefined.Instance;
                 case "win32_y":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
-                    if (_locationKnown)
+                    if (SbiKnown(SBI_LOCATION))
                         return new UiDomInt(_sbi.rcScrollBar.top);
                     return UiDomUndefined.Instance;
                 case "win32_width":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
-                    if (_locationKnown)
+                    if (SbiKnown(SBI_LOCATION))
                         return new UiDomInt(_sbi.rcScrollBar.width);
                     return UiDomUndefined.Instance;
                 case "win32_height":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
-                    if (_locationKnown)
+                    if (SbiKnown(SBI_LOCATION))
                         return new UiDomInt(_sbi.rcScrollBar.height);
+                    return UiDomUndefined.Instance;
+                case "win32_state":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (SbiKnown(SBI_STATE))
+                        return new UiDomInt(_sbi.rgstate[0]);
                     return UiDomUndefined.Instance;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
@@ -82,9 +124,17 @@ namespace Xalia.Win32
             {
                 case "scrollbar":
                 case "scroll_bar":
-                case "enabled":
-                case "visible":
                     return UiDomBoolean.True;
+                case "enabled":
+                    depends_on.Add((element, new IdentifierExpression("win32_state")));
+                    if (SbiKnown(SBI_STATE))
+                        return UiDomBoolean.FromBool((_sbi.rgstate[0] & STATE_SYSTEM_UNAVAILABLE) == 0);
+                    return UiDomUndefined.Instance;
+                case "visible":
+                    depends_on.Add((element, new IdentifierExpression("win32_state")));
+                    if (SbiKnown(SBI_STATE))
+                        return UiDomBoolean.FromBool((_sbi.rgstate[0] & (STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN)) == 0);
+                    return UiDomUndefined.Instance;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, element.Root, depends_on);
@@ -99,8 +149,15 @@ namespace Xalia.Win32
                 {
                     case "win32_pos":
                         {
-                            _watchingLocation = true;
-                            if (!_locationKnown)
+                            SetWatchingSbi(SBI_LOCATION);
+                            if (!SbiKnown(SBI_LOCATION))
+                                Utils.RunTask(RefreshScrollBarInfo());
+                            return true;
+                        }
+                    case "win32_state":
+                        {
+                            SetWatchingSbi(SBI_STATE);
+                            if (!SbiKnown(SBI_STATE))
                                 Utils.RunTask(RefreshScrollBarInfo());
                             return true;
                         }
@@ -117,7 +174,12 @@ namespace Xalia.Win32
                 {
                     case "win32_pos":
                         {
-                            _watchingLocation = false;
+                            ClearWatchingSbi(SBI_LOCATION);
+                            return true;
+                        }
+                    case "win32_state":
+                        {
+                            ClearWatchingSbi(SBI_STATE);
                             return true;
                         }
                 }
@@ -125,15 +187,27 @@ namespace Xalia.Win32
             return base.UnwatchProperty(element, expression);
         }
 
+        private bool AnySbiInfoCurrent(int[] old_change_count)
+        {
+            for (int i = 0; i < SBI_NUM_CONSTANTS; i++)
+            {
+                if (old_change_count[i] == _sbiChangeCount[i])
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private async Task RefreshScrollBarInfo()
         {
-            var old_change_count = _sbiChangeCount;
+            var old_change_count = (int[])_sbiChangeCount.Clone();
             SCROLLBARINFO sbi;
             try
             {
                 sbi = await Connection.CommandThread.OnBackgroundThread(() =>
                 {
-                    if (_sbiChangeCount != old_change_count)
+                    if (!AnySbiInfoCurrent(old_change_count))
                         return default;
                     SCROLLBARINFO _sbi = new SCROLLBARINFO();
                     _sbi.cbSize = Marshal.SizeOf<SCROLLBARINFO>();
@@ -148,22 +222,26 @@ namespace Xalia.Win32
                     throw;
                 return;
             }
-            if (_sbiChangeCount != old_change_count || sbi.cbSize == 0)
+            if (sbi.cbSize == 0 || !AnySbiInfoCurrent(old_change_count))
                 return;
 
-            UpdateScrollBarInfo(sbi);
+            UpdateScrollBarInfo(sbi, old_change_count);
         }
 
-        private void UpdateScrollBarInfo(SCROLLBARINFO sbi)
+        private void UpdateScrollBarInfo(SCROLLBARINFO sbi, int[] old_change_count)
         {
             var old_sbi = _sbi;
             _sbi = sbi;
 
             bool new_location_known = !sbi.rcScrollBar.IsEmpty();
-            if (new_location_known != _locationKnown ||
-                !sbi.rcScrollBar.Equals(old_sbi.rcScrollBar))
+            if (old_change_count[SBI_LOCATION] == _sbiChangeCount[SBI_LOCATION] &&
+                (new_location_known != SbiKnown(SBI_LOCATION) ||
+                 !sbi.rcScrollBar.Equals(old_sbi.rcScrollBar)))
             {
-                _locationKnown = new_location_known;
+                if (new_location_known)
+                    SetSbiKnown(SBI_LOCATION);
+                else
+                    ClearSbiKnown(SBI_LOCATION);
                 if (Element.MatchesDebugCondition())
                 {
                     if (new_location_known)
@@ -173,15 +251,33 @@ namespace Xalia.Win32
                 }
                 Element.PropertyChanged("win32_pos");
             }
+
+            if (old_change_count[SBI_STATE] == _sbiChangeCount[SBI_STATE] &&
+                (!SbiKnown(SBI_STATE) || sbi.rgstate[0] != old_sbi.rgstate[0]))
+            {
+                SetSbiKnown(SBI_STATE);
+                Element.PropertyChanged("win32_state", sbi.rgstate[0]);
+            }
+        }
+
+        private void SbiChanged(int which)
+        {
+            _sbiChangeCount[which]++;
+            if (WatchingSbi(which))
+                Utils.RunTask(RefreshScrollBarInfo());
+            else
+                ClearSbiKnown(which);
         }
 
         public void ParentLocationChanged()
         {
-            _sbiChangeCount++;
-            if (_watchingLocation)
-                Utils.RunTask(RefreshScrollBarInfo());
-            else
-                _locationKnown = false;
+            SbiChanged(SBI_LOCATION);
+            SbiChanged(SBI_STATE); // Sometimes resizing enables/disables scrollbar with no state changed event
+        }
+
+        public void MsaaStateChange()
+        {
+            SbiChanged(SBI_STATE);
         }
     }
 }
