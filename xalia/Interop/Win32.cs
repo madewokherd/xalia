@@ -254,7 +254,7 @@ namespace Xalia.Interop
         public const int MONITOR_DEFAULTTOPRIMARY = 1;
         public const int MONITOR_DEFAULTTONEAREST = 2;
 
-        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
         public static extern IntPtr MonitorFromWindow(IntPtr hwnd, int dwFlags);
 
         public const int MDT_EFFECTIVE_DPI = 0;

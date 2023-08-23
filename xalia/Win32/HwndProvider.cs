@@ -733,6 +733,9 @@ namespace Xalia.Win32
         {
             IntPtr monitor = MonitorFromWindow(Hwnd, MONITOR_DEFAULTTONEAREST);
 
+            if (monitor == IntPtr.Zero)
+                throw new Win32Exception();
+
             try
             {
                 int hr = GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, out int dpix, out int dpiy);
