@@ -481,6 +481,10 @@ namespace Xalia.Win32
                                 {
                                     var element = LookupElement(hwnd, idObject, idChild);
                                     element?.ProviderByType<NonclientScrollProvider>()?.MsaaValueChange();
+                                    
+                                    // The window WS_HSCROLL or WS_VSCROLL style may have changed.
+                                    element = LookupElement(hwnd);
+                                    element?.ProviderByType<HwndProvider>()?.MsaaStateChange();
                                 }
                                 break;
                         }
