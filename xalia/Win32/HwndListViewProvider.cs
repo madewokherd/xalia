@@ -63,16 +63,17 @@ namespace Xalia.Win32
         {
             switch (view)
             {
+                // layered_pane is used by GTK icon views in AT-SPI2
                 case LV_VIEW_ICON:
-                    return new UiDomEnum(new string[] { "icon" });
+                    return new UiDomEnum(new string[] { "icon_view", "iconview", "layered_pane", "layeredpane" });
                 case LV_VIEW_DETAILS:
                     return new UiDomEnum(new string[] { "report", "details", "table" });
                 case LV_VIEW_SMALLICON:
-                    return new UiDomEnum(new string[] { "small_icon", "smallicon" });
+                    return new UiDomEnum(new string[] { "small_icon", "smallicon", "layered_pane", "layeredpane"  });
                 case LV_VIEW_LIST:
                     return new UiDomEnum(new string[] { "list" });
                 case LV_VIEW_TILE:
-                    return new UiDomEnum(new string[] { "tile" });
+                    return new UiDomEnum(new string[] { "tile", "layered_pane", "layeredpane"  });
             }
             return UiDomUndefined.Instance;
         }
@@ -87,7 +88,7 @@ namespace Xalia.Win32
             switch (style & LVS_TYPEMASK)
             {
                 case LVS_ICON:
-                    names.Add("icon");
+                    names.Add("icon_view");
                     break;
                 case LVS_REPORT:
                     names.Add("report");
@@ -169,7 +170,8 @@ namespace Xalia.Win32
                 case "aligntop":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return UiDomBoolean.FromBool((HwndProvider.Style & LVS_ALIGNMASK) == LVS_ALIGNTOP);
-                case "icon":
+                case "icon_view":
+                case "iconview":
                 case "report":
                 case "details":
                 case "table":
@@ -177,6 +179,8 @@ namespace Xalia.Win32
                 case "small_icon":
                 case "list":
                 case "tile":
+                case "layered_pane":
+                case "layeredpane":
                     return element.EvaluateIdentifier("win32_view", element.Root, depends_on).
                         EvaluateIdentifier(identifier, element.Root, depends_on);
             }
