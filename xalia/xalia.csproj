@@ -194,6 +194,7 @@
     <Compile Include="Win32\HwndComboBoxProvider.cs" />
     <Compile Include="Win32\HwndDialogProvider.cs" />
     <Compile Include="Win32\HwndListViewProvider.cs" />
+    <Compile Include="Win32\HwndListViewScrollProvider.cs" />
     <Compile Include="Win32\HwndMsaaChildProvider.cs" />
     <Compile Include="Win32\HwndProvider.cs" />
     <Compile Include="Win32\CommandThread.cs" />
@@ -201,6 +202,7 @@
     <Compile Include="Win32\HwndTabItemProvider.cs" />
     <Compile Include="Win32\HwndTabProvider.cs" />
     <Compile Include="Win32\HwndTrackBarProvider.cs" />
+    <Compile Include="Win32\IWin32Scrollable.cs" />
     <Compile Include="Win32\IWin32Styles.cs" />
     <Compile Include="Win32\NonclientProvider.cs" />
     <Compile Include="Win32\NonclientScrollProvider.cs" />

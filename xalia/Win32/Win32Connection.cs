@@ -136,7 +136,19 @@ namespace Xalia.Win32
                         if (hwnd_ancestor is null)
                             throw new InvalidOperationException("hwnd element must be created before child element");
 
-                        element.AddProvider(new NonclientScrollProvider(hwnd_ancestor, element, idObject == OBJID_VSCROLL));
+                        var scroll_provider = new NonclientScrollProvider(hwnd_ancestor, element, idObject == OBJID_VSCROLL);
+
+                        element.AddProvider(scroll_provider);
+
+                        // Apply any customizations
+                        var scrollable_provider = hwnd_ancestor.Element.ProviderByType<IWin32Scrollable>();
+                        if (!(scrollable_provider is null))
+                        {
+                            var custom_provider = scrollable_provider.GetScrollBarProvider(scroll_provider);
+                            if (!(custom_provider is null))
+                                element.AddProvider(custom_provider, 0);
+                        }
+
                         break;
                     }
             }

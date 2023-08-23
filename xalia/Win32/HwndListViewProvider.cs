@@ -8,7 +8,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndListViewProvider : HwndItemListProvider, IWin32Styles
+    internal class HwndListViewProvider : HwndItemListProvider, IWin32Styles, IWin32Scrollable
     {
         internal HwndListViewProvider(HwndProvider hwndProvider) : base(hwndProvider) { }
 
@@ -282,6 +282,11 @@ namespace Xalia.Win32
             ViewKnown = true;
             ViewInt = Utils.TruncatePtr(result);
             Element.PropertyChanged("win32_view", ViewFromInt(ViewInt));
+        }
+
+        public IUiDomProvider GetScrollBarProvider(NonclientScrollProvider nonclient)
+        {
+            return new HwndListViewScrollProvider(this, nonclient);
         }
     }
 }

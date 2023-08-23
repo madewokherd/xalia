@@ -127,6 +127,29 @@ namespace Xalia.Win32
             win32_styles_by_name["maximizebox"] = WS_MAXIMIZEBOX;
         }
 
+        private void AddProvider(IUiDomProvider provider, int index)
+        {
+            Element.AddProvider(provider, index);
+            if (provider is IWin32Scrollable scrollable)
+            {
+                var vs = Connection.LookupElement(Hwnd, OBJID_VSCROLL);
+                if (!(vs is null))
+                {
+                    var custom = scrollable.GetScrollBarProvider(vs.ProviderByType<NonclientScrollProvider>());
+                    if (!(custom is null))
+                        vs.AddProvider(custom, 0);
+                }
+
+                var hs = Connection.LookupElement(Hwnd, OBJID_HSCROLL);
+                if (!(hs is null))
+                {
+                    var custom = scrollable.GetScrollBarProvider(hs.ProviderByType<NonclientScrollProvider>());
+                    if (!(custom is null))
+                        hs.AddProvider(custom, 0);
+                }
+            }
+        }
+
         private async Task DiscoverProviders()
         {
             // TODO: Check if there's a UIA provider
@@ -151,7 +174,7 @@ namespace Xalia.Win32
                         Marshal.ThrowExceptionForHR(hr);
                         return obj;
                     }, Tid + 1);
-                    Element.AddProvider(new AccessibleProvider(this, Element, acc, 0), 0);
+                    AddProvider(new AccessibleProvider(this, Element, acc, 0), 0);
                     return;
                 }
                 catch (Exception e)
@@ -164,22 +187,22 @@ namespace Xalia.Win32
             switch (RealClassName)
             {
                 case "#32770":
-                    Element.AddProvider(new HwndDialogProvider(this), 0);
+                    AddProvider(new HwndDialogProvider(this), 0);
                     return;
                 case "Button":
-                    Element.AddProvider(new HwndButtonProvider(this), 0);
+                    AddProvider(new HwndButtonProvider(this), 0);
                     return;
                 case "ComboBox":
-                    Element.AddProvider(new HwndComboBoxProvider(this), 0);
+                    AddProvider(new HwndComboBoxProvider(this), 0);
                     return;
                 case "msctls_trackbar32":
-                    Element.AddProvider(new HwndTrackBarProvider(this), 0);
+                    AddProvider(new HwndTrackBarProvider(this), 0);
                     return;
                 case "SysListView32":
-                    Element.AddProvider(new HwndListViewProvider(this), 0);
+                    AddProvider(new HwndListViewProvider(this), 0);
                     return;
                 case "SysTabControl32":
-                    Element.AddProvider(new HwndTabProvider(this), 0);
+                    AddProvider(new HwndTabProvider(this), 0);
                     return;
             }
 
@@ -195,19 +218,19 @@ namespace Xalia.Win32
             switch((long)lr)
             {
                 case 65536 + 2:
-                    Element.AddProvider(new HwndButtonProvider(this), 0);
+                    AddProvider(new HwndButtonProvider(this), 0);
                     return;
                 case 65536 + 5:
-                    Element.AddProvider(new HwndComboBoxProvider(this), 0);
+                    AddProvider(new HwndComboBoxProvider(this), 0);
                     return;
                 case 65536 + 15:
-                    Element.AddProvider(new HwndTabProvider(this), 0);
+                    AddProvider(new HwndTabProvider(this), 0);
                     return;
                 case 65536 + 18:
-                    Element.AddProvider(new HwndTrackBarProvider(this), 0);
+                    AddProvider(new HwndTrackBarProvider(this), 0);
                     return;
                 case 65536 + 19:
-                    Element.AddProvider(new HwndListViewProvider(this), 0);
+                    AddProvider(new HwndListViewProvider(this), 0);
                     return;
             }
         }
