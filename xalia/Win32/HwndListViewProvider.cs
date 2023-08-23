@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Xalia.Gudl;
+using Xalia.Interop;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
 
@@ -51,6 +52,7 @@ namespace Xalia.Win32
         }
 
         bool CheckingComCtl6;
+        TaskCompletionSource<bool> IsComCtl6Completion;
         bool IsComCtl6;
         bool IsComCtl6Known;
 
@@ -58,6 +60,8 @@ namespace Xalia.Win32
         bool fetching_view;
         int ViewInt;
         bool ViewKnown;
+
+        Win32RemoteProcessMemory remote_process_memory;
 
         private static UiDomValue ViewFromInt(int view)
         {
@@ -129,6 +133,43 @@ namespace Xalia.Win32
                 }
             }
             base.DumpProperties(element);
+        }
+
+        public async Task<bool> IsComCtl6Async()
+        {
+            if (IsComCtl6Known)
+                return IsComCtl6;
+            if (IsComCtl6Completion is null)
+                IsComCtl6Completion = new TaskCompletionSource<bool>();
+            if (!CheckingComCtl6)
+            {
+                Utils.RunTask(CheckComCtl6());
+                CheckingComCtl6 = true;
+            }
+            return await IsComCtl6Completion.Task;
+        }
+
+        public async Task<int> GetViewAsync()
+        {
+            if (await IsComCtl6Async())
+            {
+                IntPtr ret = await SendMessageAsync(Hwnd, LVM_GETVIEW, IntPtr.Zero, IntPtr.Zero);
+                return Utils.TruncatePtr(ret);
+            }
+            return HwndProvider.Style & LVS_TYPEMASK;
+        }
+
+        public async Task<RECT> GetItemRectAsync(int index, int lvir)
+        {
+            if (remote_process_memory is null)
+                remote_process_memory = Win32RemoteProcessMemory.FromPid(Pid);
+            RECT rc = new RECT();
+            rc.left = lvir;
+            using (var memory = remote_process_memory.WriteAlloc(rc))
+            {
+                await SendMessageAsync(Hwnd, LVM_GETITEMRECT, (IntPtr)index, new IntPtr((long)memory.Address));
+                return memory.Read<RECT>();
+            }
         }
 
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -263,6 +304,9 @@ namespace Xalia.Win32
                 IsComCtl6Known = true;
                 Element.PropertyChanged("win32_is_comctl6", "true");
             }
+
+            IsComCtl6Completion?.SetResult(IsComCtl6);
+            IsComCtl6Completion = null;
         }
 
         private async Task FetchView()
@@ -287,6 +331,16 @@ namespace Xalia.Win32
         public IUiDomProvider GetScrollBarProvider(NonclientScrollProvider nonclient)
         {
             return new HwndListViewScrollProvider(this, nonclient);
+        }
+
+        public override void NotifyElementRemoved(UiDomElement element)
+        {
+            if (!(remote_process_memory is null))
+            {
+                remote_process_memory.Unref();
+                remote_process_memory = null;
+            }
+            base.NotifyElementRemoved(element);
         }
     }
 }
