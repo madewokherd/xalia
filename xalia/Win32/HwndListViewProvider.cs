@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.Interop;
 using Xalia.UiDom;
+using Xalia.Util;
 using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
@@ -19,6 +20,8 @@ namespace Xalia.Win32
             { "control_type", "win32_view" },
             { "role", "win32_view" },
         };
+
+        static string[] tracked_properties = { "recurse_method" };
 
         static string[] style_names =
         {
@@ -61,6 +64,9 @@ namespace Xalia.Win32
         int ViewInt;
         bool ViewKnown;
 
+        bool watching_children;
+        bool watching_children_visible;
+
         Win32RemoteProcessMemory remote_process_memory;
 
         private static UiDomValue ViewFromInt(int view)
@@ -82,9 +88,24 @@ namespace Xalia.Win32
             return UiDomUndefined.Instance;
         }
 
-        private static UiDomValue ViewFromStyle(int style)
+        public int EvaluateView(HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
-            return ViewFromInt(style & LVS_TYPEMASK);
+            if (!IsComCtl6Known)
+            {
+                depends_on.Add((Element, new IdentifierExpression("win32_is_comctl6")));
+                return -1;
+            }
+            if (!IsComCtl6)
+            {
+                depends_on.Add((Element, new IdentifierExpression("win32_style")));
+                return HwndProvider.Style & LVS_TYPEMASK;
+            }
+            depends_on.Add((Element, new IdentifierExpression("win32_view")));
+            if (ViewKnown)
+            {
+                return ViewInt;
+            }
+            return -1;
         }
 
         public void GetStyleNames(int style, List<string> names)
@@ -122,15 +143,9 @@ namespace Xalia.Win32
             if (IsComCtl6Known)
             {
                 Utils.DebugWriteLine($"  win32_is_comctl6: {IsComCtl6}");
-                if (IsComCtl6)
-                {
-                    if (ViewKnown)
-                        Utils.DebugWriteLine($"  win32_view: {ViewFromInt(ViewInt)}");
-                }
-                else
-                {
-                    Utils.DebugWriteLine($"  win32_view: {ViewFromStyle(HwndProvider.Style)}");
-                }
+                var view = EvaluateView(new HashSet<(UiDomElement, GudlExpression)>());
+                if (view != -1)
+                    Utils.DebugWriteLine($"  win32_view: {ViewFromInt(view)}");
             }
             base.DumpProperties(element);
         }
@@ -184,22 +199,7 @@ namespace Xalia.Win32
                         return UiDomBoolean.FromBool(IsComCtl6);
                     return UiDomUndefined.Instance;
                 case "win32_view":
-                    if (!IsComCtl6Known)
-                    {
-                        depends_on.Add((element, new IdentifierExpression("win32_is_comctl6")));
-                        return UiDomUndefined.Instance;
-                    }
-                    if (!IsComCtl6)
-                    {
-                        depends_on.Add((element, new IdentifierExpression("win32_style")));
-                        return ViewFromStyle(HwndProvider.Style);
-                    }
-                    depends_on.Add((element, new IdentifierExpression("win32_view")));
-                    if (ViewKnown)
-                    {
-                        return ViewFromInt(ViewInt);
-                    }
-                    return UiDomUndefined.Instance;
+                    return ViewFromInt(EvaluateView(depends_on));
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
         }
@@ -224,6 +224,15 @@ namespace Xalia.Win32
                 case "layeredpane":
                     return element.EvaluateIdentifier("win32_view", element.Root, depends_on).
                         EvaluateIdentifier(identifier, element.Root, depends_on);
+                case "recurse_method":
+                    if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
+                    {
+                        if (element.EvaluateIdentifier("recurse_full", element.Root, depends_on).ToBool())
+                            return new UiDomString("win32_list");
+                        else
+                            return new UiDomString("win32_list_visible");
+                    }
+                    break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
             {
@@ -252,6 +261,82 @@ namespace Xalia.Win32
             }
             return Utils.TruncatePtr(result);
         }
+
+        public override string[] GetTrackedProperties()
+        {
+            return tracked_properties;
+        }
+
+        public override void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
+        {
+            if (name == "recurse_method")
+            {
+                string string_value = new_value is UiDomString id ? id.Value : string.Empty;
+                switch (string_value)
+                {
+                    case "win32_list":
+                        if (watching_children && !watching_children_visible)
+                            break;
+                        watching_children = true;
+                        watching_children_visible = false;
+                        WatchChildren();
+                        break;
+                    case "win32_list_visible":
+                        if (watching_children && watching_children_visible)
+                            break;
+                        watching_children = true;
+                        watching_children_visible = true;
+                        WatchChildren();
+                        break;
+                    default:
+                        watching_children = false;
+                        UnwatchChildren();
+                        break;
+                }
+            }
+            base.TrackedPropertyChanged(element, name, new_value);
+        }
+
+        private void WatchChildren()
+        {
+            Element.SetRecurseMethodProvider(this);
+            if (ItemCountKnown)
+                RefreshChildren();
+            else
+                Utils.RunTask(DoFetchItemCount());
+        }
+
+        private void UnwatchChildren()
+        {
+            Element.UnsetRecurseMethodProvider(this);
+        }
+
+        protected override void ItemCountChanged(int newCount)
+        {
+            RefreshChildren();
+            base.ItemCountChanged(newCount);
+        }
+
+        private void RefreshChildren()
+        {
+            // TODO: account for watching_children_visible
+            SetRecurseMethodRange(0, ItemCount);
+        }
+
+        private void SetRecurseMethodRange(int start, int end)
+        {
+            Element.SyncRecurseMethodChildren(new Range(start, end), (int key) => Connection.GetElementName(Hwnd, OBJID_CLIENT, key+1),
+                CreateChildItem);
+        }
+
+        private UiDomElement CreateChildItem(int key)
+        {
+            int childId = key + 1;
+            var element = Connection.CreateElement(Hwnd, OBJID_CLIENT, childId);
+            element.AddProvider(new HwndListViewItemProvider(this, childId), 0);
+            return element;
+        }
+
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)
         {
             if (expression is IdentifierExpression id)
