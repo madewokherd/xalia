@@ -946,7 +946,9 @@ namespace Xalia.Ui
             {
                 if (ancestor.GetDeclaration("scroll_target_margin") is UiDomInt margin_int &&
                     ancestor.GetDeclaration("scroll_view_action") is UiDomRoutine routine &&
-                    TryGetBoundsDeclarations(ancestor, "scroll_view", out var scroll_view_bounds))
+                    TryGetBoundsDeclarations(ancestor, "scroll_view", out var scroll_view_bounds) &&
+                    targetedElement != ancestor.GetDeclaration("hscroll") &&
+                    targetedElement != ancestor.GetDeclaration("vscroll"))
                 {
                     int margin = margin_int.Value;
                     var padded_bounds = (
