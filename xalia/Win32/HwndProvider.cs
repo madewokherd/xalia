@@ -409,7 +409,7 @@ namespace Xalia.Win32
         internal UiDomValue ChildEvaluateIdentifierLate(string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             if (child_property_aliases.TryGetValue(identifier, out var aliased))
-                return Element.EvaluateIdentifier(identifier, Element.Root, depends_on);
+                return Element.EvaluateIdentifier(aliased, Element.Root, depends_on);
             return UiDomUndefined.Instance;
         }
 
