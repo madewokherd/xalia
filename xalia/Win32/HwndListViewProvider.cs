@@ -56,8 +56,8 @@ namespace Xalia.Win32
         bool IsComCtl6;
         bool IsComCtl6Known;
 
-        // TODO: Watch for notification of view change?
-        bool fetching_view;
+        bool watching_view;
+        int view_change_count;
         int ViewInt;
         bool ViewKnown;
 
@@ -266,15 +266,34 @@ namespace Xalia.Win32
                         }
                         return true;
                     case "win32_view":
-                        if (!fetching_view)
-                        {
-                            Utils.RunTask(FetchView());
-                            fetching_view = true;
-                        }
+                        watching_view = true;
+                        Utils.RunTask(WatchView());
                         return true;
                 }
             }
             return false;
+        }
+
+        public override bool UnwatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_view":
+                        watching_view = false;
+                        return true;
+                }
+            }
+            return base.UnwatchProperty(element, expression);
+        }
+
+        private async Task WatchView()
+        {
+            if (!ViewKnown && await IsComCtl6Async())
+            {
+                await FetchView();
+            }
         }
 
         private async Task CheckComCtl6()
@@ -311,6 +330,7 @@ namespace Xalia.Win32
 
         private async Task FetchView()
         {
+            int old_change_count = view_change_count;
             IntPtr result;
             try
             {
@@ -323,9 +343,17 @@ namespace Xalia.Win32
                 return;
             }
 
-            ViewKnown = true;
-            ViewInt = Utils.TruncatePtr(result);
-            Element.PropertyChanged("win32_view", ViewFromInt(ViewInt));
+            if (old_change_count != view_change_count)
+                return;
+
+            int new_view = Utils.TruncatePtr(result);
+
+            if (!ViewKnown || new_view != ViewInt)
+            {
+                ViewKnown = true;
+                ViewInt = new_view;
+                Element.PropertyChanged("win32_view", ViewFromInt(ViewInt));
+            }
         }
 
         public IUiDomProvider GetScrollBarProvider(NonclientScrollProvider nonclient)
@@ -341,6 +369,15 @@ namespace Xalia.Win32
                 remote_process_memory = null;
             }
             base.NotifyElementRemoved(element);
+        }
+
+        internal void MsaaReorder()
+        {
+            view_change_count++;
+            if (watching_view)
+                Utils.RunTask(FetchView());
+            else
+                ViewKnown = false;
         }
     }
 }

@@ -453,6 +453,18 @@ namespace Xalia.Win32
                         }
                         break;
                     }
+                case EVENT_OBJECT_REORDER:
+                    {
+                        if (idObject == OBJID_CLIENT)
+                        {
+                            var element = LookupElement(hwnd, idObject, idChild);
+                            if (!(element is null))
+                            {
+                                element.ProviderByType<HwndListViewProvider>()?.MsaaReorder();
+                            }
+                        }
+                        break;
+                    }
                 case EVENT_OBJECT_LOCATIONCHANGE:
                     {
                         var element = LookupElement(hwnd, idObject, idChild);

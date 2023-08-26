@@ -311,6 +311,7 @@ namespace Xalia.Interop
         public const uint EVENT_OBJECT_DESTROY = 0x8001;
         public const uint EVENT_OBJECT_SHOW = 0x8002;
         public const uint EVENT_OBJECT_HIDE = 0x8003;
+        public const uint EVENT_OBJECT_REORDER = 0x8004;
         public const uint EVENT_OBJECT_FOCUS = 0x8005;
         public const uint EVENT_OBJECT_SELECTION = 0x8006;
         public const uint EVENT_OBJECT_STATECHANGE = 0x800A;
