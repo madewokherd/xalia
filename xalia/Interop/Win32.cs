@@ -1060,6 +1060,7 @@ namespace Xalia.Interop
         public const int LVM_GETITEMCOUNT = LVM_FIRST + 4;
         public const int LVM_GETITEMRECT = LVM_FIRST + 14;
         public const int LVM_SCROLL = LVM_FIRST + 20;
+        public const int LVM_GETCOLUMNWIDTH = LVM_FIRST + 29;
         public const int LVM_GETHEADER = LVM_FIRST + 31;
         public const int LVM_GETTOPINDEX = LVM_FIRST + 39;
         public const int LVM_GETCOUNTPERPAGE = LVM_FIRST + 40;

@@ -28,6 +28,11 @@ namespace Xalia.Win32
                         // One item should always be reasonable
                         return 1.0;
                     break;
+                case LV_VIEW_LIST:
+                    if (!Vertical)
+                        // One column should always be reasonable
+                        return 1.0;
+                    break;
             }
             return 0.0; // fallback on default scrollbar implementation
         }
@@ -54,6 +59,16 @@ namespace Xalia.Win32
                             // pixels, but the win32 scroll info is by item index.
                             var bounds = await Parent.GetItemRectAsync(0, LVIR_SELECTBOUNDS);
                             remote_int_offset *= bounds.height;
+                        }
+                        break;
+                    case LV_VIEW_LIST:
+                        if (!Vertical)
+                        {
+                            // Can only scroll in column increments. LVM_SCROLL expects
+                            // pixels, but the win32 scroll info is by column.
+                            var columnwidth = Utils.TruncatePtr(
+                                await SendMessageAsync(Hwnd, LVM_GETCOLUMNWIDTH, IntPtr.Zero, IntPtr.Zero));
+                            remote_int_offset *= columnwidth;
                         }
                         break;
                 }
