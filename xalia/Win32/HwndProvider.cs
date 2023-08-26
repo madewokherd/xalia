@@ -707,7 +707,7 @@ namespace Xalia.Win32
                     var child = Connection.CreateElement(Hwnd, OBJID_VSCROLL);
                     Element.AddChild(Element.Children.Count, child);
                 }
-                else
+                else if (!_useNonclient)
                 {
                     Element.RemoveChild(Element.Children.IndexOf(vs));
                 }
@@ -722,7 +722,7 @@ namespace Xalia.Win32
                     var child = Connection.CreateElement(Hwnd, OBJID_HSCROLL);
                     Element.AddChild(Element.Children.Count, child);
                 }
-                else
+                else if (!_useNonclient)
                 {
                     Element.RemoveChild(Element.Children.IndexOf(hs));
                 }
