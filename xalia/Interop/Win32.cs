@@ -245,6 +245,12 @@ namespace Xalia.Interop
         public const uint SWP_HIDEWINDOW = 0x0080;
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]

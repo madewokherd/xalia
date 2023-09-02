@@ -60,6 +60,10 @@ namespace Xalia.Win32
             { "y", "win32_y" },
             { "width", "win32_width" },
             { "height", "win32_height" },
+            { "client_x", "win32_client_x" },
+            { "client_y", "win32_client_y" },
+            { "client_width", "win32_client_width" },
+            { "client_height", "win32_client_height" },
             { "control_id", "win32_control_id" },
             { "name", "win32_window_text" },
             { "window_text", "win32_window_text" },
@@ -90,7 +94,8 @@ namespace Xalia.Win32
 
         private bool _watchingWindowRect;
         internal RECT WindowRect { get; private set; }
-        public bool WindowRectKnown { get; private set; }
+        internal RECT ClientRect { get; private set; }
+        public bool WindowRectsKnown { get; private set; }
         public int X => WindowRect.left;
         public int Y => WindowRect.top;
         public int Width => WindowRect.right - WindowRect.left;
@@ -279,12 +284,16 @@ namespace Xalia.Win32
             Utils.DebugWriteLine($"  win32_class_name: \"{ClassName}\"");
             Utils.DebugWriteLine($"  win32_real_class_name: \"{RealClassName}\"");
             Utils.DebugWriteLine($"  win32_style: {FormatStyles()}");
-            if (WindowRectKnown)
+            if (WindowRectsKnown)
             {
                 Utils.DebugWriteLine($"  win32_x: {X}");
                 Utils.DebugWriteLine($"  win32_y: {Y}");
                 Utils.DebugWriteLine($"  win32_width: {Width}");
                 Utils.DebugWriteLine($"  win32_height: {Height}");
+                Utils.DebugWriteLine($"  win32_client_x: {ClientRect.left}");
+                Utils.DebugWriteLine($"  win32_client_y: {ClientRect.top}");
+                Utils.DebugWriteLine($"  win32_client_width: {ClientRect.width}");
+                Utils.DebugWriteLine($"  win32_client_height: {ClientRect.height}");
             }
             if ((Style & WS_CHILD) != 0 && ControlId != 0)
             {
@@ -318,23 +327,43 @@ namespace Xalia.Win32
                     return new UiDomInt(Style);
                 case "win32_x":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
-                    if (WindowRectKnown)
+                    if (WindowRectsKnown)
                         return new UiDomInt(X);
                     break;
                 case "win32_y":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
-                    if (WindowRectKnown)
+                    if (WindowRectsKnown)
                         return new UiDomInt(Y);
                     break;
                 case "win32_width":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
-                    if (WindowRectKnown)
+                    if (WindowRectsKnown)
                         return new UiDomInt(Width);
                     break;
                 case "win32_height":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
-                    if (WindowRectKnown)
+                    if (WindowRectsKnown)
                         return new UiDomInt(Height);
+                    break;
+                case "win32_client_x":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    if (WindowRectsKnown)
+                        return new UiDomInt(ClientRect.left);
+                    break;
+                case "win32_client_y":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    if (WindowRectsKnown)
+                        return new UiDomInt(ClientRect.top);
+                    break;
+                case "win32_client_width":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    if (WindowRectsKnown)
+                        return new UiDomInt(ClientRect.width);
+                    break;
+                case "win32_client_height":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    if (WindowRectsKnown)
+                        return new UiDomInt(ClientRect.height);
                     break;
                 case "win32_control_id":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
@@ -545,8 +574,8 @@ namespace Xalia.Win32
                 {
                     case "win32_pos":
                         _watchingWindowRect = true;
-                        if (!WindowRectKnown)
-                            RefreshWindowRect();
+                        if (!WindowRectsKnown)
+                            RefreshWindowRects();
                         return true;
                     case "win32_window_text":
                         if (!_fetchingWindowText)
@@ -648,11 +677,11 @@ namespace Xalia.Win32
         {
             if (_watchingWindowRect)
             {
-                RefreshWindowRect();
+                RefreshWindowRects();
             }
             else
             {
-                WindowRectKnown = false;
+                WindowRectsKnown = false;
             }
             if (_useNonclient)
             {
@@ -681,16 +710,27 @@ namespace Xalia.Win32
             }
         }
 
-        private void RefreshWindowRect()
+        private void RefreshWindowRects()
         {
-            if (GetWindowRect(Hwnd, out var new_rect))
+            POINT client_pos = default;
+            if (GetWindowRect(Hwnd, out var new_rect) &&
+                ClientToScreen(Hwnd, ref client_pos) && GetClientRect(Hwnd, out var new_client_rect))
             {
-                if (!WindowRectKnown || !new_rect.Equals(WindowRect))
+                new_client_rect.left = client_pos.x;
+                new_client_rect.top = client_pos.y;
+                new_client_rect.right += client_pos.x;
+                new_client_rect.bottom += client_pos.y;
+                if (!WindowRectsKnown || !new_rect.Equals(WindowRect) ||
+                    !new_client_rect.Equals(ClientRect))
                 {
-                    WindowRectKnown = true;
+                    WindowRectsKnown = true;
                     WindowRect = new_rect;
+                    ClientRect = new_client_rect;
                     if (Element.MatchesDebugCondition())
+                    {
                         Utils.DebugWriteLine($"{Element}.win32_(x,y,width,height): {X},{Y},{Width},{Height}");
+                        Utils.DebugWriteLine($"{Element}.win32_client_(x,y,width,height): {ClientRect.left},{ClientRect.top},{ClientRect.width},{ClientRect.height}");
+                    }
                     Element.PropertyChanged("win32_pos");
                 }
             }

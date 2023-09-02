@@ -52,7 +52,7 @@ namespace Xalia.Win32
                     {
                         depends_on.Add((Parent.Element, new IdentifierExpression("win32_pos")));
                         var rects = Parent.GetItemRects(depends_on);
-                        if (ChildId <= rects.Length && Parent.HwndProvider.WindowRectKnown)
+                        if (ChildId <= rects.Length && Parent.HwndProvider.WindowRectsKnown)
                             return new UiDomInt(Parent.HwndProvider.X + rects[ChildId - 1].left);
                         break;
                     }
@@ -60,7 +60,7 @@ namespace Xalia.Win32
                     {
                         depends_on.Add((Parent.Element, new IdentifierExpression("win32_pos")));
                         var rects = Parent.GetItemRects(depends_on);
-                        if (ChildId <= rects.Length && Parent.HwndProvider.WindowRectKnown)
+                        if (ChildId <= rects.Length && Parent.HwndProvider.WindowRectsKnown)
                             return new UiDomInt(Parent.HwndProvider.Y + rects[ChildId - 1].top);
                         break;
                     }
