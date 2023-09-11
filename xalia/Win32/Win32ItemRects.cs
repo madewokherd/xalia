@@ -64,20 +64,9 @@ namespace Xalia.Win32
             var arg = context.Evaluate(arglist[0], root, depends_on);
 
             int index;
-            if (arg is UiDomInt i)
+            if (arg.TryToInt(out int i))
             {
-                index = i.Value;
-            }
-            else if (arg.TryToDouble(out var d))
-            {
-                try
-                {
-                    index = (int)Math.Round(d);
-                }
-                catch (OverflowException)
-                {
-                    return UiDomUndefined.Instance;
-                }
+                index = i;
             }
             else
                 return UiDomUndefined.Instance;

@@ -1,4 +1,7 @@
-﻿namespace Xalia.UiDom
+﻿using System;
+using System.Numerics;
+
+namespace Xalia.UiDom
 {
     internal class UiDomDouble : UiDomValue
     {
@@ -32,9 +35,38 @@
             }
             if (other is UiDomInt i)
             {
-                if (Value == i.Value)
+                var tr = Math.Floor(Value);
+                BigInteger bi;
+                try
+                {
+                    bi = new BigInteger(tr);
+                }
+                catch (OverflowException)
+                {
+                    if (double.IsPositiveInfinity(tr))
+                    {
+                        sign = 1;
+                        return true;
+                    }
+                    if (double.IsNegativeInfinity(tr))
+                    {
+                        sign = -1;
+                        return true;
+                    }
+                    // else NaN
                     sign = 0;
-                else if (Value < i.Value)
+                    return false;
+                }
+
+                if (bi == i.Value)
+                {
+                    // Value floors to i.Value, therefore Value >= i.Value
+                    if (Value != tr)
+                        sign = 1;
+                    else
+                        sign = 0;
+                }
+                else if (bi < i.Value)
                     sign = -1;
                 else
                     sign = 1;
@@ -53,6 +85,20 @@
             return Value != 0.0;
         }
 
+        public override bool TryToInt(out int val)
+        {
+            try
+            {
+                val = (int)Math.Round(Value);
+                return true;
+            }
+            catch (OverflowException)
+            {
+                val = 0;
+                return false;
+            }
+        }
+
         public override bool TryToDouble(out double val)
         {
             val = Value;
@@ -69,7 +115,23 @@
             if (Equals(other))
                 return true;
             if (other is UiDomInt i)
-                return Value == i.Value;
+            {
+                var tr = Math.Floor(Value);
+                if (tr != Value)
+                    return false;
+                BigInteger bi;
+                try
+                {
+                    bi = new BigInteger(tr);
+                }
+                catch (OverflowException)
+                {
+                    // Infinity or NaN
+                    return false;
+                }
+
+                return bi == i.Value;
+            }
             return false;
         }
     }

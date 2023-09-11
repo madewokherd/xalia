@@ -182,13 +182,13 @@ namespace Xalia.Ui
 
         private bool TryGetBoundsDeclarations(UiDomElement element, string prefix, out (int, int, int, int) bounds)
         {
-            if (element.GetDeclaration($"{prefix}_x") is UiDomInt xint &&
-                element.GetDeclaration($"{prefix}_y") is UiDomInt yint &&
-                element.GetDeclaration($"{prefix}_width") is UiDomInt wint &&
-                element.GetDeclaration($"{prefix}_height") is UiDomInt hint)
+            if (element.GetDeclaration($"{prefix}_x").TryToInt(out int xint) &&
+                element.GetDeclaration($"{prefix}_y").TryToInt(out int yint) &&
+                element.GetDeclaration($"{prefix}_width").TryToInt(out int wint) &&
+                element.GetDeclaration($"{prefix}_height").TryToInt(out int hint))
             {
-                bounds = (xint.Value, yint.Value,
-                    wint.Value > 0 ? wint.Value : 1, hint.Value > 0 ? hint.Value : 1);
+                bounds = (xint, yint,
+                    wint > 0 ? wint : 1, hint > 0 ? hint : 1);
                 return true;
             }
             bounds = default;
@@ -944,13 +944,12 @@ namespace Xalia.Ui
 
             while (!(ancestor is null))
             {
-                if (ancestor.GetDeclaration("scroll_target_margin") is UiDomInt margin_int &&
+                if (ancestor.GetDeclaration("scroll_target_margin").TryToInt(out int margin) &&
                     ancestor.GetDeclaration("scroll_view_action") is UiDomRoutine routine &&
                     TryGetBoundsDeclarations(ancestor, "scroll_view", out var scroll_view_bounds) &&
                     targetedElement != ancestor.GetDeclaration("hscroll") &&
                     targetedElement != ancestor.GetDeclaration("vscroll"))
                 {
-                    int margin = margin_int.Value;
                     var padded_bounds = (
                         bounds.Item1 - margin,
                         bounds.Item2 - margin,

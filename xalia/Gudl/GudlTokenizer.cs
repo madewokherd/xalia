@@ -89,7 +89,7 @@ namespace Xalia.Gudl
                 .Match(Identifier.CStyle, GudlToken.Identifier, requireDelimiters: true)
                 .Match(GudlString, GudlToken.String, requireDelimiters: true)
                 .Match(GudlDouble, GudlToken.Double, requireDelimiters: true)
-                .Match(Numerics.IntegerInt32, GudlToken.Integer, requireDelimiters: true)
+                .Match(Numerics.Integer, GudlToken.Integer, requireDelimiters: true)
                 .Build();
     }
 }

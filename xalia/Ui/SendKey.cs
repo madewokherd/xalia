@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Xalia.Gudl;
 using Xalia.Sdl;
@@ -37,7 +38,14 @@ namespace Xalia.Ui
             }
             if (expr is IntegerExpression i)
             {
-                return RoutineForKeyCode(i.Value, $"send_key.{i.Value}");
+                try
+                {
+                    return RoutineForKeyCode((int)i.Value, $"send_key.{i.Value}");
+                }
+                catch (OverflowException)
+                {
+                    return UiDomUndefined.Instance;
+                }
             }
             return Evaluate(expr, root, depends_on);
         }
@@ -53,9 +61,9 @@ namespace Xalia.Ui
             {
                 return EvaluateIdentifier(st.Value, root, depends_on);
             }
-            if (right is UiDomInt i)
+            if (right.TryToInt(out int i))
             {
-                return RoutineForKeyCode(i.Value, $"send_key.{i.Value}");
+                return RoutineForKeyCode(i, $"send_key.{i}");
             }
             return UiDomUndefined.Instance;
         }

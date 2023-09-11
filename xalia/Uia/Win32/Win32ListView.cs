@@ -461,15 +461,15 @@ namespace Xalia.Uia.Win32
                     AddChild(Children.Count, Header);
                     PropertyChanged("win32_header", Header);
                 }
-                if (GetDeclaration("win32_child_item_start") is UiDomInt start &&
-                    GetDeclaration("win32_child_item_count") is UiDomInt count &&
-                    (start.Value != child_item_start || count.Value != child_item_count))
+                if (GetDeclaration("win32_child_item_start").TryToInt(out int start) &&
+                    GetDeclaration("win32_child_item_count").TryToInt(out int count) &&
+                    (start != child_item_start || count != child_item_count))
                 {
                     int old_start = child_item_start;
                     int old_count = child_item_count;
                     int old_end = child_item_start + child_item_count;
-                    child_item_start = start.Value;
-                    child_item_count = count.Value;
+                    child_item_start = start;
+                    child_item_count = count;
                     int child_item_end = child_item_start + child_item_count;
 
                     if (child_item_start >= old_end || old_start >= child_item_end)

@@ -4,6 +4,7 @@ using Superpower.Parsers;
 using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 
 namespace Xalia.Gudl
@@ -26,7 +27,7 @@ namespace Xalia.Gudl
 
         public static TokenListParser<GudlToken, GudlExpression> IntegerExpression =
             from s in Token.EqualTo(GudlToken.Integer)
-            select (GudlExpression)new IntegerExpression(int.Parse(s.ToStringValue()));
+            select (GudlExpression)new IntegerExpression(BigInteger.Parse(s.ToStringValue()));
 
         public static TokenListParser<GudlToken, GudlExpression> DoubleExpression =
             from s in Token.EqualTo(GudlToken.Double)

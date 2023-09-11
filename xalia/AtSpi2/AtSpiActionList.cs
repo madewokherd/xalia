@@ -62,7 +62,7 @@ namespace Xalia.AtSpi2
             {
                 return EvaluateIdentifier(st.Value, root, depends_on);
             }
-            if (right is UiDomInt i)
+            if (right.TryToInt(out int i))
             {
                 return new UiDomRoutineAsync(Element, "spi_action", new UiDomValue[] { right }, HandleApply);
             }
@@ -72,7 +72,7 @@ namespace Xalia.AtSpi2
         private static Task HandleApply(UiDomRoutineAsync obj)
         {
             var element = obj.Element;
-            var index = ((UiDomInt)obj.Arglist[0]).Value;
+            obj.Arglist[0].TryToInt(out int index); /* already checked in EvaluateApply */
             return element.ProviderByType<ActionProvider>().DoAction(index);
         }
 

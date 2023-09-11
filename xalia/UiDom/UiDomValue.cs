@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 using Xalia.Gudl;
@@ -193,14 +194,15 @@ namespace Xalia.UiDom
                                 if (right is UiDomInt rint)
                                     return new UiDomInt(lint.Value + rint.Value);
                                 if (right is UiDomDouble rdbl)
-                                    return new UiDomDouble(lint.Value + rdbl.Value);
+                                    return new UiDomDouble((double)lint.Value + rdbl.Value);
                             }
-                            if (left is UiDomInt ldbl)
+                            if (left is UiDomDouble ldbl)
                             {
                                 if (right is UiDomInt rint)
-                                    return new UiDomDouble(ldbl.Value + rint.Value);
+                                    return new UiDomDouble(ldbl.Value + (double)rint.Value);
                                 if (right is UiDomDouble rdbl)
                                     return new UiDomDouble(ldbl.Value + rdbl.Value);
+
                             }
                             if (left is UiDomRoutine lrou && right is UiDomRoutine rrou)
                                 return new UiDomRoutineSequence(lrou, rrou);
@@ -216,12 +218,12 @@ namespace Xalia.UiDom
                                 if (right is UiDomInt rint)
                                     return new UiDomInt(lint.Value - rint.Value);
                                 if (right is UiDomDouble rdbl)
-                                    return new UiDomDouble(lint.Value - rdbl.Value);
+                                    return new UiDomDouble((double)lint.Value - rdbl.Value);
                             }
-                            if (left is UiDomInt ldbl)
+                            if (left is UiDomDouble ldbl)
                             {
                                 if (right is UiDomInt rint)
-                                    return new UiDomDouble(ldbl.Value - rint.Value);
+                                    return new UiDomDouble(ldbl.Value - (double)rint.Value);
                                 if (right is UiDomDouble rdbl)
                                     return new UiDomDouble(ldbl.Value - rdbl.Value);
                             }
@@ -237,12 +239,12 @@ namespace Xalia.UiDom
                                 if (right is UiDomInt rint)
                                     return new UiDomInt(lint.Value * rint.Value);
                                 if (right is UiDomDouble rdbl)
-                                    return new UiDomDouble(lint.Value * rdbl.Value);
+                                    return new UiDomDouble((double)lint.Value * rdbl.Value);
                             }
-                            if (left is UiDomInt ldbl)
+                            if (left is UiDomDouble ldbl)
                             {
                                 if (right is UiDomInt rint)
-                                    return new UiDomDouble(ldbl.Value * rint.Value);
+                                    return new UiDomDouble(ldbl.Value * (double)rint.Value);
                                 if (right is UiDomDouble rdbl)
                                     return new UiDomDouble(ldbl.Value * rdbl.Value);
                             }
@@ -256,14 +258,14 @@ namespace Xalia.UiDom
                             if (left is UiDomInt lint)
                             {
                                 if (right is UiDomInt rint)
-                                    return new UiDomDouble((double)lint.Value / rint.Value);
+                                    return new UiDomDouble((double)lint.Value / (double)rint.Value);
                                 if (right is UiDomDouble rdbl)
-                                    return new UiDomDouble(lint.Value / rdbl.Value);
+                                    return new UiDomDouble((double)lint.Value / rdbl.Value);
                             }
-                            if (left is UiDomInt ldbl)
+                            if (left is UiDomDouble ldbl)
                             {
                                 if (right is UiDomInt rint)
-                                    return new UiDomDouble(ldbl.Value / rint.Value);
+                                    return new UiDomDouble(ldbl.Value / (double)rint.Value);
                                 if (right is UiDomDouble rdbl)
                                     return new UiDomDouble(ldbl.Value / rdbl.Value);
                             }
@@ -281,8 +283,7 @@ namespace Xalia.UiDom
                                     if (rint.Value == 0)
                                         return UiDomUndefined.Instance;
 
-                                    int mod = lint.Value % rint.Value;
-                                    int quotient = lint.Value / rint.Value;
+                                    var quotient = BigInteger.DivRem(lint.Value, rint.Value, out var mod);
 
                                     if (mod != 0 && ((mod > 0) != (rint.Value > 0)))
                                     {
@@ -294,7 +295,7 @@ namespace Xalia.UiDom
                                 if (right is UiDomDouble rdbl)
                                     return IntegerDiv((double)lint.Value, rdbl.Value);
                             }
-                            if (left is UiDomInt ldbl)
+                            if (left is UiDomDouble ldbl)
                             {
                                 if (right is UiDomInt rint)
                                     return IntegerDiv(ldbl.Value, (double)rint.Value);
@@ -315,7 +316,7 @@ namespace Xalia.UiDom
                                     if (rint.Value == 0)
                                         return UiDomUndefined.Instance;
 
-                                    int mod = lint.Value % rint.Value;
+                                    BigInteger mod = lint.Value % rint.Value;
 
                                     if (mod != 0 && ((mod > 0) != (rint.Value > 0)))
                                     {
@@ -327,7 +328,7 @@ namespace Xalia.UiDom
                                 if (right is UiDomDouble rdbl)
                                     return Modulo((double)lint.Value, rdbl.Value);
                             }
-                            if (left is UiDomInt ldbl)
+                            if (left is UiDomDouble ldbl)
                             {
                                 if (right is UiDomInt rint)
                                     return Modulo(ldbl.Value, (double)rint.Value);
@@ -390,6 +391,12 @@ namespace Xalia.UiDom
         public virtual bool ToBool()
         {
             return true;
+        }
+
+        public virtual bool TryToInt(out int val)
+        {
+            val = 0;
+            return false;
         }
 
         public virtual bool TryToDouble(out double val)

@@ -1,13 +1,17 @@
-﻿namespace Xalia.Gudl
+﻿using System.Numerics;
+
+namespace Xalia.Gudl
 {
     internal class IntegerExpression : GudlExpression
     {
-        public IntegerExpression(int value)
+        public IntegerExpression(BigInteger value)
         {
             Value = value;
         }
 
-        public int Value { get; }
+        public IntegerExpression(int value) : this(new BigInteger(value)) { }
+
+        public BigInteger Value { get; }
 
         public override bool Equals(object obj)
         {

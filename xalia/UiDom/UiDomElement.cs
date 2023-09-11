@@ -446,12 +446,12 @@ namespace Xalia.UiDom
                 return UiDomUndefined.Instance;
             var expr = arglist[0];
             UiDomValue right = context.Evaluate(expr, root, depends_on);
-            if (right is UiDomInt i)
+            if (right.TryToInt(out int i))
             {
                 depends_on.Add((this, new IdentifierExpression("children")));
-                if (i.Value >= 0 && i.Value < Children.Count)
+                if (i >= 0 && i < Children.Count)
                 {
-                    return Children[i.Value];
+                    return Children[i];
                 }
             }
             return UiDomUndefined.Instance;
@@ -484,13 +484,13 @@ namespace Xalia.UiDom
         public virtual async Task<(bool, int, int)> GetClickablePoint()
         {
             int x, y;
-            if (GetDeclaration("target_x") is UiDomInt tx &&
-                GetDeclaration("target_y") is UiDomInt ty &&
-                GetDeclaration("target_width") is UiDomInt tw &&
-                GetDeclaration("target_height") is UiDomInt th)
+            if (GetDeclaration("target_x").TryToInt(out int tx) &&
+                GetDeclaration("target_y").TryToInt(out int ty) &&
+                GetDeclaration("target_width").TryToInt(out int tw) &&
+                GetDeclaration("target_height").TryToInt(out int th))
             {
-                x = tx.Value + tw.Value / 2;
-                y = ty.Value + th.Value / 2;
+                x = tx + tw / 2;
+                y = ty + th / 2;
                 return (true, x, y);
             }
             foreach (var provider in Providers)
