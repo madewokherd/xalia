@@ -25,9 +25,16 @@ namespace Xalia.Gudl
             from s in Token.EqualTo(GudlToken.String)
             select (GudlExpression)new StringExpression(GudlTokenizer.GudlString.Parse(s.ToStringValue()));
 
-        public static TokenListParser<GudlToken, GudlExpression> IntegerExpression =
-            from s in Token.EqualTo(GudlToken.Integer)
+        public static TokenListParser<GudlToken, GudlExpression> DecIntegerExpression =
+            from s in Token.EqualTo(GudlToken.DecInteger)
             select (GudlExpression)new IntegerExpression(BigInteger.Parse(s.ToStringValue()));
+
+        public static TokenListParser<GudlToken, GudlExpression> HexIntegerExpression =
+            from s in Token.EqualTo(GudlToken.HexInteger)
+            select (GudlExpression)new IntegerExpression(GudlTokenizer.GudlHexConstant.Parse(s.ToStringValue()));
+
+        public static TokenListParser<GudlToken, GudlExpression> IntegerExpression =
+            DecIntegerExpression.Or(HexIntegerExpression);
 
         public static TokenListParser<GudlToken, GudlExpression> DoubleExpression =
             from s in Token.EqualTo(GudlToken.Double)

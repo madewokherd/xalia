@@ -72,7 +72,8 @@ namespace Xalia.Gudl
 
         String,
 
-        Integer,
+        DecInteger,
+        HexInteger,
 
         [Token(Example = ",")]
         Comma,

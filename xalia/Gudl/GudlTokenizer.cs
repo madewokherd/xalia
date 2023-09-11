@@ -2,7 +2,9 @@
 using Superpower.Model;
 using Superpower.Parsers;
 using Superpower.Tokenizers;
+using System.Globalization;
 using System.Linq;
+using System.Numerics;
 
 namespace Xalia.Gudl
 {
@@ -57,6 +59,11 @@ namespace Xalia.Gudl
             from dec in Numerics.Integer.OptionalOrDefault(TextSpan.Empty)
             select double.Parse($"{whole}.{dec}");
 
+        public static TextParser<BigInteger> GudlHexConstant =
+            from prefix in Span.EqualTo("0x")
+            from digits in Numerics.HexDigits
+            select BigInteger.Parse(digits.ToStringValue(), NumberStyles.HexNumber);
+
         public static Tokenizer<GudlToken> Instance =
             new TokenizerBuilder<GudlToken>()
                 .Ignore(Span.WhiteSpace)
@@ -89,7 +96,8 @@ namespace Xalia.Gudl
                 .Match(Identifier.CStyle, GudlToken.Identifier, requireDelimiters: true)
                 .Match(GudlString, GudlToken.String, requireDelimiters: true)
                 .Match(GudlDouble, GudlToken.Double, requireDelimiters: true)
-                .Match(Numerics.Integer, GudlToken.Integer, requireDelimiters: true)
+                .Match(Numerics.Integer, GudlToken.DecInteger, requireDelimiters: true)
+                .Match(GudlHexConstant, GudlToken.HexInteger, requireDelimiters: true)
                 .Build();
     }
 }
