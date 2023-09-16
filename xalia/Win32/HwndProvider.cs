@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xalia.Gudl;
@@ -49,6 +50,8 @@ namespace Xalia.Win32
             { "hwnd", "win32_hwnd" },
             { "pid", "win32_pid" },
             { "tid", "win32_tid" },
+            { "process_name", "win32_process_name" },
+            { "application_name", "win32_process_name" },
         };
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
@@ -119,6 +122,8 @@ namespace Xalia.Win32
         private bool _fetchingWindowText;
         public string WindowText { get; private set; }
         public bool WindowTextKnown { get; private set; }
+
+        public string ProcessName { get; private set; }
 
         static HwndProvider()
         {
@@ -310,6 +315,8 @@ namespace Xalia.Win32
             Utils.DebugWriteLine($"  win32_hwnd: {Hwnd}");
             Utils.DebugWriteLine($"  win32_pid: {Pid}");
             Utils.DebugWriteLine($"  win32_tid: {Tid}");
+            if (!(ProcessName is null))
+                Utils.DebugWriteLine($"  win32_process_name: {ProcessName}");
         }
 
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -393,6 +400,21 @@ namespace Xalia.Win32
                     return new UiDomInt(Pid);
                 case "win32_tid":
                     return new UiDomInt(Tid);
+                case "win32_process_name":
+                    if (ProcessName is null)
+                    {
+                        try
+                        {
+                            using (var process = Process.GetProcessById(Pid))
+                                ProcessName = process.ProcessName;
+                        }
+                        catch (ArgumentException)
+                        {
+                            // process no longer running
+                            return UiDomUndefined.Instance;
+                        }
+                    }
+                    return new UiDomString(ProcessName);
             }
             return UiDomUndefined.Instance;
         }
