@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
+using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
@@ -36,7 +38,7 @@ namespace Xalia.Win32
         private void CreateNewThread(CommandQueue queue)
         {
             var thread = new Thread(ThreadProc);
-            thread.SetApartmentState(ApartmentState.MTA);
+            thread.SetApartmentState(ApartmentState.STA);
             thread.Start(queue);
         }
 
@@ -119,6 +121,30 @@ namespace Xalia.Win32
             await completion_source.Task;
         }
 
+        private void MsgWaitOne(WaitHandle waitHandle)
+        {
+            while (true)
+            {
+                var ret = MsgWaitForSingleObject(waitHandle.SafeWaitHandle, INFINITE, QS_ALLINPUT);
+                switch (ret)
+                {
+                    case 0:
+                        return;
+                    case 1:
+                        {
+                            while (PeekMessageW(out MSG msg, IntPtr.Zero, 0, 0, PM_REMOVE))
+                            {
+                                TranslateMessage(ref msg);
+                                DispatchMessageW(ref msg);
+                            }
+                            break;
+                        }
+                    default:
+                        throw new Win32Exception();
+                }
+            }
+        }
+
         private void ThreadProc(object initial_info)
         {
             var queue = (CommandQueue)initial_info;
@@ -141,7 +167,7 @@ namespace Xalia.Win32
                         }
                     }
                     Interlocked.Increment(ref threads_waiting);
-                    tasks_available.WaitOne();
+                    MsgWaitOne(tasks_available);
                     Interlocked.Decrement(ref threads_waiting);
                 }
             }

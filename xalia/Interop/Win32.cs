@@ -376,6 +376,15 @@ namespace Xalia.Interop
                 ref Guid riid);
         }
 
+        [ComImport, Guid("00000114-0000-0000-c000-000000000046")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IOleWindow
+        {
+            IntPtr GetWindow();
+
+            void ContextSensitiveHelp(bool fEnterMode);
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         public struct IA2Locale
         {
@@ -885,6 +894,70 @@ namespace Xalia.Interop
         {
             return new IntPtr((high << 16) | low);
         }
+
+        public const int QS_KEY = 0x1;
+        public const int QS_MOUSEMOVE = 0x2;
+        public const int QS_MOUSEBUTTON = 0x4;
+        public const int QS_MOUSE = QS_MOUSEMOVE | QS_MOUSEBUTTON;
+        public const int QS_POSTMESSAGE = 0x8;
+        public const int QS_TIMER = 0x10;
+        public const int QS_PAINT = 0x20;
+        public const int QS_SENDMESSAGE = 0x40;
+        public const int QS_HOTKEY = 0x80;
+        public const int QS_RAWINPUT = 0x400;
+        public const int QS_TOUCH = 0x800;
+        public const int QS_POINTER = 0x1000;
+        public const int QS_INPUT = QS_MOUSE | QS_KEY | QS_RAWINPUT | QS_TOUCH | QS_POINTER;
+        public const int QS_ALLEVENTS = QS_INPUT | QS_POSTMESSAGE | QS_TIMER | QS_PAINT | QS_HOTKEY;
+        public const int QS_ALLINPUT = QS_ALLEVENTS | QS_SENDMESSAGE;
+
+        public const int INFINITE = -1;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        unsafe public extern static int MsgWaitForMultipleObjects(int nCount, IntPtr* pHandles, bool fWaitAll,
+            int dwMilliseconds, int dwWakeMask);
+
+        unsafe public static int MsgWaitForSingleObject(SafeWaitHandle handle, int dwMilliseconds, int dwWakeMask)
+        {
+            bool success = false;
+            IntPtr raw_handle;
+            try
+            {
+                handle.DangerousAddRef(ref success);
+
+                raw_handle = handle.DangerousGetHandle();
+
+                return MsgWaitForMultipleObjects(1, &raw_handle, false, dwMilliseconds, dwWakeMask);
+            }
+            finally
+            {
+                handle.DangerousRelease();
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MSG
+        {
+            public IntPtr hwnd;
+            public int message;
+            public IntPtr wParam;
+            public IntPtr lParam;
+            public int time;
+            public POINT pt;
+            public int lPrivate;
+        }
+
+        public const int PM_REMOVE = 0x1;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public extern static bool PeekMessageW(out MSG lpMsg, IntPtr hWnd, int wMsgFilterMin,
+            int wMsgFilterMax, int wRemoveMsg);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public extern static bool TranslateMessage(ref MSG lpMsg);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public extern static bool DispatchMessageW(ref MSG lpMsg);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr SendMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);

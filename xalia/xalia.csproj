@@ -190,6 +190,7 @@
     <Compile Include="external\SDL2-CS\src\SDL2.cs" />
     <Compile Include="Util\Range.cs" />
     <Compile Include="Win32\AccessibleProvider.cs" />
+    <Compile Include="Win32\ElementIdentifier.cs" />
     <Compile Include="Win32\HwndButtonProvider.cs" />
     <Compile Include="Win32\HwndComboBoxProvider.cs" />
     <Compile Include="Win32\HwndDialogProvider.cs" />

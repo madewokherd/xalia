@@ -29,6 +29,8 @@ namespace Xalia.Win32
 
         private Dictionary<string, UiDomElement> elements_by_id = new Dictionary<string, UiDomElement>();
 
+        private int id_counter;
+
         public UiDomRoot Root { get; }
 
         public CommandThread CommandThread { get; } = new CommandThread();
@@ -62,6 +64,17 @@ namespace Xalia.Win32
                     return $"NonclientHScroll-{hwnd}";
             }
             return null;
+        }
+
+        public string GetElementName(ElementIdentifier id)
+        {
+            if (id.is_root_hwnd)
+                return GetElementName(id.root_hwnd);
+            if (!(id.acc2 is null))
+                return $"acc2-{id.root_hwnd}-{id.acc2_uniqueId}";
+            // TODO: UIA runtime id
+            id_counter++;
+            return $"msaa-{id.root_hwnd}-{id_counter}";
         }
 
         private void UpdateToplevels()
@@ -102,6 +115,18 @@ namespace Xalia.Win32
             var element_name = GetElementName(hwnd, idObject, idChild);
             if (element_name is null)
                 return null;
+            return LookupElement(element_name);
+        }
+
+        public UiDomElement LookupElement(ElementIdentifier id)
+        {
+            if (!id.is_root_hwnd && id.acc2 is null)
+                return null;
+
+            var element_name = GetElementName(id);
+            if (element_name is null)
+                return null;
+
             return LookupElement(element_name);
         }
 
@@ -156,6 +181,26 @@ namespace Xalia.Win32
             elements_by_id.Add(element_name, element);
 
             return element;
+        }
+
+        internal UiDomElement CreateElement(ElementIdentifier id)
+        {
+            if (id.is_root_hwnd)
+                return CreateElement(id.root_hwnd);
+
+            var name = GetElementName(id);
+            var result = new UiDomElement(name, Root);
+
+            var root_hwnd = LookupElement(id.root_hwnd)?.ProviderByType<HwndProvider>();
+            if (root_hwnd is null)
+                throw new InvalidOperationException("hwnd element must be created before child element");
+
+            if (!(id.acc is null))
+            {
+                result.AddProvider(new AccessibleProvider(root_hwnd, result, id.acc, id.child_id));
+            }
+
+            return result;
         }
 
         public override void NotifyElementRemoved(UiDomElement element)

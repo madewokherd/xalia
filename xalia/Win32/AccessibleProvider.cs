@@ -1,7 +1,9 @@
 ﻿using Accessibility;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -20,11 +22,24 @@ namespace Xalia.Win32
             ChildId = child_id;
         }
 
+        private static string[] tracked_properties = new string[] { "recurse_method" };
+
         public HwndProvider RootHwnd { get; }
         public UiDomElement Element { get; private set; }
         public Win32Connection Connection => RootHwnd.Connection;
+        public int Tid => RootHwnd.Tid;
         public IAccessible IAccessible { get; private set; }
         public int ChildId { get; }
+
+        enum RecurseMethod
+        {
+            None,
+            IEnumVARIANT,
+            // accChild,
+            // accNavigate,
+            // Auto
+        }
+        private RecurseMethod _recurseMethod;
 
         public int Role { get; private set; }
         public bool RoleKnown { get; private set; }
@@ -187,10 +202,18 @@ namespace Xalia.Win32
             }
         }
 
+        public override void NotifyElementRemoved(UiDomElement element)
+        {
+            _recurseMethod = RecurseMethod.None;
+            base.NotifyElementRemoved(element);
+        }
+
         public override void DumpProperties(UiDomElement element)
         {
             if (RoleKnown)
                 Utils.DebugWriteLine($"  msaa_role: {RoleAsValue}");
+            if (RootHwnd.Element != Element)
+                RootHwnd.ChildDumpProperties();
         }
 
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -203,11 +226,18 @@ namespace Xalia.Win32
                     depends_on.Add((Element, new IdentifierExpression("msaa_role")));
                     return RoleAsValue;
             }
-            return UiDomUndefined.Instance;
+            return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
         }
 
         public override UiDomValue EvaluateIdentifierLate(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            switch (identifier)
+            {
+                case "recurse_method":
+                    if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
+                        return new UiDomString("msaa_enum");
+                    break;
+            }
             if (property_aliases.TryGetValue(identifier, out var aliased))
             {
                 return Element.EvaluateIdentifier(aliased, Element.Root, depends_on);
@@ -220,7 +250,7 @@ namespace Xalia.Win32
                     return UiDomBoolean.FromBool(Role == role);
                 }
             }
-            return UiDomUndefined.Instance;
+            return RootHwnd.ChildEvaluateIdentifierLate(identifier, depends_on);
         }
 
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)
@@ -241,6 +271,202 @@ namespace Xalia.Win32
                 }
             }
             return false;
+        }
+
+        void WatchChildren(RecurseMethod method)
+        {
+            if (method == _recurseMethod)
+                return;
+            _recurseMethod = method;
+            if (method == RecurseMethod.None)
+            {
+                Element.UnsetRecurseMethodProvider(this);
+            }
+            else
+            {
+                if (Element.MatchesDebugCondition())
+                    Utils.DebugWriteLine($"WatchChildren for {Element} (msaa {method})");
+                Element.SetRecurseMethodProvider(this);
+                Utils.RunTask(PollChildren());
+            }
+        }
+
+        private async Task PollChildren()
+        {
+            List<ElementIdentifier> children;
+            try
+            {
+                children = await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    List<ElementIdentifier> result;
+                    switch (_recurseMethod)
+                    {
+                        case RecurseMethod.None:
+                        default:
+                            result = null;
+                            break;
+                        case RecurseMethod.IEnumVARIANT:
+                            result = GetChildrenEnumVariantBackground();
+                            break;
+                    }
+                    return result;
+                }, Tid);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            if (children is null || _recurseMethod == RecurseMethod.None)
+                return;
+
+            for (int i = children.Count - 1; i >= 0; i--)
+            {
+                // Remove any duplicate elements
+                var existing_element = Connection.LookupElement(children[i]);
+                if (!(existing_element is null) && existing_element.Parent != Element)
+                    children.RemoveAt(i);
+            }
+
+            Element.SyncRecurseMethodChildren(children, Connection.GetElementName,
+                Connection.CreateElement);
+        }
+
+        private List<ElementIdentifier> GetChildrenEnumVariantBackground()
+        {
+            var count = IAccessible.accChildCount;
+
+            return GetChildrenEnumVariantBackground(count);
+        }
+
+        unsafe private List<ElementIdentifier> GetChildrenEnumVariantBackground(int count)
+        {
+            if (count == 0)
+                return new List<ElementIdentifier>(0);
+
+            IEnumVARIANT e;
+            try
+            {
+                e = (IEnumVARIANT)IAccessible;
+            }
+            catch (InvalidCastException)
+            {
+                return null;
+            }
+
+            int res = e.Reset();
+            Marshal.ThrowExceptionForHR(res);
+
+            object[] variants = new object[count];
+            res = e.Next(count, variants, new IntPtr(&count));
+            Marshal.ThrowExceptionForHR(res);
+
+            List<ElementIdentifier> result = new List<ElementIdentifier>(count);
+            HashSet<object> seen = new HashSet<object>(count);
+            foreach (var v in variants)
+            {
+                if (v is int i && i == CHILDID_SELF)
+                    continue;
+                if (!seen.Add(v))
+                    continue;
+                result.Add(ElementIdFromVariantBackground(v));
+            }
+
+            return result;
+        }
+
+        private ElementIdentifier ElementIdFromVariantBackground(object variant)
+        {
+            ElementIdentifier result = default;
+            result.root_hwnd = RootHwnd.Hwnd;
+            IAccessible acc;
+            if (variant is int childid)
+            {
+                var child = IAccessible.accChild[childid];
+                if (child is null)
+                {
+                    // Child without its own IAccessible
+                    result.acc = IAccessible;
+                    result.child_id = childid;
+                    return result;
+                }
+                acc = (IAccessible)child;
+            }
+            else if (variant is IAccessible ia)
+                acc = ia;
+            else if (variant is null)
+                throw new InvalidOperationException($"variant is VT_EMPTY");
+            else
+                throw new InvalidOperationException($"wrong type {variant.GetType()}");
+
+            IOleWindow oleWindow = acc as IOleWindow;
+            if (!(oleWindow is null))
+            {
+                try
+                {
+                    IntPtr root_hwnd = oleWindow.GetWindow();
+                    if (root_hwnd != IntPtr.Zero && root_hwnd != RootHwnd.Hwnd)
+                    {
+                        result.root_hwnd = root_hwnd;
+                        result.is_root_hwnd = true;
+                        return result;
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (!IsExpectedException(e))
+                        throw;
+                }
+            }
+
+            // TODO: Check for IAccessibleEx (UIA)
+
+            result.acc = acc;
+
+            IAccessible2 acc2 = QueryIAccessible2(acc);
+
+            if (!(acc2 is null))
+            {
+                result.acc2 = acc2;
+                result.acc2_uniqueId = acc2.uniqueID;
+            }
+
+            return result;
+        }
+
+        public override string[] GetTrackedProperties()
+        {
+            return tracked_properties;
+        }
+
+        public override void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
+        {
+            switch (name)
+            {
+                case "recurse_method":
+                    {
+                        RecurseMethod new_method;
+                        if (new_value is UiDomString s)
+                        {
+                            switch (s.Value)
+                            {
+                                case "msaa_enum":
+                                    new_method = RecurseMethod.IEnumVARIANT;
+                                    break;
+                                default:
+                                    new_method = RecurseMethod.None;
+                                    break;
+                            }
+                        }
+                        else
+                            new_method = RecurseMethod.None;
+                        WatchChildren(new_method);
+                        break;
+                    }
+            }
+            base.TrackedPropertyChanged(element, name, new_value);
         }
 
         private async Task FetchRole()
