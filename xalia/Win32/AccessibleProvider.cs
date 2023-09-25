@@ -190,7 +190,7 @@ namespace Xalia.Win32
         public override void DumpProperties(UiDomElement element)
         {
             if (RoleKnown)
-                Utils.DebugWriteLine($"  {Element}.msaa_role: {RoleAsValue}");
+                Utils.DebugWriteLine($"  msaa_role: {RoleAsValue}");
         }
 
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
