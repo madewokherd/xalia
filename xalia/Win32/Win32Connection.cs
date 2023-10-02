@@ -481,6 +481,7 @@ namespace Xalia.Win32
                                     var element = LookupElement(hwnd, idObject, idChild);
                                     if (!(element is null))
                                     {
+                                        element.ProviderByType<AccessibleProvider>()?.MsaaStateChange();
                                         element.ProviderByType<HwndProvider>()?.MsaaStateChange();
                                     }
                                     break;

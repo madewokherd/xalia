@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Text;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -44,6 +45,11 @@ namespace Xalia.Win32
         public int Role { get; private set; }
         public bool RoleKnown { get; private set; }
         private bool _fetchingRole;
+
+        public int State { get; private set; }
+        public bool StateKnown { get; private set; }
+        private bool _watchingState;
+        private int _stateChangeCount;
 
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
         internal static bool IsExpectedException(Exception e)
@@ -107,6 +113,7 @@ namespace Xalia.Win32
         {
             msaa_role_to_enum = new UiDomEnum[msaa_role_names.Length];
             msaa_name_to_role = new Dictionary<string, int>();
+            msaa_name_to_state = new Dictionary<string, int>();
             for (int i = 0; i < msaa_role_names.Length; i++)
             {
                 string name = msaa_role_names[i];
@@ -118,6 +125,10 @@ namespace Xalia.Win32
                 foreach (string rolename in names)
                     msaa_name_to_role[rolename] = i;
                 msaa_role_to_enum[i] = new UiDomEnum(names);
+            }
+            for (int i = 0; i < msaa_state_names.Length; i++)
+            {
+                msaa_name_to_state[msaa_state_names[i]] = 1 << i;
             }
         }
 
@@ -190,8 +201,43 @@ namespace Xalia.Win32
             "outline_button",
         };
 
+        internal static readonly string[] msaa_state_names =
+        {
+            "unavailable",
+            "selected",
+            "focused",
+            "pressed",
+            "checked",
+            "mixed",
+            "readonly",
+            "hottracked",
+            "default",
+            "expanded",
+            "collapsed",
+            "busy",
+            "floating",
+            "marqueed",
+            "animated",
+            "invisible",
+            "offscreen",
+            "sizeable",
+            "moveable",
+            "selfvoicing",
+            "focusable",
+            "selectable",
+            "linked",
+            "traversed",
+            "multiselectable",
+            "extselectable",
+            "alert_low",
+            "alert_medium",
+            "alert_high",
+            "protected"
+        };
+
         internal static readonly UiDomEnum[] msaa_role_to_enum;
         internal static readonly Dictionary<string, int> msaa_name_to_role;
+        internal static readonly Dictionary<string, int> msaa_name_to_state;
 
         public UiDomValue RoleAsValue
         {
@@ -213,10 +259,29 @@ namespace Xalia.Win32
             base.NotifyElementRemoved(element);
         }
 
+        private static string GetStateNames(int state)
+        {
+            var state_names = new StringBuilder();
+            bool first_flag = true;
+            for (int i=0; i < msaa_state_names.Length; i++)
+            {
+                if ((state & (1 << i)) != 0)
+                {
+                    if (!first_flag)
+                        state_names.Append("|");
+                    first_flag = false;
+                    state_names.Append(msaa_state_names[i]);
+                }
+            }
+            return state_names.ToString();
+        }
+
         public override void DumpProperties(UiDomElement element)
         {
             if (RoleKnown)
                 Utils.DebugWriteLine($"  msaa_role: {RoleAsValue}");
+            if (StateKnown)
+                Utils.DebugWriteLine($"  msaa_state: 0x{State:X} ({GetStateNames(State)})");
             if (RootHwnd.Element != Element)
                 RootHwnd.ChildDumpProperties();
         }
@@ -230,6 +295,11 @@ namespace Xalia.Win32
                 case "msaa_role":
                     depends_on.Add((Element, new IdentifierExpression("msaa_role")));
                     return RoleAsValue;
+                case "msaa_state":
+                    depends_on.Add((Element, new IdentifierExpression(identifier)));
+                    if (StateKnown)
+                        return new UiDomInt(State);
+                    break;
             }
             return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
         }
@@ -241,6 +311,21 @@ namespace Xalia.Win32
                 case "recurse_method":
                     if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
                         return new UiDomString("msaa");
+                    break;
+                case "enabled":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_state")));
+                    if (StateKnown)
+                        return UiDomBoolean.FromBool((State & STATE_SYSTEM_UNAVAILABLE) == 0);
+                    break;
+                case "disabled":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_state")));
+                    if (StateKnown)
+                        return UiDomBoolean.FromBool((State & STATE_SYSTEM_UNAVAILABLE) != 0);
+                    break;
+                case "visible":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_state")));
+                    if (StateKnown)
+                        return UiDomBoolean.FromBool((State & (STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN)) != STATE_SYSTEM_INVISIBLE);
                     break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
@@ -254,6 +339,12 @@ namespace Xalia.Win32
                 {
                     return UiDomBoolean.FromBool(Role == role);
                 }
+            }
+            if (msaa_name_to_state.TryGetValue(identifier, out var state))
+            {
+                depends_on.Add((Element, new IdentifierExpression("msaa_state")));
+                if (StateKnown)
+                    return UiDomBoolean.FromBool((State & state) != 0);
             }
             return RootHwnd.ChildEvaluateIdentifierLate(identifier, depends_on);
         }
@@ -273,9 +364,73 @@ namespace Xalia.Win32
                             }
                             break;
                         }
+                    case "msaa_state":
+                        {
+                            _watchingState = true;
+                            if (!StateKnown)
+                                Utils.RunTask(FetchState());
+                            return true;
+                        }
                 }
             }
             return false;
+        }
+
+        public override bool UnwatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "msaa_state":
+                        _watchingState = false;
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        private async Task FetchState()
+        {
+            var old_change_count = _stateChangeCount;
+            int? new_state;
+
+            try
+            {
+                new_state = await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    if (old_change_count != _stateChangeCount)
+                        return null;
+                    return IAccessible.accState[ChildId] as int?;
+                }, Tid+1);
+            }
+            catch (Exception e)
+            {
+                if (IsExpectedException(e))
+                    return;
+                throw;
+            }
+
+            if (new_state is null)
+                // should always be int
+                return;
+
+            if (old_change_count != _stateChangeCount)
+                // possibly stale value
+                return;
+
+            if (!StateKnown || State != new_state)
+            {
+                StateKnown = true;
+                State = (int)new_state;
+
+                if (Element.MatchesDebugCondition())
+                {
+                    Utils.DebugWriteLine($"{Element}.msaa_state: 0x{State:X} ({GetStateNames(State)})");
+                }
+
+                Element.PropertyChanged("msaa_state");
+            }
         }
 
         void WatchChildren(RecurseMethod method)
@@ -534,6 +689,15 @@ namespace Xalia.Win32
                     Utils.DebugWriteLine($"{Element}.msaa_role: {RoleAsValue}");
                 Element.PropertyChanged("msaa_role");
             }
+        }
+
+        public void MsaaStateChange()
+        {
+            _stateChangeCount++;
+            if (_watchingState)
+                Utils.RunTask(FetchState());
+            else
+                StateKnown = false;
         }
     }
 }

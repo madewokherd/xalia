@@ -268,12 +268,7 @@ if (class_name == "TermControl") {
 
 // APPLICATION: X-Blades (launcher)
 if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherWnd")) {
-    pane (parent.class_name == "GameLauncherWnd" and previous_sibling) {
-        // The launcher has a lot of duplicate panes at the top level
-        recurse: false;
-        targetable: false;
-    }
-	recurse: uia_offscreen == false;
+	recurse: invisible == false;
 
     manual_buttons: true;
     manual_checkboxes: true;
@@ -593,6 +588,11 @@ if (is_spi_element and role.filler) {
     // In versions before 2.47.1, GetChildren incorrectly returned no children.
     // ref: https://gitlab.gnome.org/GNOME/at-spi2-core/-/issues/98
     recurse_method: "spi_child_at_index";
+}
+
+if (is_msaa_element and (msaa_state == undefined or (invisible and not offscreen))) {
+    // should be ignored per https://learn.microsoft.com/en-us/windows/win32/winauto/object-state-constants
+    recurse: false;
 }
 
 // List children of containers
