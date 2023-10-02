@@ -35,9 +35,9 @@ namespace Xalia.Win32
         {
             None,
             IEnumVARIANT,
-            // accChild,
+            accChild,
             // accNavigate,
-            // Auto
+            Auto
         }
         private RecurseMethod _recurseMethod;
 
@@ -78,6 +78,11 @@ namespace Xalia.Win32
             }
             if (e is UnauthorizedAccessException)
             {
+                return true;
+            }
+            if (e is ArgumentException)
+            {
+                // thrown for stale childid's
                 return true;
             }
 #if DEBUG
@@ -235,7 +240,7 @@ namespace Xalia.Win32
             {
                 case "recurse_method":
                     if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
-                        return new UiDomString("msaa_enum");
+                        return new UiDomString("msaa");
                     break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
@@ -299,6 +304,9 @@ namespace Xalia.Win32
                 children = await Connection.CommandThread.OnBackgroundThread(() =>
                 {
                     List<ElementIdentifier> result;
+                    var count = 0;
+                    if (_recurseMethod != RecurseMethod.None)
+                        count = IAccessible.accChildCount;
                     switch (_recurseMethod)
                     {
                         case RecurseMethod.None:
@@ -306,7 +314,15 @@ namespace Xalia.Win32
                             result = null;
                             break;
                         case RecurseMethod.IEnumVARIANT:
-                            result = GetChildrenEnumVariantBackground();
+                            result = GetChildrenEnumVariantBackground(count);
+                            break;
+                        case RecurseMethod.accChild:
+                            result = GetChildrenAccChildBackground(count);
+                            break;
+                        case RecurseMethod.Auto:
+                            result = GetChildrenEnumVariantBackground(count);
+                            if (result is null)
+                                result = GetChildrenAccChildBackground(count);
                             break;
                     }
                     return result;
@@ -332,13 +348,6 @@ namespace Xalia.Win32
 
             Element.SyncRecurseMethodChildren(children, Connection.GetElementName,
                 Connection.CreateElement);
-        }
-
-        private List<ElementIdentifier> GetChildrenEnumVariantBackground()
-        {
-            var count = IAccessible.accChildCount;
-
-            return GetChildrenEnumVariantBackground(count);
         }
 
         unsafe private List<ElementIdentifier> GetChildrenEnumVariantBackground(int count)
@@ -368,6 +377,24 @@ namespace Xalia.Win32
             foreach (var v in variants)
             {
                 if (v is int i && i == CHILDID_SELF)
+                    continue;
+                if (!seen.Add(v))
+                    continue;
+                result.Add(ElementIdFromVariantBackground(v));
+            }
+
+            return result;
+        }
+
+        private List<ElementIdentifier> GetChildrenAccChildBackground(int count)
+        {
+            var result = new List<ElementIdentifier>(count);
+
+            var seen = new HashSet<object>(count);
+            for (int i = 0; i < count; i++)
+            {
+                var v = IAccessible.accChild[i + 1];
+                if (v is int vi && vi == CHILDID_SELF)
                     continue;
                 if (!seen.Add(v))
                     continue;
@@ -452,8 +479,14 @@ namespace Xalia.Win32
                         {
                             switch (s.Value)
                             {
+                                case "msaa":
+                                    new_method = RecurseMethod.Auto;
+                                    break;
                                 case "msaa_enum":
                                     new_method = RecurseMethod.IEnumVARIANT;
+                                    break;
+                                case "msaa_child":
+                                    new_method = RecurseMethod.accChild;
                                     break;
                                 default:
                                     new_method = RecurseMethod.None;
