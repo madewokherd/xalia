@@ -791,6 +791,29 @@ namespace Xalia.Win32
             }
         }
 
+        internal RECT DpiAdjustScreenRect(RECT input)
+        {
+            // Adjust the given rectangle to account for DPI awareness
+
+            var input_dpi = GetDpiForWindow(Hwnd);
+
+            var output_dpi = GetWindowMonitorDpi(false);
+
+            if (input_dpi == output_dpi)
+                return input;
+
+            var multiplier = (float)output_dpi / input_dpi;
+
+            // FIXME: Account for multiple monitors with different DPI
+            var result = new RECT();
+            result.left = (int)Math.Round(input.left * multiplier);
+            result.top = (int)Math.Round(input.top * multiplier);
+            result.right = (int)Math.Round(input.right * multiplier);
+            result.bottom = (int)Math.Round(input.bottom * multiplier);
+
+            return result;
+        }
+
         internal int GetWindowMonitorDpi(bool vertical)
         {
             IntPtr monitor = MonitorFromWindow(Hwnd, MONITOR_DEFAULTTONEAREST);

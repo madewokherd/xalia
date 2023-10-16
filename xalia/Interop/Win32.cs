@@ -271,6 +271,9 @@ namespace Xalia.Interop
         [DllImport(SHCORE_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType, out int dpix, out int dpiy);
 
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int GetDpiForWindow(IntPtr hwnd);
+
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
         public delegate void WINEVENTPROC(IntPtr hWinEventProc, uint eventId, IntPtr hwnd, int idObject,
             int idChild, int idEventThread, int dwmsEventTime);

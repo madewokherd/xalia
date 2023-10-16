@@ -510,6 +510,8 @@ namespace Xalia.Win32
                 // possibly stale value
                 return;
 
+            new_location = RootHwnd.DpiAdjustScreenRect(new_location);
+
             if (!LocationKnown || !Location.Equals(new_location))
             {
                 LocationKnown = true;
