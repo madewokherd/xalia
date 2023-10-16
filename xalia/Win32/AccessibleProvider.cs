@@ -37,7 +37,7 @@ namespace Xalia.Win32
             None,
             IEnumVARIANT,
             accChild,
-            // accNavigate,
+            accNavigate,
             Auto
         }
         private RecurseMethod _recurseMethod;
@@ -460,7 +460,7 @@ namespace Xalia.Win32
                 {
                     List<ElementIdentifier> result;
                     var count = 0;
-                    if (_recurseMethod != RecurseMethod.None)
+                    if (_recurseMethod != RecurseMethod.None && _recurseMethod != RecurseMethod.accNavigate)
                         count = IAccessible.accChildCount;
                     switch (_recurseMethod)
                     {
@@ -473,6 +473,9 @@ namespace Xalia.Win32
                             break;
                         case RecurseMethod.accChild:
                             result = GetChildrenAccChildBackground(count);
+                            break;
+                        case RecurseMethod.accNavigate:
+                            result = GetChildrenAccNavigateBackground();
                             break;
                         case RecurseMethod.Auto:
                             result = GetChildrenEnumVariantBackground(count);
@@ -503,6 +506,25 @@ namespace Xalia.Win32
 
             Element.SyncRecurseMethodChildren(children, Connection.GetElementName,
                 Connection.CreateElement);
+        }
+
+        private List<ElementIdentifier> GetChildrenAccNavigateBackground()
+        {
+            var result = new List<ElementIdentifier>();
+
+            object child = IAccessible.accNavigate(NAVDIR_FIRSTCHILD, ChildId);
+            IAccessible base_acc = IAccessible;
+
+            while (!(child is null) && !(child is int c && c == CHILDID_SELF))
+            {
+                var child_ei = ElementIdFromVariantBackground(child, base_acc);
+                result.Add(child_ei);
+
+                base_acc = child_ei.acc;
+                child = base_acc.accNavigate(NAVDIR_NEXT, child_ei.child_id);
+            }
+
+            return result;
         }
 
         unsafe private List<ElementIdentifier> GetChildrenEnumVariantBackground(int count)
@@ -559,18 +581,18 @@ namespace Xalia.Win32
             return result;
         }
 
-        private ElementIdentifier ElementIdFromVariantBackground(object variant)
+        private ElementIdentifier ElementIdFromVariantBackground(object variant, IAccessible base_acc)
         {
             ElementIdentifier result = default;
             result.root_hwnd = RootHwnd.Hwnd;
             IAccessible acc;
             if (variant is int childid)
             {
-                var child = IAccessible.accChild[childid];
+                var child = base_acc.accChild[childid];
                 if (child is null)
                 {
                     // Child without its own IAccessible
-                    result.acc = IAccessible;
+                    result.acc = base_acc;
                     result.child_id = childid;
                     return result;
                 }
@@ -618,6 +640,11 @@ namespace Xalia.Win32
             return result;
         }
 
+        private ElementIdentifier ElementIdFromVariantBackground(object variant)
+        {
+            return ElementIdFromVariantBackground(variant, IAccessible);
+        }
+
         public override string[] GetTrackedProperties()
         {
             return tracked_properties;
@@ -642,6 +669,9 @@ namespace Xalia.Win32
                                     break;
                                 case "msaa_child":
                                     new_method = RecurseMethod.accChild;
+                                    break;
+                                case "msaa_navigate":
+                                    new_method = RecurseMethod.accNavigate;
                                     break;
                                 default:
                                     new_method = RecurseMethod.None;

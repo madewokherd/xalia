@@ -274,6 +274,10 @@ if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherW
     manual_checkboxes: true;
 
 	poll_uia_offscreen: true;
+
+    if (msaa_role.list) {
+        recurse_method: "msaa_navigate";
+    }
 }
 
 // General behaviors:
