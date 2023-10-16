@@ -277,6 +277,11 @@ if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherW
 
     if (msaa_role.list) {
         recurse_method: "msaa_navigate";
+        targetable: false;
+    }
+
+    if (msaa_role.list_item and interactable) {
+        targetable: true;
     }
 }
 
@@ -1011,7 +1016,7 @@ if (targetable or is_current_view) {
         target_height: spi_abs_height;
     }
 
-    if (is_uia_element or is_win32_element or is_win32_subelement or is_hwnd_element or is_hwnd_subelement) {
+    if (is_uia_element or is_win32_element or is_win32_subelement or is_hwnd_element or is_hwnd_subelement or is_msaa_element) {
         target_x: x + (offset_target_x or 0);
         target_y: y + (offset_target_y or 0);
         target_width: width;

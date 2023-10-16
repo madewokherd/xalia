@@ -400,6 +400,7 @@ namespace Xalia.Win32
         static void RecursiveLocationChange(UiDomElement element)
         {
             element.ProviderByType<HwndProvider>()?.MsaaAncestorLocationChange();
+            element.ProviderByType<AccessibleProvider>()?.MsaaAncestorLocationChange();
             foreach (var child in element.Children)
             {
                 RecursiveLocationChange(child);

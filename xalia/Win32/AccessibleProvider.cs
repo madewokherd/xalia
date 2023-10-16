@@ -51,6 +51,11 @@ namespace Xalia.Win32
         private bool _watchingState;
         private int _stateChangeCount;
 
+        public RECT Location { get; private set; }
+        public bool LocationKnown { get; private set; }
+        private bool _watchingLocation;
+        private int _locationChangeCount;
+
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
         internal static bool IsExpectedException(Exception e)
         {
@@ -107,6 +112,10 @@ namespace Xalia.Win32
         {
             { "role", "msaa_role" },
             { "control_type", "msaa_role" },
+            { "x", "msaa_x" },
+            { "y", "msaa_y" },
+            { "width", "msaa_width" },
+            { "height", "msaa_height" },
         };
 
         static AccessibleProvider()
@@ -282,6 +291,13 @@ namespace Xalia.Win32
                 Utils.DebugWriteLine($"  msaa_role: {RoleAsValue}");
             if (StateKnown)
                 Utils.DebugWriteLine($"  msaa_state: 0x{State:X} ({GetStateNames(State)})");
+            if (LocationKnown)
+            {
+                Utils.DebugWriteLine($"  msaa_x {Location.left}");
+                Utils.DebugWriteLine($"  msaa_y {Location.top}");
+                Utils.DebugWriteLine($"  msaa_width {Location.width}");
+                Utils.DebugWriteLine($"  msaa_height {Location.height}");
+            }
             if (RootHwnd.Element != Element)
                 RootHwnd.ChildDumpProperties();
         }
@@ -299,6 +315,26 @@ namespace Xalia.Win32
                     depends_on.Add((Element, new IdentifierExpression(identifier)));
                     if (StateKnown)
                         return new UiDomInt(State);
+                    break;
+                case "msaa_x":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_location")));
+                    if (LocationKnown)
+                        return new UiDomInt(Location.left);
+                    break;
+                case "msaa_y":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_location")));
+                    if (LocationKnown)
+                        return new UiDomInt(Location.top);
+                    break;
+                case "msaa_width":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_location")));
+                    if (LocationKnown)
+                        return new UiDomInt(Location.width);
+                    break;
+                case "msaa_height":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_location")));
+                    if (LocationKnown)
+                        return new UiDomInt(Location.height);
                     break;
             }
             return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
@@ -371,6 +407,13 @@ namespace Xalia.Win32
                                 Utils.RunTask(FetchState());
                             return true;
                         }
+                    case "msaa_location":
+                        {
+                            _watchingLocation = true;
+                            if (!LocationKnown)
+                                Utils.RunTask(FetchLocation());
+                            return true;
+                        }
                 }
             }
             return false;
@@ -384,6 +427,9 @@ namespace Xalia.Win32
                 {
                     case "msaa_state":
                         _watchingState = false;
+                        return true;
+                    case "msaa_location":
+                        _watchingLocation = false;
                         return true;
                 }
             }
@@ -430,6 +476,51 @@ namespace Xalia.Win32
                 }
 
                 Element.PropertyChanged("msaa_state");
+            }
+        }
+
+        private async Task FetchLocation()
+        {
+            var old_change_count = _locationChangeCount;
+            RECT new_location;
+
+            try
+            {
+                new_location = await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    if (old_change_count != _locationChangeCount)
+                        return default;
+                    IAccessible.accLocation(out int x, out int y, out int width, out int height, ChildId);
+                    var result = new RECT();
+                    result.left = x;
+                    result.top = y;
+                    result.right = x + width;
+                    result.bottom = y + height;
+                    return result;
+                }, Tid+1);
+            }
+            catch (Exception e)
+            {
+                if (IsExpectedException(e))
+                    return;
+                throw;
+            }
+
+            if (old_change_count != _locationChangeCount)
+                // possibly stale value
+                return;
+
+            if (!LocationKnown || !Location.Equals(new_location))
+            {
+                LocationKnown = true;
+                Location = new_location;
+
+                if (Element.MatchesDebugCondition())
+                {
+                    Utils.DebugWriteLine($"{Element}.msaa_location: {new_location.left},{new_location.top} {new_location.width}x{new_location.height}");
+                }
+
+                Element.PropertyChanged("msaa_location");
             }
         }
 
@@ -728,6 +819,15 @@ namespace Xalia.Win32
                 Utils.RunTask(FetchState());
             else
                 StateKnown = false;
+        }
+
+        internal void MsaaAncestorLocationChange()
+        {
+            _locationChangeCount++;
+            if (_watchingLocation)
+                Utils.RunTask(FetchLocation());
+            else
+                LocationKnown = false;
         }
     }
 }
