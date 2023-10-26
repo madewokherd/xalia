@@ -31,7 +31,7 @@ namespace Xalia.Sdl
             }
             // Set HWND_TOPMOST early because, if we're not started with UIAccess,
             // this will probably be the only time we have permission to do that.
-            SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
 
         static IntPtr _windowClass;
