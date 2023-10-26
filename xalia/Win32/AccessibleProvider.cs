@@ -56,6 +56,11 @@ namespace Xalia.Win32
         private bool _watchingLocation;
         private int _locationChangeCount;
 
+        public string DefaultAction { get; private set; }
+        public bool DefaultActionKnown { get; private set; }
+        private bool _watchingDefaultAction;
+        private int _defaultActionChangeCount;
+
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
         internal static bool IsExpectedException(Exception e)
         {
@@ -116,6 +121,7 @@ namespace Xalia.Win32
             { "y", "msaa_y" },
             { "width", "msaa_width" },
             { "height", "msaa_height" },
+            { "default_action", "msaa_default_action" },
         };
 
         static AccessibleProvider()
@@ -298,6 +304,13 @@ namespace Xalia.Win32
                 Utils.DebugWriteLine($"  msaa_width {Location.width}");
                 Utils.DebugWriteLine($"  msaa_height {Location.height}");
             }
+            if (DefaultActionKnown)
+            {
+                if (DefaultAction is null)
+                    Utils.DebugWriteLine("  msaa_default_action: false");
+                else
+                    Utils.DebugWriteLine($"  msaa_default_action: {DefaultAction}");
+            }
             if (RootHwnd.Element != Element)
                 RootHwnd.ChildDumpProperties();
         }
@@ -335,6 +348,15 @@ namespace Xalia.Win32
                     depends_on.Add((Element, new IdentifierExpression("msaa_location")));
                     if (LocationKnown)
                         return new UiDomInt(Location.height);
+                    break;
+                case "msaa_default_action":
+                    depends_on.Add((Element, new IdentifierExpression(identifier)));
+                    if (DefaultActionKnown)
+                    {
+                        if (DefaultAction is null)
+                            return UiDomBoolean.False;
+                        return new UiDomString(DefaultAction);
+                    }
                     break;
             }
             return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
@@ -414,6 +436,13 @@ namespace Xalia.Win32
                                 Utils.RunTask(FetchLocation());
                             return true;
                         }
+                    case "msaa_default_action":
+                        {
+                            _watchingDefaultAction = true;
+                            if (!DefaultActionKnown)
+                                Utils.RunTask(FetchDefaultAction());
+                            return true;
+                        }
                 }
             }
             return false;
@@ -431,9 +460,46 @@ namespace Xalia.Win32
                     case "msaa_location":
                         _watchingLocation = false;
                         return true;
+                    case "msaa_default_action":
+                        _watchingDefaultAction = false;
+                        return true;
                 }
             }
             return false;
+        }
+
+        private async Task FetchDefaultAction()
+        {
+            var old_change_count = _defaultActionChangeCount;
+            string new_value;
+
+            try
+            {
+                new_value = await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    if (old_change_count != _defaultActionChangeCount)
+                        return null;
+                    return IAccessible.accDefaultAction[ChildId];
+                }, Tid+1);
+            }
+            catch (Exception e)
+            {
+                if (IsExpectedException(e))
+                    return;
+                throw;
+            }
+
+            if (old_change_count != _defaultActionChangeCount)
+                // possibly stale value
+                return;
+
+            if (!DefaultActionKnown || DefaultAction != new_value)
+            {
+                DefaultActionKnown = true;
+                DefaultAction = new_value;
+
+                Element.PropertyChanged("msaa_default_action", new_value ?? "false");
+            }
         }
 
         private async Task FetchState()
@@ -830,6 +896,15 @@ namespace Xalia.Win32
                 Utils.RunTask(FetchLocation());
             else
                 LocationKnown = false;
+        }
+
+        public void MsaaDefaultActionChange()
+        {
+            _defaultActionChangeCount++;
+            if (_watchingDefaultAction)
+                Utils.RunTask(FetchDefaultAction());
+            else
+                DefaultActionKnown = false;
         }
     }
 }

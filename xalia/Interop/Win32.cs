@@ -327,6 +327,7 @@ namespace Xalia.Interop
         public const uint EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
         public const uint EVENT_OBJECT_NAMECHANGE = 0x800C;
         public const uint EVENT_OBJECT_VALUECHANGE = 0x800E;
+        public const uint EVENT_OBJECT_DEFACTIONCHANGE = 0x8011;
         public const uint EVENT_OBJECT_CLOAKED = 0x8017;
         public const uint EVENT_OBJECT_UNCLOAKED = 0x8018;
 

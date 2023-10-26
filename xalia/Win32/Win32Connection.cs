@@ -549,6 +549,15 @@ namespace Xalia.Win32
                         }
                         break;
                     }
+                case EVENT_OBJECT_DEFACTIONCHANGE:
+                    {
+                        var element = LookupElement(hwnd, idObject, idChild);
+                        if (!(element is null))
+                        {
+                            element?.ProviderByType<AccessibleProvider>()?.MsaaDefaultActionChange();
+                        }
+                        break;
+                    }
             }
         }
     }
