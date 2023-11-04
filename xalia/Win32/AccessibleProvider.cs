@@ -362,7 +362,7 @@ namespace Xalia.Win32
                                 _fetchingRole = true;
                                 Utils.RunTask(FetchRole());
                             }
-                            break;
+                            return true;
                         }
                     case "msaa_state":
                         {
