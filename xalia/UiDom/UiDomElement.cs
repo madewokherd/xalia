@@ -1103,6 +1103,9 @@ namespace Xalia.UiDom
         public void SyncRecurseMethodChildren<T>(IList<T> keys, Func<T,string> key_to_id,
             Func<T,UiDomElement> key_to_element)
         {
+            if (!IsAlive)
+                return;
+
             var new_ids = new string[keys.Count];
             var new_elements = new UiDomElement[keys.Count];
             var new_id_to_index = new Dictionary<string, int>(keys.Count);
