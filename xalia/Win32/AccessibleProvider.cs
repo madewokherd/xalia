@@ -747,7 +747,7 @@ namespace Xalia.Win32
             IAccessible acc;
             if (variant is int childid)
             {
-                var child = base_acc.accChild[childid];
+                var child = childid == CHILDID_SELF ? base_acc : base_acc.accChild[childid];
                 if (child is null)
                 {
                     // Child without its own IAccessible
