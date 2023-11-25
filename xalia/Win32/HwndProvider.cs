@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xalia.Gudl;
@@ -650,12 +651,12 @@ namespace Xalia.Win32
 
         static bool DebugExceptions = Environment.GetEnvironmentVariable("XALIA_DEBUG_EXCEPTIONS") != "0";
 
-        public static bool IsExpectedException(Win32Exception e)
+        public static bool IsExpectedException(Win32Exception e, params int[] accepted_errors)
         {
 #if DEBUG
             if (DebugExceptions)
             {
-                Utils.DebugWriteLine($"WARNING: Win32 exception:");
+                Utils.DebugWriteLine($"WARNING: Win32 exception({e.NativeErrorCode}):");
                 Utils.DebugWriteLine(e);
             }
 #endif
@@ -665,6 +666,8 @@ namespace Xalia.Win32
                 case 1400: // Invalid window handle
                     return true;
                 default:
+                    if (accepted_errors.Contains(e.NativeErrorCode))
+                        return true;
 #if DEBUG
                     return false;
 #else

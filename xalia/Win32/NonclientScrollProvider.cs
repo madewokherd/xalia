@@ -291,7 +291,9 @@ namespace Xalia.Win32
             }
             catch (Win32Exception e)
             {
-                if (!HwndProvider.IsExpectedException(e))
+                if (!HwndProvider.IsExpectedException(e,
+                    0 // Wine bug: GetScrollBarInfo doesn't work cross-process
+                    ))
                     throw;
                 return;
             }
