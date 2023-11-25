@@ -312,7 +312,7 @@ namespace Xalia.Win32
 
         internal void ChildDumpProperties()
         {
-            Utils.DebugWriteLine($"  win32_hwnd: {Hwnd}");
+            Utils.DebugWriteLine($"  win32_hwnd: 0x{Hwnd.ToInt64():x}");
             Utils.DebugWriteLine($"  win32_pid: {Pid}");
             Utils.DebugWriteLine($"  win32_tid: {Tid}");
             if (!(ProcessName is null))

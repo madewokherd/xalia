@@ -29,7 +29,7 @@ namespace Xalia.Win32
         public override void DumpProperties(UiDomElement element)
         {
             if (HwndList != IntPtr.Zero)
-                Utils.DebugWriteLine($"  win32_combo_box_list_element: hwnd-{HwndList}");
+                Utils.DebugWriteLine($"  win32_combo_box_list_element: {Connection.GetElementName(HwndList)}");
         }
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
@@ -243,7 +243,7 @@ namespace Xalia.Win32
 
             HwndList = info.hwndList;
             if (Element.MatchesDebugCondition())
-                Utils.DebugWriteLine($"{Element}.win32_combo_box_list_element: hwnd-{HwndList}");
+                Utils.DebugWriteLine($"{Element}.win32_combo_box_list_element: {Connection.GetElementName(HwndList)}");
             Element.PropertyChanged("win32_combo_box_info_static");
         }
 

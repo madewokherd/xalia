@@ -53,15 +53,15 @@ namespace Xalia.Win32
             switch (idObject)
             {
                 case OBJID_WINDOW:
-                    return $"hwnd-{hwnd}";
+                    return $"hwnd-{hwnd.ToInt64():x}";
                 case OBJID_CLIENT:
                     if (idChild == CHILDID_SELF)
                         goto case OBJID_WINDOW;
-                    return $"hwnd-{hwnd}-{idChild}";
+                    return $"hwnd-{hwnd.ToInt64():x}-{idChild}";
                 case OBJID_VSCROLL:
-                    return $"NonclientVScroll-{hwnd}";
+                    return $"NonclientVScroll-{hwnd.ToInt64():x}";
                 case OBJID_HSCROLL:
-                    return $"NonclientHScroll-{hwnd}";
+                    return $"NonclientHScroll-{hwnd.ToInt64():x}";
             }
             return null;
         }
@@ -71,10 +71,10 @@ namespace Xalia.Win32
             if (id.is_root_hwnd)
                 return GetElementName(id.root_hwnd);
             if (!(id.acc2 is null))
-                return $"acc2-{id.root_hwnd}-{id.acc2_uniqueId}";
+                return $"acc2-{id.root_hwnd.ToInt64():x}-{id.acc2_uniqueId}";
             // TODO: UIA runtime id
             id_counter++;
-            return $"msaa-{id.root_hwnd}-{id_counter}";
+            return $"msaa-{id.root_hwnd.ToInt64():x}-{id_counter}";
         }
 
         private void UpdateToplevels()
