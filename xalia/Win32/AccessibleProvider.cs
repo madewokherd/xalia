@@ -26,7 +26,9 @@ namespace Xalia.Win32
             ChildId = child_id;
         }
 
-        private static string[] tracked_properties = new string[] { "recurse_method" };
+        private static string[] tracked_properties = new string[] { "recurse_method", "poll_msaa_state" };
+
+        private const int DEFAULT_POLL_INTERVAL = 200;
 
         public HwndProvider RootHwnd { get; }
         public UiDomElement Element { get; private set; }
@@ -53,6 +55,7 @@ namespace Xalia.Win32
         public bool StateKnown { get; private set; }
         private bool _watchingState;
         private int _stateChangeCount;
+        private bool _pollingState;
 
         public RECT Location { get; private set; }
         public bool LocationKnown { get; private set; }
@@ -437,6 +440,8 @@ namespace Xalia.Win32
                             _watchingState = true;
                             if (!StateKnown)
                                 Utils.RunTask(FetchState());
+                            if (_pollingState)
+                                Element.PollProperty(new IdentifierExpression("msaa_state"), PollState, DEFAULT_POLL_INTERVAL);
                             return true;
                         }
                     case "msaa_location":
@@ -466,6 +471,7 @@ namespace Xalia.Win32
                 {
                     case "msaa_state":
                         _watchingState = false;
+                        Element.EndPollProperty(new IdentifierExpression("msaa_state"));
                         return true;
                     case "msaa_location":
                         _watchingLocation = false;
@@ -512,7 +518,7 @@ namespace Xalia.Win32
             }
         }
 
-        private async Task FetchState()
+        private async Task FetchState(bool polling)
         {
             var old_change_count = _stateChangeCount;
             int? new_state;
@@ -524,7 +530,7 @@ namespace Xalia.Win32
                     if (old_change_count != _stateChangeCount)
                         return null;
                     return IAccessible.accState[ChildId] as int?;
-                }, Tid+1);
+                }, polling ? Tid + 2 : Tid + 1);
             }
             catch (Exception e)
             {
@@ -553,6 +559,16 @@ namespace Xalia.Win32
 
                 Element.PropertyChanged("msaa_state");
             }
+        }
+
+        private Task FetchState()
+        {
+            return FetchState(false);
+        }
+
+        private Task PollState()
+        {
+            return FetchState(true);
         }
 
         private async Task FetchLocation()
@@ -850,6 +866,19 @@ namespace Xalia.Win32
                         else
                             new_method = RecurseMethod.None;
                         WatchChildren(new_method);
+                        break;
+                    }
+                case "poll_msaa_state":
+                    {
+                        var new_polling_state = new_value.ToBool();
+                        if (new_polling_state != _pollingState)
+                        {
+                            _pollingState = new_polling_state;
+                            if (_watchingState && _pollingState)
+                                Element.PollProperty(new IdentifierExpression("msaa_state"), PollState, DEFAULT_POLL_INTERVAL);
+                            else
+                                Element.EndPollProperty(new IdentifierExpression("msaa_state"));
+                        }
                         break;
                     }
             }
