@@ -1,7 +1,6 @@
 ﻿using Accessibility;
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
