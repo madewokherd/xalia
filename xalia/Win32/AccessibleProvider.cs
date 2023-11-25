@@ -16,6 +16,10 @@ namespace Xalia.Win32
         public AccessibleProvider(HwndProvider root_hwnd, UiDomElement element,
             IAccessible accessible, int child_id)
         {
+            if (element is null)
+                throw new ArgumentNullException(nameof(element));
+            if (accessible is null)
+                throw new ArgumentNullException(nameof(accessible));
             RootHwnd = root_hwnd;
             Element = element;
             IAccessible = accessible;
