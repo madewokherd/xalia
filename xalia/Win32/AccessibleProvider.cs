@@ -361,6 +361,8 @@ namespace Xalia.Win32
                         return new UiDomString(DefaultAction);
                     }
                     break;
+                case "msaa_do_default_action":
+                    return new UiDomRoutineAsync(Element, "msaa_do_default_action", DoDefaultActionAsync);
             }
             return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
         }
@@ -387,6 +389,11 @@ namespace Xalia.Win32
                     depends_on.Add((Element, new IdentifierExpression("msaa_state")));
                     if (StateKnown)
                         return UiDomBoolean.FromBool((State & (STATE_SYSTEM_INVISIBLE|STATE_SYSTEM_OFFSCREEN)) != STATE_SYSTEM_INVISIBLE);
+                    break;
+                case "do_default_action":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_default_action")));
+                    if (DefaultActionKnown && !(DefaultAction is null))
+                        return Element.EvaluateIdentifier("msaa_do_default_action", Element.Root, depends_on);
                     break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
@@ -908,6 +915,22 @@ namespace Xalia.Win32
                 Utils.RunTask(FetchDefaultAction());
             else
                 DefaultActionKnown = false;
+        }
+
+        private async Task DoDefaultActionAsync(UiDomRoutineAsync obj)
+        {
+            try
+            {
+                await Connection.CommandThread.OnBackgroundThread(() =>
+                {
+                    IAccessible.accDoDefaultAction(ChildId);
+                }, Tid);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
         }
     }
 }
