@@ -1,5 +1,4 @@
 ﻿#if WINDOWS
-using Interop.UIAutomationClient;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
@@ -350,7 +349,7 @@ namespace Xalia.Interop
         public const int NAVDIR_FIRSTCHILD = 7;
         public const int NAVDIR_LASTCHILD = 8;
 
-        public static bool AccessibleNavigate(ref Accessibility.IAccessible acc, ref int child_id, int navdir)
+        public static bool AccessibleNavigate(ref IAccessible acc, ref int child_id, int navdir)
         {
             var result = acc.accNavigate(navdir, child_id);
             if (result is null)
@@ -358,7 +357,7 @@ namespace Xalia.Interop
             if (result is int i)
                 child_id = i;
             else
-                acc = (Accessibility.IAccessible)result;
+                acc = (IAccessible)result;
             return true;
         }
 
@@ -369,7 +368,7 @@ namespace Xalia.Interop
 
         [DllImport(OLEACC_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int ObjectFromLresult(IntPtr lResult,
-            [MarshalAs(UnmanagedType.LPStruct)] Guid riid, IntPtr wParam, out Accessibility.IAccessible ppvObject);
+            [MarshalAs(UnmanagedType.LPStruct)] Guid riid, IntPtr wParam, out IAccessible ppvObject);
 
         [ComImport, Guid("6d5140c1-7436-11ce-8034-00aa006009fa")]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -395,6 +394,68 @@ namespace Xalia.Interop
             [MarshalAs(UnmanagedType.BStr)] public string language;
             [MarshalAs(UnmanagedType.BStr)] public string country;
             [MarshalAs(UnmanagedType.BStr)] public string variant;
+        }
+
+        [ComImport, Guid("618736e0-3c3d-11cf-810c-00aa00389b71")]
+        [InterfaceType(ComInterfaceType.InterfaceIsDual)]
+        public interface IAccessible
+        {
+            // IAccessible methods
+            [return: MarshalAs(UnmanagedType.IDispatch)]
+            object get_accParent();
+
+            int get_accChildCount();
+
+            [return: MarshalAs(UnmanagedType.IDispatch)]
+            object get_accChild([MarshalAs(UnmanagedType.Struct)] object varChildId);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accName([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accValue([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accDescription([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object get_accRole([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object get_accState([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accHelp([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            long get_accHelpTopic([MarshalAs(UnmanagedType.BStr)] out string helpfile, [MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accKeyboardShortcut([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object get_accFocus();
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object get_accSelection();
+
+            [return: MarshalAs(UnmanagedType.BStr)]
+            string get_accDefaultAction([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            void accSelect(long flagsSelect, [MarshalAs(UnmanagedType.Struct)] object varID);
+
+            void accLocation(out int left, out int top, out int width, out int height, [MarshalAs(UnmanagedType.Struct)] object varID);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object accNavigate(long dir, [MarshalAs(UnmanagedType.Struct)] object varStart);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object accHitTest(long left, long top);
+
+            void accDoDefaultAction([MarshalAs(UnmanagedType.Struct)] object varID);
+
+            void set_accName([MarshalAs(UnmanagedType.Struct)] object varID, [MarshalAs(UnmanagedType.BStr)] string name);
+
+            void set_accValue([MarshalAs(UnmanagedType.Struct)] object varID, [MarshalAs(UnmanagedType.BStr)] string value);
         }
 
         [ComImport, Guid("e89f726e-c4f4-4c19-bb19-b647d7fa8478")]

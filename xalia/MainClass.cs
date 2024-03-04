@@ -11,9 +11,6 @@ using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.Ui;
 using Xalia.UiDom;
-#if WINDOWS
-using Xalia.Uia;
-#endif
 using Xalia.Sdl;
 
 using static SDL2.SDL;
@@ -58,22 +55,10 @@ namespace Xalia
 
 #if WINDOWS
                 if (connection == null &&
-                    ((Environment.GetEnvironmentVariable("XALIA_EXPERIMENTAL_WIN32") ?? "0") != "0"))
+                    ((Environment.GetEnvironmentVariable("XALIA_USE_WIN32") ?? (Utils.IsWindows() ? "1" : "0")) != "0"))
                 {
                     connection = new UiDomRoot(config, application);
                     new Win32Connection(connection);
-                }
-
-                if (connection == null &&
-                    (Environment.GetEnvironmentVariable("XALIA_USE_UIA2") ?? "0") != "0")
-                {
-                    connection = new UiaConnection(false, config, application);
-                }
-
-                if (connection == null &&
-                    (Environment.GetEnvironmentVariable("XALIA_USE_UIA3") ?? (Utils.IsWindows() ? "1" : "0")) != "0")
-                {
-                    connection = new UiaConnection(true, config, application);
                 }
 #endif
 

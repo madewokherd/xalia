@@ -1,5 +1,4 @@
-﻿using Accessibility;
-using System;
+﻿using System;
 using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32

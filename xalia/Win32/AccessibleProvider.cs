@@ -1,5 +1,4 @@
-﻿using Accessibility;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -495,7 +494,7 @@ namespace Xalia.Win32
                 {
                     if (old_change_count != _defaultActionChangeCount)
                         return null;
-                    return IAccessible.accDefaultAction[ChildId];
+                    return IAccessible.get_accDefaultAction(ChildId);
                 }, Tid+1);
             }
             catch (Exception e)
@@ -529,7 +528,7 @@ namespace Xalia.Win32
                 {
                     if (old_change_count != _stateChangeCount)
                         return null;
-                    return IAccessible.accState[ChildId] as int?;
+                    return IAccessible.get_accState(ChildId) as int?;
                 }, polling ? Tid + 2 : Tid + 1);
             }
             catch (Exception e)
@@ -646,7 +645,7 @@ namespace Xalia.Win32
                     List<ElementIdentifier> result;
                     var count = 0;
                     if (_recurseMethod != RecurseMethod.None && _recurseMethod != RecurseMethod.accNavigate)
-                        count = IAccessible.accChildCount;
+                        count = IAccessible.get_accChildCount();
                     switch (_recurseMethod)
                     {
                         case RecurseMethod.None:
@@ -755,7 +754,7 @@ namespace Xalia.Win32
             var seen = new HashSet<object>(count);
             for (int i = 0; i < count; i++)
             {
-                var v = IAccessible.accChild[i + 1];
+                var v = IAccessible.get_accChild(i + 1);
                 if (v is int vi && vi == CHILDID_SELF)
                     continue;
                 if (!seen.Add(v))
@@ -773,7 +772,7 @@ namespace Xalia.Win32
             IAccessible acc;
             if (variant is int childid)
             {
-                var child = childid == CHILDID_SELF ? base_acc : base_acc.accChild[childid];
+                var child = childid == CHILDID_SELF ? base_acc : base_acc.get_accChild(childid);
                 if (child is null)
                 {
                     // Child without its own IAccessible
@@ -892,7 +891,7 @@ namespace Xalia.Win32
             {
                 role_obj = await Connection.CommandThread.OnBackgroundThread(() =>
                 {
-                    return IAccessible.accRole[ChildId];
+                    return IAccessible.get_accRole(ChildId);
                 }, RootHwnd.Tid + 1);
             }
             catch (Exception e)
