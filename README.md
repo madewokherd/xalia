@@ -15,7 +15,7 @@ Wayland has not been tested yet, but it probably does not work.
 
 ## Windows
 
-Windows is supported using UI Automation. Sometimes it is slow to respond to UI updates.
+Windows is supported using Win32 and MSAA. Sometimes it is slow to respond to UI updates.
 
 # Setup
 
@@ -101,20 +101,6 @@ if (interactable) {
 The language works based on pattern-matching. In this example we are searching for an element with the combo_box role that is "interactable" (generally, in the active window while there isn't a menu open - the exact definition is defined within GUDL). All matching controls are marked as "targetable" which makes it possible to navigate to it. If the control is targeted, it also has actions defined on it. If a targeted combo box has a child with the "text" role then a secondary action to open an on-screen keyboard is defined.
 
 All of these conditions are monitored, and if any of them changes (for example, a menu opens, making the combo box no longer "interactable"), the declarations inside no longer apply.
-
-# TODO list
-
- * Rewrite the AT-SPI2 code using Tmds.Dbus.Protocol, which will solve a limitation on the number of match rules one can have on DBus.
- * Allow for watching X11 state, which is useful for detecting window decorations, and objects invisible to AT-SPI2 (due to bugs).
- * Add late evaluation and function declarations to GUDL, as the limitations are unweildy.
- * Add "include" directive to GUDL so that toolkit and application specific behaviors, and user settings, can be organized better.
- * Fill out support for some Linux desktops and their builtin applications.
- * Create an AT-SPI2 bridge for Win32/MSAA/UIAutomation, which will be a separate project, and use that from Xalia. This can be shared with Wine and will solve some difficulties with MSAA an UIAutomation. It's also necessary if we want Xalia to work correctly with applications running in Wine.
- * Fill out support for the Windows desktop and its builtin applications.
- * Add support for the ISimpleDOM interfaces (web browsers).
- * Develop a GUI for starting/stopping Xalia, configuring controls, and configuring startup behavior. This will require an RPC service.
- * Fully document GUDL.
- * Provide a window showing button prompts for the currently available actions. This would be a separate program making use of an RPC service.
 
  # Debugging Environment Variables
 
