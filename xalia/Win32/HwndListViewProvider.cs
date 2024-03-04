@@ -325,7 +325,7 @@ namespace Xalia.Win32
 
         private void SetRecurseMethodRange(int start, int end)
         {
-            Element.SyncRecurseMethodChildren(new Range(start, end), (int key) => Connection.GetElementName(Hwnd, OBJID_CLIENT, key+1),
+            Element.SyncRecurseMethodChildren(new RangeList(start, end), (int key) => Connection.GetElementName(Hwnd, OBJID_CLIENT, key+1),
                 CreateChildItem);
         }
 

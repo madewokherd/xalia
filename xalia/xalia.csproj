@@ -188,7 +188,7 @@
     <Compile Include="Sdl\SdlOverlayBox.cs" />
     <Compile Include="Sdl\WindowingSystem.cs" />
     <Compile Include="external\SDL2-CS\src\SDL2.cs" />
-    <Compile Include="Util\Range.cs" />
+    <Compile Include="Util\RangeList.cs" />
     <Compile Include="Win32\AccessibleProvider.cs" />
     <Compile Include="Win32\ElementIdentifier.cs" />
     <Compile Include="Win32\HwndButtonProvider.cs" />

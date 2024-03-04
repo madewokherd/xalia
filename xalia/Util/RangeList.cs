@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace Xalia.Util
 {
-    public class Range : IList<int>
+    public class RangeList : IList<int>
     {
-        public Range(int start, int end)
+        public RangeList(int start, int end)
         {
             if (end < start)
                 throw new ArgumentException($"end ({end}) must be greater than or equal to start ({start})");
@@ -82,13 +82,13 @@ namespace Xalia.Util
 
         public class RangeEnumerator : IEnumerator<int>
         {
-            public RangeEnumerator(Range range)
+            public RangeEnumerator(RangeList range)
             {
                 Range = range;
                 Reset();
             }
 
-            public Range Range { get; }
+            public RangeList Range { get; }
 
             public int Current { get; set; }
 

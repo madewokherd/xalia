@@ -211,7 +211,7 @@ namespace Xalia.Win32
             if (Element.RecurseMethodChildCount == newCount)
                 return;
 
-            Element.SyncRecurseMethodChildren(new Range(1, newCount + 1),
+            Element.SyncRecurseMethodChildren(new RangeList(1, newCount + 1),
                 (int key) => Connection.GetElementName(Hwnd, OBJID_CLIENT, key), CreateChildElement);
         }
 
