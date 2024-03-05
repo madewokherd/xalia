@@ -1,19 +1,15 @@
 ﻿<Project>
-
   <PropertyGroup Condition="'$(Configuration)'=='Release-Linux' OR '$(Configuration)'=='Debug-Linux'">
     <BaseOutputPath>bin-netcore-linux</BaseOutputPath>
     <BaseIntermediateOutputPath>obj-netcore-linux\</BaseIntermediateOutputPath>
     <RestorePackagesPath>packages-netcore-linux\</RestorePackagesPath>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)'=='Release-Windows' OR '$(Configuration)'=='Debug-Windows'">
     <BaseOutputPath>bin-netcore-windows</BaseOutputPath>
     <BaseIntermediateOutputPath>obj-netcore-windows\</BaseIntermediateOutputPath>
     <RestorePackagesPath>packages-netcore-windows\</RestorePackagesPath>
   </PropertyGroup>
-
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
-  
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Xalia</RootNamespace>
@@ -25,25 +21,20 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <Configurations>Debug-Windows;Release-Windows;Debug-Linux;Release-Linux</Configurations>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)'=='Debug-Linux' OR '$(Configuration)'=='Debug-Windows'">
     <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)'=='Release-Linux' OR '$(Configuration)'=='Debug-Linux'">
     <DefineConstants>$(DefineConstants);LINUX</DefineConstants>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup Condition="'$(Configuration)'=='Release-Linux' OR '$(Configuration)'=='Debug-Linux'">
     <Compile Remove="Win32\**" />
   </ItemGroup>
-
   <PropertyGroup Condition="'$(Configuration)'=='Release-Windows' OR '$(Configuration)'=='Debug-Windows'">
     <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Remove="bin-netcore-linux\**" />
     <Compile Remove="bin-netcore-windows\**" />
@@ -80,14 +71,12 @@
     <None Remove="packages-netcore\**" />
     <None Remove="xalia-netcore\**" />
   </ItemGroup>
-
   <ItemGroup>
     <Compile Remove="external\SDL2-CS\src\SDL2_gfx.cs" />
     <Compile Remove="external\SDL2-CS\src\SDL2_image.cs" />
     <Compile Remove="external\SDL2-CS\src\SDL2_mixer.cs" />
     <Compile Remove="external\SDL2-CS\src\SDL2_ttf.cs" />
   </ItemGroup>
-
   <ItemGroup>
     <None Remove="external\SDL2-CS\.gitignore" />
     <None Remove="external\SDL2-CS\.gitlab-ci.yml" />
@@ -96,12 +85,10 @@
     <None Remove="external\SDL2-CS\Makefile" />
     <None Remove="external\SDL2-CS\README" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Superpower" Version="3.0.0" />
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.16.0" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="main.gudl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -113,7 +100,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-
 </Project>

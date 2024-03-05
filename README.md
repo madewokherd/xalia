@@ -40,7 +40,7 @@ Once all of the setup is complete, run `mono xalia.exe`, `dotnet xalia.dll`, or 
 
 ## Windows
 
-Run `xalia.exe` from the net48-mono or net6-windows zip.
+Run `xalia.exe` from the net48-mono or net8-windows zip.
 
 If you are using 32-bit Windows, you will need to use the net48-mono build and replace SDL.dll with a win32-x86 version from http://libsdl.org/download-2.0.php.
 
