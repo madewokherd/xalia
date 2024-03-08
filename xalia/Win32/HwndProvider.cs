@@ -208,6 +208,9 @@ namespace Xalia.Win32
                 case "msctls_trackbar32":
                     AddProvider(new HwndTrackBarProvider(this), 0);
                     return;
+                case "Static":
+                    AddProvider(new HwndStaticProvider(this), 0);
+                    return;
                 case "SysListView32":
                     AddProvider(new HwndListViewProvider(this), 0);
                     return;
@@ -229,6 +232,9 @@ namespace Xalia.Win32
             {
                 case 65536 + 2:
                     AddProvider(new HwndButtonProvider(this), 0);
+                    return;
+                case 65536 + 3:
+                    AddProvider(new HwndStaticProvider(this), 0);
                     return;
                 case 65536 + 5:
                     AddProvider(new HwndComboBoxProvider(this), 0);

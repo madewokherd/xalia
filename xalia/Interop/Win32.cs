@@ -1225,6 +1225,32 @@ namespace Xalia.Interop
         public const int LVIR_LABEL = 2;
         public const int LVIR_SELECTBOUNDS = 3;
 
+        // Static Control
+        public const int SS_LEFT = 0x0000;
+        public const int SS_CENTER = 0x0001;
+        public const int SS_RIGHT = 0x0002;
+        public const int SS_ICON = 0x0003;
+        public const int SS_BLACKRECT = 0x0004;
+        public const int SS_GRAYRECT = 0x0005;
+        public const int SS_WHITERECT = 0x0006;
+        public const int SS_BLACKFRAME = 0x0007;
+        public const int SS_GRAYFRAME = 0x0008;
+        public const int SS_WHITEFRAME = 0x0009;
+        public const int SS_USERITEM = 0x000a;
+        public const int SS_SIMPLE = 0x000b;
+        public const int SS_LEFTNOWORDWRAP = 0x000c;
+        public const int SS_OWNERDRAW = 0x000d;
+        public const int SS_BITMAP = 0x000e;
+        public const int SS_ENHMETAFILE = 0x000f;
+        public const int SS_ETCHEDHORZ = 0x0010;
+        public const int SS_ETCHEDVERT = 0x0011;
+        public const int SS_ETCHEDFRAME = 0x0012;
+        public const int SS_TYPEMASK = 0x001f;
+        public const int SS_ENDELLIPSIS = 0x4000;
+        public const int SS_PATHELLIPSIS = 0x8000;
+        public const int SS_WORDELLIPSIS = 0xc000;
+        public const int SS_ELLIPSISMASK = 0xc000;
+
         // Tab Control
         public const int TCS_BOTTOM = 0x0002;
         public const int TCS_RIGHT = 0x0002;
