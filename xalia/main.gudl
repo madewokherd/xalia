@@ -1226,6 +1226,11 @@ if (interactable) {
         targetable: true;
     }
 
+    if (is_hwnd_button and not frame)
+    {
+        targetable: true;
+    }
+
     if ((table_cell or table_row or list_item) and targetable) {
         if (expandable and spi_action("expand or contract")) {
             secondary_action: spi_action("expand or contract");
