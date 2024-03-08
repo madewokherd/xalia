@@ -233,11 +233,11 @@ application (name == "plasmashell") {
 }
 
 // APPLICATION: Skyrim Launcher
-image (is_uia_element and interactable and parent.(window and win32_process_name == "SkyrimLauncher") and
-    automation_id != "103") {
+image (interactable and parent.(dialog and win32_process_name == "SkyrimLauncher") and
+    control_id != 103) {
     targetable: true;
     primary_action: send_click;
-    if (automation_id == "1004") { // Play button
+    if (control_id == 1004) { // Play button
         confirm_action: primary_action;
         target_priority: 1;
     }
