@@ -22,6 +22,8 @@ namespace Xalia.UiDom
 
         public UiDomRoot Root { get; }
 
+        private int cached_index_in_parent;
+
         public IReadOnlyCollection<string> Declarations => _activeDeclarations.Keys;
 
         public List<IUiDomProvider> Providers { get; private set; } = new List<IUiDomProvider>();
@@ -155,6 +157,7 @@ namespace Xalia.UiDom
                 throw new InvalidOperationException(string.Format("Attempted to add child {0} to {1} but it already has a parent of {2}", child.DebugId, DebugId, child.Parent.DebugId));
             child.Parent = this;
             Children.Insert(index, child);
+            child.cached_index_in_parent = index;
             if (recurse_method)
                 RecurseMethodChildCount++;
             child.SetAlive(true);
@@ -377,12 +380,10 @@ namespace Xalia.UiDom
                 case "assign":
                     return new UiDomMethod(this, "assign", AssignFn);
                 case "index_in_parent":
-                    if (!(Parent is null))
-                    {
-                        depends_on.Add((Parent, new IdentifierExpression("children")));
-                        return new UiDomInt(Parent.Children.IndexOf(this));
-                    }
-                    return UiDomUndefined.Instance;
+                    if (Parent is null)
+                        return UiDomUndefined.Instance;
+                    depends_on.Add((Parent, new IdentifierExpression("children")));
+                    return new UiDomInt(IndexInParent);
                 case "child_at_index":
                     return new UiDomMethod(this, "child_at_index", ChildAtIndexFn);
                 case "child_count":
@@ -600,7 +601,7 @@ namespace Xalia.UiDom
             if (!(Parent is null))
             {
                 Utils.DebugWriteLine($"  parent: {Parent.DebugId}");
-                Utils.DebugWriteLine($"  index_in_parent: {Parent.Children.IndexOf(this)}");
+                Utils.DebugWriteLine($"  index_in_parent: {IndexInParent}");
             }
             for (int i = 0; i < Children.Count; i++)
             {
@@ -1199,6 +1200,29 @@ namespace Xalia.UiDom
             if (MatchesDebugCondition())
                 Utils.DebugWriteLine($"children of {this} changed");
             PropertyChanged("children");
+        }
+
+        public int IndexInParent
+        {
+            get
+            {
+                if (Parent is null)
+                    return -1;
+                if (Parent.Children.Count >= cached_index_in_parent ||
+                    Parent.Children[cached_index_in_parent] != this)
+                {
+                    Parent.RecalculateChildIndices();
+                }
+                return cached_index_in_parent;
+            }
+        }
+
+        private void RecalculateChildIndices()
+        {
+            for (int i = 0; i < Children.Count; i++)
+            {
+                Children[i].cached_index_in_parent = i;
+            }
         }
     }
 }
