@@ -90,6 +90,9 @@ namespace Xalia.Win32
                             return UiDomBoolean.True;
                     }
                     break;
+                case "visible":
+                case "enabled":
+                    return UiDomBoolean.True;
             }
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
