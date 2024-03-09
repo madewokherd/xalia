@@ -185,6 +185,7 @@
     <Compile Include="Win32\HwndTabItemProvider.cs" />
     <Compile Include="Win32\HwndTabProvider.cs" />
     <Compile Include="Win32\HwndTrackBarProvider.cs" />
+    <Compile Include="Win32\IWin32Container.cs" />
     <Compile Include="Win32\IWin32Scrollable.cs" />
     <Compile Include="Win32\IWin32Styles.cs" />
     <Compile Include="Win32\NonclientProvider.cs" />

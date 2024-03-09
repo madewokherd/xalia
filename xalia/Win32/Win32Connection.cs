@@ -444,7 +444,10 @@ namespace Xalia.Win32
                     {
                         var hwnd_element = LookupElement(hwnd);
                         if (!(hwnd_element is null))
+                        {
                             hwnd_element.ProviderByType<HwndItemListProvider>()?.MsaaChildAdded(idChild);
+                            hwnd_element.ProviderByType<IWin32Container>()?.MsaaChildCreated(idChild);
+                        }
                     }
                     break;
                 case EVENT_OBJECT_DESTROY:
@@ -464,7 +467,10 @@ namespace Xalia.Win32
                         {
                             var hwnd_element = LookupElement(hwnd);
                             if (!(hwnd_element is null))
+                            {
                                 hwnd_element.ProviderByType<HwndItemListProvider>()?.MsaaChildDestroyed(idChild);
+                                hwnd_element.ProviderByType<IWin32Container>()?.MsaaChildDestroyed(idChild);
+                            }
                         }
                         break;
                     }
@@ -507,7 +513,7 @@ namespace Xalia.Win32
                             var element = LookupElement(hwnd, idObject, idChild);
                             if (!(element is null))
                             {
-                                element.ProviderByType<HwndListViewProvider>()?.MsaaReorder();
+                                element.ProviderByType<IWin32Container>()?.MsaaChildrenReordered();
                             }
                         }
                         break;

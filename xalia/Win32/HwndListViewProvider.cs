@@ -5,20 +5,39 @@ using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.Interop;
 using Xalia.UiDom;
-using Xalia.Util;
 using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndListViewProvider : HwndItemListProvider, IWin32Styles, IWin32Scrollable
+    internal class HwndListViewProvider : UiDomProviderBase, IWin32Container, IWin32Styles, IWin32Scrollable
     {
-        internal HwndListViewProvider(HwndProvider hwndProvider) : base(hwndProvider) { }
+        internal HwndListViewProvider(HwndProvider hwndProvider)
+        {
+            HwndProvider = hwndProvider;
+        }
+
+        public HwndProvider HwndProvider { get; }
+        public IntPtr Hwnd => HwndProvider.Hwnd;
+        public UiDomElement Element => HwndProvider.Element;
+        public Win32Connection Connection => HwndProvider.Connection;
+        public UiDomRoot Root => Element.Root;
+        public int Pid => HwndProvider.Pid;
+
+        public bool ItemCountKnown;
+        public int ItemCount;
+        private bool fetching_item_count;
+
+        private int uniqueid;
+        private int first_child_id;
+
+        public int FirstChildId => first_child_id;
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
             { "view", "win32_view" },
             { "control_type", "win32_view" },
             { "role", "win32_view" },
+            { "item_count", "win32_item_count" },
         };
 
         static string[] tracked_properties = { "recurse_method" };
@@ -147,6 +166,8 @@ namespace Xalia.Win32
                 if (view != -1)
                     Utils.DebugWriteLine($"  win32_view: {ViewFromInt(view)}");
             }
+            if (ItemCountKnown)
+                Utils.DebugWriteLine($"  win32_item_count: {ItemCount}");
             base.DumpProperties(element);
         }
 
@@ -200,6 +221,11 @@ namespace Xalia.Win32
                     return UiDomUndefined.Instance;
                 case "win32_view":
                     return ViewFromInt(EvaluateView(depends_on));
+                case "win32_item_count":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (ItemCountKnown)
+                        return new UiDomInt(ItemCount);
+                    break;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
         }
@@ -246,7 +272,7 @@ namespace Xalia.Win32
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
 
-        protected override async Task<int> FetchItemCount()
+        private async Task FetchItemCount()
         {
             IntPtr result;
             try
@@ -257,9 +283,15 @@ namespace Xalia.Win32
             {
                 if (!HwndProvider.IsExpectedException(ex))
                     throw;
-                return 0;
+                return;
             }
-            return Utils.TruncatePtr(result);
+
+            ItemCount = Utils.TruncatePtr(result);
+            ItemCountKnown = true;
+            fetching_item_count = false;
+            Element.PropertyChanged("win32_item_count", ItemCount);
+
+            RefreshChildren();
         }
 
         public override string[] GetTrackedProperties()
@@ -302,8 +334,11 @@ namespace Xalia.Win32
             Element.SetRecurseMethodProvider(this);
             if (ItemCountKnown)
                 RefreshChildren();
-            else
-                Utils.RunTask(DoFetchItemCount());
+            else if (!fetching_item_count)
+            {
+                fetching_item_count = true;
+                Utils.RunTask(FetchItemCount());
+            }
         }
 
         private void UnwatchChildren()
@@ -311,29 +346,52 @@ namespace Xalia.Win32
             Element.UnsetRecurseMethodProvider(this);
         }
 
-        protected override void ItemCountChanged(int newCount)
-        {
-            RefreshChildren();
-            base.ItemCountChanged(newCount);
-        }
-
         private void RefreshChildren()
         {
             // TODO: account for watching_children_visible
-            SetRecurseMethodRange(0, ItemCount);
+            SetRecurseMethodRange(1, ItemCount + 1);
+        }
+
+        public UiDomElement GetMsaaChild(int ChildId)
+        {
+            if (ChildId >= first_child_id)
+            {
+                int index = ChildId - first_child_id;
+                if (index < Element.RecurseMethodChildCount)
+                    return Element.Children[index];
+            }
+            return null;
+        }
+
+        private string GetUniqueKey()
+        {
+            return $"listview-{Hwnd:x}-{++uniqueid}";
+        }
+
+        private string GetChildKey(int ChildId)
+        {
+            var child = GetMsaaChild(ChildId);
+            if (child is null)
+                return GetUniqueKey();
+            return child.DebugId;
         }
 
         private void SetRecurseMethodRange(int start, int end)
         {
-            Element.SyncRecurseMethodChildren(new RangeList(start, end), (int key) => Connection.GetElementName(Hwnd, OBJID_CLIENT, key+1),
+            List<string> keys = new List<string>(end - start);
+            for (int i = start; i < end; i++)
+            {
+                keys.Add(GetChildKey(i));
+            }
+            first_child_id = start;
+            Element.SyncRecurseMethodChildren(keys, (string key) => key,
                 CreateChildItem);
         }
 
-        private UiDomElement CreateChildItem(int key)
+        private UiDomElement CreateChildItem(string key)
         {
-            int childId = key + 1;
-            var element = Connection.CreateElement(Hwnd, OBJID_CLIENT, childId);
-            element.AddProvider(new HwndListViewItemProvider(this, childId), 0);
+            var element = new UiDomElement(key, Root);
+            element.AddProvider(new HwndListViewItemProvider(this, element), 0);
             return element;
         }
 
@@ -348,6 +406,13 @@ namespace Xalia.Win32
                         {
                             Utils.RunTask(CheckComCtl6());
                             CheckingComCtl6 = true;
+                        }
+                        return true;
+                    case "win32_item_count":
+                        if (!ItemCountKnown && !fetching_item_count)
+                        {
+                            fetching_item_count = true;
+                            Utils.RunTask(FetchItemCount());
                         }
                         return true;
                     case "win32_view":
@@ -456,13 +521,69 @@ namespace Xalia.Win32
             base.NotifyElementRemoved(element);
         }
 
-        internal void MsaaReorder()
+        public void MsaaChildrenReordered()
         {
             view_change_count++;
             if (watching_view)
                 Utils.RunTask(FetchView());
             else
                 ViewKnown = false;
+        }
+
+        public void MsaaChildCreated(int ChildId)
+        {
+            // TODO: account for watching_children_visible
+            if (ItemCountKnown)
+            {
+                if (ChildId < 1 || ChildId > ItemCount + 1)
+                {
+                    Utils.DebugWriteLine($"got EVENT_OBJECT_CREATE for {Element} with child id {ChildId} with ItemCount={ItemCount}");
+                    return;
+                }
+
+                ItemCount++;
+                Element.PropertyChanged("win32_item_count", ItemCount);
+
+                if (!watching_children ||
+                    ChildId > Element.RecurseMethodChildCount + first_child_id ||
+                    ChildId < first_child_id)
+                {
+                    // Not in the range of children we're watching
+                    return;
+                }
+
+                if (watching_children)
+                {
+                    var child = CreateChildItem(GetUniqueKey());
+                    Element.AddChild(ChildId - first_child_id, child, true);
+                }
+            }
+        }
+
+        public void MsaaChildDestroyed(int ChildId)
+        {
+            // TODO: account for watching_children_visible
+            if (ItemCountKnown)
+            {
+                if (ChildId < 1 || ChildId >= ItemCount + 1)
+                {
+                    Utils.DebugWriteLine($"got EVENT_OBJECT_DESTROY for {Element} with child id {ChildId} with ItemCount={ItemCount}");
+                    return;
+                }
+
+                ItemCount--;
+                Element.PropertyChanged("win32_item_count", ItemCount);
+
+                if (!watching_children ||
+                    ChildId >= Element.RecurseMethodChildCount + first_child_id ||
+                    ChildId < first_child_id)
+                {
+                    // Not in the range of children we're watching
+                    return;
+                }
+
+                Element.RemoveChild(ChildId - first_child_id, true);
+            }
         }
     }
 }
