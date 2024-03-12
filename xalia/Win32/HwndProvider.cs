@@ -691,6 +691,7 @@ namespace Xalia.Win32
             int new_style = unchecked((int)(long)GetWindowLong(Hwnd, GWL_STYLE));
             if (new_style != Style)
             {
+                var old_style = Style;
                 Style = new_style;
                 if (Element.MatchesDebugCondition())
                 {
@@ -699,6 +700,18 @@ namespace Xalia.Win32
                 Element.PropertyChanged("win32_style");
                 if (_useNonclient)
                     RefreshNonclientChildren();
+                if ((new_style & WS_VISIBLE) == WS_VISIBLE &&
+                    (old_style & WS_VISIBLE) == 0 &&
+                    _watchingChildren)
+                {
+                    // Children may also be newly-visible
+                    for (int i = 0; i < Element.RecurseMethodChildCount; i++)
+                    {
+                        var child = Element.Children[i];
+                        child.ProviderByType<AccessibleProvider>()?.MsaaStateChange();
+                        child.ProviderByType<HwndProvider>()?.MsaaStateChange();
+                    }
+                }
             }
             Element.ProviderByType<HwndButtonProvider>()?.MsaaStateChange();
         }
