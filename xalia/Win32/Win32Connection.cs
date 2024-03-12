@@ -115,7 +115,19 @@ namespace Xalia.Win32
             var element_name = GetElementName(hwnd, idObject, idChild);
             if (element_name is null)
                 return null;
-            return LookupElement(element_name);
+            var result = LookupElement(element_name);
+            if (result is null && idChild != CHILDID_SELF)
+            {
+                // Could be an MSAA item with mutable child id
+                var parent_element = LookupElement(hwnd, idObject);
+                if (!(parent_element is null))
+                {
+                    var container = parent_element.ProviderByType<IWin32Container>();
+                    if (!(container is null))
+                        return container.GetMsaaChild(idChild);
+                }
+            }
+            return result;
         }
 
         public UiDomElement LookupElement(ElementIdentifier id)
@@ -523,7 +535,7 @@ namespace Xalia.Win32
                         var element = LookupElement(hwnd, idObject, idChild);
                         if (!(element is null))
                         {
-                            element.ProviderByType<HwndTabProvider>()?.MsaaLocationChange();
+                            element.ProviderByType<IWin32LocationChange>()?.MsaaLocationChange();
                             RecursiveLocationChange(element);
                         }
                         break;
@@ -550,6 +562,8 @@ namespace Xalia.Win32
                                     // The window WS_HSCROLL or WS_VSCROLL style may have changed.
                                     element = LookupElement(hwnd);
                                     element?.ProviderByType<HwndProvider>()?.MsaaStateChange();
+
+                                    element?.ProviderByType<IWin32ScrollChange>()?.MsaaScrolled(idObject);
                                 }
                                 break;
                         }

@@ -10,7 +10,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndTabProvider : HwndItemListProvider, IWin32Styles
+    internal class HwndTabProvider : HwndItemListProvider, IWin32Styles, IWin32LocationChange
     {
         public HwndTabProvider(HwndProvider hwndProvider) : base(hwndProvider)
         {
@@ -405,7 +405,7 @@ namespace Xalia.Win32
             Element.PropertyChanged("win32_selection_index", SelectionIndex);
         }
 
-        internal void MsaaLocationChange()
+        public void MsaaLocationChange()
         {
             InvalidateItemRects();
         }

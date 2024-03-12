@@ -799,6 +799,19 @@ namespace Xalia.Win32
             }
         }
 
+        internal RECT ClientRectToScreen(RECT input)
+        {
+            POINT origin = new POINT();
+            ClientToScreen(Hwnd, ref origin);
+
+            DpiAdjustScreenRect(input);
+            input.left += origin.x;
+            input.right += origin.x;
+            input.top += origin.y;
+            input.bottom += origin.y;
+            return input;
+        }
+
         internal RECT DpiAdjustScreenRect(RECT input)
         {
             // Adjust the given rectangle to account for DPI awareness

@@ -9,7 +9,8 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndListViewProvider : UiDomProviderBase, IWin32Container, IWin32Styles, IWin32Scrollable
+    internal class HwndListViewProvider : UiDomProviderBase, IWin32Container, IWin32Styles, IWin32Scrollable,
+        IWin32LocationChange, IWin32ScrollChange
     {
         internal HwndListViewProvider(HwndProvider hwndProvider)
         {
@@ -31,6 +32,8 @@ namespace Xalia.Win32
         private int first_child_id;
 
         public int FirstChildId => first_child_id;
+
+        private bool invalidating_child_bounds;
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
@@ -528,6 +531,8 @@ namespace Xalia.Win32
                 Utils.RunTask(FetchView());
             else
                 ViewKnown = false;
+
+            InvalidateChildBounds();
         }
 
         public void MsaaChildCreated(int ChildId)
@@ -558,6 +563,9 @@ namespace Xalia.Win32
                     Element.AddChild(ChildId - first_child_id, child, true);
                 }
             }
+
+            // FIXME: Should only be necessary for items after the one added, and only in LV_VIEW_LIST
+            InvalidateChildBounds();
         }
 
         public void MsaaChildDestroyed(int ChildId)
@@ -584,6 +592,40 @@ namespace Xalia.Win32
 
                 Element.RemoveChild(ChildId - first_child_id, true);
             }
+
+            // FIXME: Should only be necessary for items after the one removed, and only in LV_VIEW_LIST
+            InvalidateChildBounds();
+        }
+
+        private void InvalidateChildBounds()
+        {
+            if (!watching_children || invalidating_child_bounds)
+                return;
+            invalidating_child_bounds = true;
+            Utils.RunIdle(DoInvalidateChildBounds);
+        }
+
+        private void DoInvalidateChildBounds()
+        {
+            if (watching_children)
+            {
+                for (int i = 0; i < Element.RecurseMethodChildCount; i++)
+                {
+                    Element.Children[i].ProviderByType<HwndListViewItemProvider>().InvalidateBounds();
+                }
+            }
+            invalidating_child_bounds = false;
+        }
+
+        public void MsaaLocationChange()
+        {
+            InvalidateChildBounds();
+        }
+
+        public void MsaaScrolled(int which)
+        {
+            // FIXME: We should account for scroll offset instead of refreshing every item rectangle
+            InvalidateChildBounds();
         }
     }
 }
