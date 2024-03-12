@@ -263,6 +263,14 @@ namespace Xalia.AtSpi2
                     names = new[] { "page_tab_list", "pagetablist", "tab" };
                 else if (name == "text")
                     names = new[] { "text", "text_box", "textbox", "edit" };
+                else if (name == "table_cell")
+                    names = new[] { "table_cell", "tablecell", "cell" };
+                else if (name == "table_row_header")
+                    names = new[] { "table_row_header", "tablerowheader", "row_header", "rowheader" };
+                else if (name == "table_column_header")
+                    names = new[] { "table_column_header", "tablecolumnheader", "column_header", "columnheader" };
+                else if (name == "table_row")
+                    names = new[] { "table_row", "tablerow", "row" };
                 else if (name.Contains("_"))
                     names = new[] { name, name.Replace("_", "") };
                 else

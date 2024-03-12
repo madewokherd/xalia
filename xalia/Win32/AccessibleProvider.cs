@@ -138,7 +138,15 @@ namespace Xalia.Win32
             {
                 string name = msaa_role_names[i];
                 string[] names;
-                if (name.Contains("_"))
+                if (name == "cell")
+                    names = new[] { "cell", "table_cell", "tablecell" };
+                else if (name == "row_header")
+                    names = new[] { "row_header", "rowheader", "table_row_header", "tablerowheader" };
+                else if (name == "column_header")
+                    names = new[] { "column_header", "columnheader", "column_row_header", "columnrowheader" };
+                else if (name == "row")
+                    names = new[] { "row", "table_row", "tablerow" };
+                else if (name.Contains("_"))
                     names = new[] { name, name.Replace("_", "") };
                 else
                     names = new[] { name };

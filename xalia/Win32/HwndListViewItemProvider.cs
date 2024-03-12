@@ -30,7 +30,7 @@ namespace Xalia.Win32
 
         static readonly UiDomEnum item_role = new UiDomEnum(new string[] { "list_item", "listitem" });
         static readonly UiDomEnum icon_role = new UiDomEnum(new string[] { "icon" });
-        static readonly UiDomEnum row_role = new UiDomEnum(new string[] { "row" });
+        static readonly UiDomEnum row_role = new UiDomEnum(new string[] { "row", "table_row", "tablerow" });
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
@@ -170,6 +170,8 @@ namespace Xalia.Win32
                     }
                     break;
                 case "row":
+                case "table_row":
+                case "tablerow":
                     switch (Parent.EvaluateView(depends_on))
                     {
                         case LV_VIEW_DETAILS:
