@@ -1222,7 +1222,7 @@ if (interactable) {
         targetable: false;
     }
 
-    if (is_win32_listview_item) {
+    if (is_hwnd_listview_item) {
         targetable: true;
     }
 
