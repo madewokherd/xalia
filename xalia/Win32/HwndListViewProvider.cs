@@ -27,6 +27,7 @@ namespace Xalia.Win32
         public bool ItemCountKnown;
         public int ItemCount;
         private bool fetching_item_count;
+        private bool watching_item_count;
 
         private int uniqueid;
         private int first_child_id;
@@ -412,6 +413,7 @@ namespace Xalia.Win32
                         }
                         return true;
                     case "win32_item_count":
+                        watching_item_count = true;
                         if (!ItemCountKnown && !fetching_item_count)
                         {
                             fetching_item_count = true;
@@ -435,6 +437,9 @@ namespace Xalia.Win32
                 {
                     case "win32_view":
                         watching_view = false;
+                        return true;
+                    case "win32_item_count":
+                        watching_item_count = false;
                         return true;
                 }
             }
@@ -524,6 +529,20 @@ namespace Xalia.Win32
             base.NotifyElementRemoved(element);
         }
 
+        private async Task DoChildrenReordered()
+        {
+            fetching_item_count = true;
+            await FetchItemCount();
+
+            // This leaves us in an odd state where we may have existing
+            // children that are actually different items now, so we
+            // need to invalidate everything. This is preferable to
+            // disruption caused by recreating everything if the
+            // "reorder" was a minor change.
+
+            InvalidateChildBounds();
+        }
+
         public void MsaaChildrenReordered()
         {
             view_change_count++;
@@ -532,7 +551,9 @@ namespace Xalia.Win32
             else
                 ViewKnown = false;
 
-            InvalidateChildBounds();
+            ItemCountKnown = false;
+            if (watching_children || watching_item_count)
+                Utils.RunTask(DoChildrenReordered());
         }
 
         public void MsaaChildCreated(int ChildId)
