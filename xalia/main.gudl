@@ -236,7 +236,10 @@ application (name == "plasmashell") {
 image (interactable and parent.(dialog and win32_process_name == "SkyrimLauncher") and
     control_id != 103) {
     targetable: true;
-    primary_action: send_click;
+    primary_action:
+        parent.disable_window + // Disable the window so it can't do SC_MOVE which causes problems on Wine
+        parent.send_message(0x201, 0, (y - parent.client_y) * 0x10000 + (x - parent.client_x)) + // WM_LBUTTONDOWN
+        parent.enable_window;
     if (control_id == 1004) { // Play button
         confirm_action: primary_action;
         target_priority: 1;
