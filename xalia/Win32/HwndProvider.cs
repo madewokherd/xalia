@@ -71,6 +71,8 @@ namespace Xalia.Win32
             { "name", "win32_window_text" },
             { "window_text", "win32_window_text" },
             { "send_message", "win32_send_message" },
+            { "enable_window", "win32_enable_window" },
+            { "disable_window", "win32_disable_window" },
         };
 
         private static string[] win32_stylenames =
@@ -395,8 +397,22 @@ namespace Xalia.Win32
                     break;
                 case "win32_send_message":
                     return new UiDomMethod(Element, "win32_send_message", SendMessageMethod);
+                case "win32_enable_window":
+                    return new UiDomRoutineSync(Element, "win32_enable_window", EnableWindowRoutine);
+                case "win32_disable_window":
+                    return new UiDomRoutineSync(Element, "win32_disable_window", DisableWindowRoutine);
             }
             return ChildEvaluateIdentifier(identifier, depends_on);
+        }
+
+        private void EnableWindowRoutine(UiDomRoutineSync sync)
+        {
+            EnableWindow(Hwnd, true);
+        }
+
+        private void DisableWindowRoutine(UiDomRoutineSync sync)
+        {
+            EnableWindow(Hwnd, false);
         }
 
         private UiDomValue SendMessageMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)

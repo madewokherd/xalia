@@ -883,6 +883,9 @@ namespace Xalia.Interop
             return (style & WS_VISIBLE) != 0;
         }
 
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
+
         public const int SM_CXVSCROLL = 2;
         public const int SM_CYHSCROLL = 3;
         public const int SM_XVIRTUALSCREEN = 76;
