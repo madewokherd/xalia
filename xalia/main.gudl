@@ -246,6 +246,19 @@ image (interactable and parent.(dialog and win32_process_name == "SkyrimLauncher
     }
 }
 
+dialog (win32_process_name == "SkyrimLauncher" and name == "Skyrim") {
+    if (parent.child_matches(win32_process_name == "SkyrimLauncher" and name == "Skyrim Options" and visible) and active) {
+        // work around focus sometimes incorrectly reverting to main window on Wine when a sub-subwindow closes
+        interactable: false;
+    }
+}
+dialog (win32_process_name == "SkyrimLauncher" and name == "Skyrim Options" and visible) {
+    if (parent.child_matches(win32_process_name == "SkyrimLauncher" and name == "Skyrim" and active)) {
+        // work around focus sometimes incorrectly reverting to main window on Wine when a sub-subwindow closes
+        interactable: true;
+    }
+}
+
 // APPLICATION: VLC
 layered_pane (spi_application.name == "vlc") {
     // Buttons along the top of preferences window are checkboxes that do not update the UI on Toggle
