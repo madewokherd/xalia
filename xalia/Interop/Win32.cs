@@ -1025,6 +1025,9 @@ namespace Xalia.Interop
         public extern static bool DispatchMessageW(ref MSG lpMsg);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public extern static int RegisterWindowMessageW([MarshalAs(UnmanagedType.LPWStr)] string lpString);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr SendMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]

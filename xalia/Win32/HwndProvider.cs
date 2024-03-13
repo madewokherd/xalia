@@ -70,6 +70,7 @@ namespace Xalia.Win32
             { "control_id", "win32_control_id" },
             { "name", "win32_window_text" },
             { "window_text", "win32_window_text" },
+            { "send_message", "win32_send_message" },
         };
 
         private static string[] win32_stylenames =
@@ -392,8 +393,52 @@ namespace Xalia.Win32
                         return new UiDomString(WindowText);
                     }
                     break;
+                case "win32_send_message":
+                    return new UiDomMethod(Element, "win32_send_message", SendMessageMethod);
             }
             return ChildEvaluateIdentifier(identifier, depends_on);
+        }
+
+        private UiDomValue SendMessageMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length == 0)
+                return UiDomUndefined.Instance;
+
+            UiDomValue[] evaluated_args = new UiDomValue[arglist.Length];
+            for (int i = 0; i < arglist.Length; i++)
+            {
+                evaluated_args[i] = context.Evaluate(arglist[i], root, depends_on);
+            }
+
+            if (!(evaluated_args[0] is UiDomString) && !evaluated_args[0].TryToInt(out var _msg))
+            {
+                return UiDomUndefined.Instance;
+            }
+
+            return new UiDomRoutineAsync(Element, "win32_send_message", evaluated_args, SendMessageRoutine);
+        }
+
+        private async Task SendMessageRoutine(UiDomRoutineAsync obj)
+        {
+            int msg;
+            IntPtr wparam = default, lparam = default;
+
+            if (!obj.Arglist[0].TryToInt(out msg))
+            {
+                msg = RegisterWindowMessageW(((UiDomString)obj.Arglist[0]).Value);
+            }
+
+            if (obj.Arglist.Length >= 2 && obj.Arglist[1] is UiDomInt wint)
+            {
+                wparam = new IntPtr((long)wint.Value);
+            }
+
+            if (obj.Arglist.Length >= 3 && obj.Arglist[2] is UiDomInt lint)
+            {
+                lparam = new IntPtr((long)lint.Value);
+            }
+
+            await SendMessageAsync(Hwnd, msg, wparam, lparam);
         }
 
         internal UiDomValue ChildEvaluateIdentifier(string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
