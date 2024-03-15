@@ -1,6 +1,3 @@
 [submodule "xalia/external/SDL2-CS"]
 	path = xalia/external/SDL2-CS
 	url = https://github.com/flibitijibibo/SDL2-CS.git
-[submodule "external/Tmds.Dbus"]
-	path = external/Tmds.Dbus
-	url = https://github.com/madewokherd/Tmds.Dbus.git
