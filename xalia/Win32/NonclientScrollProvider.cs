@@ -278,7 +278,7 @@ namespace Xalia.Win32
             SCROLLBARINFO sbi;
             try
             {
-                sbi = await Connection.CommandThread.OnBackgroundThread(() =>
+                sbi = await CommandThread.OnBackgroundThread(() =>
                 {
                     if (!AnySbiInfoCurrent(old_change_count))
                         return default;
@@ -287,7 +287,7 @@ namespace Xalia.Win32
                     if (!GetScrollBarInfo(Hwnd, Vertical ? OBJID_VSCROLL : OBJID_HSCROLL, ref _sbi))
                         throw new Win32Exception();
                     return _sbi;
-                }, Tid);
+                }, CommandThreadPriority.Query);
             }
             catch (Win32Exception e)
             {
@@ -360,7 +360,7 @@ namespace Xalia.Win32
             SCROLLINFO new_si;
             try
             {
-                new_si = await Connection.CommandThread.OnBackgroundThread(() =>
+                new_si = await CommandThread.OnBackgroundThread(() =>
                 {
                     if (old_change_count != _siChangeCount)
                         return default;
@@ -371,7 +371,7 @@ namespace Xalia.Win32
                         throw new Win32Exception();
 
                     return si;
-                }, Tid);
+                }, CommandThreadPriority.Query);
             }
             catch (Win32Exception e)
             {
@@ -416,7 +416,7 @@ namespace Xalia.Win32
         {
             try
             {
-                return await Connection.CommandThread.OnBackgroundThread(() =>
+                return await CommandThread.OnBackgroundThread(() =>
                 {
                     var sbi = new SCROLLBARINFO();
                     sbi.cbSize = Marshal.SizeOf<SCROLLBARINFO>();
@@ -430,7 +430,7 @@ namespace Xalia.Win32
                         throw new Win32Exception();
 
                     return CalculateMinimumIncrement(sbi, si);
-                }, Tid);
+                }, CommandThreadPriority.User);
             }
             catch (Win32Exception e)
             {
@@ -454,7 +454,7 @@ namespace Xalia.Win32
         {
             try
             {
-                SCROLLINFO si = await Connection.CommandThread.OnBackgroundThread(() =>
+                SCROLLINFO si = await CommandThread.OnBackgroundThread(() =>
                 {
                     var bg_si = new SCROLLINFO();
                     bg_si.cbSize = Marshal.SizeOf<SCROLLINFO>();
@@ -463,7 +463,7 @@ namespace Xalia.Win32
                         throw new Win32Exception();
 
                     return bg_si;
-                }, Tid);
+                }, CommandThreadPriority.User);
 
                 if (si.max_value <= si.nMin)
                     return false;

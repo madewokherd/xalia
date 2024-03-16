@@ -33,6 +33,7 @@ namespace Xalia.Win32
         public UiDomElement Element { get; private set; }
         public Win32Connection Connection => RootHwnd.Connection;
         public int Tid => RootHwnd.Tid;
+        public CommandThread CommandThread => RootHwnd.CommandThread;
         public IAccessible IAccessible { get; private set; }
         public int ChildId { get; }
 
@@ -498,12 +499,12 @@ namespace Xalia.Win32
 
             try
             {
-                new_value = await Connection.CommandThread.OnBackgroundThread(() =>
+                new_value = await CommandThread.OnBackgroundThread(() =>
                 {
                     if (old_change_count != _defaultActionChangeCount)
                         return null;
                     return IAccessible.get_accDefaultAction(ChildId);
-                }, Tid+1);
+                }, CommandThreadPriority.Query);
             }
             catch (Exception e)
             {
@@ -532,12 +533,12 @@ namespace Xalia.Win32
 
             try
             {
-                new_state = await Connection.CommandThread.OnBackgroundThread(() =>
+                new_state = await CommandThread.OnBackgroundThread(() =>
                 {
                     if (old_change_count != _stateChangeCount)
                         return null;
                     return IAccessible.get_accState(ChildId) as int?;
-                }, polling ? Tid + 2 : Tid + 1);
+                }, polling ? CommandThreadPriority.Poll : CommandThreadPriority.Query);
             }
             catch (Exception e)
             {
@@ -585,7 +586,7 @@ namespace Xalia.Win32
 
             try
             {
-                new_location = await Connection.CommandThread.OnBackgroundThread(() =>
+                new_location = await CommandThread.OnBackgroundThread(() =>
                 {
                     if (old_change_count != _locationChangeCount)
                         return default;
@@ -596,7 +597,7 @@ namespace Xalia.Win32
                     result.right = x + width;
                     result.bottom = y + height;
                     return result;
-                }, Tid+1);
+                }, CommandThreadPriority.Query);
             }
             catch (Exception e)
             {
@@ -648,7 +649,7 @@ namespace Xalia.Win32
             List<ElementIdentifier> children;
             try
             {
-                children = await Connection.CommandThread.OnBackgroundThread(() =>
+                children = await CommandThread.OnBackgroundThread(() =>
                 {
                     List<ElementIdentifier> result;
                     var count = 0;
@@ -676,7 +677,7 @@ namespace Xalia.Win32
                             break;
                     }
                     return result;
-                }, Tid);
+                }, CommandThreadPriority.Query);
             }
             catch (Exception e)
             {
@@ -897,10 +898,10 @@ namespace Xalia.Win32
             object role_obj;
             try
             {
-                role_obj = await Connection.CommandThread.OnBackgroundThread(() =>
+                role_obj = await CommandThread.OnBackgroundThread(() =>
                 {
                     return IAccessible.get_accRole(ChildId);
-                }, RootHwnd.Tid + 1);
+                }, CommandThreadPriority.Query);
             }
             catch (Exception e)
             {
@@ -957,10 +958,10 @@ namespace Xalia.Win32
         {
             try
             {
-                await Connection.CommandThread.OnBackgroundThread(() =>
+                await CommandThread.OnBackgroundThread(() =>
                 {
                     IAccessible.accDoDefaultAction(ChildId);
-                }, Tid);
+                }, CommandThreadPriority.User);
             }
             catch (Exception e)
             {

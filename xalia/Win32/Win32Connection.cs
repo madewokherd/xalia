@@ -33,7 +33,7 @@ namespace Xalia.Win32
 
         public UiDomRoot Root { get; }
 
-        public CommandThread CommandThread { get; } = new CommandThread();
+        private Dictionary<int, (int, CommandThread)> background_threads = new Dictionary<int, (int, CommandThread)>();
 
         private GUITHREADINFO guithreadinfo;
 
@@ -578,6 +578,34 @@ namespace Xalia.Win32
                         }
                         break;
                     }
+            }
+        }
+
+        public CommandThread CreateBackgroundThread(int tid)
+        {
+            if (background_threads.TryGetValue(tid, out var pair))
+            {
+                background_threads[tid] = (pair.Item1 + 1, pair.Item2);
+                return pair.Item2;
+            }
+
+            var result = new CommandThread();
+            background_threads.Add(tid, (1, result));
+            return result;
+        }
+
+        public void UnrefBackgroundThread(int tid)
+        {
+            var pair = background_threads[tid];
+
+            if (pair.Item1 == 1)
+            {
+                background_threads.Remove(tid);
+                pair.Item2.Dispose();
+            }
+            else
+            {
+                background_threads[tid] = (pair.Item1 - 1, pair.Item2);
             }
         }
     }

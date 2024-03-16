@@ -993,13 +993,18 @@ namespace Xalia.Interop
             {
                 handle.DangerousAddRef(ref success);
 
+                if (!success || handle.IsClosed || handle.IsInvalid)
+                    // Avoids race condition when another thread may free the handle - treat that as signaled
+                    return 0;
+
                 raw_handle = handle.DangerousGetHandle();
 
                 return MsgWaitForMultipleObjects(1, &raw_handle, false, dwMilliseconds, dwWakeMask);
             }
             finally
             {
-                handle.DangerousRelease();
+                if (success)
+                    handle.DangerousRelease();
             }
         }
 

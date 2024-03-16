@@ -19,6 +19,7 @@ namespace Xalia.Win32
         public Win32Connection Connection => HwndProvider.Connection;
         public int Pid => HwndProvider.Pid;
         public int Tid => HwndProvider.Tid;
+        public CommandThread CommandThread => HwndProvider.CommandThread;
 
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {

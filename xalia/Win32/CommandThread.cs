@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,76 +7,64 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    public class CommandThread
+    public enum CommandThreadPriority
+    {
+        User, // For user actions
+        Query, // For normal queries
+        Poll // For polls
+    }
+
+    public class CommandThread : IDisposable
     {
         struct CommandThreadRequest
         {
             public Action Action;
+            public Action Cancel;
         }
 
-        class CommandQueue
-        {
-            public int key;
-            public ConcurrentQueue<CommandThreadRequest> requests = new ConcurrentQueue<CommandThreadRequest>();
-            public long locked;
-        }
-
-        Dictionary<int, CommandQueue> keyed_queues = new Dictionary<int, CommandQueue>();
-
-        ConcurrentQueue<CommandQueue> overall_queue = new ConcurrentQueue<CommandQueue>();
+        private ConcurrentQueue<CommandThreadRequest> user_requests = new ConcurrentQueue<CommandThreadRequest>();
+        private ConcurrentQueue<CommandThreadRequest> query_requests = new ConcurrentQueue<CommandThreadRequest>();
+        private ConcurrentQueue<CommandThreadRequest> poll_requests = new ConcurrentQueue<CommandThreadRequest>();
 
         AutoResetEvent tasks_available;
 
-        long threads_waiting = 0;
+        bool disposed = false;
 
         internal CommandThread()
         {
             tasks_available = new AutoResetEvent(false);
-        }
 
-        private void CreateNewThread(CommandQueue queue)
-        {
             var thread = new Thread(ThreadProc);
             thread.SetApartmentState(ApartmentState.STA);
-            thread.Start(queue);
+            thread.Start();
         }
 
-        private void QueueRequest(CommandThreadRequest request, int key)
+        private void QueueRequest(CommandThreadRequest request, CommandThreadPriority priority)
         {
-            if (!keyed_queues.TryGetValue(key, out var queue))
+            switch (priority)
             {
-                queue = new CommandQueue();
-                queue.key = key;
-                keyed_queues[key] = queue;
+                case CommandThreadPriority.User:
+                    user_requests.Enqueue(request);
+                    break;
+                case CommandThreadPriority.Query:
+                    query_requests.Enqueue(request);
+                    break;
+                case CommandThreadPriority.Poll:
+                    poll_requests.Enqueue(request);
+                    break;
             }
-
-            queue.requests.Enqueue(request);
-
-            if (Interlocked.Read(ref queue.locked) == 0)
-            {
-                bool lock_taken = false;
-                if (Interlocked.Read(ref threads_waiting) == 0)
-                {
-                    lock_taken = Interlocked.CompareExchange(ref queue.locked, 1, 0) == 0;
-                    if (lock_taken)
-                        CreateNewThread(queue);
-                }
-                if (!lock_taken)
-                {
-                    overall_queue.Enqueue(queue);
-                    tasks_available.Set();
-                }
-            }
+            tasks_available.Set();
         }
 
-        public async Task<T> OnBackgroundThread<T>(Func<T> func, int key = 0)
+        private void CheckDisposed()
         {
-            /* Commands with the same key will be executed sequentially.
-             * By convention key is:
-                0 - operations not associated with a thread
-                tid - user-initiated operations
-                tid+1 - queries not related to user-initiated operations
-                tid+2 - polling */
+            if (disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+        }
+
+        public async Task<T> OnBackgroundThread<T>(Func<T> func, CommandThreadPriority priority)
+        {
+            CheckDisposed();
 
             var request = new CommandThreadRequest();
             var completion_source = new TaskCompletionSource<T>();
@@ -94,13 +81,17 @@ namespace Xalia.Win32
                 }
             };
 
-            QueueRequest(request, key);
+            request.Cancel = completion_source.SetCanceled;
+
+            QueueRequest(request, priority);
 
             return await completion_source.Task;
         }
 
-        public async Task OnBackgroundThread(Action func, int key = 0)
+        public async Task OnBackgroundThread(Action func, CommandThreadPriority priority)
         {
+            CheckDisposed();
+
             var request = new CommandThreadRequest();
             var completion_source = new TaskCompletionSource<bool>();
             request.Action = () =>
@@ -116,7 +107,9 @@ namespace Xalia.Win32
                 }
             };
 
-            QueueRequest(request, key);
+            request.Cancel = completion_source.SetCanceled;
+
+            QueueRequest(request, priority);
 
             await completion_source.Task;
         }
@@ -145,30 +138,29 @@ namespace Xalia.Win32
             }
         }
 
-        private void ThreadProc(object initial_info)
+        private void ThreadProc()
         {
-            var queue = (CommandQueue)initial_info;
-            // We start with the lock held
-            bool lock_held = true;
-            while (TryProcessQueue(queue, lock_held))
-            {
-                // All work is done in TryProcessQueue
-                lock_held = false;
-            }
             try
             {
-                while (true)
+                while (!disposed)
                 {
-                    while (overall_queue.TryDequeue(out queue))
+                    if (user_requests.TryDequeue(out var request) ||
+                        query_requests.TryDequeue(out request) ||
+                        poll_requests.TryDequeue(out request))
                     {
-                        while (TryProcessQueue(queue, false))
-                        {
-                            // All work is done in TryProcessQueue
-                        }
+                        request.Action();
                     }
-                    Interlocked.Increment(ref threads_waiting);
-                    MsgWaitOne(tasks_available);
-                    Interlocked.Decrement(ref threads_waiting);
+                    else
+                    {
+                        MsgWaitOne(tasks_available);
+                    }
+                }
+
+                while (user_requests.TryDequeue(out var request) ||
+                    query_requests.TryDequeue(out request) ||
+                    poll_requests.TryDequeue(out request))
+                {
+                    request.Cancel();
                 }
             }
             catch (Exception e)
@@ -177,43 +169,14 @@ namespace Xalia.Win32
             }
         }
 
-        private bool TryProcessQueue(CommandQueue queue, bool lock_held)
+        public void Dispose()
         {
-            // It's important that we check this while the lock is not held.
-            // See the comment at the end for why this is necessary.
-            if (!lock_held && queue.requests.IsEmpty)
-                // Nothing to do.
-                return false;
-
-            bool lock_taken = false;
-
-            try
+            if (!disposed)
             {
-                if (lock_held)
-                    lock_taken = true;
-                else
-                    lock_taken = Interlocked.CompareExchange(ref queue.locked, 1, 0) == 0;
-
-                if (!lock_taken)
-                    return false;
-
-                while (queue.requests.TryDequeue(out var request))
-                {
-                    request.Action();
-                }
+                disposed = true;
+                tasks_available.Set();
+                tasks_available.Dispose();
             }
-            finally
-            {
-                if (lock_taken)
-                    Interlocked.Exchange(ref queue.locked, 0);
-            }
-
-            /* It's possible that the main thread added a request to the queue after
-             * we called TryDequeue but before we unset locked. If this happened,
-             * the queue is no longer empty, but no other thread will be woken up to
-             * serve the request, and there is no new entry in requests. We
-             * must recheck the queue while the lock is not held to account for this case.*/
-            return true;
         }
     }
 }

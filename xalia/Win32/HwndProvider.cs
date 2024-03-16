@@ -140,6 +140,29 @@ namespace Xalia.Win32
             win32_styles_by_name["maximizebox"] = WS_MAXIMIZEBOX;
         }
 
+
+        private CommandThread _commandThread;
+        public CommandThread CommandThread
+        {
+            get
+            {
+                if (_commandThread is null)
+                {
+                    _commandThread = Connection.CreateBackgroundThread(Tid);
+                }
+                return _commandThread;
+            }
+        }
+
+        public override void NotifyElementRemoved(UiDomElement element)
+        {
+            if (!(_commandThread is null))
+            {
+                Connection.UnrefBackgroundThread(Tid);
+            }
+            base.NotifyElementRemoved(element);
+        }
+
         private void AddProvider(IUiDomProvider provider, int index)
         {
             Element.AddProvider(provider, index);
@@ -181,12 +204,12 @@ namespace Xalia.Win32
             {
                 try
                 {
-                    IAccessible acc = await Connection.CommandThread.OnBackgroundThread(() =>
+                    IAccessible acc = await CommandThread.OnBackgroundThread(() =>
                     {
                         int hr = ObjectFromLresult(lr, IID_IAccessible, IntPtr.Zero, out var obj);
                         Marshal.ThrowExceptionForHR(hr);
                         return obj;
-                    }, Tid + 1);
+                    }, CommandThreadPriority.Query);
                     AddProvider(new AccessibleProvider(this, Element, acc, 0), 0);
                     return;
                 }
@@ -683,7 +706,7 @@ namespace Xalia.Win32
             string result;
             try
             {
-                result = await Connection.CommandThread.OnBackgroundThread(() =>
+                result = await CommandThread.OnBackgroundThread(() =>
                 {
                     int buffer_size = 256;
                     IntPtr buffer = Marshal.AllocCoTaskMem(buffer_size * 2);
@@ -699,7 +722,7 @@ namespace Xalia.Win32
                         Marshal.FreeCoTaskMem(buffer);
                     }
                     return null;
-                }, Tid+1);
+                }, CommandThreadPriority.Query);
             }
             catch (Win32Exception e)
             {

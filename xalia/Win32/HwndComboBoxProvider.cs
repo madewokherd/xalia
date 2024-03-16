@@ -23,6 +23,8 @@ namespace Xalia.Win32
         public UiDomElement Element => HwndProvider.Element;
         public int Tid => HwndProvider.Tid;
 
+        public CommandThread CommandThread => HwndProvider.CommandThread;
+
         public IntPtr HwndList { get; private set; }
         private bool _fetchingComboBoxInfo;
 
@@ -233,10 +235,10 @@ namespace Xalia.Win32
         private async Task FetchComboBoxInfo()
         {
             COMBOBOXINFO info;
-            info = await Connection.CommandThread.OnBackgroundThread(() =>
+            info = await CommandThread.OnBackgroundThread(() =>
             {
                 return FetchComboBoxInfoBackground();
-            }, Tid + 1);
+            }, CommandThreadPriority.Query);
             if (info.cbSize == 0)
                 // message failed
                 return;
