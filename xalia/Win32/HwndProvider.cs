@@ -188,6 +188,8 @@ namespace Xalia.Win32
 
         private async Task DiscoverProviders()
         {
+            int index = 0;
+
             // TODO: Check if there's a UIA provider
 
             IntPtr lr = default;
@@ -210,8 +212,7 @@ namespace Xalia.Win32
                         Marshal.ThrowExceptionForHR(hr);
                         return obj;
                     }, CommandThreadPriority.Query);
-                    AddProvider(new AccessibleProvider(this, Element, acc, 0), 0);
-                    return;
+                    AddProvider(new AccessibleProvider(this, Element, acc, 0), index++);
                 }
                 catch (Exception e)
                 {
@@ -223,25 +224,25 @@ namespace Xalia.Win32
             switch (RealClassName)
             {
                 case "#32770":
-                    AddProvider(new HwndDialogProvider(this), 0);
+                    AddProvider(new HwndDialogProvider(this), index);
                     return;
                 case "Button":
-                    AddProvider(new HwndButtonProvider(this), 0);
+                    AddProvider(new HwndButtonProvider(this), index);
                     return;
                 case "ComboBox":
-                    AddProvider(new HwndComboBoxProvider(this), 0);
+                    AddProvider(new HwndComboBoxProvider(this), index);
                     return;
                 case "msctls_trackbar32":
-                    AddProvider(new HwndTrackBarProvider(this), 0);
+                    AddProvider(new HwndTrackBarProvider(this), index);
                     return;
                 case "Static":
-                    AddProvider(new HwndStaticProvider(this), 0);
+                    AddProvider(new HwndStaticProvider(this), index);
                     return;
                 case "SysListView32":
-                    AddProvider(new HwndListViewProvider(this), 0);
+                    AddProvider(new HwndListViewProvider(this), index);
                     return;
                 case "SysTabControl32":
-                    AddProvider(new HwndTabProvider(this), 0);
+                    AddProvider(new HwndTabProvider(this), index);
                     return;
             }
 
@@ -257,22 +258,22 @@ namespace Xalia.Win32
             switch((long)lr)
             {
                 case 65536 + 2:
-                    AddProvider(new HwndButtonProvider(this), 0);
+                    AddProvider(new HwndButtonProvider(this), index);
                     return;
                 case 65536 + 3:
-                    AddProvider(new HwndStaticProvider(this), 0);
+                    AddProvider(new HwndStaticProvider(this), index);
                     return;
                 case 65536 + 5:
-                    AddProvider(new HwndComboBoxProvider(this), 0);
+                    AddProvider(new HwndComboBoxProvider(this), index);
                     return;
                 case 65536 + 15:
-                    AddProvider(new HwndTabProvider(this), 0);
+                    AddProvider(new HwndTabProvider(this), index);
                     return;
                 case 65536 + 18:
-                    AddProvider(new HwndTrackBarProvider(this), 0);
+                    AddProvider(new HwndTrackBarProvider(this), index);
                     return;
                 case 65536 + 19:
-                    AddProvider(new HwndListViewProvider(this), 0);
+                    AddProvider(new HwndListViewProvider(this), index);
                     return;
             }
         }
