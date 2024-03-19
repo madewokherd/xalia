@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
+using IServiceProvider = Xalia.Interop.Win32.IServiceProvider;
 
 namespace Xalia.Win32
 {
@@ -190,8 +191,6 @@ namespace Xalia.Win32
         {
             int index = 0;
 
-            // TODO: Check if there's a UIA provider
-
             IntPtr lr = default;
             try
             {
@@ -206,13 +205,55 @@ namespace Xalia.Win32
             {
                 try
                 {
-                    IAccessible acc = await CommandThread.OnBackgroundThread(() =>
+                    (IAccessible, IRawElementProviderSimple) res = await CommandThread.OnBackgroundThread(() =>
                     {
                         int hr = ObjectFromLresult(lr, IID_IAccessible, IntPtr.Zero, out var obj);
                         Marshal.ThrowExceptionForHR(hr);
-                        return obj;
+
+                        if (UiaProviderFromIAccessible(obj, 0, UIA_PFIA_UNWRAP_BRIDGE, out var uiaprov) == 0)
+                        {
+                            obj = null;
+                        }
+                        else
+                        {
+                            IServiceProvider sp = obj as IServiceProvider;
+
+                            if (!(sp is null))
+                            {
+                                try
+                                {
+                                    Guid sid = IID_IAccessibleEx;
+                                    var raw_accex = sp.QueryService(ref sid, ref sid);
+                                    if (raw_accex != IntPtr.Zero)
+                                    {
+                                        object obj_accex = Marshal.GetObjectForIUnknown(raw_accex);
+                                        uiaprov = obj_accex as IRawElementProviderSimple;
+                                    }
+                                }
+                                catch (InvalidOperationException)
+                                {
+                                }
+                                catch (NotImplementedException)
+                                {
+                                }
+                                catch (InvalidCastException)
+                                {
+                                }
+                                catch (ArgumentException)
+                                {
+                                }
+                                catch (COMException)
+                                {
+                                }
+                            }
+                        }
+
+                        return (obj, uiaprov);
                     }, CommandThreadPriority.Query);
-                    AddProvider(new AccessibleProvider(this, Element, acc, 0), index++);
+                    if (!(res.Item2 is null))
+                        AddProvider(new UiaProvider(this, Element, res.Item2), index++);
+                    if (!(res.Item1 is null))
+                        AddProvider(new AccessibleProvider(this, Element, res.Item1, 0), index++);
                 }
                 catch (Exception e)
                 {

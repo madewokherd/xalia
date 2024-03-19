@@ -18,6 +18,7 @@ namespace Xalia.Interop
         const string USER_LIB = "user32";
         const string SHCORE_LIB = "shcore";
         const string OLEACC_LIB = "oleacc";
+        const string UIA_LIB = "uiautomationcore";
 
         // Wine extension
         [DllImport(NT_LIB, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
@@ -1292,6 +1293,30 @@ namespace Xalia.Interop
         public const int TB_THUMBPOSITION = 4;
         public const int TB_THUMBTRACK = 5;
         public const int TB_ENDTRACK = 8;
+
+        // UI Automation:
+
+        public static readonly Guid IID_IAccessibleEx = new Guid("f8b80ada-2c44-48d0-89be-5ff23c9cd875");
+
+        [ComImport, Guid("d6dd68d1-86fd-4332-8666-9abedea2d24c")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IRawElementProviderSimple
+        {
+            int ProviderOptions { get; }
+
+            [return: MarshalAs(UnmanagedType.IUnknown)]
+            object GetPatternProvider(int patternId);
+
+            [return: MarshalAs(UnmanagedType.Struct)]
+            object GetPropertyValue(int propertyId);
+
+            IRawElementProviderSimple HostRawElementProvider { get; }
+        }
+
+        public const int UIA_PFIA_UNWRAP_BRIDGE = 1;
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaProviderFromIAccessible(IAccessible pAccessible, int idChild, int dwFlags, out IRawElementProviderSimple ppProvider);
     }
 }
 #endif
