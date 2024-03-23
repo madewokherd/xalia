@@ -1298,6 +1298,8 @@ namespace Xalia.Interop
 
         public static readonly Guid IID_IAccessibleEx = new Guid("f8b80ada-2c44-48d0-89be-5ff23c9cd875");
 
+        public static int UIA_NativeWindowHandlePropertyId = 30020;
+
         [ComImport, Guid("d6dd68d1-86fd-4332-8666-9abedea2d24c")]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         public interface IRawElementProviderSimple
@@ -1360,6 +1362,11 @@ namespace Xalia.Interop
 
         [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern int UiaProviderFromIAccessible(IAccessible pAccessible, int idChild, int dwFlags, out IRawElementProviderSimple ppProvider);
+
+        public const int UIA_IAFP_UNWRAP_BRIDGE = 1;
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaIAccessibleFromProvider(IRawElementProviderSimple pProvider, int dwFlags, out IAccessible ppAccessible, [MarshalAs(UnmanagedType.Struct)] out object pvarChild);
     }
 }
 #endif

@@ -774,10 +774,10 @@ namespace Xalia.Win32
             return result;
         }
 
-        private ElementIdentifier ElementIdFromVariantBackground(object variant, IAccessible base_acc)
+        public static ElementIdentifier ElementIdFromVariantBackground(object variant, IAccessible base_acc, IntPtr root_hwnd)
         {
             ElementIdentifier result = default;
-            result.root_hwnd = RootHwnd.Hwnd;
+            result.root_hwnd = root_hwnd;
             IAccessible acc;
             if (variant is int childid)
             {
@@ -803,10 +803,10 @@ namespace Xalia.Win32
             {
                 try
                 {
-                    IntPtr root_hwnd = oleWindow.GetWindow();
-                    if (root_hwnd != IntPtr.Zero && root_hwnd != RootHwnd.Hwnd)
+                    IntPtr our_hwnd = oleWindow.GetWindow();
+                    if (our_hwnd != IntPtr.Zero && our_hwnd != root_hwnd)
                     {
-                        result.root_hwnd = root_hwnd;
+                        result.root_hwnd = our_hwnd;
                         result.is_root_hwnd = true;
                         return result;
                     }
@@ -831,6 +831,11 @@ namespace Xalia.Win32
             }
 
             return result;
+        }
+
+        private ElementIdentifier ElementIdFromVariantBackground(object variant, IAccessible base_acc)
+        {
+            return ElementIdFromVariantBackground(variant, base_acc, RootHwnd.Hwnd);
         }
 
         private ElementIdentifier ElementIdFromVariantBackground(object variant)

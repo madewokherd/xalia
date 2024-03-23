@@ -14,8 +14,8 @@ namespace Xalia.Win32
         public IAccessible2 acc2;
         public int acc2_uniqueId;
         public int child_id;
-        /* TODO: UIA: */
-        // public IRawElementProviderSimple prov;
-        // public int[] runtime_id
+        /* UIA: */
+        public IRawElementProviderSimple prov;
+        public int[] runtime_id;
     }
 }

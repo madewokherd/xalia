@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 using Xalia.Gudl;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
@@ -70,9 +71,20 @@ namespace Xalia.Win32
         {
             if (id.is_root_hwnd)
                 return GetElementName(id.root_hwnd);
+            if (!(id.runtime_id is null))
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("uia-");
+                sb.Append(id.root_hwnd.ToString("x"));
+                foreach (int i in id.runtime_id)
+                {
+                    sb.Append('-');
+                    sb.Append(i);
+                }
+                return sb.ToString();
+            }
             if (!(id.acc2 is null))
                 return $"acc2-{id.root_hwnd.ToInt64():x}-{id.acc2_uniqueId}";
-            // TODO: UIA runtime id
             id_counter++;
             return $"msaa-{id.root_hwnd.ToInt64():x}-{id_counter}";
         }
@@ -206,6 +218,11 @@ namespace Xalia.Win32
             var root_hwnd = LookupElement(id.root_hwnd)?.ProviderByType<HwndProvider>();
             if (root_hwnd is null)
                 throw new InvalidOperationException("hwnd element must be created before child element");
+
+            if (!(id.prov is null))
+            {
+                result.AddProvider(new UiaProvider(root_hwnd, result, id.prov));
+            }
 
             if (!(id.acc is null))
             {
