@@ -1313,6 +1313,49 @@ namespace Xalia.Interop
             IRawElementProviderSimple HostRawElementProvider { get; }
         }
 
+        public enum NavigateDirection
+        {
+            Parent,
+            NextSibling,
+            PreviousSibling,
+            FirstChild,
+            LastChild
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct UiaRect
+        {
+            public double left, top, width, height;
+        }
+
+        [ComImport, Guid("f7063da8-8359-439c-9297-bbc5299a7d87")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IRawElementProviderFragment
+        {
+            IRawElementProviderFragment Navigate(NavigateDirection direction);
+
+            [return: MarshalAs(UnmanagedType.SafeArray)]
+            int[] GetRuntimeId();
+
+            UiaRect BoundingRectangle { get; }
+
+            [return: MarshalAs(UnmanagedType.SafeArray, SafeArraySubType = VarEnum.VT_VARIANT)]
+            object[] GetEmbeddedFragmentRoots();
+
+            void SetFocus();
+
+            IRawElementProviderFragmentRoot FragmentRoot { get; }
+        }
+
+        [ComImport, Guid("620ce2a5-ab8f-40a9-86cb-de3c75599b58")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        public interface IRawElementProviderFragmentRoot
+        {
+            IRawElementProviderFragment ElementProviderFromPoint(double x, double y);
+
+            IRawElementProviderFragment GetFocus();
+        }
+
         public const int UIA_PFIA_UNWRAP_BRIDGE = 1;
 
         [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
