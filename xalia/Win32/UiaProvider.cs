@@ -197,7 +197,7 @@ namespace Xalia.Win32
                 case "uia_control_type":
                     return EvaluateProperty(Property.ControlType, depends_on);
             }
-            return base.EvaluateIdentifier(element, identifier, depends_on);
+            return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
         }
 
         private UiDomValue EvaluateProperty(Property propid, HashSet<(UiDomElement, GudlExpression)> depends_on = null)
@@ -269,7 +269,7 @@ namespace Xalia.Win32
                 if (GetPropertyValue(Property.ControlType, depends_on) is int i)
                     return UiDomBoolean.FromBool(i == controlType);
             }
-            return base.EvaluateIdentifierLate(element, identifier, depends_on);
+            return RootHwnd.ChildEvaluateIdentifierLate(identifier, depends_on);
         }
 
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)
