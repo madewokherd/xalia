@@ -32,6 +32,7 @@ namespace Xalia.Win32
             { "role", "uia_control_type" },
             { "control_type", "uia_control_type" },
             { "enabled", "uia_is_enabled" },
+            { "offscreen", "uia_is_offscreen" },
         };
 
         internal static readonly string[] control_type_names =
@@ -132,12 +133,14 @@ namespace Xalia.Win32
         {
             new PropertyInfo(UIA_ControlTypePropertyId, "uia_control_type"),
             new PropertyInfo(UIA_IsEnabledPropertyId, "uia_is_enabled"),
+            new PropertyInfo(UIA_IsOffscreenPropertyId, "uia_is_offscreen"),
         };
 
         private enum Property
         {
             ControlType,
             Enabled,
+            Offscreen,
         }
 
         enum SupportedState
@@ -201,6 +204,8 @@ namespace Xalia.Win32
                     return EvaluateProperty(Property.ControlType, depends_on);
                 case "uia_is_enabled":
                     return EvaluateProperty(Property.Enabled, depends_on);
+                case "uia_is_offscreen":
+                    return EvaluateProperty(Property.Offscreen, depends_on);
             }
             return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
         }
@@ -267,6 +272,15 @@ namespace Xalia.Win32
                             return new UiDomString("uia");
                     }
                     break;
+                case "visible":
+                    if (GetPropertyValue(Property.Offscreen, depends_on) is bool b)
+                        return UiDomBoolean.FromBool(!b);
+                    else if (properties[(int)Property.Offscreen].known &&
+                        Element.ProviderByType<AccessibleProvider>() is null &&
+                        Element.ProviderByType<HwndProvider>() is null)
+                        // Defer to other providers for this when possible
+                        return UiDomBoolean.True;
+                    break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
             {
@@ -298,6 +312,9 @@ namespace Xalia.Win32
                         return true;
                     case "uia_is_enabled":
                         WatchProperty(Property.Enabled);
+                        return true;
+                    case "uia_is_offscreen":
+                        WatchProperty(Property.Offscreen);
                         return true;
                 }
             }
@@ -349,6 +366,9 @@ namespace Xalia.Win32
                         return true;
                     case "uia_is_enabled":
                         UnwatchProperty(Property.Enabled);
+                        return true;
+                    case "uia_is_offscreen":
+                        UnwatchProperty(Property.Offscreen);
                         return true;
                 }
             }

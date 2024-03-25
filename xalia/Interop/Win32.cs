@@ -1301,6 +1301,7 @@ namespace Xalia.Interop
         public static int UIA_ControlTypePropertyId = 30003;
         public static int UIA_IsEnabledPropertyId = 30010;
         public static int UIA_NativeWindowHandlePropertyId = 30020;
+        public static int UIA_IsOffscreenPropertyId = 30022;
 
         [ComImport, Guid("d6dd68d1-86fd-4332-8666-9abedea2d24c")]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
