@@ -33,6 +33,10 @@ namespace Xalia.Win32
             { "control_type", "uia_control_type" },
             { "enabled", "uia_is_enabled" },
             { "offscreen", "uia_is_offscreen" },
+            { "x", "uia_x" },
+            { "y", "uia_y" },
+            { "width", "uia_width" },
+            { "height", "uia_height" },
         };
 
         internal static readonly string[] control_type_names =
@@ -153,6 +157,10 @@ namespace Xalia.Win32
 
         private SupportedState fragment_supported;
 
+        private UiaRect bounding_rectangle;
+        private bool watching_bounding_rectangle;
+        private bool bounding_rectangle_known;
+
         public override string[] GetTrackedProperties()
         {
             return tracked_properties;
@@ -206,6 +214,29 @@ namespace Xalia.Win32
                     return EvaluateProperty(Property.Enabled, depends_on);
                 case "uia_is_offscreen":
                     return EvaluateProperty(Property.Offscreen, depends_on);
+                case "uia_x":
+                case "uia_y":
+                case "uia_width":
+                case "uia_height":
+                    depends_on.Add((Element, new IdentifierExpression("is_uia_fragment")));
+                    if (fragment_supported != SupportedState.Supported)
+                        break;
+                    depends_on.Add((Element, new IdentifierExpression("uia_bounding_rectangle")));
+                    if (bounding_rectangle_known)
+                    {
+                        switch (identifier)
+                        {
+                            case "uia_x":
+                                return new UiDomDouble(bounding_rectangle.left);
+                            case "uia_y":
+                                return new UiDomDouble(bounding_rectangle.top);
+                            case "uia_width":
+                                return new UiDomDouble(bounding_rectangle.width);
+                            case "uia_height":
+                                return new UiDomDouble(bounding_rectangle.height);
+                        }
+                    }
+                    break;
             }
             return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
         }
@@ -316,9 +347,43 @@ namespace Xalia.Win32
                     case "uia_is_offscreen":
                         WatchProperty(Property.Offscreen);
                         return true;
+                    case "uia_bounding_rectangle":
+                        if (!watching_bounding_rectangle)
+                        {
+                            watching_bounding_rectangle = true;
+                            if (!bounding_rectangle_known)
+                                Utils.RunTask(FetchBoundingRectangle());
+                        }
+                        return true;
                 }
             }
             return base.WatchProperty(element, expression);
+        }
+
+        private async Task FetchBoundingRectangle()
+        {
+            var result = await CommandThread.OnBackgroundThread(() =>
+            {
+                var fragment = Provider as IRawElementProviderFragment;
+
+                if (!(fragment is null))
+                {
+                    return (fragment.BoundingRectangle, true);
+                }
+
+                return default;
+            }, CommandThreadPriority.Query);
+
+            if (bounding_rectangle_known || !result.Item2)
+            {
+                return;
+            }
+
+            bounding_rectangle_known = true;
+            bounding_rectangle = result.Item1;
+
+            Element.PropertyChanged("uia_bounding_rectangle",
+                $"{bounding_rectangle.left},{bounding_rectangle.top} {bounding_rectangle.width}x{bounding_rectangle.height}");
         }
 
         private void WatchProperty(Property propid)
@@ -369,6 +434,10 @@ namespace Xalia.Win32
                         return true;
                     case "uia_is_offscreen":
                         UnwatchProperty(Property.Offscreen);
+                        return true;
+                    case "uia_bounding_rectangle":
+                        watching_bounding_rectangle = false;
+                        bounding_rectangle_known = false;
                         return true;
                 }
             }
