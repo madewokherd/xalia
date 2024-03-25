@@ -1296,6 +1296,8 @@ namespace Xalia.Interop
 
         // UI Automation:
 
+        public static readonly int UiaAppendRuntimeId = 3;
+
         public static readonly Guid IID_IAccessibleEx = new Guid("f8b80ada-2c44-48d0-89be-5ff23c9cd875");
 
         public static int UIA_ControlTypePropertyId = 30003;

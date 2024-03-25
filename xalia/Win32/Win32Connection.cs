@@ -74,12 +74,11 @@ namespace Xalia.Win32
             if (!(id.runtime_id is null))
             {
                 StringBuilder sb = new StringBuilder();
-                sb.Append("uia-");
-                sb.Append(id.root_hwnd.ToString("x"));
+                sb.Append("uia");
                 foreach (int i in id.runtime_id)
                 {
                     sb.Append('-');
-                    sb.Append(i);
+                    sb.Append(i.ToString("x"));
                 }
                 return sb.ToString();
             }
