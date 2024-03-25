@@ -31,6 +31,7 @@ namespace Xalia.Win32
         {
             { "role", "uia_control_type" },
             { "control_type", "uia_control_type" },
+            { "enabled", "uia_is_enabled" },
         };
 
         internal static readonly string[] control_type_names =
@@ -130,11 +131,13 @@ namespace Xalia.Win32
         private PropertyInfo[] properties = // keep synced with Property enum
         {
             new PropertyInfo(UIA_ControlTypePropertyId, "uia_control_type"),
+            new PropertyInfo(UIA_IsEnabledPropertyId, "uia_is_enabled"),
         };
 
         private enum Property
         {
             ControlType,
+            Enabled,
         }
 
         enum SupportedState
@@ -170,7 +173,7 @@ namespace Xalia.Win32
             {
                 var prop = properties[i];
                 if (prop.known)
-                    Console.WriteLine($"  {prop.name}: {EvaluateProperty((Property)i)}");
+                    Utils.DebugWriteLine($"  {prop.name}: {EvaluateProperty((Property)i)}");
             }
             base.DumpProperties(element);
         }
@@ -196,6 +199,8 @@ namespace Xalia.Win32
                     break;
                 case "uia_control_type":
                     return EvaluateProperty(Property.ControlType, depends_on);
+                case "uia_is_enabled":
+                    return EvaluateProperty(Property.Enabled, depends_on);
             }
             return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
         }
@@ -228,6 +233,9 @@ namespace Xalia.Win32
 
             if (result is string s)
                 return new UiDomString(s);
+
+            if (result is bool b)
+                return UiDomBoolean.FromBool(b);
 
             Utils.DebugWriteLine($"Unhandled UIA property type {result.GetType().FullName}");
 
@@ -288,6 +296,9 @@ namespace Xalia.Win32
                     case "uia_control_type":
                         WatchProperty(Property.ControlType);
                         return true;
+                    case "uia_is_enabled":
+                        WatchProperty(Property.Enabled);
+                        return true;
                 }
             }
             return base.WatchProperty(element, expression);
@@ -335,6 +346,9 @@ namespace Xalia.Win32
                 {
                     case "uia_control_type":
                         UnwatchProperty(Property.ControlType);
+                        return true;
+                    case "uia_is_enabled":
+                        UnwatchProperty(Property.Enabled);
                         return true;
                 }
             }
