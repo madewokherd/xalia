@@ -229,6 +229,8 @@ namespace Xalia.Win32
                 result.AddProvider(new AccessibleProvider(root_hwnd, result, id.acc, id.child_id));
             }
 
+            elements_by_id.Add(name, result);
+
             return result;
         }
 
