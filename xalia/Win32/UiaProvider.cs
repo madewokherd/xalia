@@ -114,6 +114,8 @@ namespace Xalia.Win32
         }
 
         private bool watching_children;
+        private bool polling_children;
+        private bool interrupt_poll_children;
 
         private struct PropertyInfo
         {
@@ -492,28 +494,51 @@ namespace Xalia.Win32
 
         private async Task PollChildren()
         {
-            var children = await CommandThread.OnBackgroundThread(() =>
+            List<ElementIdentifier> children;
+
+            await RootHwnd.AddEvent(Win32Connection.UiaEvent.StructureChanged);
+
+            polling_children = true;
+
+            try
             {
-                var result = new List<ElementIdentifier>();
-
-                var fragment = Provider as IRawElementProviderFragment;
-
-                if (!(fragment is null))
+                children = await CommandThread.OnBackgroundThread(() =>
                 {
-                    IRawElementProviderFragment child = fragment.Navigate(NavigateDirection.FirstChild);
+                    var result = new List<ElementIdentifier>();
 
-                    while (!(child is null))
+                    var fragment = Provider as IRawElementProviderFragment;
+
+                    if (!(fragment is null))
                     {
-                        result.Add(ElementIdFromFragmentBackground(child));
-                        child = child.Navigate(NavigateDirection.NextSibling);
-                    }
-                }
+                        IRawElementProviderFragment child = fragment.Navigate(NavigateDirection.FirstChild);
 
-                return result;
-            }, CommandThreadPriority.Query);
+                        while (!(child is null) && !interrupt_poll_children)
+                        {
+                            result.Add(ElementIdFromFragmentBackground(child));
+                            child = child.Navigate(NavigateDirection.NextSibling);
+                        }
+                    }
+
+                    return result;
+                }, CommandThreadPriority.Query);
+            }
+            finally
+            {
+                polling_children = false;
+            }
 
             if (!watching_children)
+            {
+                interrupt_poll_children = false;
                 return;
+            }
+
+            if (interrupt_poll_children)
+            {
+                interrupt_poll_children = false;
+                Utils.RunTask(PollChildren());
+                return;
+            }
 
             Element.SyncRecurseMethodChildren(children, Connection.GetElementName, Connection.CreateElement);
         }
@@ -586,6 +611,21 @@ namespace Xalia.Win32
                 Utils.DebugWriteLine($"UnwatchChildren for {Element} (uia)");
             watching_children = false;
             Element.UnsetRecurseMethodProvider(this);
+        }
+
+        internal void ChildrenChanged()
+        {
+            if (!watching_children)
+                return;
+
+            if (polling_children)
+            {
+                interrupt_poll_children = true;
+            }
+            else
+            {
+                Utils.RunTask(PollChildren());
+            }
         }
     }
 }

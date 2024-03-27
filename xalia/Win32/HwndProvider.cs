@@ -129,6 +129,8 @@ namespace Xalia.Win32
 
         public string ProcessName { get; private set; }
 
+        private HashSet<Win32Connection.UiaEvent> added_events;
+
         static HwndProvider()
         {
             for (int i=0; i<win32_stylenames.Length; i++)
@@ -160,6 +162,12 @@ namespace Xalia.Win32
             if (!(_commandThread is null))
             {
                 Connection.UnrefBackgroundThread(Tid);
+            }
+            if (!(added_events is null))
+            {
+                foreach (var ev in added_events)
+                    Utils.RunTask(Connection.RemoveUiaEventWindow(ev, Hwnd));
+                added_events = null;
             }
             base.NotifyElementRemoved(element);
         }
@@ -994,6 +1002,16 @@ namespace Xalia.Win32
                 if (!IsExpectedException(e))
                     throw;
                 return 96;
+            }
+        }
+
+        internal async Task AddEvent(Win32Connection.UiaEvent ev)
+        {
+            if (added_events is null)
+                added_events = new HashSet<Win32Connection.UiaEvent>();
+            if (added_events.Add(ev))
+            {
+                await Connection.AddUiaEventWindow(ev, Hwnd);
             }
         }
     }

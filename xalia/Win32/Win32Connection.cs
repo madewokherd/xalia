@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
@@ -14,6 +16,12 @@ namespace Xalia.Win32
         {
             Root = root;
             root.AddGlobalProvider(this);
+
+            MainContext = SynchronizationContext.Current;
+
+            EventCallback = new UiaEventCallback(OnUiaEvent);
+
+            event_callbacks.Add(EventCallback);
 
             var eventprocdelegate = new WINEVENTPROC(OnMsaaEvent);
 
@@ -36,9 +44,50 @@ namespace Xalia.Win32
 
         private Dictionary<int, (int, CommandThread)> background_threads = new Dictionary<int, (int, CommandThread)>();
 
+        private CommandThread uia_event_thread;
+        private CommandThread UiaEventThread
+        {
+            get
+            {
+                if (uia_event_thread is null)
+                    uia_event_thread = new CommandThread(ApartmentState.MTA);
+                return uia_event_thread;
+            }
+        }
+
+        public SynchronizationContext MainContext { get; }
+
+        private struct UiaEventInfo
+        {
+            public int eventid;
+            public IntPtr handle;
+            public int refcount;
+
+            public UiaEventInfo(int eventid)
+            {
+                this.eventid = eventid;
+                handle = IntPtr.Zero;
+                refcount = 0;
+            }
+        }
+
+        private UiaEventInfo[] uia_events = new UiaEventInfo[] {
+            new UiaEventInfo(UIA_StructureChangedEventId),
+        };
+
+        public enum UiaEvent
+        {
+            StructureChanged,
+            Count
+        }
+
         private GUITHREADINFO guithreadinfo;
 
         static List<WINEVENTPROC> event_proc_delegates = new List<WINEVENTPROC>(); // to make sure delegates aren't GC'd while in use
+
+        private UiaEventCallback EventCallback;
+
+        static List<UiaEventCallback> event_callbacks = new List<UiaEventCallback>();
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
@@ -72,20 +121,29 @@ namespace Xalia.Win32
             if (id.is_root_hwnd)
                 return GetElementName(id.root_hwnd);
             if (!(id.runtime_id is null))
-            {
-                StringBuilder sb = new StringBuilder();
-                sb.Append("uia");
-                foreach (int i in id.runtime_id)
-                {
-                    sb.Append('-');
-                    sb.Append(i.ToString("x"));
-                }
-                return sb.ToString();
-            }
+                return GetElementName(id.runtime_id);
             if (!(id.acc2 is null))
                 return $"acc2-{id.root_hwnd.ToInt64():x}-{id.acc2_uniqueId}";
             id_counter++;
             return $"msaa-{id.root_hwnd.ToInt64():x}-{id_counter}";
+        }
+
+        public string GetElementName(int[] runtime_id)
+        {
+            if (runtime_id.Length == 2 && runtime_id[0] == 42)
+            {
+                // HWND element
+                return GetElementName((IntPtr)runtime_id[1]);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append("uia");
+            foreach (int i in runtime_id)
+            {
+                sb.Append('-');
+                sb.Append(i.ToString("x"));
+            }
+            return sb.ToString();
         }
 
         private void UpdateToplevels()
@@ -147,6 +205,15 @@ namespace Xalia.Win32
                 return null;
 
             var element_name = GetElementName(id);
+            if (element_name is null)
+                return null;
+
+            return LookupElement(element_name);
+        }
+
+        public UiDomElement LookupElement(int[] runtime_id)
+        {
+            var element_name = GetElementName(runtime_id);
             if (element_name is null)
                 return null;
 
@@ -625,6 +692,153 @@ namespace Xalia.Win32
             {
                 background_threads[tid] = (pair.Item1 - 1, pair.Item2);
             }
+        }
+
+        private void OnUiaEvent(IntPtr pArgs, object[,] pRequestedData, string pTreeStructure)
+        {
+            IntPtr node = (IntPtr)(long)pRequestedData[0, 0];
+            int hr;
+
+            hr = UiaGetRuntimeId(node, out var runtime_id);
+            Marshal.ThrowExceptionForHR(hr);
+
+            UiaEventArgs args = Marshal.PtrToStructure<UiaEventArgs>(pArgs);
+            switch (args.Type)
+            {
+                case EventArgsType.StructureChanged:
+                    {
+                        var sc = Marshal.PtrToStructure<UiaStructureChangedEventArgs>(pArgs);
+
+                        if (sc.StructureChangeType == StructureChangeType.ChildAdded)
+                        {
+                            IntPtr condition;
+                            UiaCacheRequest cache_request = new UiaCacheRequest()
+                            {
+                                Scope = TreeScope.Element,
+                                automationElementMode = AutomationElementMode.Full
+                            };
+
+                            condition = Marshal.AllocCoTaskMem(Marshal.SizeOf<UiaCondition>());
+
+                            try
+                            {
+                                UiaCondition view_condition = new UiaCondition
+                                {
+                                    ConditionType = ConditionType.True,
+                                };
+                                Marshal.StructureToPtr(view_condition, condition, false);
+                                cache_request.pViewCondition = condition;
+
+                                hr = UiaNavigate(node, NavigateDirection.Parent, condition,
+                                    ref cache_request, out var ppRequestedData, out string ppTreeStructure);
+                                Marshal.ThrowExceptionForHR(hr);
+
+                                IntPtr node2 = (IntPtr)(long)ppRequestedData[0, 0];
+
+                                try
+                                {
+                                    hr = UiaGetRuntimeId(node2, out runtime_id);
+                                    Marshal.ThrowExceptionForHR(hr);
+                                }
+                                finally
+                                {
+                                    UiaNodeRelease(node2);
+                                }
+                            }
+                            finally
+                            {
+                                Marshal.FreeCoTaskMem(condition);
+                            }
+                        }
+
+                        MainContext.Post(OnChildrenChanged, runtime_id);
+
+                        break;
+                    }
+            }
+        }
+
+        private void OnChildrenChanged(object state)
+        {
+            int[] runtime_id = (int[])state;
+
+            var element = LookupElement(runtime_id);
+            if (element is null)
+                return;
+
+            element.ProviderByType<UiaProvider>()?.ChildrenChanged();
+        }
+
+        public Task AddUiaEventWindow(UiaEvent ev, IntPtr hwnd)
+        {
+            return UiaEventThread.OnBackgroundThread(() => {
+                ref UiaEventInfo info = ref uia_events[(int)ev];
+                int hr;
+                if (info.handle == IntPtr.Zero)
+                {
+                    UiaCacheRequest cache_request = new UiaCacheRequest()
+                    {
+                        Scope = TreeScope.Element,
+                        automationElementMode = AutomationElementMode.Full
+                    };
+
+                    cache_request.pViewCondition = Marshal.AllocCoTaskMem(Marshal.SizeOf<UiaCondition>());
+                    try
+                    {
+                        UiaCondition view_condition = new UiaCondition
+                        {
+                            ConditionType = ConditionType.True,
+                        };
+                        Marshal.StructureToPtr(view_condition, cache_request.pViewCondition, false);
+
+                        hr = UiaGetRootNode(out var root_node);
+                        Marshal.ThrowExceptionForHR(hr);
+                        try
+                        {
+                            IntPtr handle;
+                            hr = UiaAddEvent(root_node, info.eventid,
+                                EventCallback, TreeScope.Subtree, IntPtr.Zero, 0, ref cache_request,
+                                out handle);
+                            Marshal.ThrowExceptionForHR(hr);
+                            info.handle = handle;
+                        }
+                        finally
+                        {
+                            UiaNodeRelease(root_node);
+                        }
+                    }
+                    finally
+                    {
+                        Marshal.FreeCoTaskMem(cache_request.pViewCondition);
+                    }
+                }
+
+                hr = UiaEventAddWindow(info.handle, hwnd);
+                Marshal.ThrowExceptionForHR(hr);
+                info.refcount++;
+            }, CommandThreadPriority.Query);
+        }
+
+        public async Task RemoveUiaEventWindow(UiaEvent ev, IntPtr hwnd)
+        {
+            await UiaEventThread.OnBackgroundThread(() =>
+            {
+                ref UiaEventInfo info = ref uia_events[(int)ev];
+                int hr;
+                if (info.refcount == 1)
+                {
+                    hr = UiaRemoveEvent(info.handle);
+                    Marshal.ThrowExceptionForHR(hr);
+                    info.handle = IntPtr.Zero;
+                    info.refcount = 0;
+                }
+                else
+                {
+                    hr = UiaEventRemoveWindow(info.handle, hwnd);
+                    Marshal.ThrowExceptionForHR(hr);
+                    info.refcount--;
+                }
+            }, CommandThreadPriority.Query);
         }
     }
 }

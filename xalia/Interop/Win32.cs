@@ -1296,14 +1296,23 @@ namespace Xalia.Interop
 
         // UI Automation:
 
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaGetRootNode(out IntPtr phnode);
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool UiaNodeRelease(IntPtr hnode);
+
         public static readonly int UiaAppendRuntimeId = 3;
 
         public static readonly Guid IID_IAccessibleEx = new Guid("f8b80ada-2c44-48d0-89be-5ff23c9cd875");
 
-        public static int UIA_ControlTypePropertyId = 30003;
-        public static int UIA_IsEnabledPropertyId = 30010;
-        public static int UIA_NativeWindowHandlePropertyId = 30020;
-        public static int UIA_IsOffscreenPropertyId = 30022;
+        public const int UIA_StructureChangedEventId = 20002;
+
+        public const int UIA_RuntimeIdPropertyId = 30003;
+        public const int UIA_ControlTypePropertyId = 30003;
+        public const int UIA_IsEnabledPropertyId = 30010;
+        public const int UIA_NativeWindowHandlePropertyId = 30020;
+        public const int UIA_IsOffscreenPropertyId = 30022;
 
         [ComImport, Guid("d6dd68d1-86fd-4332-8666-9abedea2d24c")]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -1362,6 +1371,118 @@ namespace Xalia.Interop
 
             IRawElementProviderFragment GetFocus();
         }
+
+        public enum EventArgsType
+        {
+            Simple,
+            PropertyChanged,
+            StructureChanged,
+            AsyncContentLoaded,
+            WindowClosed,
+            TextEditTextChanged,
+            Changes,
+            Notification
+        }
+
+        [StructLayout (LayoutKind.Sequential)]
+        public struct UiaEventArgs
+        {
+            public EventArgsType Type;
+            public int EventId;
+        }
+
+        public enum StructureChangeType
+        {
+            ChildAdded,
+            ChildRemoved,
+            ChildrenInvalidated,
+            ChildrenBulkAdded,
+            ChildrenBulkRemoved,
+            ChildrenReordered
+        }
+
+        [StructLayout (LayoutKind.Sequential)]
+        public struct UiaStructureChangedEventArgs
+        {
+            public EventArgsType Type;
+            public int EventId;
+
+            public StructureChangeType StructureChangeType;
+            public IntPtr pRuntimeId;
+            public int cRuntimeIdLen;
+        }
+
+        [Flags]
+        public enum TreeScope
+        {
+            Element = 0x1,
+            Children = 0x2,
+            Descendants = 0x4,
+            Parent = 0x8,
+            Ancestors = 0x10,
+            Subtree = Element | Children | Descendants
+        }
+
+        public enum ConditionType
+        {
+            True,
+            False,
+            Property,
+            And,
+            Or,
+            Not
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct UiaCondition
+        {
+            public ConditionType ConditionType;
+        }
+
+        public enum AutomationElementMode
+        {
+            None,
+            Full
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct UiaCacheRequest
+        {
+            public IntPtr pViewCondition;
+            public TreeScope Scope;
+            public IntPtr pProperties;
+            public int cProperties;
+            public IntPtr pPatterns;
+            public int cPatterns;
+            public AutomationElementMode automationElementMode;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        public delegate void UiaEventCallback(IntPtr pArgs, [MarshalAs(UnmanagedType.SafeArray)] object[,] pRequestedData,
+            [MarshalAs(UnmanagedType.BStr)] string pTreeStructure);
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaAddEvent(IntPtr hnode, int eventid, UiaEventCallback pCallback,
+            TreeScope scope, IntPtr pProperties, int cProperties, ref UiaCacheRequest pRequest,
+            out IntPtr phEvent);
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaRemoveEvent(IntPtr hEvent);
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaEventAddWindow(IntPtr hEvent, IntPtr hwnd);
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaEventRemoveWindow(IntPtr hEvent, IntPtr hwnd);
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaGetRuntimeId(IntPtr hnode,
+            [MarshalAs(UnmanagedType.SafeArray, SafeArraySubType = VarEnum.VT_I4)] out int[] pruntimeId);
+
+        [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int UiaNavigate(IntPtr hnode, NavigateDirection direction, IntPtr pCondition,
+            ref UiaCacheRequest pRequest, [MarshalAs(UnmanagedType.SafeArray)] out object[,] ppRequestedData,
+            [MarshalAs(UnmanagedType.BStr)] out string ppTreeStructure);
 
         public const int UIA_PFIA_UNWRAP_BRIDGE = 1;
 
