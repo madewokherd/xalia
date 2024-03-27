@@ -364,6 +364,8 @@ namespace Xalia.Win32
 
         private async Task FetchBoundingRectangle()
         {
+            await RootHwnd.AddEvent(Win32Connection.UiaEvent.PropertyChanged);
+
             var result = await CommandThread.OnBackgroundThread(() =>
             {
                 var fragment = Provider as IRawElementProviderFragment;
@@ -406,6 +408,8 @@ namespace Xalia.Win32
 
         private async Task FetchProperty(Property propid)
         {
+            await RootHwnd.AddEvent(Win32Connection.UiaEvent.PropertyChanged);
+
             var idx = (int)propid;
 
             var value = await CommandThread.OnBackgroundThread(() =>
@@ -449,7 +453,6 @@ namespace Xalia.Win32
         private void UnwatchProperty(Property propid)
         {
             properties[(int)propid].watching = false;
-            properties[(int)propid].known = false;
         }
 
         private async Task CheckFragmentSupport()
@@ -625,6 +628,48 @@ namespace Xalia.Win32
             else
             {
                 Utils.RunTask(PollChildren());
+            }
+        }
+
+        private void PropertyChanged(Property prop, object new_value)
+        {
+            ref PropertyInfo info = ref properties[(int)prop];
+
+            info.known = true;
+            info.value = new_value;
+            Element.PropertyChanged(info.name, EvaluateProperty(prop));
+        }
+
+        internal void PropertyChanged(int prop_id, object new_value)
+        {
+            switch (prop_id)
+            {
+                case UIA_ControlTypePropertyId:
+                    PropertyChanged(Property.ControlType, new_value);
+                    break;
+                case UIA_IsEnabledPropertyId:
+                    PropertyChanged(Property.Enabled, new_value);
+                    break;
+                case UIA_IsOffscreenPropertyId:
+                    PropertyChanged(Property.Offscreen, new_value);
+                    break;
+                case UIA_BoundingRectanglePropertyId:
+                    {
+                        double[] values = (double[])new_value;
+                        UiaRect new_bounding_rectangle = new UiaRect() {
+                            left = values[0],
+                            top = values[1],
+                            width = values[2],
+                            height = values[3]
+                        };
+
+                        bounding_rectangle = new_bounding_rectangle;
+                        bounding_rectangle_known = true;
+
+                        Element.PropertyChanged("uia_bounding_rectangle",
+                            $"{bounding_rectangle.left},{bounding_rectangle.top} {bounding_rectangle.width}x{bounding_rectangle.height}");
+                        break;
+                    }
             }
         }
     }

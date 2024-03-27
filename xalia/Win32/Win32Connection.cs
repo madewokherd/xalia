@@ -73,11 +73,13 @@ namespace Xalia.Win32
 
         private UiaEventInfo[] uia_events = new UiaEventInfo[] {
             new UiaEventInfo(UIA_StructureChangedEventId),
+            new UiaEventInfo(UIA_AutomationPropertyChangedEventId),
         };
 
         public enum UiaEvent
         {
             StructureChanged,
+            PropertyChanged,
             Count
         }
 
@@ -755,7 +757,29 @@ namespace Xalia.Win32
 
                         break;
                     }
+                case EventArgsType.PropertyChanged:
+                    {
+                        var pc = Marshal.PtrToStructure<UiaPropertyChangedEventArgs>(pArgs);
+
+                        MainContext.Post(OnPropertyChanged, (runtime_id, pc.PropertyId, pc.NewValue));
+
+                        break;
+                    }
             }
+        }
+
+        private void OnPropertyChanged(object state)
+        {
+            var st = ((int[], int, object))state;
+            var runtime_id = st.Item1;
+            var prop_id = st.Item2;
+            var new_value = st.Item3;
+
+            var element = LookupElement(runtime_id);
+            if (element is null)
+                return;
+
+            element.ProviderByType<UiaProvider>()?.PropertyChanged(prop_id, new_value);
         }
 
         private void OnChildrenChanged(object state)
@@ -769,7 +793,7 @@ namespace Xalia.Win32
             element.ProviderByType<UiaProvider>()?.ChildrenChanged();
         }
 
-        public Task AddUiaEventWindow(UiaEvent ev, IntPtr hwnd)
+        public unsafe Task AddUiaEventWindow(UiaEvent ev, IntPtr hwnd)
         {
             return UiaEventThread.OnBackgroundThread(() => {
                 ref UiaEventInfo info = ref uia_events[(int)ev];
@@ -796,10 +820,31 @@ namespace Xalia.Win32
                         try
                         {
                             IntPtr handle;
-                            hr = UiaAddEvent(root_node, info.eventid,
-                                EventCallback, TreeScope.Subtree, IntPtr.Zero, 0, ref cache_request,
-                                out handle);
-                            Marshal.ThrowExceptionForHR(hr);
+
+                            if (ev == UiaEvent.PropertyChanged)
+                            {
+                                int[] properties = new int[]
+                                {
+                                    UIA_ControlTypePropertyId,
+                                    UIA_IsEnabledPropertyId,
+                                    UIA_IsOffscreenPropertyId,
+                                    UIA_BoundingRectanglePropertyId,
+                                };
+                                fixed (int* pProperties = properties)
+                                {
+                                    hr = UiaAddEvent(root_node, info.eventid,
+                                        EventCallback, TreeScope.Subtree, (IntPtr)pProperties, properties.Length,
+                                        ref cache_request, out handle);
+                                    Marshal.ThrowExceptionForHR(hr);
+                                }
+                            }
+                            else
+                            {
+                                hr = UiaAddEvent(root_node, info.eventid,
+                                    EventCallback, TreeScope.Subtree, IntPtr.Zero, 0, ref cache_request,
+                                    out handle);
+                                Marshal.ThrowExceptionForHR(hr);
+                            }
                             info.handle = handle;
                         }
                         finally

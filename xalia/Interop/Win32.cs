@@ -1307,7 +1307,9 @@ namespace Xalia.Interop
         public static readonly Guid IID_IAccessibleEx = new Guid("f8b80ada-2c44-48d0-89be-5ff23c9cd875");
 
         public const int UIA_StructureChangedEventId = 20002;
+        public const int UIA_AutomationPropertyChangedEventId = 20004;
 
+        public const int UIA_BoundingRectanglePropertyId = 30001;
         public const int UIA_RuntimeIdPropertyId = 30003;
         public const int UIA_ControlTypePropertyId = 30003;
         public const int UIA_IsEnabledPropertyId = 30010;
@@ -1410,6 +1412,19 @@ namespace Xalia.Interop
             public StructureChangeType StructureChangeType;
             public IntPtr pRuntimeId;
             public int cRuntimeIdLen;
+        }
+
+        [StructLayout (LayoutKind.Sequential)]
+        public struct UiaPropertyChangedEventArgs
+        {
+            public EventArgsType Type;
+            public int EventId;
+
+            public int PropertyId;
+            [MarshalAs(UnmanagedType.Struct)]
+            public object OldValue;
+            [MarshalAs(UnmanagedType.Struct)]
+            public object NewValue;
         }
 
         [Flags]
