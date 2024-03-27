@@ -31,6 +31,12 @@ namespace Xalia.Win32
         {
             { "role", "uia_control_type" },
             { "control_type", "uia_control_type" },
+            { "enabled", "uia_is_enabled" },
+            { "offscreen", "uia_is_offscreen" },
+            { "x", "uia_x" },
+            { "y", "uia_y" },
+            { "width", "uia_width" },
+            { "height", "uia_height" },
         };
 
         internal static readonly string[] control_type_names =
@@ -108,6 +114,8 @@ namespace Xalia.Win32
         }
 
         private bool watching_children;
+        private bool polling_children;
+        private bool interrupt_poll_children;
 
         private struct PropertyInfo
         {
@@ -130,11 +138,15 @@ namespace Xalia.Win32
         private PropertyInfo[] properties = // keep synced with Property enum
         {
             new PropertyInfo(UIA_ControlTypePropertyId, "uia_control_type"),
+            new PropertyInfo(UIA_IsEnabledPropertyId, "uia_is_enabled"),
+            new PropertyInfo(UIA_IsOffscreenPropertyId, "uia_is_offscreen"),
         };
 
         private enum Property
         {
             ControlType,
+            Enabled,
+            Offscreen,
         }
 
         enum SupportedState
@@ -146,6 +158,10 @@ namespace Xalia.Win32
         }
 
         private SupportedState fragment_supported;
+
+        private UiaRect bounding_rectangle;
+        private bool watching_bounding_rectangle;
+        private bool bounding_rectangle_known;
 
         public override string[] GetTrackedProperties()
         {
@@ -170,7 +186,7 @@ namespace Xalia.Win32
             {
                 var prop = properties[i];
                 if (prop.known)
-                    Console.WriteLine($"  {prop.name}: {EvaluateProperty((Property)i)}");
+                    Utils.DebugWriteLine($"  {prop.name}: {EvaluateProperty((Property)i)}");
             }
             base.DumpProperties(element);
         }
@@ -196,8 +212,35 @@ namespace Xalia.Win32
                     break;
                 case "uia_control_type":
                     return EvaluateProperty(Property.ControlType, depends_on);
+                case "uia_is_enabled":
+                    return EvaluateProperty(Property.Enabled, depends_on);
+                case "uia_is_offscreen":
+                    return EvaluateProperty(Property.Offscreen, depends_on);
+                case "uia_x":
+                case "uia_y":
+                case "uia_width":
+                case "uia_height":
+                    depends_on.Add((Element, new IdentifierExpression("is_uia_fragment")));
+                    if (fragment_supported != SupportedState.Supported)
+                        break;
+                    depends_on.Add((Element, new IdentifierExpression("uia_bounding_rectangle")));
+                    if (bounding_rectangle_known)
+                    {
+                        switch (identifier)
+                        {
+                            case "uia_x":
+                                return new UiDomDouble(bounding_rectangle.left);
+                            case "uia_y":
+                                return new UiDomDouble(bounding_rectangle.top);
+                            case "uia_width":
+                                return new UiDomDouble(bounding_rectangle.width);
+                            case "uia_height":
+                                return new UiDomDouble(bounding_rectangle.height);
+                        }
+                    }
+                    break;
             }
-            return base.EvaluateIdentifier(element, identifier, depends_on);
+            return RootHwnd.ChildEvaluateIdentifier(identifier, depends_on);
         }
 
         private UiDomValue EvaluateProperty(Property propid, HashSet<(UiDomElement, GudlExpression)> depends_on = null)
@@ -229,6 +272,9 @@ namespace Xalia.Win32
             if (result is string s)
                 return new UiDomString(s);
 
+            if (result is bool b)
+                return UiDomBoolean.FromBool(b);
+
             Utils.DebugWriteLine($"Unhandled UIA property type {result.GetType().FullName}");
 
             return UiDomUndefined.Instance;
@@ -259,6 +305,15 @@ namespace Xalia.Win32
                             return new UiDomString("uia");
                     }
                     break;
+                case "visible":
+                    if (GetPropertyValue(Property.Offscreen, depends_on) is bool b)
+                        return UiDomBoolean.FromBool(!b);
+                    else if (properties[(int)Property.Offscreen].known &&
+                        Element.ProviderByType<AccessibleProvider>() is null &&
+                        Element.ProviderByType<HwndProvider>() is null)
+                        // Defer to other providers for this when possible
+                        return UiDomBoolean.True;
+                    break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
             {
@@ -269,7 +324,7 @@ namespace Xalia.Win32
                 if (GetPropertyValue(Property.ControlType, depends_on) is int i)
                     return UiDomBoolean.FromBool(i == controlType);
             }
-            return base.EvaluateIdentifierLate(element, identifier, depends_on);
+            return RootHwnd.ChildEvaluateIdentifierLate(identifier, depends_on);
         }
 
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)
@@ -288,9 +343,51 @@ namespace Xalia.Win32
                     case "uia_control_type":
                         WatchProperty(Property.ControlType);
                         return true;
+                    case "uia_is_enabled":
+                        WatchProperty(Property.Enabled);
+                        return true;
+                    case "uia_is_offscreen":
+                        WatchProperty(Property.Offscreen);
+                        return true;
+                    case "uia_bounding_rectangle":
+                        if (!watching_bounding_rectangle)
+                        {
+                            watching_bounding_rectangle = true;
+                            if (!bounding_rectangle_known)
+                                Utils.RunTask(FetchBoundingRectangle());
+                        }
+                        return true;
                 }
             }
             return base.WatchProperty(element, expression);
+        }
+
+        private async Task FetchBoundingRectangle()
+        {
+            await RootHwnd.AddEvent(Win32Connection.UiaEvent.PropertyChanged);
+
+            var result = await CommandThread.OnBackgroundThread(() =>
+            {
+                var fragment = Provider as IRawElementProviderFragment;
+
+                if (!(fragment is null))
+                {
+                    return (fragment.BoundingRectangle, true);
+                }
+
+                return default;
+            }, CommandThreadPriority.Query);
+
+            if (bounding_rectangle_known || !result.Item2)
+            {
+                return;
+            }
+
+            bounding_rectangle_known = true;
+            bounding_rectangle = result.Item1;
+
+            Element.PropertyChanged("uia_bounding_rectangle",
+                $"{bounding_rectangle.left},{bounding_rectangle.top} {bounding_rectangle.width}x{bounding_rectangle.height}");
         }
 
         private void WatchProperty(Property propid)
@@ -311,6 +408,8 @@ namespace Xalia.Win32
 
         private async Task FetchProperty(Property propid)
         {
+            await RootHwnd.AddEvent(Win32Connection.UiaEvent.PropertyChanged);
+
             var idx = (int)propid;
 
             var value = await CommandThread.OnBackgroundThread(() =>
@@ -336,6 +435,16 @@ namespace Xalia.Win32
                     case "uia_control_type":
                         UnwatchProperty(Property.ControlType);
                         return true;
+                    case "uia_is_enabled":
+                        UnwatchProperty(Property.Enabled);
+                        return true;
+                    case "uia_is_offscreen":
+                        UnwatchProperty(Property.Offscreen);
+                        return true;
+                    case "uia_bounding_rectangle":
+                        watching_bounding_rectangle = false;
+                        bounding_rectangle_known = false;
+                        return true;
                 }
             }
             return base.UnwatchProperty(element, expression);
@@ -344,7 +453,6 @@ namespace Xalia.Win32
         private void UnwatchProperty(Property propid)
         {
             properties[(int)propid].watching = false;
-            properties[(int)propid].known = false;
         }
 
         private async Task CheckFragmentSupport()
@@ -389,28 +497,51 @@ namespace Xalia.Win32
 
         private async Task PollChildren()
         {
-            var children = await CommandThread.OnBackgroundThread(() =>
+            List<ElementIdentifier> children;
+
+            await RootHwnd.AddEvent(Win32Connection.UiaEvent.StructureChanged);
+
+            polling_children = true;
+
+            try
             {
-                var result = new List<ElementIdentifier>();
-
-                var fragment = Provider as IRawElementProviderFragment;
-
-                if (!(fragment is null))
+                children = await CommandThread.OnBackgroundThread(() =>
                 {
-                    IRawElementProviderFragment child = fragment.Navigate(NavigateDirection.FirstChild);
+                    var result = new List<ElementIdentifier>();
 
-                    while (!(child is null))
+                    var fragment = Provider as IRawElementProviderFragment;
+
+                    if (!(fragment is null))
                     {
-                        result.Add(ElementIdFromFragmentBackground(child));
-                        child = child.Navigate(NavigateDirection.NextSibling);
-                    }
-                }
+                        IRawElementProviderFragment child = fragment.Navigate(NavigateDirection.FirstChild);
 
-                return result;
-            }, CommandThreadPriority.Query);
+                        while (!(child is null) && !interrupt_poll_children)
+                        {
+                            result.Add(ElementIdFromFragmentBackground(child));
+                            child = child.Navigate(NavigateDirection.NextSibling);
+                        }
+                    }
+
+                    return result;
+                }, CommandThreadPriority.Query);
+            }
+            finally
+            {
+                polling_children = false;
+            }
 
             if (!watching_children)
+            {
+                interrupt_poll_children = false;
                 return;
+            }
+
+            if (interrupt_poll_children)
+            {
+                interrupt_poll_children = false;
+                Utils.RunTask(PollChildren());
+                return;
+            }
 
             Element.SyncRecurseMethodChildren(children, Connection.GetElementName, Connection.CreateElement);
         }
@@ -459,13 +590,18 @@ namespace Xalia.Win32
             result.root_hwnd = RootHwnd.Hwnd;
             result.is_root_hwnd = false;
             result.prov = simple;
-            result.runtime_id = child.GetRuntimeId();
 
-            if (result.runtime_id is null)
+            var runtime_id = child.GetRuntimeId();
+
+            if (runtime_id[0] == UiaAppendRuntimeId)
             {
-                // not sure how to handle this situation
-                throw new Exception("runtime_id is null");
+                result.runtime_id = new int[runtime_id.Length + 2];
+                result.runtime_id[0] = 42;
+                result.runtime_id[1] = (int)RootHwnd.Hwnd;
+                Array.Copy(runtime_id, 0, result.runtime_id, 2, runtime_id.Length);
             }
+            else
+                result.runtime_id = runtime_id;
 
             return result;
         }
@@ -478,6 +614,63 @@ namespace Xalia.Win32
                 Utils.DebugWriteLine($"UnwatchChildren for {Element} (uia)");
             watching_children = false;
             Element.UnsetRecurseMethodProvider(this);
+        }
+
+        internal void ChildrenChanged()
+        {
+            if (!watching_children)
+                return;
+
+            if (polling_children)
+            {
+                interrupt_poll_children = true;
+            }
+            else
+            {
+                Utils.RunTask(PollChildren());
+            }
+        }
+
+        private void PropertyChanged(Property prop, object new_value)
+        {
+            ref PropertyInfo info = ref properties[(int)prop];
+
+            info.known = true;
+            info.value = new_value;
+            Element.PropertyChanged(info.name, EvaluateProperty(prop));
+        }
+
+        internal void PropertyChanged(int prop_id, object new_value)
+        {
+            switch (prop_id)
+            {
+                case UIA_ControlTypePropertyId:
+                    PropertyChanged(Property.ControlType, new_value);
+                    break;
+                case UIA_IsEnabledPropertyId:
+                    PropertyChanged(Property.Enabled, new_value);
+                    break;
+                case UIA_IsOffscreenPropertyId:
+                    PropertyChanged(Property.Offscreen, new_value);
+                    break;
+                case UIA_BoundingRectanglePropertyId:
+                    {
+                        double[] values = (double[])new_value;
+                        UiaRect new_bounding_rectangle = new UiaRect() {
+                            left = values[0],
+                            top = values[1],
+                            width = values[2],
+                            height = values[3]
+                        };
+
+                        bounding_rectangle = new_bounding_rectangle;
+                        bounding_rectangle_known = true;
+
+                        Element.PropertyChanged("uia_bounding_rectangle",
+                            $"{bounding_rectangle.left},{bounding_rectangle.top} {bounding_rectangle.width}x{bounding_rectangle.height}");
+                        break;
+                    }
+            }
         }
     }
 }

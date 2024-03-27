@@ -28,14 +28,17 @@ namespace Xalia.Win32
 
         AutoResetEvent tasks_available;
 
+        ApartmentState ApartmentState { get; }
+
         bool disposed = false;
 
-        internal CommandThread()
+        internal CommandThread(ApartmentState apartment_state = ApartmentState.STA)
         {
             tasks_available = new AutoResetEvent(false);
+            ApartmentState = apartment_state;
 
             var thread = new Thread(ThreadProc);
-            thread.SetApartmentState(ApartmentState.STA);
+            thread.SetApartmentState(apartment_state);
             thread.Start();
         }
 
@@ -152,7 +155,10 @@ namespace Xalia.Win32
                     }
                     else
                     {
-                        MsgWaitOne(tasks_available);
+                        if (ApartmentState == ApartmentState.STA)
+                            MsgWaitOne(tasks_available);
+                        else
+                            tasks_available.WaitOne();
                     }
                 }
 
