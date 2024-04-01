@@ -713,13 +713,13 @@ if (is_current_view) {
 
 root {
     current_view: descendent_matches(toplevel_interactable and deepest_modal.is_current_view).deepest_modal;
-    scroll_current_view_action: current_view.scroll_view_action;
-    adjust_current_view_action: current_view.adjust_value_action;
-    adjust_current_view_left_action: current_view.adjust_value_left_action;
-    adjust_current_view_down_action: current_view.adjust_value_down_action;
-    adjust_current_view_up_action: current_view.adjust_value_up_action;
-    adjust_current_view_right_action: current_view.adjust_value_right_action;
-    ascend_action: current_view.assign("is_current_view", false);
+    scroll_current_view_action: wrap_current_view_action(current_view.scroll_view_action);
+    adjust_current_view_action: wrap_current_view_action(current_view.adjust_value_action);
+    adjust_current_view_left_action: wrap_current_view_action(current_view.adjust_value_left_action);
+    adjust_current_view_down_action: wrap_current_view_action(current_view.adjust_value_down_action);
+    adjust_current_view_up_action: wrap_current_view_action(current_view.adjust_value_up_action);
+    adjust_current_view_right_action: wrap_current_view_action(current_view.adjust_value_right_action);
+    ascend_action: wrap_current_view_action(current_view.assign("is_current_view", false));
 }
 
 // Panels

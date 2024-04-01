@@ -55,6 +55,8 @@ namespace Xalia.Ui
 
         private int target_move_bound; // Number of active bindings to a target_move routine
 
+        private int current_view_bound; // Number of active bindings to a current_view routine
+
         public UiMain()
         {
             Windowing = WindowingSystem.Instance;
@@ -136,7 +138,7 @@ namespace Xalia.Ui
 
         private void UpdateCurrentViewBox()
         {
-            if (!(CurrentView is null) &&
+            if (!(CurrentView is null) && current_view_bound != 0 &&
                 (TryGetBoundsDeclarations(CurrentView, "scroll_pane", out var bounds) ||
                  TryGetBoundsDeclarations(CurrentView, "target", out bounds)))
             {
@@ -144,6 +146,20 @@ namespace Xalia.Ui
                 current_view_box.Show();
             }
             else
+                current_view_box.Hide();
+        }
+
+        internal void CurrentViewRoutineStarted()
+        {
+            current_view_bound++;
+            if (current_view_bound == 1)
+                UpdateCurrentViewBox();
+        }
+
+        internal void CurrentViewRoutineStopped()
+        {
+            current_view_bound--;
+            if (current_view_bound == 0)
                 current_view_box.Hide();
         }
 
@@ -642,8 +658,25 @@ namespace Xalia.Ui
                     return new UiDomRoutineSync("target_next", TargetNext);
                 case "target_previous":
                     return new UiDomRoutineSync("target_previous", TargetPrevious);
+                case "wrap_current_view_action":
+                    return new UiDomMethod("wrap_current_view_action", WrapCurrentViewMethod);
             }
             return null;
+        }
+
+        private UiDomValue WrapCurrentViewMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length < 1)
+                return UiDomUndefined.Instance;
+
+            UiDomRoutine routine;
+
+            routine = context.Evaluate(arglist[0], root, depends_on) as UiDomRoutine;
+
+            if (routine is null)
+                return UiDomUndefined.Instance;
+
+            return new CurrentViewRoutine(this, routine);
         }
 
         public void DumpElementProperties(UiDomElement element)
