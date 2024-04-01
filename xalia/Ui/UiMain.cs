@@ -177,7 +177,7 @@ namespace Xalia.Ui
                         _targetedElement.PropertyChanged("targeted");
                     if (!(previous is null))
                         previous.PropertyChanged("targeted");
-                    TargetChanged(previous);
+                    TargetChanged();
                 }
             }
         }
@@ -912,7 +912,7 @@ namespace Xalia.Ui
             TargetMove(Direction.Right);
         }
 
-        public void TargetChanged(UiDomElement previous_target)
+        public void TargetChanged()
         {
             if (TargetedElement is null)
             {
@@ -932,7 +932,6 @@ namespace Xalia.Ui
                 return;
             }
 
-            // TODO: Animate this if previous_target is not null
             target_box.SetBounds(bounds.Item1, bounds.Item2, bounds.Item3, bounds.Item4);
 
             if (target_move_bound != 0)
