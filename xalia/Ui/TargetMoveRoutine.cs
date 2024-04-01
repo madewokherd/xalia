@@ -16,19 +16,27 @@ namespace Xalia.Ui
 
         public override async Task ProcessInputQueue(InputQueue queue)
         {
-            InputState prev_state = new InputState(InputStateKind.Disconnected), state;
-            do
+            Main.TargetMoveRoutineStarted();
+            try
             {
-                state = await queue.Dequeue();
-                if (state.JustPressed(prev_state))
+                InputState prev_state = new InputState(InputStateKind.Disconnected), state;
+                do
                 {
-                    if (state.Kind == InputStateKind.AnalogJoystick)
-                        DoMove(state);
-                    else if (prev_state.Kind == InputStateKind.AnalogJoystick)
-                        DoMove(prev_state);
-                }
-                prev_state = state;
-            } while (state.Kind != InputStateKind.Disconnected);
+                    state = await queue.Dequeue();
+                    if (state.JustPressed(prev_state))
+                    {
+                        if (state.Kind == InputStateKind.AnalogJoystick)
+                            DoMove(state);
+                        else if (prev_state.Kind == InputStateKind.AnalogJoystick)
+                            DoMove(prev_state);
+                    }
+                    prev_state = state;
+                } while (state.Kind != InputStateKind.Disconnected);
+            }
+            finally
+            {
+                Main.TargetMoveRoutineStopped();
+            }
         }
 
         private void DoMove(InputState state)

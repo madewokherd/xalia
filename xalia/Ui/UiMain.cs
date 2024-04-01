@@ -53,6 +53,8 @@ namespace Xalia.Ui
         private uint target_sequence_counter;
         private Dictionary<UiDomElement, uint> element_target_sequence = new Dictionary<UiDomElement, uint>();
 
+        private int target_move_bound; // Number of active bindings to a target_move routine
+
         public UiMain()
         {
             Windowing = WindowingSystem.Instance;
@@ -601,13 +603,13 @@ namespace Xalia.Ui
             switch (id)
             {
                 case "target_move_up":
-                    return new UiDomRoutineSync(null, "target_move_up", TargetMoveUp);
+                    return new TargetMoveButtonRoutine(this, "target_move_up", TargetMoveUp);
                 case "target_move_down":
-                    return new UiDomRoutineSync(null, "target_move_down", TargetMoveDown);
+                    return new TargetMoveButtonRoutine(this, "target_move_down", TargetMoveDown);
                 case "target_move_left":
-                    return new UiDomRoutineSync(null, "target_move_left", TargetMoveLeft);
+                    return new TargetMoveButtonRoutine(this, "target_move_left", TargetMoveLeft);
                 case "target_move_right":
-                    return new UiDomRoutineSync(null, "target_move_right", TargetMoveRight);
+                    return new TargetMoveButtonRoutine(this, "target_move_right", TargetMoveRight);
                 case "target_move":
                     return new TargetMoveRoutine(this);
                 case "targeted_element":
@@ -932,7 +934,25 @@ namespace Xalia.Ui
 
             // TODO: Animate this if previous_target is not null
             target_box.SetBounds(bounds.Item1, bounds.Item2, bounds.Item3, bounds.Item4);
-            target_box.Show();
+
+            if (target_move_bound != 0)
+                target_box.Show();
+        }
+
+        internal void TargetMoveRoutineStarted()
+        {
+            // Called when a TargetMoveRoutine starts getting inputs.
+            target_move_bound++;
+            if (target_move_bound == 1 && !(TargetedElement is null))
+                target_box.Show();
+        }
+
+        internal void TargetMoveRoutineStopped()
+        {
+            // Called when a TargetMoveRoutine stops getting inputs.
+            target_move_bound--;
+            if (target_move_bound == 0)
+                target_box.Hide();
         }
 
         private void ScrollIntoView(UiDomElement targetedElement)
