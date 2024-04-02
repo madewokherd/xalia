@@ -80,6 +80,17 @@ root {
 
 // Application-specific behaviors:
 
+// APPLICATION: Atelier Ryza launcher
+window (class_name == "KOEI_RYZALAUNCHER_WINDOW") {
+    // Buttons malfunction if the mouse isn't hovering on the correct one
+    manual_buttons: true;
+}
+
+button (interactable and parent.parent.class_name == "KOEI_RYZALAUNCHER_WINDOW" and control_id == 1003) { // Play button
+	confirm_action: send_click;
+	target_priority: 1;
+}
+
 // APPLICATION: EA App
 
 window (uia_class_name == "eax::services::windowing::QmlView") {
