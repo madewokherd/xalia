@@ -655,15 +655,24 @@ namespace Xalia.Win32
                     break;
                 case UIA_BoundingRectanglePropertyId:
                     {
-                        double[] values = (double[])new_value;
-                        UiaRect new_bounding_rectangle = new UiaRect() {
-                            left = values[0],
-                            top = values[1],
-                            width = values[2],
-                            height = values[3]
-                        };
 
-                        bounding_rectangle = new_bounding_rectangle;
+                        double[] values = (double[])new_value;
+                        if (new_value is null)
+                        {
+                            bounding_rectangle = default;
+                        }
+                        else
+                        {
+                            UiaRect new_bounding_rectangle = new UiaRect()
+                            {
+                                left = values[0],
+                                top = values[1],
+                                width = values[2],
+                                height = values[3]
+                            };
+                            bounding_rectangle = new_bounding_rectangle;
+                        }
+
                         bounding_rectangle_known = true;
 
                         Element.PropertyChanged("uia_bounding_rectangle",
