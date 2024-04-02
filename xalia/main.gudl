@@ -91,6 +91,43 @@ button (interactable and parent.parent.class_name == "KOEI_RYZALAUNCHER_WINDOW" 
 	target_priority: 1;
 }
 
+// APPLICATION: Bethesda Launchers
+dialog (child_matches(image and x == parent.x and y = parent.y and width == parent.width and height == parent.height))
+{
+    is_bethesda_launcher: true;
+
+    if (sibling_matches(override_bethesda_launcher))
+    {
+        interactable: false;
+    }
+}
+
+dialog (not active and visible and
+    sibling_matches(active and dialog and is_bethesda_launcher).pid == pid) {
+	// work around focus sometimes incorrectly reverting to main window on Wine when a sub-subwindow closes
+    override_bethesda_launcher: true;
+    interactable: true;
+}
+
+image (interactable and parent.is_bethesda_launcher and
+    width != parent.width and height != parent.height) {
+
+    if (process_name == "SkyrimSELauncher" and control_id == 1010) {
+        // "Data Files" button is still present in Skyrim Special Edition but invisible and does nothing
+        targetable: false;
+    }
+
+    targetable: true;
+    primary_action:
+        parent.disable_window + // Disable the window so it can't do SC_MOVE which causes problems on Wine
+        parent.send_message(0x201, 0, (y - parent.client_y) * 0x10000 + (x - parent.client_x)) + // WM_LBUTTONDOWN
+        parent.enable_window;
+    if (targetable and control_id == 1004) { // Play button
+        confirm_action: primary_action;
+        target_priority: 1;
+    }
+}
+
 // APPLICATION: EA App
 
 window (uia_class_name == "eax::services::windowing::QmlView") {
@@ -240,33 +277,6 @@ application (name == "plasmashell") {
     // awful heuristic for now
     child (not child_matches(layered_pane)) {
         is_panel: true;
-    }
-}
-
-// APPLICATION: Skyrim Launcher
-image (interactable and parent.(dialog and win32_process_name == "SkyrimLauncher") and
-    control_id != 103) {
-    targetable: true;
-    primary_action:
-        parent.disable_window + // Disable the window so it can't do SC_MOVE which causes problems on Wine
-        parent.send_message(0x201, 0, (y - parent.client_y) * 0x10000 + (x - parent.client_x)) + // WM_LBUTTONDOWN
-        parent.enable_window;
-    if (control_id == 1004) { // Play button
-        confirm_action: primary_action;
-        target_priority: 1;
-    }
-}
-
-dialog (win32_process_name == "SkyrimLauncher" and name == "Skyrim") {
-    if (parent.child_matches(win32_process_name == "SkyrimLauncher" and name == "Skyrim Options" and visible) and active) {
-        // work around focus sometimes incorrectly reverting to main window on Wine when a sub-subwindow closes
-        interactable: false;
-    }
-}
-dialog (win32_process_name == "SkyrimLauncher" and name == "Skyrim Options" and visible) {
-    if (parent.child_matches(win32_process_name == "SkyrimLauncher" and name == "Skyrim" and active)) {
-        // work around focus sometimes incorrectly reverting to main window on Wine when a sub-subwindow closes
-        interactable: true;
     }
 }
 
