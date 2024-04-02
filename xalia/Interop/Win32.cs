@@ -723,6 +723,30 @@ namespace Xalia.Interop
             {
                 return right <= left || bottom <= top;
             }
+
+            internal RECT Intersect(RECT other)
+            {
+                RECT result = new RECT
+                {
+                    left = Math.Max(left, other.left),
+                    top = Math.Max(top, other.top),
+                    right = Math.Min(right, other.right),
+                    bottom = Math.Min(bottom, other.bottom)
+                };
+                return result;
+            }
+
+            internal RECT Offset(POINT other)
+            {
+                RECT result = new RECT
+                {
+                    left = left + other.x,
+                    top = top + other.y,
+                    right = right + other.x,
+                    bottom = bottom + other.y,
+                };
+                return result;
+            }
         }
 
         [StructLayout(LayoutKind.Sequential)]
