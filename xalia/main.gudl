@@ -95,6 +95,8 @@ button (interactable and parent.parent.class_name == "KOEI_RYZALAUNCHER_WINDOW" 
 dialog (child_matches(image and x == parent.x and y = parent.y and width == parent.width and height == parent.height))
 {
     is_bethesda_launcher: true;
+    play_button: child_matches(interactable and height != parent.height and
+        (not parent.play_button or y < parent.play_button.y)) or play_button;
 
     if (sibling_matches(override_bethesda_launcher))
     {
@@ -122,7 +124,7 @@ image (interactable and parent.is_bethesda_launcher and
         parent.disable_window + // Disable the window so it can't do SC_MOVE which causes problems on Wine
         parent.send_message(0x201, 0, (y - parent.client_y) * 0x10000 + (x - parent.client_x)) + // WM_LBUTTONDOWN
         parent.enable_window;
-    if (targetable and control_id == 1004) { // Play button
+    if (targetable and this == parent.play_button) {
         confirm_action: primary_action;
         target_priority: 1;
     }
