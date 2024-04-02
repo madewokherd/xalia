@@ -297,7 +297,7 @@ namespace Xalia.Win32
             return base.WatchProperty(element, expression);
         }
 
-        private async Task FetchItemRects()
+        internal async Task FetchItemRects()
         {
             int prev_change_count = item_rects_change_count;
             RECT[] result = new RECT[ItemCount];

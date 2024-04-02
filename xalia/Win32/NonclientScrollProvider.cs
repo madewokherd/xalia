@@ -493,5 +493,23 @@ namespace Xalia.Win32
                 return false;
             }
         }
+
+        public override async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        {
+            if (SbiKnown(SBI_LOCATION))
+            {
+                return (true, _sbi.rcScrollBar.left + _sbi.rcScrollBar.width / 2,
+                    _sbi.rcScrollBar.top + _sbi.rcScrollBar.height / 2);
+            }
+            return await CommandThread.OnBackgroundThread(() =>
+            {
+                var sbi = new SCROLLBARINFO();
+                sbi.cbSize = Marshal.SizeOf<SCROLLBARINFO>();
+                if (!GetScrollBarInfo(Hwnd, Vertical ? OBJID_VSCROLL : OBJID_HSCROLL, ref sbi))
+                    throw new Win32Exception();
+                return (true, sbi.rcScrollBar.left + sbi.rcScrollBar.width / 2,
+                    sbi.rcScrollBar.top + sbi.rcScrollBar.height / 2);
+            }, CommandThreadPriority.User);
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
@@ -52,7 +53,7 @@ namespace Xalia.Win32
                     {
                         depends_on.Add((Parent.Element, new IdentifierExpression("win32_pos")));
                         var rects = Parent.GetItemRects(depends_on);
-                        if (ChildId <= rects.Length && Parent.HwndProvider.WindowRectsKnown)
+                        if (!(rects is null) && ChildId <= rects.Length && Parent.HwndProvider.WindowRectsKnown)
                             return new UiDomInt(Parent.HwndProvider.X + rects[ChildId - 1].left);
                         break;
                     }
@@ -60,28 +61,28 @@ namespace Xalia.Win32
                     {
                         depends_on.Add((Parent.Element, new IdentifierExpression("win32_pos")));
                         var rects = Parent.GetItemRects(depends_on);
-                        if (ChildId <= rects.Length && Parent.HwndProvider.WindowRectsKnown)
+                        if (!(rects is null) && ChildId <= rects.Length && Parent.HwndProvider.WindowRectsKnown)
                             return new UiDomInt(Parent.HwndProvider.Y + rects[ChildId - 1].top);
                         break;
                     }
                 case "width":
                     {
                         var rects = Parent.GetItemRects(depends_on);
-                        if (ChildId <= rects.Length)
+                        if (!(rects is null) && ChildId <= rects.Length)
                             return new UiDomInt(rects[ChildId - 1].right - rects[ChildId - 1].left);
                         break;
                     }
                 case "height":
                     {
                         var rects = Parent.GetItemRects(depends_on);
-                        if (ChildId <= rects.Length)
+                        if (!(rects is null) && ChildId <= rects.Length)
                             return new UiDomInt(rects[ChildId - 1].bottom - rects[ChildId - 1].top);
                         break;
                     }
                 case "rect":
                     {
                         var rects = Parent.GetItemRects(depends_on);
-                        if (ChildId <= rects.Length)
+                        if (!(rects is null) && ChildId <= rects.Length)
                             return new Win32Rect(rects[ChildId - 1]);
                         break;
                     }
@@ -97,6 +98,25 @@ namespace Xalia.Win32
                     return role;
             }
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
+        }
+
+        public override async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        {
+            var rects = Parent.GetItemRects(new HashSet<(UiDomElement, GudlExpression)>());
+
+            if (rects is null)
+            {
+                await Parent.FetchItemRects();
+                rects = Parent.GetItemRects(new HashSet<(UiDomElement, GudlExpression)>());
+            }
+
+            if (!(rects is null) && ChildId <= rects.Length)
+            {
+                var rect = rects[ChildId - 1];
+                return (true, rect.left + rect.width / 2, rect.top + rect.height / 2);
+            }
+
+            return await base.GetClickablePointAsync(element);
         }
     }
 }

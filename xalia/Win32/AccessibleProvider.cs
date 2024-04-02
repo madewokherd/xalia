@@ -974,5 +974,25 @@ namespace Xalia.Win32
                     throw;
             }
         }
+
+        public async override Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        {
+            if (LocationKnown)
+                return (true, Location.left + Location.width / 2, Location.top + Location.height / 2);
+            try
+            {
+                return await CommandThread.OnBackgroundThread(() =>
+                {
+                    IAccessible.accLocation(out var left, out var top, out var width, out var height, ChildId);
+                    return (true, left + width / 2, top + height / 2);
+                }, CommandThreadPriority.User);
+            }
+            catch (Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+            }
+            return (false, 0, 0);
+        }
     }
 }

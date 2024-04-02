@@ -1014,5 +1014,15 @@ namespace Xalia.Win32
                 await Connection.AddUiaEventWindow(ev, Hwnd);
             }
         }
+
+        public override Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        {
+            POINT client_pos = default;
+            RECT client_rect;
+            if (!ClientToScreen(Hwnd, ref client_pos) || !GetClientRect(Hwnd, out client_rect))
+                return Task.FromResult((false, 0, 0));
+            return Task.FromResult((true, client_pos.x + client_rect.width / 2,
+                client_pos.y + client_rect.height / 2));
+        }
     }
 }

@@ -332,5 +332,17 @@ namespace Xalia.Win32
         {
             InvalidateBounds();
         }
+
+        public override async Task<(bool, int, int)> GetClickablePointAsync(UiDomElement element)
+        {
+            if (!bounds_known[LVIR_SELECTBOUNDS])
+                await RefreshBounds(LVIR_SELECTBOUNDS);
+            if (bounds_known[LVIR_SELECTBOUNDS])
+            {
+                var bounds = bounds_rects[LVIR_SELECTBOUNDS];
+                return (true, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+            }
+            return await base.GetClickablePointAsync(element);
+        }
     }
 }
