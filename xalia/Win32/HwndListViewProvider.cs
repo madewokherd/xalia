@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Text;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.Interop;
@@ -36,12 +37,16 @@ namespace Xalia.Win32
 
         private bool invalidating_child_bounds;
 
+        public int ExtendedStyle;
+        public bool ExtendedStyleKnown;
+
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
             { "view", "win32_view" },
             { "control_type", "win32_view" },
             { "role", "win32_view" },
             { "item_count", "win32_item_count" },
+            { "extended_listview_style", "win32_extended_listview_style" },
         };
 
         static string[] tracked_properties = { "recurse_method" };
@@ -64,7 +69,42 @@ namespace Xalia.Win32
             "singlesel"
         };
 
+        static string[] extended_style_names =
+        {
+            "gridlines",
+            "subitemimages",
+            "checkboxes",
+            "trackselect",
+            "headerdragdrop",
+            "fullrowselect",
+            "oneclickactivate",
+            "twoclickactivate",
+            "flatsb",
+            "regional",
+            "infotip",
+            "underlinehot",
+            "underlinecold",
+            "multiworkareas",
+            "labeltip",
+            "borderselect",
+            "doublebuffer",
+            "hidelabels",
+            "singlerow",
+            "snaptogrid",
+            "simpleselect",
+            "justifycolumns",
+            "transparentbkgnd",
+            "tranparentshadowtext",
+            "autoautoarrange",
+            "headerinallviews",
+            "autocheckselect",
+            "autosizecolumns",
+            "columnsnappoints",
+            "columnsoverflow"
+        };
+
         static Dictionary<string,int> style_flags;
+        static Dictionary<string,int> extended_style_flags;
 
         static HwndListViewProvider()
         {
@@ -74,6 +114,13 @@ namespace Xalia.Win32
                 if (style_names[i] is null)
                     continue;
                 style_flags[style_names[i]] = 0x8000 >> i;
+            }
+            extended_style_flags = new Dictionary<string, int>();
+            for (int i=0; i<extended_style_names.Length; i++)
+            {
+                if (extended_style_names[i] is null)
+                    continue;
+                extended_style_flags[extended_style_names[i]] = 1 << i;
             }
         }
 
@@ -161,6 +208,23 @@ namespace Xalia.Win32
             }
         }
 
+        private static string ExtendedStyleToString(int style)
+        {
+            StringBuilder style_list = new StringBuilder();
+            bool seen_any_styles = false;
+            for (int i=0; i < extended_style_names.Length; i++)
+            {
+                if (((1 << i) & style) != 0)
+                {
+                    if (seen_any_styles)
+                        style_list.Append('|');
+                    style_list.Append(extended_style_names[i]);
+                    seen_any_styles = true;
+                }
+            }
+            return $"0x{style:x} ({style_list})";
+        }
+
         public override void DumpProperties(UiDomElement element)
         {
             if (IsComCtl6Known)
@@ -172,6 +236,10 @@ namespace Xalia.Win32
             }
             if (ItemCountKnown)
                 Utils.DebugWriteLine($"  win32_item_count: {ItemCount}");
+            if (ExtendedStyleKnown)
+            {
+                Utils.DebugWriteLine($" win32_extended_listview_style: {ExtendedStyleToString(ExtendedStyle)}");
+            }
             base.DumpProperties(element);
         }
 
@@ -230,6 +298,11 @@ namespace Xalia.Win32
                     if (ItemCountKnown)
                         return new UiDomInt(ItemCount);
                     break;
+                case "win32_extended_listview_style":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (ExtendedStyleKnown)
+                        return new UiDomInt(ExtendedStyle);
+                    break;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
         }
@@ -272,6 +345,12 @@ namespace Xalia.Win32
             {
                 depends_on.Add((element, new IdentifierExpression("win32_style")));
                 return UiDomBoolean.FromBool((HwndProvider.Style & flag) != 0);
+            }
+            if (extended_style_flags.TryGetValue(identifier, out var eflag))
+            {
+                depends_on.Add((element, new IdentifierExpression("win32_extended_listview_style")));
+                if (ExtendedStyleKnown)
+                    return UiDomBoolean.FromBool((ExtendedStyle & eflag) != 0);
             }
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
@@ -424,9 +503,24 @@ namespace Xalia.Win32
                         watching_view = true;
                         Utils.RunTask(WatchView());
                         return true;
+                    case "win32_extended_listview_style":
+                        Element.PollProperty(expression, PollExtendedStyle, 500);
+                        return true;
                 }
             }
             return false;
+        }
+
+        private async Task PollExtendedStyle()
+        {
+            var style = (int)(long)await SendMessageAsync(Hwnd, LVM_GETEXTENDEDLISTVIEWSTYLE, IntPtr.Zero, IntPtr.Zero);
+
+            if (!ExtendedStyleKnown || ExtendedStyle != style)
+            {
+                ExtendedStyle = style;
+                ExtendedStyleKnown = true;
+                Element.PropertyChanged("win32_extended_listview_style", ExtendedStyleToString(style));
+            }
         }
 
         public override bool UnwatchProperty(UiDomElement element, GudlExpression expression)
@@ -440,6 +534,9 @@ namespace Xalia.Win32
                         return true;
                     case "win32_item_count":
                         watching_item_count = false;
+                        return true;
+                    case "win32_extended_listview_style":
+                        Element.EndPollProperty(expression);
                         return true;
                 }
             }

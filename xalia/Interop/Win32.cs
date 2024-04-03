@@ -1246,6 +1246,7 @@ namespace Xalia.Interop
         public const int LVM_GETTOPINDEX = LVM_FIRST + 39;
         public const int LVM_GETCOUNTPERPAGE = LVM_FIRST + 40;
         public const int LVM_GETORIGIN = LVM_FIRST + 41;
+        public const int LVM_GETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 55;
         public const int LVM_SETVIEW = LVM_FIRST + 142;
         public const int LVM_GETVIEW = LVM_FIRST + 143;
 
