@@ -366,17 +366,27 @@ namespace Xalia.Win32
         {
             await RootHwnd.AddEvent(Win32Connection.UiaEvent.PropertyChanged);
 
-            var result = await CommandThread.OnBackgroundThread(() =>
+            (UiaRect, bool) result;
+            try
             {
-                var fragment = Provider as IRawElementProviderFragment;
-
-                if (!(fragment is null))
+                result = await CommandThread.OnBackgroundThread(() =>
                 {
-                    return (fragment.BoundingRectangle, true);
-                }
+                    var fragment = Provider as IRawElementProviderFragment;
 
-                return default;
-            }, CommandThreadPriority.Query);
+                    if (!(fragment is null))
+                    {
+                        return (fragment.BoundingRectangle, true);
+                    }
+
+                    return default;
+                }, CommandThreadPriority.Query);
+            }
+            catch (Exception e)
+            {
+                if (!AccessibleProvider.IsExpectedException(e))
+                    throw;
+                return;
+            }
 
             if (bounding_rectangle_known || !result.Item2)
             {
@@ -412,10 +422,21 @@ namespace Xalia.Win32
 
             var idx = (int)propid;
 
-            var value = await CommandThread.OnBackgroundThread(() =>
+            object value;
+
+            try
             {
-                return Provider.GetPropertyValue(properties[idx].id);
-            }, CommandThreadPriority.Query);
+                value = await CommandThread.OnBackgroundThread(() =>
+                {
+                    return Provider.GetPropertyValue(properties[idx].id);
+                }, CommandThreadPriority.Query);
+            }
+            catch (Exception e)
+            {
+                if (!AccessibleProvider.IsExpectedException(e))
+                    throw;
+                return;
+            }
 
             if (properties[idx].known)
                 // Assume we got this from an event which is more up to date
@@ -457,11 +478,21 @@ namespace Xalia.Win32
 
         private async Task CheckFragmentSupport()
         {
-            bool supported = await CommandThread.OnBackgroundThread(() =>
+            bool supported;
+            try
             {
-                var iface = Provider as IRawElementProviderFragment;
-                return !(iface is null);
-            }, CommandThreadPriority.Query);
+                supported = await CommandThread.OnBackgroundThread(() =>
+                {
+                    var iface = Provider as IRawElementProviderFragment;
+                    return !(iface is null);
+                }, CommandThreadPriority.Query);
+            }
+            catch (Exception e)
+            {
+                if (!AccessibleProvider.IsExpectedException(e))
+                    throw;
+                supported = false;
+            }
 
             if (supported)
                 fragment_supported = SupportedState.Supported;
@@ -524,6 +555,12 @@ namespace Xalia.Win32
 
                     return result;
                 }, CommandThreadPriority.Query);
+            }
+            catch (Exception e)
+            {
+                if (!AccessibleProvider.IsExpectedException(e))
+                    throw;
+                children = new List<ElementIdentifier>();
             }
             finally
             {
