@@ -13,7 +13,7 @@ namespace Xalia.Interop
         public Win32RemoteProcessMemory(int pid)
         {
             Pid = pid;
-            processHandle = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
+            processHandle = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_LIMITED_INFORMATION,
                 false, pid);
             if (processHandle.IsInvalid)
                 throw new Win32Exception();
@@ -181,6 +181,8 @@ namespace Xalia.Interop
         private List<MemoryPage> memoryPages = new List<MemoryPage>();
         private int refCount;
 
+        private int _is64bit = -1;
+
         public MemoryAllocation Alloc(ulong size)
         {
             if (disposedValue)
@@ -335,6 +337,35 @@ namespace Xalia.Interop
             if (!result)
                 throw new Win32Exception();
             return buffer;
+        }
+
+        internal bool Is64Bit()
+        {
+            // FIXME: Use IsWow64Process2 if available?
+
+            if (IntPtr.Size == 4)
+            {
+                // Assume that we're not running in a 32-bit process on 64-bit Windows.
+                // We can't manipulate 64-bit process memory from 32-bit anyway.
+                return false;
+            }
+
+            if (_is64bit == -1)
+            {
+                try
+                {
+                    if (!IsWow64Process(processHandle, out bool is_wow64))
+                        throw new Win32Exception();
+                    _is64bit = is_wow64 ? 0 : 1;
+                }
+                catch (EntryPointNotFoundException)
+                {
+                    // Wow64 not supported on this system
+                    _is64bit = 1;
+                }
+            }
+
+            return _is64bit == 1;
         }
 
         protected virtual void Dispose(bool disposing)

@@ -1261,6 +1261,10 @@ if (interactable) {
 
     if (is_hwnd_listview_item) {
         targetable: true;
+        if (parent.checkboxes) {
+            primary_action: toggle_checked;
+            secondary_action: send_click;
+        }
     }
 
     if (is_hwnd_button and not frame)

@@ -44,9 +44,13 @@ namespace Xalia.Interop
         public const int PROCESS_VM_OPERATION = 0x8;
         public const int PROCESS_VM_READ = 0x10;
         public const int PROCESS_VM_WRITE = 0x20;
+        public const int PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
         [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
         public static extern SafeProcessHandle OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+
+        [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        public static extern bool IsWow64Process(SafeProcessHandle hProcess, out bool Wow64Process);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct SYSTEM_INFO
@@ -1237,6 +1241,8 @@ namespace Xalia.Interop
         public const int LVS_ALIGNTOP = 0x0;
         public const int LVS_ALIGNMASK = 0xc00;
 
+        public const int LVS_EX_CHECKBOXES = 0x4;
+
         public const int LVM_FIRST = 0x1000;
         public const int LVM_GETITEMCOUNT = LVM_FIRST + 4;
         public const int LVM_GETITEMRECT = LVM_FIRST + 14;
@@ -1246,6 +1252,8 @@ namespace Xalia.Interop
         public const int LVM_GETTOPINDEX = LVM_FIRST + 39;
         public const int LVM_GETCOUNTPERPAGE = LVM_FIRST + 40;
         public const int LVM_GETORIGIN = LVM_FIRST + 41;
+        public const int LVM_SETITEMSTATE = LVM_FIRST + 43;
+        public const int LVM_GETITEMSTATE = LVM_FIRST + 44;
         public const int LVM_GETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 55;
         public const int LVM_SETVIEW = LVM_FIRST + 142;
         public const int LVM_GETVIEW = LVM_FIRST + 143;
@@ -1261,6 +1269,52 @@ namespace Xalia.Interop
         public const int LVIR_ICON = 1;
         public const int LVIR_LABEL = 2;
         public const int LVIR_SELECTBOUNDS = 3;
+
+        public const int LVIS_STATEIMAGEMASK = 0xf000;
+
+        // Not in SDK headers:
+        public const int LVIS_UNCHECKED = 0x1000;
+        public const int LVIS_CHECKED = 0x2000;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LVITEM32
+        {
+            public int mask;
+            public int iItem;
+            public int iSubItem;
+            public int state;
+            public int stateMask;
+            public int pszText; // pointer - LPSTR
+            public int cchTextMax;
+            public int iImage;
+            public int lParam; // pointer - LPARAM
+            public int iIndent;
+            public int iGroupId;
+            public int cColumns;
+            public int puColumns; // pointer - PUINT
+            public int piColFmt; // pointer - int*
+            public int iGroup;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LVITEM64
+        {
+            public int mask;
+            public int iItem;
+            public int iSubItem;
+            public int state;
+            public int stateMask;
+            public long pszText; // pointer - LPSTR
+            public int cchTextMax;
+            public int iImage;
+            public long lParam; // pointer - LPARAM
+            public int iIndent;
+            public int iGroupId;
+            public int cColumns;
+            public long puColumns; // pointer - PUINT
+            public long piColFmt; // pointer - int*
+            public int iGroup;
+        }
 
         // Static Control
         public const int SS_LEFT = 0x0000;

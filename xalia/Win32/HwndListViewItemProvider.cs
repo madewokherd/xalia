@@ -54,6 +54,7 @@ namespace Xalia.Win32
             { "y", "win32_selectbounds_y" },
             { "width", "win32_selectbounds_width" },
             { "height", "win32_selectbounds_height" },
+            { "toggle_checked", "win32_toggle_checked" },
         };
 
         static readonly string[] bounds_names = new string[] { "win32_bounds", "win32_icon", "win32_label", "win32_selectbounds" };
@@ -122,6 +123,11 @@ namespace Xalia.Win32
                     return EvaluateBounds(LVIR_SELECTBOUNDS, Coord.Width, depends_on);
                 case "win32_selectbounds_height":
                     return EvaluateBounds(LVIR_SELECTBOUNDS, Coord.Height, depends_on);
+                case "win32_toggle_checked":
+                    depends_on.Add((Parent.Element, new IdentifierExpression("win32_extended_listview_style")));
+                    if ((Parent.ExtendedStyle & LVS_EX_CHECKBOXES) != 0)
+                        return new UiDomRoutineAsync(Element, "win32_toggle_checked", ToggleChecked);
+                    break;
             }
             return Parent.HwndProvider.ChildEvaluateIdentifier(identifier, depends_on);
         }
@@ -343,6 +349,44 @@ namespace Xalia.Win32
                 return (true, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
             }
             return await base.GetClickablePointAsync(element);
+        }
+
+        private async Task ToggleChecked(UiDomRoutineAsync obj)
+        {
+            var current_state = (int)(long)await SendMessageAsync(Parent.Hwnd, LVM_GETITEMSTATE,
+                (IntPtr)(ChildId - 1), (IntPtr)LVIS_STATEIMAGEMASK);
+
+            bool was_checked = (current_state & LVIS_STATEIMAGEMASK) == LVIS_CHECKED;
+
+            int new_state = was_checked ? LVIS_UNCHECKED : LVIS_CHECKED;
+
+            if (remote_process_memory is null)
+                remote_process_memory = Win32RemoteProcessMemory.FromPid(Parent.Pid);
+
+            Win32RemoteProcessMemory.MemoryAllocation memory;
+
+            if (remote_process_memory.Is64Bit())
+            {
+                var item = new LVITEM64 {
+                    state = new_state,
+                    stateMask = LVIS_STATEIMAGEMASK
+                };
+                memory = remote_process_memory.WriteAlloc(item);
+            }
+            else
+            {
+                var item = new LVITEM32 {
+                    state = new_state,
+                    stateMask = LVIS_STATEIMAGEMASK
+                };
+                memory = remote_process_memory.WriteAlloc(item);
+            }
+
+            using (memory)
+            {
+                await SendMessageAsync(Parent.Hwnd, LVM_SETITEMSTATE,
+                    (IntPtr)(ChildId - 1), (IntPtr)(long)memory.Address);
+            }
         }
     }
 }
