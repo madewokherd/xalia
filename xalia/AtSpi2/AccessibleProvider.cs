@@ -227,6 +227,7 @@ namespace Xalia.AtSpi2
             { "attributes", "spi_attributes" },
             { "select", "spi_select" },
             { "deselect", "spi_deselect" },
+            { "toggle_selected", "spi_toggle_selected" },
         };
 
         private static readonly HashSet<string> other_interface_properties = new HashSet<string>()
@@ -426,6 +427,15 @@ namespace Xalia.AtSpi2
                             return new UiDomRoutineAsync(element, "spi_deselect", DeselectAsync);
                     }
                     break;
+                case "spi_toggle_selected":
+                    if (!(element.Parent is null)) {
+                        depends_on.Add((element.Parent, new IdentifierExpression("spi_supported")));
+                        var parent_acc = element.Parent.ProviderByType<AccessibleProvider>();
+                        if (!(parent_acc is null) && !(parent_acc.SupportedInterfaces is null) &&
+                            parent_acc.SupportedInterfaces.Contains(IFACE_SELECTION))
+                            return new UiDomRoutineAsync(element, "spi_toggle_selected", ToggleSelectedAsync);
+                    }
+                    break;
             }
             if (other_interface_properties.Contains(identifier))
                 depends_on.Add((element, new IdentifierExpression("spi_supported")));
@@ -476,6 +486,47 @@ namespace Xalia.AtSpi2
                 if (!success)
                 {
                     Utils.DebugWriteLine($"WARNING: DeselectChild failed for {obj.Element}");
+                }
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+            }
+        }
+
+        private static async Task ToggleSelectedAsync(UiDomRoutineAsync obj)
+        {
+            var acc = obj.Element.ProviderByType<AccessibleProvider>();
+            var parent_acc = obj.Element.Parent?.ProviderByType<AccessibleProvider>();
+            try
+            {
+                var index = await CallMethod(acc.Connection.Connection, acc.Peer, acc.Path, IFACE_ACCESSIBLE,
+                    "GetIndexInParent", ReadMessageInt32);
+
+                var is_selected = await CallMethod(acc.Connection.Connection, parent_acc.Peer,
+                    parent_acc.Path, IFACE_SELECTION, "IsChildSelected", index, ReadMessageBoolean);
+
+                bool success;
+                if (is_selected)
+                {
+                    var num_selected = (int)await GetProperty(acc.Connection.Connection, parent_acc.Peer,
+                        parent_acc.Path, IFACE_SELECTION, "NSelectedChildren");
+
+                    if (num_selected == 1)
+                        success = await CallMethod(acc.Connection.Connection, parent_acc.Peer, parent_acc.Path,
+                            IFACE_SELECTION, "ClearSelection", ReadMessageBoolean);
+                    else
+                        success = await CallMethod(parent_acc.Connection.Connection, parent_acc.Peer, parent_acc.Path,
+                            IFACE_SELECTION, "DeselectChild", index, ReadMessageBoolean);
+                }
+                else
+                    success = await CallMethod(parent_acc.Connection.Connection, parent_acc.Peer, parent_acc.Path,
+                        IFACE_SELECTION, "SelectChild", index, ReadMessageBoolean);
+
+                if (!success)
+                {
+                    Utils.DebugWriteLine($"WARNING: Toggling selection failed for {obj.Element}");
                 }
             }
             catch (DBusException e)
