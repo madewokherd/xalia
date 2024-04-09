@@ -102,6 +102,11 @@ dialog (child_matches(image and x == parent.x and y = parent.y and width == pare
     {
         interactable: false;
     }
+
+    if (sibling_matches(interact_bethesda_launcher))
+    {
+        interactable: true;
+    }
 }
 
 dialog (not active and visible and
@@ -109,6 +114,13 @@ dialog (not active and visible and
 	// work around focus sometimes incorrectly reverting to main window on Wine when a sub-subwindow closes
     override_bethesda_launcher: true;
     interactable: true;
+}
+
+dialog (active and not visible and
+    sibling_matches(not active and dialog and is_bethesda_launcher).pid == pid) {
+	// work around dialogs sometimes staying focused when hidden in Fallout 3 and NV launchers
+    interact_bethesda_launcher: true;
+    interactable: false;
 }
 
 image (interactable and parent.is_bethesda_launcher and
