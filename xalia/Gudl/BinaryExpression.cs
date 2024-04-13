@@ -43,8 +43,38 @@
                 case GudlToken.NotEqual:
                     opname = " != ";
                     break;
+                case GudlToken.Lt:
+                    opname = " < ";
+                    break;
+                case GudlToken.Gt:
+                    opname = " > ";
+                    break;
+                case GudlToken.Lte:
+                    opname = " <= ";
+                    break;
+                case GudlToken.Gte:
+                    opname = " >= ";
+                    break;
                 case GudlToken.Or:
                     opname = " or ";
+                    break;
+                case GudlToken.Mult:
+                    opname = " * ";
+                    break;
+                case GudlToken.IDiv:
+                    opname = " ~/ ";
+                    break;
+                case GudlToken.Modulo:
+                    opname = " ~ ";
+                    break;
+                case GudlToken.Div:
+                    opname = " / ";
+                    break;
+                case GudlToken.Plus:
+                    opname = " + ";
+                    break;
+                case GudlToken.Minus:
+                    opname = " - ";
                     break;
                 default:
                     return base.ToString();
