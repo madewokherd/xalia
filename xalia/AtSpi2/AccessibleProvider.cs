@@ -912,9 +912,10 @@ namespace Xalia.AtSpi2
                     case "spi_supported":
                         if (!fetching_supported)
                         {
-                            fetching_supported = true;
-                            wait_for_supported_task = FetchSupported();
-                            Utils.RunTask(wait_for_supported_task);
+                            // Somehow, FetchSupported can complete without waiting, which
+                            // would modify the providers list while it's being iterated to
+                            // call WatchProperty, so delay it to prevent that.
+                            Utils.RunIdle(DoFetchSupported);
                         }
                         break;
                     case "spi_application":
@@ -932,6 +933,16 @@ namespace Xalia.AtSpi2
                 }
             }
             return false;
+        }
+
+        private void DoFetchSupported()
+        {
+            if (!fetching_supported)
+            {
+                fetching_supported = true;
+                wait_for_supported_task = FetchSupported();
+                Utils.RunTask(wait_for_supported_task);
+            }
         }
 
         private async Task FetchAttributes()
