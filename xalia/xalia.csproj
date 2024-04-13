@@ -97,6 +97,7 @@
     <Compile Include="AtSpi2\SelectionProvider.cs" />
     <Compile Include="AtSpi2\ValueProvider.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Gudl\GudlPrecedence.cs" />
     <Compile Include="Interop\Win32RemoteProcessMemory.cs" />
     <Compile Include="Interop\Win32WaitHandle.cs" />
     <Compile Include="Sdl\OverlayBox.cs" />

@@ -25,8 +25,9 @@
             return Value.GetHashCode() ^ typeof(DoubleExpression).GetHashCode();
         }
 
-        public override string ToString()
+        internal override string ToString(out GudlPrecedence precedence)
         {
+            precedence = GudlPrecedence.Atom;
             return Value.ToString();
         }
     }

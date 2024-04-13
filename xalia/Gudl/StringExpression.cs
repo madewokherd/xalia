@@ -22,9 +22,10 @@
             return Value.GetHashCode() ^ typeof(StringExpression).GetHashCode();
         }
 
-        public override string ToString()
+        internal override string ToString(out GudlPrecedence precedence)
         {
             // FIXME: add escapes if necessary
+            precedence = GudlPrecedence.Atom;
             return $"\"{Value}\"";
         }
     }

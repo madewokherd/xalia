@@ -27,8 +27,9 @@ namespace Xalia.Gudl
             return Value.GetHashCode() ^ typeof(IntegerExpression).GetHashCode();
         }
 
-        public override string ToString()
+        internal override string ToString(out GudlPrecedence precedence)
         {
+            precedence = GudlPrecedence.Atom;
             return Value.ToString();
         }
     }

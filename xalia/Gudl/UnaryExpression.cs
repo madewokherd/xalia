@@ -24,18 +24,31 @@
             return (Inner, Kind).GetHashCode() ^ typeof(UnaryExpression).GetHashCode();
         }
 
-        public override string ToString()
+        internal override string ToString(out GudlPrecedence precedence)
         {
             string opname;
             switch (Kind)
             {
                 case GudlToken.Not:
                     opname = "not ";
+                    precedence = GudlPrecedence.Not;
+                    break;
+                case GudlToken.Plus:
+                    opname = "+";
+                    precedence = GudlPrecedence.Sign;
+                    break;
+                case GudlToken.Minus:
+                    opname = "-";
+                    precedence = GudlPrecedence.Sign;
                     break;
                 default:
+                    precedence = GudlPrecedence.Atom;
                     return base.ToString();
-            }    
-            return $"{opname}{Inner}";
+            }
+            var inner_str = Inner.ToString(out var inner_precedence);
+            if (inner_precedence < precedence)
+                return $"{opname}({inner_str})";
+            return $"{opname}{inner_str}";
         }
     }
 }

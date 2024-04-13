@@ -22,8 +22,9 @@
             return Name.GetHashCode() ^ typeof(IdentifierExpression).GetHashCode();
         }
 
-        public override string ToString()
+        internal override string ToString(out GudlPrecedence precedence)
         {
+            precedence = GudlPrecedence.Atom;
             return Name.ToString();
         }
     }

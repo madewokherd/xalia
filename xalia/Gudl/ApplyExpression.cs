@@ -43,10 +43,15 @@ namespace Xalia.Gudl
             return result;
         }
 
-        public override string ToString()
+        internal override string ToString(out GudlPrecedence precedence)
         {
             var result = new StringBuilder();
-            result.Append(Left);
+            var left_str = Left.ToString(out var left_precedence);
+            if (left_precedence < GudlPrecedence.Apply)
+                result.Append("(");
+            result.Append(left_str);
+            if (left_precedence < GudlPrecedence.Apply)
+                result.Append(")");
             result.Append("(");
             for (int i=0; i < Arglist.Length; i++)
             {
@@ -55,6 +60,7 @@ namespace Xalia.Gudl
                     result.Append(", ");
             }
             result.Append(")");
+            precedence = GudlPrecedence.Apply;
             return result.ToString();
         }
     }
