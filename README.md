@@ -15,7 +15,7 @@ Wayland has not been tested yet, but it probably does not work.
 
 ## Windows
 
-Windows is supported using Win32 and MSAA. Sometimes it is slow to respond to UI updates.
+Windows is supported using Win32, MSAA, and UI Automation. Sometimes it is slow to respond to UI updates. The current Windows backend is an early WIP.
 
 # Setup
 
@@ -42,7 +42,7 @@ Once all of the setup is complete, run `mono xalia.exe`, `dotnet xalia.dll`, or 
 
 Run `xalia.exe` from the net48-mono or net8-windows zip.
 
-If you are using 32-bit Windows, you will need to use the net48-mono build and replace SDL.dll with a win32-x86 version from http://libsdl.org/download-2.0.php.
+If you are using 32-bit Windows, you will need to use the net48-mono build and replace SDL2.dll with a win32-x86 version from http://libsdl.org/download-2.0.php.
 
 # Building
 
@@ -54,7 +54,7 @@ Mono should hopefully also be able to build the project, but I have not tried it
 
 The single-assembly version (which works on both Linux/Mono and Windows/.NET Framework 4.8), can be built from xalia.sln.
 
-A .NET 6 version can be built with one of the following commands:
+A .NET 8 version can be built with one of the following commands:
 
 ```
 dotnet publish xalia-netcore.sln --runtime linux-x64 --configuration Release-Linux --self-contained
@@ -109,4 +109,8 @@ All of these conditions are monitored, and if any of them changes (for example, 
 `XALIA_DEBUG_INPUT=1` displays gamepad inputs.
 
 `XALIA_DEBUG_EXCEPTIONS=1` displays expected exceptions.
+
+`XALIA_DEBUG_EVENTS=1` displays AT-SPI2 events. This will only work for the events Xalia listens to.
+
+`XALIA_DEBUG_EVENT_*=1` displays a specific named AT-SPI2 event, for example `XALIA_DEBUG_EVENT_ATTRIBUTESCHANGED=1` will display all AttributesChanged events. This will only work for the events Xalia listens to.
 
