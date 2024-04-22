@@ -61,7 +61,7 @@ namespace Xalia.AtSpi2
 
         private async Task FetchToolkitName()
         {
-            object result;
+            VariantValue result;
             try
             {
                 result = await GetProperty(Connection.Connection, Peer, Path,
@@ -74,18 +74,19 @@ namespace Xalia.AtSpi2
                 return;
             }
 
-            if (result is string st)
+            if (result.Type == VariantValueType.String)
             {
+                string st = result.GetString();
                 ToolkitNameKnown = true;
                 ToolkitName = st;
                 Element.PropertyChanged("spi_toolkit_name", ToolkitName);
                 return;
             }
 
-            if (result is null)
+            if (result.Type == VariantValueType.Invalid)
                 Utils.DebugWriteLine($"WARNING: {Element} returned null for ToolkitName");
             else
-                Utils.DebugWriteLine($"WARNING: {Element} returned {SignatureFromType(result.GetType())} for ToolkitName");
+                Utils.DebugWriteLine($"WARNING: {Element} returned {result} for ToolkitName");
         }
 
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)

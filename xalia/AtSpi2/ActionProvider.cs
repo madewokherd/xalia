@@ -90,7 +90,7 @@ namespace Xalia.AtSpi2
             string[] result;
             try
             {
-                int count = (int)await GetProperty(Connection.Connection, Peer, Path, IFACE_ACTION, "NActions");
+                int count = await GetPropertyInt(Connection.Connection, Peer, Path, IFACE_ACTION, "NActions");
                 result = new string[count];
                 for (int i = 0; i < count; i++)
                 {

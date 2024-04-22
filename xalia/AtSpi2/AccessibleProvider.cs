@@ -510,7 +510,7 @@ namespace Xalia.AtSpi2
                 bool success;
                 if (is_selected)
                 {
-                    var num_selected = (int)await GetProperty(acc.Connection.Connection, parent_acc.Peer,
+                    var num_selected = await GetPropertyInt(acc.Connection.Connection, parent_acc.Peer,
                         parent_acc.Path, IFACE_SELECTION, "NSelectedChildren");
 
                     if (num_selected == 1)
@@ -641,7 +641,7 @@ namespace Xalia.AtSpi2
         {
             try
             {
-                var child_count = (int)await GetProperty(Connection.Connection, Peer, Path,
+                var child_count = await GetPropertyInt(Connection.Connection, Peer, Path,
                     IFACE_ACCESSIBLE, "ChildCount");
                 var children = new List<(string, string)>(child_count);
                 for (int i = 0; i < child_count; i++)
@@ -765,7 +765,7 @@ namespace Xalia.AtSpi2
             if (!children_known)
                 return;
             var index = signal.detail1;
-            var child = ((string, ObjectPath))signal.value;
+            var child = (signal.value.GetItem(0).GetString(), signal.value.GetItem(1).GetObjectPath());
             var child_element = Connection.LookupElement(child);
             switch (signal.detail)
             {
@@ -1101,7 +1101,7 @@ namespace Xalia.AtSpi2
 
         private async Task FetchName()
         {
-            object result;
+            VariantValue result;
             try
             {
                 await Connection.RegisterEvent("object:property-change:accessible-name");
@@ -1114,7 +1114,7 @@ namespace Xalia.AtSpi2
                     throw;
                 return;
             }
-            if (result is null)
+            if (result.Type == VariantValueType.Invalid)
             {
                 // This would infinitely recurse
                 return;
@@ -1124,7 +1124,7 @@ namespace Xalia.AtSpi2
 
         private async Task FetchDescription()
         {
-            object result;
+            VariantValue result;
             try
             {
                 await Connection.RegisterEvent("object:property-change:accessible-description");
@@ -1137,7 +1137,7 @@ namespace Xalia.AtSpi2
                     throw;
                 return;
             }
-            if (result is null)
+            if (result.Type == VariantValueType.Invalid)
             {
                 // This would infinitely recurse
                 return;
@@ -1145,14 +1145,15 @@ namespace Xalia.AtSpi2
             AtSpiPropertyChange("accessible-description", result);
         }
 
-        internal void AtSpiPropertyChange(string detail, object value)
+        internal void AtSpiPropertyChange(string detail, VariantValue value)
         {
             switch (detail)
             {
                 case "accessible-name":
                     {
-                        if (value is string sval)
+                        if (value.Type == VariantValueType.String)
                         {
+                            string sval = value.GetString();
                             if (!NameKnown || sval != Name)
                             {
                                 NameKnown = true;
@@ -1160,7 +1161,7 @@ namespace Xalia.AtSpi2
                                 Element.PropertyChanged("spi_name", sval);
                             }
                         }
-                        else if (value is null)
+                        else if (value.Type == VariantValueType.Invalid)
                         {
                             if (fetching_name || NameKnown)
                                 Utils.RunTask(FetchName());
@@ -1173,8 +1174,9 @@ namespace Xalia.AtSpi2
                     }
                 case "accessible-description":
                     {
-                        if (value is string sval)
+                        if (value.Type == VariantValueType.String)
                         {
+                            string sval = value.GetString();
                             if (!DescriptionKnown || sval != Description)
                             {
                                 DescriptionKnown = true;
@@ -1182,7 +1184,7 @@ namespace Xalia.AtSpi2
                                 Element.PropertyChanged("spi_description", sval);
                             }
                         }
-                        else if (value is null)
+                        else if (value.Type == VariantValueType.Invalid)
                         {
                             if (fetching_description || DescriptionKnown)
                                 Utils.RunTask(FetchDescription());
@@ -1195,25 +1197,27 @@ namespace Xalia.AtSpi2
                     }
                 case "accessible-role":
                     {
-                        if (value is uint uval)
-                            value = (int)uval;
-                        if (value is int ival && (!RoleKnown || ival != Role))
-                        {
-                            RoleKnown = true;
-                            Role = ival;
-                            if (Element.MatchesDebugCondition())
-                                Utils.DebugWriteLine($"{Element}.spi_role: {RoleAsValue}");
-                            Element.PropertyChanged("spi_role");
-                        }
-                        else if (value is null)
+                        int ival;
+                        if (value.Type == VariantValueType.UInt32)
+                            ival = (int)value.GetUInt32();
+                        else if (value.Type == VariantValueType.Int32)
+                            ival = value.GetInt32();
+                        else if (value.Type == VariantValueType.Invalid)
                         {
                             if (fetching_role || RoleKnown)
                                 Utils.RunTask(FetchRole());
+                            break;
                         }
                         else
                         {
-                            Console.WriteLine($"WARNING: unexpected type for accessible-role: {value.GetType()}");
+                            Console.WriteLine($"WARNING: unexpected type for accessible-role: {value}");
+                            break;
                         }
+                        RoleKnown = true;
+                        Role = ival;
+                        if (Element.MatchesDebugCondition())
+                            Utils.DebugWriteLine($"{Element}.spi_role: {RoleAsValue}");
+                        Element.PropertyChanged("spi_role");
                         break;
                     }
                 default:

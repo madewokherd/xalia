@@ -138,7 +138,7 @@ namespace Xalia.AtSpi2
             double result;
             try
             {
-                result = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumValue");
+                result = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumValue");
             }
             catch (DBusException e) {
                 if (!AtSpiConnection.IsExpectedException(e))
@@ -162,7 +162,7 @@ namespace Xalia.AtSpi2
             double result;
             try
             {
-                result = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MaximumValue");
+                result = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MaximumValue");
             }
             catch (DBusException e) {
                 if (!AtSpiConnection.IsExpectedException(e))
@@ -186,7 +186,7 @@ namespace Xalia.AtSpi2
             double result;
             try
             {
-                result = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumIncrement");
+                result = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumIncrement");
             }
             catch (DBusException e) {
                 if (!AtSpiConnection.IsExpectedException(e))
@@ -209,7 +209,7 @@ namespace Xalia.AtSpi2
         {
             try
             {
-                return (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumIncrement");
+                return await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumIncrement");
             }
             catch (DBusException e) {
                 if (!AtSpiConnection.IsExpectedException(e))
@@ -225,20 +225,20 @@ namespace Xalia.AtSpi2
 
             try
             {
-                var current_value = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "CurrentValue");
+                var current_value = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "CurrentValue");
 
                 var new_value = current_value + offset;
 
                 if (offset > 0)
                 {
-                    var maximum_value = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MaximumValue");
+                    var maximum_value = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MaximumValue");
 
                     if (new_value > maximum_value)
                         new_value = maximum_value;
                 }
                 else
                 {
-                    var minimum_value = (double)await GetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumValue");
+                    var minimum_value = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumValue");
 
                     if (new_value < minimum_value)
                         new_value = minimum_value;

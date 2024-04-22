@@ -150,7 +150,7 @@ namespace Xalia.AtSpi2
             });
         }
 
-        public static Task<object> GetProperty(Connection connection, string peer, string path,
+        public static Task<VariantValue> GetProperty(Connection connection, string peer, string path,
             string iface, string prop)
         {
             return CallMethod(connection, peer, path, IFACE_PROPERTIES,
@@ -160,6 +160,24 @@ namespace Xalia.AtSpi2
                     writer.WriteString(prop);
                 }, ReadMessageVariant);
         } 
+
+        public static async Task<double> GetPropertyDouble(Connection connection, string peer, string path,
+            string iface, string prop)
+        {
+            return (await GetProperty(connection, peer, path, iface, prop)).GetDouble();
+        }
+
+        public static async Task<int> GetPropertyInt(Connection connection, string peer, string path,
+            string iface, string prop)
+        {
+            return (await GetProperty(connection, peer, path, iface, prop)).GetInt32();
+        }
+
+        public static async Task<string> GetPropertyString(Connection connection, string peer, string path,
+            string iface, string prop)
+        {
+            return (await GetProperty(connection, peer, path, iface, prop)).GetString();
+        }
 
         public static Task SetProperty(Connection connection, string peer, string path,
             string iface, string prop, bool value)
@@ -238,9 +256,9 @@ namespace Xalia.AtSpi2
             return result.ToArray();
         }
 
-        public static object ReadMessageVariant(Message message, object state)
+        public static VariantValue ReadMessageVariant(Message message, object state)
         {
-            return message.GetBodyReader().ReadVariant();
+            return message.GetBodyReader().ReadVariantValue();
         }
 
         public static (string, string) ReadMessageElement(Message message, object state)
@@ -287,8 +305,8 @@ namespace Xalia.AtSpi2
             public string detail;
             public int detail1;
             public int detail2;
-            public object value;
-            public Dictionary<string, object> properties;
+            public VariantValue value;
+            public Dictionary<string, VariantValue> properties;
         }
 
         private static AtSpiSignal ReadAtSpiSignal(Message message, object state)
@@ -300,7 +318,7 @@ namespace Xalia.AtSpi2
             result.detail = reader.ReadString();
             result.detail1 = reader.ReadInt32();
             result.detail2 = reader.ReadInt32();
-            result.value = reader.ReadVariant();
+            result.value = reader.ReadVariantValue();
             if (message.SignatureAsString == "siiv(so)")
             {
                 // Qt does not include the array at the end and instead repeats the sender/path
@@ -309,12 +327,12 @@ namespace Xalia.AtSpi2
             var arraystart = reader.ReadArrayStart(DBusType.Struct);
             if (reader.HasNext(arraystart))
             {
-                result.properties = new Dictionary<string, object>();
+                result.properties = new Dictionary<string, VariantValue>();
                 do
                 {
                     reader.AlignStruct();
                     var name = reader.ReadString();
-                    var value = reader.ReadVariant();
+                    var value = reader.ReadVariantValue();
                     result.properties[name] = value;
                 } while (reader.HasNext(arraystart));
             }
@@ -322,66 +340,6 @@ namespace Xalia.AtSpi2
         }
 
         static bool debug_events = Utils.TryGetEnvironmentVariable("XALIA_DEBUG_EVENTS", out var debug) && debug != "0";
-
-        public static string SignatureFromType(Type type)
-        {
-            switch(type.Name)
-            {
-                case "Byte":
-                    return "y";
-                case "Boolean":
-                    return "b";
-                case "Int16":
-                    return "n";
-                case "UInt16":
-                    return "q";
-                case "Int32":
-                    return "i";
-                case "UInt32":
-                    return "u";
-                case "Int64":
-                    return "x";
-                case "UInt64":
-                    return "t";
-                case "Double":
-                    return "d";
-                case "String":
-                    return "s";
-                case "ObjectPath":
-                    return "o";
-                case "Signature":
-                    return "g";
-                case "SafeHandle":
-                    return "h";
-                case "Dictionary`2":
-                    return $"{{{SignatureFromType(type.GenericTypeArguments[0])}{SignatureFromType(type.GenericTypeArguments[1])}}}";
-                case "ValueTuple`1":
-                case "ValueTuple`2":
-                case "ValueTuple`3":
-                case "ValueTuple`4":
-                case "ValueTuple`5":
-                case "ValueTuple`6":
-                case "ValueTuple`7":
-                case "ValueTuple`8":
-                case "ValueTuple`9":
-                case "ValueTuple`10":
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.Append("(");
-                        foreach (var subtype in type.GenericTypeArguments)
-                        {
-                            sb.Append(SignatureFromType(subtype));
-                        }
-                        sb.Append(")");
-                        return sb.ToString();
-                    }
-                case "Array":
-                    return "a" + SignatureFromType(type.GetElementType());
-                case "Object":
-                    return "v";
-            }
-            return "*";
-        }
 
         public static Task<IDisposable> MatchAtSpiSignal(Connection connection, string iface, string name, Action<AtSpiSignal> handler)
         {
@@ -408,13 +366,13 @@ namespace Xalia.AtSpi2
                             Console.WriteLine($"  detail1: {signal.detail1}");
                         if (signal.detail2 != 0)
                             Console.WriteLine($"  detail2: {signal.detail2}");
-                        if (!(signal.value is null))
-                            Console.WriteLine($"  value(type {SignatureFromType(signal.value.GetType())}): {signal.value}");
+                        if (signal.value.Type != VariantValueType.Invalid)
+                            Console.WriteLine($"  value: {signal.value}");
                         if (!(signal.properties is null))
                         {
                             foreach (var property in signal.properties)
                             {
-                                Console.WriteLine($"  properties[\"{property.Key}\"] (type {SignatureFromType(property.Value.GetType())}): {property.Value}");
+                                Console.WriteLine($"  properties[\"{property.Key}\"]: {property.Value}");
                             }
                         }
                     }
@@ -431,7 +389,7 @@ namespace Xalia.AtSpi2
                     {
                         Utils.OnError(e2);
                     }
-                }).AsTask();
+                }, ObserverFlags.None).AsTask();
         }
 
         public const string SERVICE_DBUS = "org.freedesktop.DBus";
