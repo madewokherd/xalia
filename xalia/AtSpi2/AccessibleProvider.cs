@@ -224,6 +224,8 @@ namespace Xalia.AtSpi2
             { "state", "spi_state" },
             { "name", "spi_name" },
             { "description", "spi_description" },
+            { "accessible_id", "spi_accessible_id" },
+            { "id", "spi_accessible_id" },
             { "attributes", "spi_attributes" },
             { "select", "spi_select" },
             { "deselect", "spi_deselect" },
@@ -313,6 +315,10 @@ namespace Xalia.AtSpi2
         public string Description { get; private set; }
         private bool fetching_description;
 
+        public bool AccessibleIdKnown { get; private set; }
+        public string AccessibleId { get; private set; }
+        private bool fetching_accessible_id;
+
         public bool AttributesKnown { get; private set; }
         public Dictionary<string,string> Attributes { get; private set; }
         private bool watching_attributes;
@@ -343,6 +349,8 @@ namespace Xalia.AtSpi2
                 Utils.DebugWriteLine($"  spi_name: \"{Name}\"");
             if (DescriptionKnown && Description != string.Empty)
                 Utils.DebugWriteLine($"  spi_description: \"{Description}\"");
+            if (AccessibleIdKnown && AccessibleId != string.Empty)
+                Utils.DebugWriteLine($"  spi_accessible_id: \"{AccessibleId}\"");
             if (AttributesKnown)
             {
                 foreach (var kvp in Attributes)
@@ -387,6 +395,11 @@ namespace Xalia.AtSpi2
                     depends_on.Add((element, new IdentifierExpression(identifier)));
                     if (DescriptionKnown)
                         return new UiDomString(Description);
+                    return UiDomUndefined.Instance;
+                case "spi_accessible_id":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (AccessibleIdKnown)
+                        return new UiDomString(AccessibleId);
                     return UiDomUndefined.Instance;
                 case "spi_supported":
                     depends_on.Add((element, new IdentifierExpression("spi_supported")));
@@ -909,6 +922,13 @@ namespace Xalia.AtSpi2
                             Utils.RunTask(FetchDescription());
                         }
                         return true;
+                    case "spi_accessible_id":
+                        if (!fetching_accessible_id)
+                        {
+                            fetching_accessible_id = true;
+                            Utils.RunTask(FetchAccessibleId());
+                        }
+                        return true;
                     case "spi_supported":
                         if (!fetching_supported)
                         {
@@ -1143,6 +1163,27 @@ namespace Xalia.AtSpi2
                 return;
             }
             AtSpiPropertyChange("accessible-description", result);
+        }
+
+        private async Task FetchAccessibleId()
+        {
+            string result;
+            try
+            {
+                // No event for this? Probably not supposed to change during the element's lifetime.
+
+                result = await GetPropertyString(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE, "AccessibleId");
+            }
+            catch (DBusException e)
+            {
+                if (!AtSpiConnection.IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            AccessibleId = result;
+            AccessibleIdKnown = true;
+            Element.PropertyChanged("spi_accessible_id", result);
         }
 
         internal void AtSpiPropertyChange(string detail, VariantValue value)

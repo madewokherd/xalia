@@ -288,8 +288,7 @@ if (win32_process_name == "gvim") {
 // TODO: 5.27 should have the panel identifiable by ID
 
 application (name == "plasmashell") {
-    // awful heuristic for now
-    child (not child_matches(layered_pane)) {
+    child (id == "QApplication.PanelView") {
         is_panel: true;
     }
 }
