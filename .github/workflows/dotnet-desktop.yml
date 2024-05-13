@@ -30,7 +30,7 @@ jobs:
       run: curl -o sdl.zip "https://github.com/libsdl-org/SDL/releases/download/release-2.30.2/SDL2-2.30.2-win32-x64.zip"
 
     - name: Extract SDL
-      run: tar -C xalia -xf ../sdl.zip
+      run: tar -C xalia -xf sdl.zip
 
     - name: Build netcore-linux-noruntime
       run: dotnet publish xalia-netcore.sln --runtime linux-x64 --configuration Release-Linux --no-self-contained
