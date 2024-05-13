@@ -49,8 +49,8 @@ jobs:
     - name: Upload netcore-windows-noruntime
       uses: actions/upload-artifact@v4
       with:
-        name: net8-linux-noruntime
-        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\**
+        name: net8-windows-noruntime
+        path: xalia\bin-netcore-windows\Release-Windows\net8.0\win-x64\**
         if-no-files-found: error
 
     - name: Build netcore-linux-noruntime
@@ -69,6 +69,6 @@ jobs:
     - name: Upload netcore-windows
       uses: actions/upload-artifact@v4
       with:
-        name: net8-linux
-        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\**
+        name: net8-windows
+        path: xalia\bin-netcore-windows\Release-Windows\net8.0\win-x64\**
         if-no-files-found: error
