@@ -36,9 +36,39 @@ jobs:
     - name: Build netcore-linux-noruntime
       run: dotnet publish xalia-netcore.sln --runtime linux-x64 --configuration Release-Linux --no-self-contained
 
+    - name: Build netcore-windows-noruntime
+      run: dotnet publish xalia-netcore.sln --runtime win-x64 --configuration Release-Linux --no-self-contained
+
     - name: Upload netcore-linux-noruntime
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: net8-linux-noruntime
+        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\**
+        if-no-files-found: error
+
+    - name: Upload netcore-windows-noruntime
+      uses: actions/upload-artifact@v4
+      with:
+        name: net8-linux-noruntime
+        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\**
+        if-no-files-found: error
+
+    - name: Build netcore-linux-noruntime
+      run: dotnet publish xalia-netcore.sln --runtime linux-x64 --configuration Release-Linux --self-contained
+
+    - name: Build netcore-windows-noruntime
+      run: dotnet publish xalia-netcore.sln --runtime win-x64 --configuration Release-Linux --self-contained
+
+    - name: Upload netcore-linux
+      uses: actions/upload-artifact@v4
+      with:
+        name: net8-linux
+        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\**
+        if-no-files-found: error
+
+    - name: Upload netcore-windows
+      uses: actions/upload-artifact@v4
+      with:
+        name: net8-linux
         path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\**
         if-no-files-found: error
