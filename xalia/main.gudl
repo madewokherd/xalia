@@ -729,7 +729,7 @@ if (is_active_modal and not root.disable_interactions and root.current_view == t
 }
 
 // We normally should only consider the active window when searching for controls to interact with
-if (active and
+if (active and visible and
     (window or parent.(spi_role.application or is_root)) and // regular controls can be active
     not root.in_panel_mode) {
     toplevel_interactable: true;
