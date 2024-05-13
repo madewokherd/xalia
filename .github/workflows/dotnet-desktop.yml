@@ -1,0 +1,74 @@
+name: .NET Core Desktop
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: windows-latest 
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Fetch SDL
+      run: curl -L -o sdl.zip "https://github.com/libsdl-org/SDL/releases/download/release-2.30.2/SDL2-2.30.2-win32-x64.zip"
+
+    - name: Extract SDL
+      run: tar -C xalia -xf sdl.zip
+
+    - name: Build netcore-linux-noruntime
+      run: dotnet publish xalia-netcore.sln --runtime linux-x64 --configuration Release-Linux --no-self-contained
+
+    - name: Build netcore-windows-noruntime
+      run: dotnet publish xalia-netcore.sln --runtime win-x64 --configuration Release-Windows --no-self-contained
+
+    - name: Upload netcore-linux-noruntime
+      uses: actions/upload-artifact@v4
+      with:
+        name: net8-linux-noruntime
+        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\publish\**
+        if-no-files-found: error
+
+    - name: Upload netcore-windows-noruntime
+      uses: actions/upload-artifact@v4
+      with:
+        name: net8-windows-noruntime
+        path: xalia\bin-netcore-windows\Release-Windows\net8.0-windows\win-x64\publish\**
+        if-no-files-found: error
+
+    - name: Build netcore-linux
+      run: dotnet publish xalia-netcore.sln --runtime linux-x64 --configuration Release-Linux --self-contained
+
+    - name: Build netcore-windows
+      run: dotnet publish xalia-netcore.sln --runtime win-x64 --configuration Release-Windows --self-contained
+
+    - name: Upload netcore-linux
+      uses: actions/upload-artifact@v4
+      with:
+        name: net8-linux
+        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\publish\**
+        if-no-files-found: error
+
+    - name: Upload netcore-windows
+      uses: actions/upload-artifact@v4
+      with:
+        name: net8-windows
+        path: xalia\bin-netcore-windows\Release-Windows\net8.0-windows\win-x64\publish\**
+        if-no-files-found: error
