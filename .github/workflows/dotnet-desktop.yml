@@ -40,7 +40,7 @@ jobs:
       run: nuget restore xalia.sln
 
     - name: Build net48-mono
-      run: msbuild xalia.sln /p:Release-NetStandard
+      run: msbuild xalia.sln /p:Configuration=Release-NetStandard
 
     - name: Upload net48-mono
       uses: actions/upload-artifact@v4
