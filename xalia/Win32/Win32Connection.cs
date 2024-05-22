@@ -412,15 +412,15 @@ namespace Xalia.Win32
                 if ((guithreadinfo.flags & GUI_SYSTEMMENUMODE) != 0)
                     Utils.DebugWriteLine($"  win32_gui_systemmenumode: true");
                 if (guithreadinfo.hwndActive != IntPtr.Zero)
-                    Utils.DebugWriteLine($"  win32_gui_hwndactive: {guithreadinfo.hwndActive}");
+                    Utils.DebugWriteLine($"  win32_gui_hwndactive: 0x{guithreadinfo.hwndActive:x}");
                 if (guithreadinfo.hwndFocus != IntPtr.Zero)
-                    Utils.DebugWriteLine($"  win32_gui_hwndfocus: {guithreadinfo.hwndFocus}");
+                    Utils.DebugWriteLine($"  win32_gui_hwndfocus: 0x{guithreadinfo.hwndFocus:x}");
                 if (guithreadinfo.hwndCapture != IntPtr.Zero)
-                    Utils.DebugWriteLine($"  win32_gui_hwndcapture: {guithreadinfo.hwndCapture}");
+                    Utils.DebugWriteLine($"  win32_gui_hwndcapture: 0x{guithreadinfo.hwndCapture:x}");
                 if (guithreadinfo.hwndMenuOwner != IntPtr.Zero)
-                    Utils.DebugWriteLine($"  win32_gui_hwndmenuowner: {guithreadinfo.hwndMenuOwner}");
+                    Utils.DebugWriteLine($"  win32_gui_hwndmenuowner: 0x{guithreadinfo.hwndMenuOwner:x}");
                 if (guithreadinfo.hwndMoveSize != IntPtr.Zero)
-                    Utils.DebugWriteLine($"  win32_gui_hwndmovesize: {guithreadinfo.hwndMoveSize}");
+                    Utils.DebugWriteLine($"  win32_gui_hwndmovesize: 0x{guithreadinfo.hwndMoveSize:x}");
             }
             var hwnd = element.ProviderByType<HwndProvider>();
             if (!(hwnd is null))
@@ -460,35 +460,35 @@ namespace Xalia.Win32
 
             if (new_threadinfo.hwndActive != old_threadinfo.hwndActive)
             {
-                Root.PropertyChanged("win32_gui_hwndactive", new_threadinfo.hwndActive);
+                Root.PropertyChanged("win32_gui_hwndactive", $"0x{new_threadinfo.hwndActive:x}");
                 LookupElement(old_threadinfo.hwndActive)?.PropertyChanged("win32_gui_active", "false");
                 LookupElement(new_threadinfo.hwndActive)?.PropertyChanged("win32_gui_active", "true");
             }
 
             if (new_threadinfo.hwndFocus != old_threadinfo.hwndFocus)
             {
-                Root.PropertyChanged("win32_gui_hwndfocus", new_threadinfo.hwndFocus);
+                Root.PropertyChanged("win32_gui_hwndfocus", $"0x{new_threadinfo.hwndFocus:x}");
                 LookupElement(old_threadinfo.hwndFocus)?.PropertyChanged("win32_gui_focus", "false");
                 LookupElement(new_threadinfo.hwndFocus)?.PropertyChanged("win32_gui_focus", "true");
             }
 
             if (new_threadinfo.hwndCapture != old_threadinfo.hwndCapture)
             {
-                Root.PropertyChanged("win32_gui_hwndcapture", new_threadinfo.hwndCapture);
+                Root.PropertyChanged("win32_gui_hwndcapture", $"0x{new_threadinfo.hwndCapture:x}");
                 LookupElement(old_threadinfo.hwndCapture)?.PropertyChanged("win32_gui_capture", "false");
                 LookupElement(new_threadinfo.hwndCapture)?.PropertyChanged("win32_gui_capture", "true");
             }
 
             if (new_threadinfo.hwndMenuOwner != old_threadinfo.hwndMenuOwner)
             {
-                Root.PropertyChanged("win32_gui_hwndmenuowner", new_threadinfo.hwndMenuOwner);
+                Root.PropertyChanged("win32_gui_hwndmenuowner", $"0x{new_threadinfo.hwndMenuOwner:x}");
                 LookupElement(old_threadinfo.hwndMenuOwner)?.PropertyChanged("win32_gui_menuowner", "false");
                 LookupElement(new_threadinfo.hwndMenuOwner)?.PropertyChanged("win32_gui_menuowner", "true");
             }
 
             if (new_threadinfo.hwndMoveSize != old_threadinfo.hwndMoveSize)
             {
-                Root.PropertyChanged("win32_gui_hwndmovesize", new_threadinfo.hwndMoveSize);
+                Root.PropertyChanged("win32_gui_hwndmovesize", $"0x{new_threadinfo.hwndMoveSize:x}");
                 LookupElement(old_threadinfo.hwndMoveSize)?.PropertyChanged("win32_gui_movesize", "false");
                 LookupElement(new_threadinfo.hwndMoveSize)?.PropertyChanged("win32_gui_movesize", "true");
             }
