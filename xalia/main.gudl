@@ -290,6 +290,7 @@ if (win32_process_name == "gvim") {
 application (name == "plasmashell") {
     child (id == "QApplication.PanelView") {
         is_panel: true;
+        manual_buttons: true;
     }
 }
 
