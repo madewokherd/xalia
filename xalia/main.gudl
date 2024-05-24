@@ -265,6 +265,26 @@ menu (class_name == "MozillaDropShadowWindowClass") {
     menu_close_action: send_key.esc;
 }
 
+// APPLICATION: gnome-shell
+if (application_name == "gnome-shell") {
+    window
+    {
+        is_panel: true;
+        manual_buttons: true;
+    }
+
+    toggle_button (targetable) {
+        primary_action: send_click;
+    }
+
+    in_menu_navigation: false;
+
+    panel (parent.interactable and not parent.stop_interactable and showing and visible) {
+        // A lot of panels containing controls aren't enabled or sensitive
+        interactable: true;
+    }
+}
+
 // APPLICATION: GVIM
 
 if (win32_process_name == "gvim") {
