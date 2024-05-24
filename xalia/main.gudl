@@ -336,6 +336,14 @@ if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherW
     }
 }
 
+// APPLICATION: xfce4-panel
+if (application_name == "xfce4-panel") {
+    panel (interactable and child_count == 1 and child_at_index(0).(filler and child_count == 0)) {
+        // Whisker menu
+        targetable: true;
+    }
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
