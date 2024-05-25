@@ -265,6 +265,22 @@ menu (class_name == "MozillaDropShadowWindowClass") {
     menu_close_action: send_key.esc;
 }
 
+if (application_name == "Firefox" or application_name == "firefox") {
+    menu (attributes.tag == "menupopup") {
+        if (visible) {
+            in_menu_navigation: true;
+            menu_left_action: send_key.left;
+            menu_down_action: send_key.down;
+            menu_up_action: send_key.up;
+            menu_right_action: send_key.right;
+            menu_select_action: send_key.enter;
+            menu_back_action: send_key.esc;
+            menu_close_action: send_key.esc;
+        }
+        in_menu_navigation: false;
+    }
+}
+
 // APPLICATION: gnome-shell
 if (application_name == "gnome-shell") {
     window
