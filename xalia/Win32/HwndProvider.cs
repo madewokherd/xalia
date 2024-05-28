@@ -281,6 +281,9 @@ namespace Xalia.Win32
                 case "ComboBox":
                     AddProvider(new HwndComboBoxProvider(this), index);
                     return;
+                case "Edit":
+                    AddProvider(new HwndEditProvider(this), index);
+                    return;
                 case "msctls_trackbar32":
                     AddProvider(new HwndTrackBarProvider(this), index);
                     return;
@@ -311,6 +314,9 @@ namespace Xalia.Win32
                     return;
                 case 65536 + 3:
                     AddProvider(new HwndStaticProvider(this), index);
+                    return;
+                case 65536 + 4:
+                    AddProvider(new HwndEditProvider(this), index);
                     return;
                 case 65536 + 5:
                     AddProvider(new HwndComboBoxProvider(this), index);

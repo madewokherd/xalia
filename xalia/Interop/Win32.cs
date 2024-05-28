@@ -1232,6 +1232,10 @@ namespace Xalia.Interop
 
         public const int DC_HASDEFID = 0x534b;
 
+        // Edit
+        public const int ES_CENTER = 0x1;
+        public const int ES_RIGHT = 0x2;
+
         // List view
         public const int LVS_ICON = 0x0;
         public const int LVS_REPORT = 0x1;
