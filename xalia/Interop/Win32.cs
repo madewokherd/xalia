@@ -41,6 +41,9 @@ namespace Xalia.Interop
             return new IntPtr(-1);
         }
 
+        [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall)]
+        public static extern int GetCurrentThreadId();
+
         public const int PROCESS_VM_OPERATION = 0x8;
         public const int PROCESS_VM_READ = 0x10;
         public const int PROCESS_VM_WRITE = 0x20;
@@ -259,6 +262,12 @@ namespace Xalia.Interop
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern bool SetForegroundWindow(IntPtr hwnd);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern bool AttachThreadInput(int idAttach, int idAttachTo, bool fAttach);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr SetFocus(IntPtr hwnd);
 
         public const int MONITOR_DEFAULTTONULL = 0;
         public const int MONITOR_DEFAULTTOPRIMARY = 1;

@@ -74,6 +74,7 @@ namespace Xalia.Win32
             { "send_message", "win32_send_message" },
             { "enable_window", "win32_enable_window" },
             { "disable_window", "win32_disable_window" },
+            { "set_focus", "win32_set_focus" },
         };
 
         private static string[] win32_stylenames =
@@ -480,8 +481,22 @@ namespace Xalia.Win32
                     return new UiDomRoutineSync(Element, "win32_enable_window", EnableWindowRoutine);
                 case "win32_disable_window":
                     return new UiDomRoutineSync(Element, "win32_disable_window", DisableWindowRoutine);
+                case "win32_set_focus":
+                    return new UiDomRoutineAsync(Element, "win32_set_focus", SetFocusRoutine);
             }
             return ChildEvaluateIdentifier(identifier, depends_on);
+        }
+
+        private async Task SetFocusRoutine(UiDomRoutineAsync obj)
+        {
+            await CommandThread.OnBackgroundThread(() =>
+            {
+                AttachThreadInput(GetCurrentThreadId(), Tid, true);
+
+                SetFocus(Hwnd);
+
+                AttachThreadInput(GetCurrentThreadId(), Tid, false);
+            }, CommandThreadPriority.User);
         }
 
         private void EnableWindowRoutine(UiDomRoutineSync sync)
