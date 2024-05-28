@@ -79,6 +79,8 @@ namespace Xalia
         [STAThread()]
         public static int Main(string[] argv)
         {
+            AppDomain.CurrentDomain.UnhandledException += Utils.UnhandledException;
+
 #if NETCOREAPP3_0_OR_GREATER
             NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), OnDllImport);
 #endif

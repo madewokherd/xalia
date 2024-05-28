@@ -175,5 +175,10 @@ namespace Xalia
         {
             return unchecked((int)i.ToInt64());
         }
+
+        internal static void UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            OnError((Exception)e.ExceptionObject);
+        }
     }
 }
