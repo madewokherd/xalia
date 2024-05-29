@@ -40,6 +40,8 @@ namespace Xalia.Win32
         public int Pid { get; }
         public int Tid { get; }
 
+        public event EventHandler HwndChildrenChanged;
+
         private bool _watchingChildren;
 
         private bool _useNonclient;
@@ -641,11 +643,8 @@ namespace Xalia.Win32
             PollChildren();
         }
 
-        private void PollChildren()
+        public List<IntPtr> GetChildHwnds()
         {
-            if (!_watchingChildren)
-                return;
-
             var child_hwnds = EnumImmediateChildWindows(Hwnd);
 
             // Remove or ignore any existing children
@@ -673,6 +672,16 @@ namespace Xalia.Win32
                 i++;
             }
 
+            return child_hwnds;
+        }
+
+        private void PollChildren()
+        {
+            if (!_watchingChildren)
+                return;
+
+            var child_hwnds = GetChildHwnds();
+
             Element.SyncRecurseMethodChildren(child_hwnds, (IntPtr hwnd) => Connection.GetElementName(hwnd),
                 (IntPtr hwnd) => Connection.CreateElement(hwnd));
         }
@@ -680,15 +689,16 @@ namespace Xalia.Win32
         private void ReleaseChildren()
         {
             // Remove any child HWNDs that no longer belong to this element
-            if (!_watchingChildren)
-                return;
-            List<IntPtr> new_children = new List<IntPtr>(Element.RecurseMethodChildCount);
+            List<string> new_children = new List<string>(Element.RecurseMethodChildCount);
             bool changed = false;
             for (int i = 0; i < Element.RecurseMethodChildCount; i++)
             {
                 var child_provider = Element.Children[i].ProviderByType<HwndProvider>();
                 if (child_provider is null)
+                {
+                    new_children.Add(Element.DebugId);
                     continue;
+                }
                 var child_hwnd = child_provider.Hwnd;
                 var child_parent_hwnd = GetAncestor(child_hwnd, GA_PARENT);
                 if (child_parent_hwnd != Hwnd)
@@ -696,12 +706,12 @@ namespace Xalia.Win32
                     changed = true;
                     continue;
                 }
-                new_children.Add(child_hwnd);
+                new_children.Add(Element.DebugId);
             }
             if (changed)
             {
-                Element.SyncRecurseMethodChildren(new_children, (IntPtr hwnd) => Connection.GetElementName(hwnd),
-                    (IntPtr hwnd) =>
+                Element.SyncRecurseMethodChildren(new_children, (string id) => id,
+                    (string id) =>
                     {
                         throw new Exception("ReleaseChildren should not create new children");
                     });
@@ -857,7 +867,7 @@ namespace Xalia.Win32
                     RefreshNonclientChildren();
                 if ((new_style & WS_VISIBLE) == WS_VISIBLE &&
                     (old_style & WS_VISIBLE) == 0 &&
-                    _watchingChildren)
+                    (_watchingChildren || HwndChildrenChanged != null))
                 {
                     // Children may also be newly-visible
                     for (int i = 0; i < Element.RecurseMethodChildCount; i++)
@@ -898,6 +908,7 @@ namespace Xalia.Win32
             {
                 PollChildren();
             }
+            HwndChildrenChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void MsaaChildWindowRemoved()
@@ -906,6 +917,7 @@ namespace Xalia.Win32
             {
                 PollChildren();
             }
+            HwndChildrenChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void RefreshWindowRects()
