@@ -638,7 +638,7 @@ namespace Xalia.Win32
                 Utils.DebugWriteLine($"WatchChildren for {Element} (win32)");
             Element.SetRecurseMethodProvider(this);
             _watchingChildren = true;
-            Utils.RunIdle(PollChildren); // need to wait for any other providers to remove their children
+            PollChildren();
         }
 
         private void PollChildren()
