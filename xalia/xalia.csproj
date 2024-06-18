@@ -184,7 +184,6 @@
     <Compile Include="Win32\HwndMsaaChildProvider.cs" />
     <Compile Include="Win32\HwndProvider.cs" />
     <Compile Include="Win32\CommandThread.cs" />
-    <Compile Include="Win32\HwndItemListProvider.cs" />
     <Compile Include="Win32\HwndStaticProvider.cs" />
     <Compile Include="Win32\HwndTabItemProvider.cs" />
     <Compile Include="Win32\HwndTabProvider.cs" />

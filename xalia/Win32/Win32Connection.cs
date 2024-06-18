@@ -544,7 +544,6 @@ namespace Xalia.Win32
                         var hwnd_element = LookupElement(hwnd);
                         if (!(hwnd_element is null))
                         {
-                            hwnd_element.ProviderByType<HwndItemListProvider>()?.MsaaChildAdded(idChild);
                             hwnd_element.ProviderByType<IWin32Container>()?.MsaaChildCreated(idChild);
                         }
                     }
@@ -567,7 +566,6 @@ namespace Xalia.Win32
                             var hwnd_element = LookupElement(hwnd);
                             if (!(hwnd_element is null))
                             {
-                                hwnd_element.ProviderByType<HwndItemListProvider>()?.MsaaChildDestroyed(idChild);
                                 hwnd_element.ProviderByType<IWin32Container>()?.MsaaChildDestroyed(idChild);
                             }
                         }

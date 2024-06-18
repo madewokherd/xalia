@@ -7,14 +7,22 @@ namespace Xalia.Win32
 {
     internal class HwndTabItemProvider : UiDomProviderBase
     {
-        public HwndTabItemProvider(HwndTabProvider parent, int childId)
+        public HwndTabItemProvider(HwndTabProvider parent, UiDomElement element)
         {
             Parent = parent;
-            ChildId = childId;
+            Element = element;
         }
 
         public HwndTabProvider Parent { get; }
-        public int ChildId { get; }
+        public UiDomElement Element { get; }
+
+        public int ChildId
+        {
+            get
+            {
+                return Element.IndexInParent + 1;
+            }
+        }
 
         public override void DumpProperties(UiDomElement element)
         {

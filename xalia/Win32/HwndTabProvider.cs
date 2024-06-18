@@ -5,22 +5,30 @@ using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.Interop;
 using Xalia.UiDom;
-using Xalia.Util;
 using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndTabProvider : HwndItemListProvider, IWin32Styles, IWin32LocationChange
+    internal class HwndTabProvider : UiDomProviderBase, IWin32Container, IWin32Styles, IWin32LocationChange
     {
-        public HwndTabProvider(HwndProvider hwndProvider) : base(hwndProvider)
+        public HwndTabProvider(HwndProvider hwndProvider)
         {
+            HwndProvider = hwndProvider;
         }
+
+        public HwndProvider HwndProvider { get; }
+        public IntPtr Hwnd => HwndProvider.Hwnd;
+        public UiDomElement Element => HwndProvider.Element;
+        public Win32Connection Connection => HwndProvider.Connection;
+        public UiDomRoot Root => Element.Root;
+        public int Pid => HwndProvider.Pid;
 
         static readonly UiDomEnum role = new UiDomEnum(new[] { "tab", "page_tab_list", "pagetablist" });
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
             { "selection_index", "win32_selection_index" },
+            { "item_count", "win32_item_count" },
         };
 
         static string[] style_names =
@@ -61,6 +69,13 @@ namespace Xalia.Win32
 
         private bool fetching_selection_index;
 
+        public bool ItemCountKnown;
+        public int ItemCount;
+        private bool fetching_item_count;
+        private bool watching_item_count;
+
+        private int uniqueid;
+
         bool watching_children;
 
         public RECT[] ItemRects { get; private set; }
@@ -70,6 +85,8 @@ namespace Xalia.Win32
 
         public override void DumpProperties(UiDomElement element)
         {
+            if (ItemCountKnown)
+                Utils.DebugWriteLine($"  win32_item_count: {ItemCount}");
             if (SelectionIndexKnown)
                 Utils.DebugWriteLine($"  win32_selection_index: {SelectionIndex}");
             base.DumpProperties(element);
@@ -144,6 +161,11 @@ namespace Xalia.Win32
                 case "is_hwnd_tab_control":
                 case "is_hwnd_tabcontrol":
                     return UiDomBoolean.True;
+                case "win32_item_count":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (ItemCountKnown)
+                        return new UiDomInt(ItemCount);
+                    break;
                 case "win32_selection_index":
                     depends_on.Add((element, new IdentifierExpression(identifier)));
                     if (SelectionIndexKnown)
@@ -187,39 +209,64 @@ namespace Xalia.Win32
         private void WatchChildren()
         {
             Element.SetRecurseMethodProvider(this);
+            HwndProvider.HwndChildrenChanged += HwndProvider_HwndChildrenChanged;
             if (ItemCountKnown)
-                SetUiDomChildCount(ItemCount);
+                RefreshChildren();
             else
-                Utils.RunTask(DoFetchItemCount());
+                Utils.RunTask(FetchItemCount());
+        }
+
+        private string GetUniqueKey()
+        {
+            return $"tab-{Hwnd:x}-{++uniqueid}";
+        }
+
+        private string GetChildKey(int ChildId)
+        {
+            var child = GetMsaaChild(ChildId);
+            if (child is null)
+                return GetUniqueKey();
+            return child.DebugId;
+        }
+
+        private UiDomElement CreateChildItem((string, IntPtr) key)
+        {
+            if (key.Item1 is null)
+            {
+                // hwnd
+                return Connection.CreateElement(key.Item2);
+            }
+            else
+            {
+                var element = new UiDomElement(key.Item1, Root);
+                element.AddProvider(new HwndTabItemProvider(this, element), 0);
+                return element;
+            }
+        }
+
+        private void RefreshChildren()
+        {
+            List<(string, IntPtr)> keys = new List<(string, IntPtr)>(ItemCount);
+            for (int i = 1; i < ItemCount + 1; i++)
+            {
+                keys.Add((GetChildKey(i), IntPtr.Zero));
+            }
+            foreach (var hwnd in HwndProvider.GetChildHwnds())
+                keys.Add((null, hwnd));
+            Element.SyncRecurseMethodChildren(keys,
+                ((string, IntPtr) key) => key.Item1 is null ? Connection.GetElementName(key.Item2) : key.Item1,
+                CreateChildItem);
+        }
+
+        private void HwndProvider_HwndChildrenChanged(object sender, EventArgs e)
+        {
+            RefreshChildren();
         }
 
         private void UnwatchChildren()
         {
             Element.UnsetRecurseMethodProvider(this);
-        }
-
-        protected override void ItemCountChanged(int newCount)
-        {
-            InvalidateItemRects();
-            if (watching_children)
-                SetUiDomChildCount(newCount);
-            base.ItemCountChanged(newCount);
-        }
-
-        private void SetUiDomChildCount(int newCount)
-        {
-            if (Element.RecurseMethodChildCount == newCount)
-                return;
-
-            Element.SyncRecurseMethodChildren(new RangeList(1, newCount + 1),
-                (int key) => Connection.GetElementName(Hwnd, OBJID_CLIENT, key), CreateChildElement);
-        }
-
-        private UiDomElement CreateChildElement(int childId)
-        {
-            var element = Connection.CreateElement(Hwnd, OBJID_CLIENT, childId);
-            element.AddProvider(new HwndTabItemProvider(this, childId), 0);
-            return element;
+            HwndProvider.HwndChildrenChanged -= HwndProvider_HwndChildrenChanged;
         }
 
         public void GetStyleNames(int style, List<string> names)
@@ -256,7 +303,7 @@ namespace Xalia.Win32
             }
         }
 
-        protected async override Task<int> FetchItemCount()
+        private async Task<int> FetchItemCount()
         {
             IntPtr result;
             try
@@ -269,6 +316,18 @@ namespace Xalia.Win32
                     throw;
                 return 0;
             }
+
+            ItemCount = Utils.TruncatePtr(result);
+            ItemCountKnown = true;
+            fetching_item_count = false;
+            Element.PropertyChanged("win32_item_count", ItemCount);
+
+            if (watching_children)
+            {
+                InvalidateItemRects();
+                RefreshChildren();
+            }
+
             return Utils.TruncatePtr(result);
         }
 
@@ -291,6 +350,11 @@ namespace Xalia.Win32
                         {
                             Utils.RunTask(FetchItemRects());
                         }
+                        return true;
+                    case "win32_item_count":
+                        watching_item_count = true;
+                        if (!ItemCountKnown && !fetching_item_count)
+                            Utils.RunTask(FetchItemCount());
                         return true;
                 }
             }
@@ -352,6 +416,9 @@ namespace Xalia.Win32
                     case "win32_item_rects":
                         watching_item_rects = false;
                         return true;
+                    case "win32_item_count":
+                        watching_item_count = false;
+                        return true;
                 }
             }
             return base.UnwatchProperty(element, expression);
@@ -408,6 +475,83 @@ namespace Xalia.Win32
         public void MsaaLocationChange()
         {
             InvalidateItemRects();
+        }
+
+        public void MsaaChildCreated(int ChildId)
+        {
+            if (ItemCountKnown)
+            {
+                if (ChildId < 1 || ChildId > ItemCount + 1)
+                {
+                    Utils.DebugWriteLine($"got EVENT_OBJECT_CREATE for {Element} with child id {ChildId} with ItemCount={ItemCount}");
+                    return;
+                }
+
+                ItemCount++;
+                Element.PropertyChanged("win32_item_count", ItemCount);
+
+                if (watching_children)
+                {
+                    var child = CreateChildItem((GetUniqueKey(), IntPtr.Zero));
+                    Element.AddChild(ChildId - 1, child, true);
+
+                    InvalidateItemRects();
+                }
+            }
+        }
+
+        public void MsaaChildDestroyed(int ChildId)
+        {
+            if (ItemCountKnown)
+            {
+                if (ChildId < 1 || ChildId >= ItemCount + 1)
+                {
+                    Utils.DebugWriteLine($"got EVENT_OBJECT_DESTROY for {Element} with child id {ChildId} with ItemCount={ItemCount}");
+                    return;
+                }
+
+                ItemCount--;
+                Element.PropertyChanged("win32_item_count", ItemCount);
+
+                if (watching_children)
+                {
+                    Element.RemoveChild(ChildId - 1, true);
+                    InvalidateItemRects();
+                }
+            }
+        }
+
+        private async Task DoChildrenReordered()
+        {
+            fetching_item_count = true;
+            await FetchItemCount();
+
+            // This leaves us in an odd state where we may have existing
+            // children that are actually different items now, so we
+            // need to invalidate everything. This is preferable to
+            // disruption caused by recreating everything if the
+            // "reorder" was a minor change.
+
+            InvalidateItemRects();
+        }
+
+        public void MsaaChildrenReordered()
+        {
+            ItemCountKnown = false;
+            if (watching_children || watching_item_count)
+                Utils.RunTask(DoChildrenReordered());
+        }
+
+        public UiDomElement GetMsaaChild(int ChildId)
+        {
+            if (ChildId >= 1)
+            {
+                int index = ChildId - 1;
+                if (index < ItemCount && index < Element.RecurseMethodChildCount &&
+                    !(Element.Children[index].ProviderByType<HwndTabItemProvider>() is null))
+                    return Element.Children[index];
+            }
+            return null;
         }
     }
 }
