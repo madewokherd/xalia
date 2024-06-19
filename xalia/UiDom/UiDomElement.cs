@@ -1208,7 +1208,7 @@ namespace Xalia.UiDom
             {
                 if (Parent is null)
                     return -1;
-                if (Parent.Children.Count >= cached_index_in_parent ||
+                if (Parent.Children.Count <= cached_index_in_parent ||
                     Parent.Children[cached_index_in_parent] != this)
                 {
                     Parent.RecalculateChildIndices();
