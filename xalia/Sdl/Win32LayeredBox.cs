@@ -98,6 +98,14 @@ namespace Xalia.Sdl
                 case WM_MOUSEACTIVATE:
                     // For some reason, WS_EX_NOACTIVATE doesn't affect this on Wine.
                     return (IntPtr)MA_NOACTIVATE;
+                case WM_ACTIVATE:
+                    if (Utils.TruncatePtr(wparam) == WA_ACTIVE)
+                    {
+                        // Should never happen, but can on Wine. If we allow this, the overlay
+                        // will lose its override-redirect flag which is very bad.
+                        SetActiveWindow(IntPtr.Zero);
+                    }
+                    return IntPtr.Zero;
             }
             return DefWindowProcW(_hwnd, msg, wparam, lparam);
         }

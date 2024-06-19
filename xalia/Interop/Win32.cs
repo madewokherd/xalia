@@ -267,6 +267,9 @@ namespace Xalia.Interop
         public static extern bool AttachThreadInput(int idAttach, int idAttachTo, bool fAttach);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr SetActiveWindow(IntPtr hwnd);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern IntPtr SetFocus(IntPtr hwnd);
 
         public const int MONITOR_DEFAULTTONULL = 0;
