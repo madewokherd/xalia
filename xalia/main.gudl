@@ -319,6 +319,20 @@ if (win32_process_name == "gvim") {
     }
 }
 
+// APPLICATION: Overlord launcher
+
+dialog (process_name == "GamepadConfig" and child_matches(button and name == "Clear Mapping")) {
+    child (button) {
+        primary_action: on_release(click);
+        if (name == "Scanning")
+        {
+			root {
+				disable_interactions: true;
+			}
+        }
+    }
+}
+
 // APPLICATION: plasmashell
 
 // TODO: 5.27 should have the panel identifiable by ID
