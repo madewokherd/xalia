@@ -613,6 +613,14 @@ namespace Xalia.Win32
                                 element.ProviderByType<IWin32Container>()?.MsaaChildrenReordered();
                             }
                         }
+                        else if (idObject == OBJID_WINDOW)
+                        {
+                            var element = LookupElement(hwnd, idObject, idChild);
+                            if (!(element is null))
+                            {
+                                element.ProviderByType<HwndProvider>()?.MsaaStateChange();
+                            }
+                        }
                         break;
                     }
                 case EVENT_OBJECT_LOCATIONCHANGE:
@@ -622,7 +630,16 @@ namespace Xalia.Win32
                         {
                             element.ProviderByType<IWin32LocationChange>()?.MsaaLocationChange();
                             RecursiveLocationChange(element);
+                            element.ProviderByType<HwndProvider>()?.MsaaStateChange();
                         }
+                        break;
+                    }
+                case EVENT_SYSTEM_MINIMIZESTART:
+                case EVENT_SYSTEM_MINIMIZEEND:
+                    {
+                        var element = LookupElement(hwnd, idObject, idChild);
+                        if (!(element is null))
+                            element.ProviderByType<HwndProvider>()?.MsaaStateChange();
                         break;
                     }
                 case EVENT_OBJECT_SELECTION:
