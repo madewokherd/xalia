@@ -1146,15 +1146,6 @@ if (interactable) {
             secondary_action: child_matches(text_box).(focusable and set_focus or send_click)+show_keyboard;
             secondary_action_name: "Show Keyboard";
         }
-
-        adjust_value_action: map_directions(undefined, adjust_value_down, adjust_value_up, undefined);
-
-        if (targeted) {
-            adjust_value_down_action: set_focus+send_key.down;
-            adjust_value_up_action: set_focus+send_key.down;
-            adjust_value_down: repeat_action(set_focus+send_key.down, repeat_initial_delay, repeat_delay);
-            adjust_value_up: repeat_action(set_focus+send_key.up, repeat_initial_delay, repeat_delay);
-        }
     }
 
     if ((scroll_bar or slider) and not (is_win32_element or is_win32_subelement or spi_state.(vertical or horizontal) or uia_orientation)) {
