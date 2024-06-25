@@ -149,6 +149,7 @@
     <Compile Include="UiDom\UiDomMethod.cs" />
     <Compile Include="UiDom\UiDomProviderBase.cs" />
     <Compile Include="UiDom\UiDomRadialDeadzone.cs" />
+    <Compile Include="UiDom\UiDomOnRelease.cs" />
     <Compile Include="UiDom\UiDomRoutinePress.cs" />
     <Compile Include="UiDom\UiDomRelationship.cs" />
     <Compile Include="UiDom\UiDomRelationshipWatcher.cs" />

@@ -401,6 +401,8 @@ namespace Xalia.UiDom
                     return new UiDomMethod("adjust_value", AdjustValueMethod);
                 case "radial_deadzone":
                     return new UiDomMethod("radial_deadzone", UiDomRadialDeadzone.ApplyFn);
+                case "on_release":
+                    return new UiDomMethod("on_release", OnReleaseMethod);
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))
@@ -425,6 +427,16 @@ namespace Xalia.UiDom
                     return value;
             }
             return UiDomUndefined.Instance;
+        }
+
+        private UiDomValue OnReleaseMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length < 1)
+                return UiDomUndefined.Instance;
+            var routine = context.Evaluate(arglist[0], Root, depends_on) as UiDomRoutine;
+            if (routine is null)
+                return UiDomUndefined.Instance;
+            return new UiDomOnRelease(routine);
         }
 
         private UiDomValue AdjustValueMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
