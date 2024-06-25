@@ -948,6 +948,8 @@ namespace Xalia.Win32
 
         private void RefreshNonclientChildren()
         {
+            if (!Element.IsAlive)
+                return;
             bool hasVScrollChild = _useNonclient && (Style & WS_VSCROLL) != 0;
             var vs = Connection.LookupElement(Hwnd, OBJID_VSCROLL);
             if (hasVScrollChild != !(vs is null))
