@@ -446,6 +446,11 @@ namespace Xalia.Win32
             await SendMessageAsync(Hwnd, msg, MAKEWPARAM(SB_THUMBTRACK, unchecked((ushort)value)), IntPtr.Zero);
             await SendMessageAsync(Hwnd, msg, MAKEWPARAM(SB_THUMBPOSITION, unchecked((ushort)value)), IntPtr.Zero); ;
             await SendMessageAsync(Hwnd, msg, MAKEWPARAM(SB_ENDSCROLL, 0), IntPtr.Zero);
+
+            // We may not get a notification of the change
+            if (_watchingSi)
+                await RefreshScrollInfo();
+            Win32Connection.RecursiveLocationChange(HwndProvider.Element, false);
         }
 
         double _offsetRemainder;

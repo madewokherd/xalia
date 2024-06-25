@@ -496,10 +496,13 @@ namespace Xalia.Win32
             // We don't have a way to get caret change notifications so we'll ignore that for now
         }
 
-        static void RecursiveLocationChange(UiDomElement element)
+        internal static void RecursiveLocationChange(UiDomElement element, bool include_element = true)
         {
-            element.ProviderByType<HwndProvider>()?.MsaaAncestorLocationChange();
-            element.ProviderByType<AccessibleProvider>()?.MsaaAncestorLocationChange();
+            if (include_element)
+            {
+                element.ProviderByType<HwndProvider>()?.MsaaAncestorLocationChange();
+                element.ProviderByType<AccessibleProvider>()?.MsaaAncestorLocationChange();
+            }
             foreach (var child in element.Children)
             {
                 RecursiveLocationChange(child);
@@ -666,6 +669,11 @@ namespace Xalia.Win32
                                     element?.ProviderByType<HwndProvider>()?.MsaaStateChange();
 
                                     element?.ProviderByType<IWin32ScrollChange>()?.MsaaScrolled(idObject);
+
+                                    // Scrolling a window may also move child elements
+                                    var hwnd_element = LookupElement(hwnd);
+                                    if (!(hwnd_element is null))
+                                        RecursiveLocationChange(hwnd_element, include_element:false);
                                 }
                                 break;
                         }
