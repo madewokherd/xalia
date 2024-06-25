@@ -688,6 +688,15 @@ namespace Xalia.Win32
                         }
                         break;
                     }
+                case EVENT_OBJECT_NAMECHANGE:
+                    {
+                        var element = LookupElement(hwnd, idObject, idChild);
+                        if (!(element is null))
+                        {
+                            element?.ProviderByType<HwndProvider>()?.MsaaNameChange();
+                        }
+                        break;
+                    }
             }
         }
 

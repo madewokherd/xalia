@@ -127,6 +127,7 @@ namespace Xalia.Win32
         }
 
         private bool _fetchingWindowText;
+        private bool _watchingWindowText;
         public string WindowText { get; private set; }
         public bool WindowTextKnown { get; private set; }
 
@@ -754,6 +755,9 @@ namespace Xalia.Win32
                     case "win32_pos":
                         _watchingWindowRect = false;
                         return true;
+                    case "win32_window_text":
+                        _watchingWindowText = false;
+                        return true;
                 }
             }
             return false;
@@ -771,6 +775,7 @@ namespace Xalia.Win32
                             RefreshWindowRects();
                         return true;
                     case "win32_window_text":
+                        _watchingWindowText = true;
                         if (!_fetchingWindowText)
                         {
                             _fetchingWindowText = true;
@@ -811,7 +816,7 @@ namespace Xalia.Win32
                     throw;
                 return;
             }
-            if (!(result is null))
+            if (!(result is null) && (!WindowTextKnown || WindowText != result))
             {
                 WindowText = result;
                 WindowTextKnown = true;
@@ -1058,6 +1063,14 @@ namespace Xalia.Win32
                 return Task.FromResult((false, 0, 0));
             return Task.FromResult((true, client_pos.x + client_rect.width / 2,
                 client_pos.y + client_rect.height / 2));
+        }
+
+        internal void MsaaNameChange()
+        {
+            if (_watchingWindowText)
+                Utils.RunTask(FetchWindowText());
+            else
+                WindowTextKnown = false;
         }
     }
 }
