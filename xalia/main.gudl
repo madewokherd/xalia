@@ -1045,9 +1045,6 @@ if (not no_scrollable_fallback and interactable and child_count != 0 and
     hscroll: child_matches(scroll_bar and interactable and horizontal and y + height - parent.(y + height) > -5);
     vscroll: child_matches(scroll_bar and interactable and vertical and x + width - parent.(x + width) > -5);
 
-    if (hscroll.is_win32_scroll_bar or vscroll.is_win32_scroll_bar) {
-        scroll_view_action: send_scroll;
-    }
     scroll_view_action: adjust_scrollbars(hscroll, vscroll);
 
     scroll_target_margin: 0;
@@ -1056,6 +1053,13 @@ if (not no_scrollable_fallback and interactable and child_count != 0 and
     scroll_pane_y: y;
     scroll_pane_width: width;
     scroll_pane_height: height;
+
+    if (hscroll.is_nonclient_scrollbar or vscroll.is_nonclient_scrollbar) {
+        scroll_view_x: client_x;
+        scroll_view_y: client_y;
+        scroll_view_width: client_width;
+        scroll_view_height: client_height;
+    }
 
     scroll_view_x: x;
     scroll_view_y: y;
