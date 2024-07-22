@@ -319,6 +319,18 @@ if (win32_process_name == "gvim") {
     }
 }
 
+// APPLICATION: Oddworld: Stranger's Wrath HD
+dialog (process_name == "Launcher" and name == "Oddworld: Stranger's Wrath HD Controls Configuration") {
+    child (button and pushlike) {
+        primary_action: on_release(send_click);
+        if (pushed) {
+            root {
+                disable_interactions: true;
+            }
+        }
+    }
+}
+
 // APPLICATION: Overlord launcher
 
 dialog (process_name == "GamepadConfig" and child_matches(button and name == "Clear Mapping")) {
