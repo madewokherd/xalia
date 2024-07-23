@@ -57,6 +57,11 @@ namespace Xalia.Win32
         private int _stateChangeCount;
         private bool _pollingState;
 
+        public string Name { get; private set; }
+        public bool NameKnown { get; private set; }
+        private bool _watchingName;
+        private int _nameChangeCount;
+
         public RECT Location { get; private set; }
         public bool LocationKnown { get; private set; }
         private bool _watchingLocation;
@@ -123,6 +128,7 @@ namespace Xalia.Win32
         {
             { "role", "msaa_role" },
             { "control_type", "msaa_role" },
+            { "name", "msaa_name" },
             { "x", "msaa_x" },
             { "y", "msaa_y" },
             { "width", "msaa_width" },
@@ -313,6 +319,8 @@ namespace Xalia.Win32
                 Utils.DebugWriteLine($"  msaa_role: {RoleAsValue}");
             if (StateKnown)
                 Utils.DebugWriteLine($"  msaa_state: 0x{State:X} ({GetStateNames(State)})");
+            if (NameKnown)
+                Utils.DebugWriteLine($"  msaa_name: {Name}");
             if (LocationKnown)
             {
                 Utils.DebugWriteLine($"  msaa_x {Location.left}");
@@ -344,6 +352,11 @@ namespace Xalia.Win32
                     depends_on.Add((Element, new IdentifierExpression(identifier)));
                     if (StateKnown)
                         return new UiDomInt(State);
+                    break;
+                case "msaa_name":
+                    depends_on.Add((Element, new IdentifierExpression(identifier)));
+                    if (NameKnown)
+                        return new UiDomString(Name);
                     break;
                 case "msaa_x":
                     depends_on.Add((Element, new IdentifierExpression("msaa_location")));
@@ -454,6 +467,13 @@ namespace Xalia.Win32
                                 Element.PollProperty(new IdentifierExpression("msaa_state"), PollState, DEFAULT_POLL_INTERVAL);
                             return true;
                         }
+                    case "msaa_name":
+                        {
+                            _watchingName = true;
+                            if (!NameKnown)
+                                Utils.RunTask(FetchName());
+                            return true;
+                        }
                     case "msaa_location":
                         {
                             _watchingLocation = true;
@@ -482,6 +502,9 @@ namespace Xalia.Win32
                     case "msaa_state":
                         _watchingState = false;
                         Element.EndPollProperty(new IdentifierExpression("msaa_state"));
+                        return true;
+                    case "msaa_name":
+                        _watchingName = false;
                         return true;
                     case "msaa_location":
                         _watchingLocation = false;
@@ -579,6 +602,42 @@ namespace Xalia.Win32
         private Task PollState()
         {
             return FetchState(true);
+        }
+
+        private async Task FetchName()
+        {
+            var old_change_count = _nameChangeCount;
+            string new_name;
+
+            try
+            {
+                new_name = await CommandThread.OnBackgroundThread(() =>
+                {
+                    if (old_change_count != _nameChangeCount)
+                        return null;
+                    return IAccessible.get_accName(ChildId);
+                }, CommandThreadPriority.Query);
+            }
+            catch (Exception e)
+            {
+                if (IsExpectedException(e))
+                    return;
+                throw;
+            }
+
+            if (new_name is null)
+                return;
+
+            if (old_change_count != _nameChangeCount)
+                return;
+
+            if (!NameKnown || Name != new_name)
+            {
+                NameKnown = true;
+                Name = new_name;
+
+                Element.PropertyChanged("msaa_name", new_name);
+            }
         }
 
         private async Task FetchLocation()
@@ -941,6 +1000,15 @@ namespace Xalia.Win32
                 Utils.RunTask(FetchState());
             else
                 StateKnown = false;
+        }
+
+        public void MsaaNameChange()
+        {
+            _nameChangeCount++;
+            if (_watchingName)
+                Utils.RunTask(FetchName());
+            else
+                NameKnown = false;
         }
 
         internal void MsaaAncestorLocationChange()
