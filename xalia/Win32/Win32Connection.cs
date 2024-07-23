@@ -617,6 +617,7 @@ namespace Xalia.Win32
                             var element = LookupElement(hwnd, idObject, idChild);
                             if (!(element is null))
                             {
+                                element.ProviderByType<AccessibleProvider>()?.MsaaChildrenReordered();
                                 element.ProviderByType<IWin32Container>()?.MsaaChildrenReordered();
                             }
                         }

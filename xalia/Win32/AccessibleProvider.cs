@@ -1071,5 +1071,11 @@ namespace Xalia.Win32
             }
             return (false, 0, 0);
         }
+
+        internal void MsaaChildrenReordered()
+        {
+            if (_recurseMethod != RecurseMethod.None)
+                Utils.RunTask(PollChildren());
+        }
     }
 }
