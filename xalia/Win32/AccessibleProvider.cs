@@ -887,6 +887,13 @@ namespace Xalia.Win32
 
             if (!(acc2 is null))
             {
+                if (acc2.windowHandle != root_hwnd)
+                {
+                    result.root_hwnd = acc2.windowHandle;
+                    result.is_root_hwnd = true;
+                    return result;
+                }
+
                 result.acc2 = acc2;
                 result.acc2_uniqueId = acc2.uniqueID;
             }
