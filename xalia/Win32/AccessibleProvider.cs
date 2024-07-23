@@ -25,7 +25,9 @@ namespace Xalia.Win32
             ChildId = child_id;
         }
 
-        private static string[] tracked_properties = new string[] { "recurse_method", "poll_msaa_state" };
+        private static string[] tracked_properties = new string[] {
+            "recurse_method", "poll_msaa_state", "poll_msaa_location",
+        };
 
         private const int DEFAULT_POLL_INTERVAL = 200;
 
@@ -66,6 +68,7 @@ namespace Xalia.Win32
         public bool LocationKnown { get; private set; }
         private bool _watchingLocation;
         private int _locationChangeCount;
+        private bool _pollingLocation;
 
         public string DefaultAction { get; private set; }
         public bool DefaultActionKnown { get; private set; }
@@ -479,6 +482,8 @@ namespace Xalia.Win32
                             _watchingLocation = true;
                             if (!LocationKnown)
                                 Utils.RunTask(FetchLocation());
+                            if (_pollingLocation)
+                                Element.PollProperty(new IdentifierExpression("msaa_location"), PollLocation, DEFAULT_POLL_INTERVAL);
                             return true;
                         }
                     case "msaa_default_action":
@@ -508,6 +513,7 @@ namespace Xalia.Win32
                         return true;
                     case "msaa_location":
                         _watchingLocation = false;
+                        Element.EndPollProperty(new IdentifierExpression("msaa_location"));
                         return true;
                     case "msaa_default_action":
                         _watchingDefaultAction = false;
@@ -640,7 +646,7 @@ namespace Xalia.Win32
             }
         }
 
-        private async Task FetchLocation()
+        private async Task FetchLocation(bool polling)
         {
             var old_change_count = _locationChangeCount;
             RECT new_location;
@@ -658,7 +664,7 @@ namespace Xalia.Win32
                     result.right = x + width;
                     result.bottom = y + height;
                     return result;
-                }, CommandThreadPriority.Query);
+                }, polling ? CommandThreadPriority.Poll : CommandThreadPriority.Query);
             }
             catch (Exception e)
             {
@@ -685,6 +691,16 @@ namespace Xalia.Win32
 
                 Element.PropertyChanged("msaa_location");
             }
+        }
+
+        private Task FetchLocation()
+        {
+            return FetchLocation(false);
+        }
+
+        private Task PollLocation()
+        {
+            return FetchLocation(true);
         }
 
         void WatchChildren(RecurseMethod method)
@@ -959,6 +975,19 @@ namespace Xalia.Win32
                                 Element.PollProperty(new IdentifierExpression("msaa_state"), PollState, DEFAULT_POLL_INTERVAL);
                             else
                                 Element.EndPollProperty(new IdentifierExpression("msaa_state"));
+                        }
+                        break;
+                    }
+                case "poll_msaa_location":
+                    {
+                        var new_polling_location = new_value.ToBool();
+                        if (new_polling_location != _pollingLocation)
+                        {
+                            _pollingLocation = new_polling_location;
+                            if (_watchingLocation && _pollingLocation)
+                                Element.PollProperty(new IdentifierExpression("msaa_location"), PollLocation, DEFAULT_POLL_INTERVAL);
+                            else
+                                Element.EndPollProperty(new IdentifierExpression("msaa_location"));
                         }
                         break;
                     }

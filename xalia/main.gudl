@@ -365,6 +365,8 @@ if (process_name == "Paradox Launcher") {
     list_item (ancestor_matches(tool_tip) and interactable) {
         targetable: true;
     }
+
+    poll_msaa_location: true;
 }
 
 // APPLICATION: plasmashell
