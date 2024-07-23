@@ -702,6 +702,21 @@ namespace Xalia.Win32
                         }
                         break;
                     }
+                case IA2_EVENT_TEXT_CHANGED:
+                case IA2_EVENT_TEXT_INSERTED:
+                case IA2_EVENT_TEXT_REMOVED:
+                case IA2_EVENT_TEXT_UPDATED:
+                    {
+                        // This can affect name calculation
+                        var element = LookupElement(hwnd, idObject, idChild);
+                        if (!(element is null))
+                        {
+                            element?.ProviderByType<AccessibleProvider>()?.MsaaNameChange();
+                            element?.ProviderByType<HwndProvider>()?.MsaaNameChange();
+                        }
+                        break;
+                    }
+
             }
         }
 

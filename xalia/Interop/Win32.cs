@@ -407,6 +407,12 @@ namespace Xalia.Interop
             void ContextSensitiveHelp(bool fEnterMode);
         }
 
+        // IA2EventID
+        public const int IA2_EVENT_TEXT_CHANGED = 0x11c;
+        public const int IA2_EVENT_TEXT_INSERTED = 0x11e;
+        public const int IA2_EVENT_TEXT_REMOVED = 0x11f;
+        public const int IA2_EVENT_TEXT_UPDATED = 0x120;
+
         [StructLayout(LayoutKind.Sequential)]
         public struct IA2Locale
         {
