@@ -345,6 +345,16 @@ dialog (process_name == "GamepadConfig" and child_matches(button and name == "Cl
     }
 }
 
+// APPLICATION: Paradox Launcher
+if (process_name == "Paradox Launcher") {
+    button ((name == "LOSLEGEN" or name == "GET STARTED" or name == "ENTRAR" or name == "COMMENCER" or
+        name == "開始する" or name == "시작하기" or name == "ROZPOCZNIJ" or name == "COMEÇAR" or
+        name == "НАЧАТЬ" or name == "BAŞLA" or name == "开始" or name == "開始") and interactable) {
+        confirm_action: primary_action;
+        target_priority: 1;
+    }
+}
+
 // APPLICATION: plasmashell
 
 // TODO: 5.27 should have the panel identifiable by ID
