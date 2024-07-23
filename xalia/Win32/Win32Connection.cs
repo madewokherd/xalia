@@ -125,7 +125,7 @@ namespace Xalia.Win32
             if (!(id.runtime_id is null))
                 return GetElementName(id.runtime_id);
             if (!(id.acc2 is null))
-                return $"acc2-{id.root_hwnd.ToInt64():x}-{id.acc2_uniqueId}";
+                return GetElementName(id.root_hwnd, OBJID_CLIENT, id.acc2_uniqueId);
             id_counter++;
             return $"msaa-{id.root_hwnd.ToInt64():x}-{id_counter}";
         }
@@ -292,7 +292,11 @@ namespace Xalia.Win32
                 result.AddProvider(new UiaProvider(root_hwnd, result, id.prov));
             }
 
-            if (!(id.acc is null))
+            if (!(id.acc2 is null))
+            {
+                result.AddProvider(new AccessibleProvider(root_hwnd, result, id.acc, id.acc2_uniqueId));
+            }
+            else if (!(id.acc is null))
             {
                 result.AddProvider(new AccessibleProvider(root_hwnd, result, id.acc, id.child_id));
             }
