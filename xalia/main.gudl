@@ -353,6 +353,18 @@ if (process_name == "Paradox Launcher") {
         confirm_action: primary_action;
         target_priority: 1;
     }
+
+    tool_tip { // Language selection dropdown
+        recurse: true;
+    }
+
+    list_item (ancestor_matches(tool_tip)) {
+        debug: true;
+    }
+
+    list_item (ancestor_matches(tool_tip) and interactable) {
+        targetable: true;
+    }
 }
 
 // APPLICATION: plasmashell
