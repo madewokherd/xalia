@@ -1127,6 +1127,8 @@ namespace Xalia.UiDom
             for (int i=0; i<keys.Count; i++)
             {
                 new_ids[i] = key_to_id(keys[i]);
+                if (new_ids[i] is null)
+                    continue;
                 try
                 {
                     new_id_to_index.Add(new_ids[i], i);
