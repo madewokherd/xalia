@@ -687,7 +687,7 @@ namespace Xalia.Win32
                 (IntPtr hwnd) => Connection.CreateElement(hwnd));
         }
 
-        private void ReleaseChildren()
+        internal void ReleaseChildren()
         {
             // Remove any child HWNDs that no longer belong to this element
             List<string> new_children = new List<string>(Element.RecurseMethodChildCount);

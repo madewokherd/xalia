@@ -580,6 +580,31 @@ namespace Xalia.Win32
                 return;
             }
 
+            // Remove any duplicates
+            int i = 0;
+            while (i < children.Count)
+            {
+                var existing = Connection.LookupElement(children[i]);
+                if (!(existing is null) && existing.Parent != Element)
+                {
+                    // duplicate elsewhere in tree
+                    var hwnd_existing_parent = existing.Parent.ProviderByType<HwndProvider>();
+                    if (!(hwnd_existing_parent is null))
+                    {
+                        // try asking the other parent to remove it
+                        hwnd_existing_parent.ReleaseChildren();
+                        if (!existing.IsAlive)
+                        {
+                            i++;
+                            continue;
+                        }
+                    }
+                    children.RemoveAt(i);
+                    continue;
+                }
+                i++;
+            }
+
             Element.SyncRecurseMethodChildren(children, Connection.GetElementName, Connection.CreateElement);
         }
 
