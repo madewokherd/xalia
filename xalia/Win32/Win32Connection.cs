@@ -126,8 +126,7 @@ namespace Xalia.Win32
                 return GetElementName(id.runtime_id);
             if (!(id.acc2 is null))
                 return GetElementName(id.root_hwnd, OBJID_CLIENT, id.acc2_uniqueId);
-            id_counter++;
-            return $"msaa-{id.root_hwnd.ToInt64():x}-{id_counter}";
+            return null;
         }
 
         public string GetElementName(int[] runtime_id)
@@ -203,9 +202,6 @@ namespace Xalia.Win32
 
         public UiDomElement LookupElement(ElementIdentifier id)
         {
-            if (!id.is_root_hwnd && id.acc2 is null)
-                return null;
-
             var element_name = GetElementName(id);
             if (element_name is null)
                 return null;
@@ -281,6 +277,13 @@ namespace Xalia.Win32
                 return CreateElement(id.root_hwnd);
 
             var name = GetElementName(id);
+
+            if (name is null)
+            {
+                id_counter++;
+                name = $"msaa-{id.root_hwnd.ToInt64():x}-{id_counter}";
+            }
+            
             var result = new UiDomElement(name, Root);
 
             var root_hwnd = LookupElement(id.root_hwnd)?.ProviderByType<HwndProvider>();
