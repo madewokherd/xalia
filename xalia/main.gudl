@@ -758,7 +758,7 @@ if (role.(filler or internal_frame or panel or html_container or
               or info_bar or page_tab or page_tab_list or menu_bar or menu or
               combo_box or menu_item or pane or group or document or tree_table or
               toggle_button or list_box or list or table or title_bar or
-              tree)) {
+              tree or custom)) {
     recurse: true;
 }
 
