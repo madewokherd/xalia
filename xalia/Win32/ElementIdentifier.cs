@@ -11,6 +11,7 @@ namespace Xalia.Win32
         public bool is_root_hwnd;
         /* MSAA: */
         public IAccessible acc;
+        public IntPtr punk; /* acc as unmanaged pointer */
         public IAccessible2 acc2;
         public int acc2_uniqueId;
         public int child_id;

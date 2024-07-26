@@ -126,6 +126,8 @@ namespace Xalia.Win32
                 return GetElementName(id.runtime_id);
             if (!(id.acc2 is null))
                 return GetElementName(id.root_hwnd, OBJID_CLIENT, id.acc2_uniqueId);
+            if (!(id.punk == IntPtr.Zero))
+                return $"punk-{id.root_hwnd.ToInt64():x}-{id.punk.ToInt64():x}";
             return null;
         }
 

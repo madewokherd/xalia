@@ -914,7 +914,12 @@ namespace Xalia.Win32
 
                 result.acc2 = acc2;
                 result.acc2_uniqueId = acc2.uniqueID;
+                return result;
             }
+
+            // Identify object by IUnknown pointer
+            result.punk = Marshal.GetIUnknownForObject(acc);
+            Marshal.Release(result.punk);
 
             return result;
         }
