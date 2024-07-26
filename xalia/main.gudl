@@ -1277,10 +1277,8 @@ if (interactable) {
         primary_action_name: "Click";
     }
 
-    if (uia_control_type.(button or radio_button or hyperlink)) {
+    if (button or radio_button or hyperlink) {
         targetable: true;
-        primary_action: uia_invoke or msaa_do_default_action or send_click;
-        primary_action_name: "Click";
     }
 
     check_box (manual_checkboxes) {
