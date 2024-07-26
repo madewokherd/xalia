@@ -103,6 +103,8 @@ namespace Xalia.Win32
                     names = new string[] { "tab", "page_tab_list", "pagetablist" };
                 else if (name == "text")
                     names = new string[] { "text", "label" };
+                else if (name == "hyperlink")
+                    names = new string[] { "hyperlink", "link" };
                 else if (name.Contains("_"))
                     names = new string[] { name, name.Replace("-", "") };
                 else

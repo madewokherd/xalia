@@ -158,6 +158,8 @@ namespace Xalia.Win32
                     names = new[] { "row", "table_row", "tablerow" };
                 else if (name == "push_button")
                     names = new[] { "push_button", "pushbutton", "button" };
+                else if (name == "link")
+                    names = new[] { "link", "hyperlink" };
                 else if (name.Contains("_"))
                     names = new[] { name, name.Replace("_", "") };
                 else
