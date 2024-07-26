@@ -757,70 +757,79 @@ namespace Xalia.Win32
             IntPtr node = (IntPtr)(long)pRequestedData[0, 0];
             int hr;
 
-            hr = UiaGetRuntimeId(node, out var runtime_id);
-            Marshal.ThrowExceptionForHR(hr);
-
-            UiaEventArgs args = Marshal.PtrToStructure<UiaEventArgs>(pArgs);
-            switch (args.Type)
+            try
             {
-                case EventArgsType.StructureChanged:
-                    {
-                        var sc = Marshal.PtrToStructure<UiaStructureChangedEventArgs>(pArgs);
+                hr = UiaGetRuntimeId(node, out var runtime_id);
+                Marshal.ThrowExceptionForHR(hr);
 
-                        if (sc.StructureChangeType == StructureChangeType.ChildAdded)
+                UiaEventArgs args = Marshal.PtrToStructure<UiaEventArgs>(pArgs);
+                switch (args.Type)
+                {
+                    case EventArgsType.StructureChanged:
                         {
-                            IntPtr condition;
-                            UiaCacheRequest cache_request = new UiaCacheRequest()
-                            {
-                                Scope = TreeScope.Element,
-                                automationElementMode = AutomationElementMode.Full
-                            };
+                            var sc = Marshal.PtrToStructure<UiaStructureChangedEventArgs>(pArgs);
 
-                            condition = Marshal.AllocCoTaskMem(Marshal.SizeOf<UiaCondition>());
-
-                            try
+                            if (sc.StructureChangeType == StructureChangeType.ChildAdded)
                             {
-                                UiaCondition view_condition = new UiaCondition
+                                IntPtr condition;
+                                UiaCacheRequest cache_request = new UiaCacheRequest()
                                 {
-                                    ConditionType = ConditionType.True,
+                                    Scope = TreeScope.Element,
+                                    automationElementMode = AutomationElementMode.Full
                                 };
-                                Marshal.StructureToPtr(view_condition, condition, false);
-                                cache_request.pViewCondition = condition;
 
-                                hr = UiaNavigate(node, NavigateDirection.Parent, condition,
-                                    ref cache_request, out var ppRequestedData, out string ppTreeStructure);
-                                Marshal.ThrowExceptionForHR(hr);
-
-                                IntPtr node2 = (IntPtr)(long)ppRequestedData[0, 0];
+                                condition = Marshal.AllocCoTaskMem(Marshal.SizeOf<UiaCondition>());
 
                                 try
                                 {
-                                    hr = UiaGetRuntimeId(node2, out runtime_id);
+                                    UiaCondition view_condition = new UiaCondition
+                                    {
+                                        ConditionType = ConditionType.True,
+                                    };
+                                    Marshal.StructureToPtr(view_condition, condition, false);
+                                    cache_request.pViewCondition = condition;
+
+                                    hr = UiaNavigate(node, NavigateDirection.Parent, condition,
+                                        ref cache_request, out var ppRequestedData, out string ppTreeStructure);
                                     Marshal.ThrowExceptionForHR(hr);
+
+                                    IntPtr node2 = (IntPtr)(long)ppRequestedData[0, 0];
+
+                                    try
+                                    {
+                                        hr = UiaGetRuntimeId(node2, out runtime_id);
+                                        Marshal.ThrowExceptionForHR(hr);
+                                    }
+                                    finally
+                                    {
+                                        UiaNodeRelease(node2);
+                                    }
                                 }
                                 finally
                                 {
-                                    UiaNodeRelease(node2);
+                                    Marshal.FreeCoTaskMem(condition);
                                 }
                             }
-                            finally
-                            {
-                                Marshal.FreeCoTaskMem(condition);
-                            }
+
+                            MainContext.Post(OnChildrenChanged, runtime_id);
+
+                            break;
                         }
+                    case EventArgsType.PropertyChanged:
+                        {
+                            var pc = Marshal.PtrToStructure<UiaPropertyChangedEventArgs>(pArgs);
 
-                        MainContext.Post(OnChildrenChanged, runtime_id);
+                            MainContext.Post(OnPropertyChanged, (runtime_id, pc.PropertyId, pc.NewValue));
 
-                        break;
-                    }
-                case EventArgsType.PropertyChanged:
-                    {
-                        var pc = Marshal.PtrToStructure<UiaPropertyChangedEventArgs>(pArgs);
-
-                        MainContext.Post(OnPropertyChanged, (runtime_id, pc.PropertyId, pc.NewValue));
-
-                        break;
-                    }
+                            break;
+                        }
+                }
+            }
+            catch (Exception e)
+            {
+                if (AccessibleProvider.IsExpectedException(e))
+                    return;
+                throw;
             }
         }
 
