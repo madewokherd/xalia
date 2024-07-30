@@ -300,6 +300,13 @@ namespace Xalia.Win32
                 case "SysTabControl32":
                     AddProvider(new HwndTabProvider(this), index);
                     return;
+                case "RICHEDIT60W":
+                case "RICHEDIT50W":
+                case "RichEdit20A":
+                case "RichEdit20W":
+                case "RICHEDIT":
+                    AddProvider(new HwndRichEditProvider(this), index);
+                    return;
             }
 
             try
@@ -333,6 +340,9 @@ namespace Xalia.Win32
                     return;
                 case 65536 + 19:
                     AddProvider(new HwndListViewProvider(this), index);
+                    return;
+                case 65536 + 28:
+                    AddProvider(new HwndRichEditProvider(this), index);
                     return;
             }
         }
