@@ -757,7 +757,43 @@ namespace Xalia.Ui
             throw new ArgumentException("invalid Direction value");
         }
 
-        internal void TargetMove(Direction direction, double bias=0)
+        private void GetBoundsRelation((int,int,int,int) a, (int,int,int,int) b,
+            out int x_direction, out int y_direction)
+        {
+            // Determine what "direction" an (x,y,w,h) is from another
+            if (BoundsIntersect(a, b))
+            {
+                // figure out the length of the shared x/y borders
+                var shared_x = Math.Min(a.Item1 + a.Item3, b.Item1 + b.Item3) - Math.Max(a.Item1, b.Item1);
+                var shared_y = Math.Min(a.Item2 + a.Item4, b.Item2 + b.Item4) - Math.Max(a.Item2, b.Item2);
+                int xofs = (a.Item1 * 2 + a.Item3) - (b.Item1 * 2 + b.Item3);
+                int yofs = (a.Item2 * 2 + a.Item4) - (b.Item2 * 2 + b.Item4);
+
+                if (Math.Abs(xofs) - shared_x > Math.Abs(yofs) - shared_y)
+                    yofs = 0;
+                else if (Math.Abs(xofs) - shared_x < Math.Abs(yofs) - shared_y)
+                    xofs = 0;
+                x_direction = Math.Sign(xofs);
+                y_direction = Math.Sign(yofs);
+                return;
+            }
+
+            if (a.Item1 >= b.Item1 + b.Item3)
+                x_direction = 1;
+            else if (a.Item1 + a.Item3 <= b.Item1)
+                x_direction = -1;
+            else
+                x_direction = 0;
+
+            if (a.Item2 >= b.Item2 + b.Item4)
+                y_direction = 1;
+            else if (a.Item2 + a.Item4 <= b.Item2)
+                y_direction = -1;
+            else
+                y_direction = 0;
+        }
+
+        internal void TargetMove(Direction direction)
         {
             if (TargetedElement is null)
                 return;
@@ -768,124 +804,77 @@ namespace Xalia.Ui
                 return;
             }
 
+            var candidates = new List<KeyValuePair<UiDomElement, (int, int, int, int)>>(targetable_elements);
+
+            int current_perpendicular;
+
             current_bounds = TranslateBox(current_bounds, direction);
 
-            UiDomElement best_element = null;
-            // These are actually distance squared so we can skip sqrt.
-            long best_edge_distance = 0;
-            long best_center_distance = 0;
-            
-            foreach (var kvp in targetable_elements)
+            var is_horizontal = (direction == Direction.Left || direction == Direction.Right);
+
+            if (is_horizontal)
             {
-                var candidate_element = kvp.Key;
-                var candidate_bounds = kvp.Value;
-                
-                if (candidate_element == TargetedElement)
+                // Filter out anything that'd be vertical movement, or no horizontal movement
+                candidates.RemoveAll((KeyValuePair<UiDomElement,(int,int,int,int)> kvp) =>
+                {
+                    if (kvp.Key == TargetedElement)
+                        return true;
+                    GetBoundsRelation(current_bounds, TranslateBox(kvp.Value, direction), out var xd, out var yd);
+                    if (xd == 0)
+                        return true;
+                    if (yd != 0)
+                        return true;
+                    return false;
+                });
+
+                if (candidates.Count == 0)
+                {
+                    AdjustValue(TargetedElement, direction);
+                    return;
+                }
+            }
+
+            current_perpendicular = current_bounds.Item2 * 2 + current_bounds.Item4;
+
+            var best_perpendicular = int.MaxValue;
+            var best_bounds = (0, 0, 0, 0);
+            UiDomElement best_element = null;
+            foreach (var kvp in candidates)
+            {
+                if (kvp.Key == TargetedElement)
                     continue;
 
-                candidate_bounds = TranslateBox(candidate_bounds, direction);
+                var box = TranslateBox(kvp.Value, direction);
+                int box_perpendicular;
 
-                if (candidate_bounds.Item1 + candidate_bounds.Item3 > current_bounds.Item1 &&
-                    current_bounds.Item1 + current_bounds.Item3 > candidate_bounds.Item1 &&
-                    candidate_bounds.Item2 + candidate_bounds.Item4 > current_bounds.Item2 &&
-                    current_bounds.Item2 + current_bounds.Item4 > candidate_bounds.Item2)
+                box_perpendicular = Math.Abs(box.Item2 * 2 + box.Item4 - current_perpendicular);
+
+                GetBoundsRelation(current_bounds, box, out var xd, out var yd);
+
+                if (xd >= 0)
+                    // This would be moving "backwards" or "sideways"
+                    continue;
+
+                if (!(best_element is null))
                 {
-                    // candidate intersects current target
-                    int current_center_x = current_bounds.Item1 + current_bounds.Item3 / 2;
-                    int current_center_y = current_bounds.Item2 + current_bounds.Item4 / 2;
-                    int candidate_center_x = candidate_bounds.Item1 + candidate_bounds.Item3 / 2;
-                    int candidate_center_y = candidate_bounds.Item2 + candidate_bounds.Item4 / 2;
+                    GetBoundsRelation(best_bounds, box, out var bxd, out var byd);
 
-                    int center_dx = candidate_center_x - current_center_x;
-                    int center_dy = candidate_center_y - current_center_y;
-
-                    if (center_dx <= 0)
-                    {
-                        // candidate center is not to the right of target
+                    if (bxd < 0)
+                        // best_element is closer along the axis we're moving
                         continue;
-                    }
 
-                    if (center_dx < Math.Abs(center_dy))
-                    {
-                        // candidate is more up/down than right.
+                    if (bxd == 0 && box_perpendicular > best_perpendicular)
+                        // similar distance along the axis we're moving, but best is less diagonal
                         continue;
-                    }
-
-                    /* This value of edge_distance will be negative. This is intentional. */
-                    int edge_distance = candidate_bounds.Item1 - (current_bounds.Item1 + current_bounds.Item3);
-                    int center_distance = center_dx * center_dx + center_dy * center_dy;
-
-                    if (best_element is null ||
-                        edge_distance < best_edge_distance ||
-                        (edge_distance == best_edge_distance && center_distance < best_center_distance))
-                    {
-                        best_element = candidate_element;
-                        best_edge_distance = edge_distance;
-                        best_center_distance = center_distance;
-                    }
-                    continue;
                 }
 
-                if (candidate_bounds.Item1 < current_bounds.Item1 + current_bounds.Item3)
-                {
-                    // candidate's left edge must be to the right of current target
-                    continue;
-                }
-
-                // Calculate edge distance
-                long dx = candidate_bounds.Item1 - (current_bounds.Item1 + current_bounds.Item3);
-                long dy;
-
-                int y_diff_start = candidate_bounds.Item2 - current_bounds.Item2;
-
-                if (bias != 0)
-                {
-                    y_diff_start -= (int)(Math.Round(bias * dx));
-                }
-
-                int y_diff_end = y_diff_start + candidate_bounds.Item4;
-
-                if (y_diff_end < 0)
-                    dy = -y_diff_end;
-                else if (y_diff_start > current_bounds.Item4)
-                    dy = y_diff_start;
-                else
-                    dy = 0;
-                if (dy != 0)
-                {
-                    // Use the far edge/corner rather than the near in this case
-                    dx += candidate_bounds.Item3;
-                    dy += candidate_bounds.Item4;
-                }
-                var candidate_edge_distance = (dx * dx) + (dy * dy) * 4;
-
-                // Calculate centerpoint distance, with bias
-                var candidate_biased_y = candidate_bounds.Item2 + (int)Math.Round(candidate_bounds.Item4 * (1 - bias) / 2);
-                candidate_biased_y -= (int)Math.Round(bias * dx);
-                var current_biased_y = current_bounds.Item2 + (int)Math.Round(current_bounds.Item4 * (1 + bias) / 2);
-                dy = candidate_biased_y - current_biased_y;
-                var candidate_center_distance = (dx * dx) + (dy * dy) * 4;
-
-                if (best_element is null ||
-                    candidate_edge_distance < best_edge_distance ||
-                    (candidate_edge_distance == best_edge_distance && candidate_center_distance < best_center_distance))
-                {
-                    best_element = candidate_element;
-                    best_edge_distance = candidate_edge_distance;
-                    best_center_distance = candidate_center_distance;
-                    continue;
-                }
+                best_element = kvp.Key;
+                best_bounds = box;
+                best_perpendicular = box_perpendicular;
             }
 
             if (best_element is null)
-            {
-                if (ScrollAncestor(TargetedElement, direction))
-                    return;
-
-                AdjustValue(TargetedElement, direction);
-
                 return;
-            }
 
             TargetedElement = best_element;
 

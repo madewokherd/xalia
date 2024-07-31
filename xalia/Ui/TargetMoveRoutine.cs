@@ -43,19 +43,17 @@ namespace Xalia.Ui
         {
             if (Math.Abs((int)state.XAxis) > Math.Abs((int)state.YAxis))
             {
-                double bias = state.YAxis / Math.Abs((double)state.XAxis);
                 if (state.XAxis > 0)
-                    Main.TargetMove(UiMain.Direction.Right, bias);
+                    Main.TargetMove(UiMain.Direction.Right);
                 else
-                    Main.TargetMove(UiMain.Direction.Left, bias);
+                    Main.TargetMove(UiMain.Direction.Left);
             }
             else
             {
-                double bias = state.XAxis / Math.Abs((double)state.YAxis);
                 if (state.YAxis > 0)
-                    Main.TargetMove(UiMain.Direction.Down, bias);
+                    Main.TargetMove(UiMain.Direction.Down);
                 else
-                    Main.TargetMove(UiMain.Direction.Up, bias);
+                    Main.TargetMove(UiMain.Direction.Up);
             }
         }
     }
