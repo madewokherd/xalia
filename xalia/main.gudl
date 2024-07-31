@@ -786,8 +786,8 @@ if (is_uia_element and uia_control_type.custom and msaa_role.(push_button or cli
     recurse: true;
 }
 
-if (is_uia_element and uia_control_type.(text or list_item) and toolkit == "Qt") {
-    // In Qt web views, these can contain edit boxes
+if ((text or list_item) and ancestor_matches(document)) {
+    // These might contain just about anything in web views
     recurse: true;
 }
 
