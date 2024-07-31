@@ -292,7 +292,7 @@ namespace Xalia.Win32
             if (root_hwnd is null)
                 throw new InvalidOperationException("hwnd element must be created before child element");
 
-            if (!(id.prov is null))
+            if (!(id.prov is null) && !(id.runtime_id is null))
             {
                 result.AddProvider(new UiaProvider(root_hwnd, result, id.prov));
             }
@@ -304,6 +304,11 @@ namespace Xalia.Win32
             else if (!(id.acc is null))
             {
                 result.AddProvider(new AccessibleProvider(root_hwnd, result, id.acc, id.child_id));
+            }
+
+            if (!(id.prov is null) && (id.runtime_id is null))
+            {
+                result.AddProvider(new UiaProvider(root_hwnd, result, id.prov));
             }
 
             elements_by_id.Add(name, result);

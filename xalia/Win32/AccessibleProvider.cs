@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
+using IServiceProvider = Xalia.Interop.Win32.IServiceProvider;
 
 namespace Xalia.Win32
 {
@@ -853,6 +854,49 @@ namespace Xalia.Win32
             return result;
         }
 
+        public static bool UiaProviderFromIAccessibleBackground(IAccessible obj, out IRawElementProviderSimple uiaprov)
+        {
+            // Returns true if this is a bridged UIA element.
+            // May return false and a non-null provider if it's a native IAccessible with a UIA provider.
+            if (UiaProviderFromIAccessible(obj, 0, UIA_PFIA_UNWRAP_BRIDGE, out uiaprov) == 0)
+            {
+                return true;
+            }
+
+            IServiceProvider sp = obj as IServiceProvider;
+
+            if (!(sp is null))
+            {
+                try
+                {
+                    Guid sid = IID_IAccessibleEx;
+                    var raw_accex = sp.QueryService(ref sid, ref sid);
+                    if (raw_accex != IntPtr.Zero)
+                    {
+                        object obj_accex = Marshal.GetObjectForIUnknown(raw_accex);
+                        uiaprov = obj_accex as IRawElementProviderSimple;
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                }
+                catch (NotImplementedException)
+                {
+                }
+                catch (InvalidCastException)
+                {
+                }
+                catch (ArgumentException)
+                {
+                }
+                catch (COMException)
+                {
+                }
+            }
+
+            return false;
+        }
+
         public static ElementIdentifier ElementIdFromVariantBackground(object variant, IAccessible base_acc, IntPtr root_hwnd)
         {
             ElementIdentifier result = default;
@@ -897,9 +941,10 @@ namespace Xalia.Win32
                 }
             }
 
-            // TODO: Check for IAccessibleEx (UIA)
+            UiaProviderFromIAccessibleBackground(acc, out var uiaprov);
 
             result.acc = acc;
+            result.prov = uiaprov;
 
             IAccessible2 acc2 = QueryIAccessible2(acc);
 
@@ -915,6 +960,27 @@ namespace Xalia.Win32
                 result.acc2 = acc2;
                 result.acc2_uniqueId = acc2.uniqueID;
                 return result;
+            }
+
+            if (!(uiaprov is null)) {
+                var fragment = uiaprov as IRawElementProviderFragment;
+                if (!(fragment is null))
+                {
+                    var runtime_id = fragment.GetRuntimeId();
+
+                    if (!(runtime_id is null))
+                    {
+                        if (runtime_id[0] == UiaAppendRuntimeId)
+                        {
+                            result.runtime_id = new int[runtime_id.Length + 2];
+                            result.runtime_id[0] = 42;
+                            result.runtime_id[1] = (int)root_hwnd;
+                            Array.Copy(runtime_id, 0, result.runtime_id, 2, runtime_id.Length);
+                        }
+                        else
+                            result.runtime_id = runtime_id;
+                    }
+                }
             }
 
             // Identify object by IUnknown pointer

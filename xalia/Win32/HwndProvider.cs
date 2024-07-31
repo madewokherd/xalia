@@ -222,43 +222,8 @@ namespace Xalia.Win32
                         int hr = ObjectFromLresult(lr, IID_IAccessible, IntPtr.Zero, out var obj);
                         Marshal.ThrowExceptionForHR(hr);
 
-                        if (UiaProviderFromIAccessible(obj, 0, UIA_PFIA_UNWRAP_BRIDGE, out var uiaprov) == 0)
-                        {
+                        if (AccessibleProvider.UiaProviderFromIAccessibleBackground(obj, out var uiaprov))
                             obj = null;
-                        }
-                        else
-                        {
-                            IServiceProvider sp = obj as IServiceProvider;
-
-                            if (!(sp is null))
-                            {
-                                try
-                                {
-                                    Guid sid = IID_IAccessibleEx;
-                                    var raw_accex = sp.QueryService(ref sid, ref sid);
-                                    if (raw_accex != IntPtr.Zero)
-                                    {
-                                        object obj_accex = Marshal.GetObjectForIUnknown(raw_accex);
-                                        uiaprov = obj_accex as IRawElementProviderSimple;
-                                    }
-                                }
-                                catch (InvalidOperationException)
-                                {
-                                }
-                                catch (NotImplementedException)
-                                {
-                                }
-                                catch (InvalidCastException)
-                                {
-                                }
-                                catch (ArgumentException)
-                                {
-                                }
-                                catch (COMException)
-                                {
-                                }
-                            }
-                        }
 
                         return (obj, uiaprov);
                     }, CommandThreadPriority.Query);
