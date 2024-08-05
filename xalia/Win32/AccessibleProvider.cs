@@ -966,20 +966,9 @@ namespace Xalia.Win32
                 var fragment = uiaprov as IRawElementProviderFragment;
                 if (!(fragment is null))
                 {
-                    var runtime_id = fragment.GetRuntimeId();
-
-                    if (!(runtime_id is null))
-                    {
-                        if (runtime_id[0] == UiaAppendRuntimeId)
-                        {
-                            result.runtime_id = new int[runtime_id.Length + 2];
-                            result.runtime_id[0] = 42;
-                            result.runtime_id[1] = (int)root_hwnd;
-                            Array.Copy(runtime_id, 0, result.runtime_id, 2, runtime_id.Length);
-                        }
-                        else
-                            result.runtime_id = runtime_id;
-                    }
+                    result.runtime_id = fragment.GetRuntimeId();
+                    if (!(result.runtime_id is null))
+                        return result;
                 }
             }
 

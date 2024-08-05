@@ -123,7 +123,7 @@ namespace Xalia.Win32
             if (id.is_root_hwnd)
                 return GetElementName(id.root_hwnd);
             if (!(id.runtime_id is null))
-                return GetElementName(id.runtime_id);
+                return GetElementName(id.runtime_id, id.root_hwnd);
             if (!(id.acc2 is null))
                 return GetElementName(id.root_hwnd, OBJID_CLIENT, id.acc2_uniqueId);
             if (!(id.punk == IntPtr.Zero))
@@ -131,12 +131,25 @@ namespace Xalia.Win32
             return null;
         }
 
-        public string GetElementName(int[] runtime_id)
+        public string GetElementName(int[] runtime_id, IntPtr hwnd = default)
         {
             if (runtime_id.Length == 2 && runtime_id[0] == 42)
             {
                 // HWND element
                 return GetElementName((IntPtr)runtime_id[1]);
+            }
+
+            if (runtime_id.Length == 0)
+                return null;
+
+            if (runtime_id[0] == UiaAppendRuntimeId)
+            {
+                var new_runtime_id = new int[runtime_id.Length + 2];
+                new_runtime_id[0] = 42;
+                new_runtime_id[1] = Utils.TruncatePtr(hwnd);
+                new_runtime_id[2] = 4;
+                Array.Copy(runtime_id, 1, new_runtime_id, 3, runtime_id.Length - 1);
+                runtime_id = new_runtime_id;
             }
 
             StringBuilder sb = new StringBuilder();
@@ -211,9 +224,9 @@ namespace Xalia.Win32
             return LookupElement(element_name);
         }
 
-        public UiDomElement LookupElement(int[] runtime_id)
+        public UiDomElement LookupElement(int[] runtime_id, IntPtr hwnd = default)
         {
-            var element_name = GetElementName(runtime_id);
+            var element_name = GetElementName(runtime_id, hwnd);
             if (element_name is null)
                 return null;
 

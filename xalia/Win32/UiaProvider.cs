@@ -655,17 +655,7 @@ namespace Xalia.Win32
             result.is_root_hwnd = false;
             result.prov = simple;
 
-            var runtime_id = child.GetRuntimeId();
-
-            if (runtime_id[0] == UiaAppendRuntimeId)
-            {
-                result.runtime_id = new int[runtime_id.Length + 2];
-                result.runtime_id[0] = 42;
-                result.runtime_id[1] = (int)RootHwnd.Hwnd;
-                Array.Copy(runtime_id, 0, result.runtime_id, 2, runtime_id.Length);
-            }
-            else
-                result.runtime_id = runtime_id;
+            result.runtime_id = child.GetRuntimeId();
 
             return result;
         }
