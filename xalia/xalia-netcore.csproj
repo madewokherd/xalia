@@ -13,7 +13,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Xalia</RootNamespace>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <StartupObject>Xalia.MainClass</StartupObject>
@@ -30,10 +30,12 @@
   </PropertyGroup>
   <ItemGroup Condition="'$(Configuration)'=='Release-Linux' OR '$(Configuration)'=='Debug-Linux'">
     <Compile Remove="Win32\**" />
+    <Compile Remove="Viewer\**" />
   </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release-Windows' OR '$(Configuration)'=='Debug-Windows'">
-    <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
+    <DefineConstants>$(DefineConstants);WINDOWS;WINFORMS</DefineConstants>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="bin-netcore-linux\**" />

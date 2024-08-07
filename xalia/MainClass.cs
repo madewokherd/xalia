@@ -68,6 +68,19 @@ namespace Xalia
                 }
 
                 GameControllerInput.Init();
+
+#if WINFORMS
+                if ((Environment.GetEnvironmentVariable("XALIA_DEBUG_TREEVIEW") ?? "0") == "1")
+                {
+                    var main_context = SynchronizationContext.Current;
+                    Thread treeview_thread = new Thread(() =>
+                    {
+                        Xalia.Viewer.UiDomViewer.ThreadProc(main_context, connection);
+                    });
+                    treeview_thread.SetApartmentState(ApartmentState.STA);
+                    treeview_thread.Start();
+                }
+#endif
             }
             catch (Exception e)
             {
