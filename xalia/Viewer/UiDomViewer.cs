@@ -18,8 +18,21 @@ namespace Xalia.Viewer
         UiDomViewerProvider Provider { get; set; }
         public SynchronizationContext MainContext { get; }
 
+        public class TreeUpdate { }
 
-        public ConcurrentQueue<(string, (string, string)[])> ChildrenUpdates = new ConcurrentQueue<(string, (string, string)[])>();
+        public class ChildrenUpdate : TreeUpdate
+        {
+            public string parent;
+            public (string, string)[] children;
+        }
+
+        public class DescUpdate : TreeUpdate
+        {
+            public string element;
+            public string desc;
+        }
+
+        public ConcurrentQueue<TreeUpdate> TreeUpdates = new ConcurrentQueue<TreeUpdate>();
 
         private Dictionary<string, TreeNode> element_nodes = new Dictionary<string, TreeNode>();
 
@@ -37,42 +50,52 @@ namespace Xalia.Viewer
 
         internal void QueuesUpdated(object state)
         {
-            if (ChildrenUpdates.Count != 0)
+            if (TreeUpdates.Count != 0)
             {
                 element_tree.BeginUpdate();
-                while (ChildrenUpdates.TryDequeue(out var update))
+                while (TreeUpdates.TryDequeue(out var update))
                 {
-                    TreeNodeCollection nodes;
-                    if (update.Item1 is null)
-                        nodes = element_tree.Nodes;
-                    else if (element_nodes.TryGetValue(update.Item1, out var parent_node))
-                        nodes = parent_node.Nodes;
-                    else
-                        continue;
-                    var children = update.Item2;
-                    int i;
-                    for (i = 0; i < children.Length; i++)
+                    if (update is ChildrenUpdate ch)
                     {
-                        var child_id = children[i].Item1;
-                        var child_desc = children[i].Item2;
-                        if (element_nodes.TryGetValue(child_id, out var child_node))
+                        TreeNodeCollection nodes;
+                        if (ch.parent is null)
+                            nodes = element_tree.Nodes;
+                        else if (element_nodes.TryGetValue(ch.parent, out var parent_node))
+                            nodes = parent_node.Nodes;
+                        else
+                            continue;
+                        var children = ch.children;
+                        int i;
+                        for (i = 0; i < children.Length; i++)
                         {
-                            if (i >= nodes.Count || nodes[i] != child_node)
+                            var child_id = children[i].Item1;
+                            var child_desc = children[i].Item2;
+                            if (element_nodes.TryGetValue(child_id, out var child_node))
                             {
-                                child_node.Remove();
-                                nodes.Insert(i, child_node);
+                                if (i >= nodes.Count || nodes[i] != child_node)
+                                {
+                                    child_node.Remove();
+                                    nodes.Insert(i, child_node);
+                                }
+                            }
+                            else
+                            {
+                                element_nodes[child_id] = nodes.Insert(i, child_id, child_desc);
                             }
                         }
-                        else
+                        while (i < nodes.Count)
                         {
-                            element_nodes[child_id] = nodes.Insert(i, child_id, child_desc);
+                            var node = nodes[i];
+                            element_nodes.Remove(node.Name);
+                            node.Remove();
                         }
                     }
-                    while (i < nodes.Count)
+                    else if (update is DescUpdate desc)
                     {
-                        var node = nodes[i];
-                        element_nodes.Remove(node.Name);
-                        node.Remove();
+                        if (element_nodes.TryGetValue(desc.element, out var node))
+                        {
+                            node.Text = desc.desc;
+                        }
                     }
                 }
                 element_tree.EndUpdate();

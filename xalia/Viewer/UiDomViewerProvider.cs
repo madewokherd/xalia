@@ -13,6 +13,7 @@ namespace Xalia.Viewer
             UiDomViewer = uiDomViewer;
             Root = root;
             ViewerContext = viewer_context;
+            ElementDescExpression = "element_identifier + (\" \" + role.name or \"\") + (\" \" + id or \"\") + (\" \" + name or \"\")";
         }
 
         public UiDomViewer UiDomViewer { get; }
@@ -23,10 +24,25 @@ namespace Xalia.Viewer
         {
             public string[] children;
             public IDisposable children_notifier;
+            public ExpressionWatcher desc_notifier;
         }
 
         private Dictionary<string, ElementInfo> elements = new Dictionary<string, ElementInfo>();
         private bool poke_queued;
+
+        private string element_desc_expression;
+        private string ElementDescExpression
+        {
+            get => element_desc_expression;
+            set
+            {
+                element_desc_expression = value;
+                element_desc_compiled = GudlParser.ParseExpression(value);
+            }
+        }
+
+        private GudlExpression element_desc_compiled;
+
 
         internal void DoMainThreadSetup()
         {
@@ -56,30 +72,14 @@ namespace Xalia.Viewer
 
         private string GetElementDesc(UiDomElement element)
         {
-            var depends_on = new HashSet<(UiDomElement, Gudl.GudlExpression)>();
+            var depends_on = new HashSet<(UiDomElement, GudlExpression)>();
 
-            var id = element.EvaluateIdentifier("id", Root, depends_on);
-            string id_str;
-            if (id is UiDomUndefined)
-                id_str = "";
-            else
-                id_str = " " + id.ToString();
+            var result = element.Evaluate(element_desc_compiled, depends_on);
 
-            var role = element.EvaluateIdentifier("role", Root, depends_on);
-            string role_str;
-            if (role is UiDomEnum e)
-                role_str = " " + e.Names[0];
-            else
-                role_str = "";
+            if (result is UiDomString s)
+                return s.Value;
 
-            var name = element.EvaluateIdentifier("name", Root, depends_on);
-            string name_str;
-            if (name is UiDomString str)
-                name_str = " " + str.Value;
-            else
-                name_str = "";
-
-            return $"{element.DebugId}{id_str}{role_str}{name_str}";
+            return $"{element.DebugId} <ERROR>";
         }
 
         private ElementInfo CreateElementInfo(UiDomElement element)
@@ -97,9 +97,33 @@ namespace Xalia.Viewer
                 info.children = new string[0];
                 info.children_notifier = element.NotifyPropertyChanged(
                     new IdentifierExpression("children"), OnElementChildrenChanged);
+                info.desc_notifier = new ExpressionWatcher(element, Root, element_desc_compiled);
+                info.desc_notifier.ValueChanged += OnElementDescChanged;
                 elements.Add(element.DebugId, info);
             }
             return info;
+        }
+
+        private void OnElementDescChanged(object sender, EventArgs e)
+        {
+            var watcher = (ExpressionWatcher)sender;
+            var element = (UiDomElement)watcher.Context;
+
+            if (!elements.ContainsKey(element.DebugId))
+                return;
+
+            if (watcher.CurrentValue is UiDomString s)
+                SendElementDesc(element.DebugId, s.Value);
+            else
+                SendElementDesc(element.DebugId, $"{element.DebugId} <ERROR>");
+        }
+
+        private void SendElementDesc(string debug_id, string desc)
+        {
+            UiDomViewer.TreeUpdates.Enqueue(
+                new UiDomViewer.DescUpdate { element = debug_id, desc = desc }
+                );
+            QueuePoke();
         }
 
         private void OnElementChildrenChanged(UiDomElement element, GudlExpression property)
@@ -112,6 +136,7 @@ namespace Xalia.Viewer
             if (elements.TryGetValue(element, out var info))
             {
                 info.children_notifier.Dispose();
+                info.desc_notifier.Dispose();
                 foreach (var child in info.children)
                 {
                     DeleteElementInfo(child);
@@ -144,7 +169,8 @@ namespace Xalia.Viewer
                 }
                 child_descs[i] = (child.DebugId, GetElementDesc(child));
             }
-            UiDomViewer.ChildrenUpdates.Enqueue((element?.DebugId, child_descs));
+            UiDomViewer.TreeUpdates.Enqueue(
+                new UiDomViewer.ChildrenUpdate { parent = element?.DebugId, children = child_descs });
             foreach (var child in prev_children)
             {
                 DeleteElementInfo(child);
