@@ -189,6 +189,10 @@ namespace Xalia.UiDom
                             UiDomValue left = Evaluate(bin.Left, root, depends_on);
                             UiDomValue right = Evaluate(bin.Right, root, depends_on);
 
+                            if (left is UiDomString ls && right is UiDomString rs)
+                            {
+                                return new UiDomString(ls.Value + rs.Value);
+                            }
                             if (left is UiDomInt lint)
                             {
                                 if (right is UiDomInt rint)
