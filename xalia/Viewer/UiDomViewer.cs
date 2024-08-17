@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Windows.Forms;
+using Xalia.Gudl;
 using Xalia.UiDom;
 
 namespace Xalia.Viewer
@@ -34,6 +35,15 @@ namespace Xalia.Viewer
 
         public ConcurrentQueue<TreeUpdate> TreeUpdates = new ConcurrentQueue<TreeUpdate>();
 
+        public class DataUpdate
+        {
+            public string element;
+            public GudlExpression expression;
+            public UiDomValue value;
+        }
+
+        public ConcurrentQueue<DataUpdate> PropertyUpdates = new ConcurrentQueue<DataUpdate>();
+
         private Dictionary<string, TreeNode> element_nodes = new Dictionary<string, TreeNode>();
 
         internal static void ThreadProc(SynchronizationContext main_context, UiDomRoot root)
@@ -50,6 +60,37 @@ namespace Xalia.Viewer
 
         internal void QueuesUpdated(object state)
         {
+            if (PropertyUpdates.Count != 0)
+            {
+                var element = element_tree.SelectedNode?.Name;
+                while (PropertyUpdates.TryDequeue(out var update)) {
+                    if (element != update.element)
+                        continue;
+                    var expr = update.expression;
+                    DataGridViewRow row = null;
+                    foreach (DataGridViewRow r in properties_view.Rows)
+                    {
+                        if (r.Cells[0].Value == expr)
+                        {
+                            row = r;
+                            break;
+                        }
+                    }
+                    if (row is null)
+                    {
+                        row = properties_view.Rows[properties_view.Rows.Add()];
+                        row.Cells[0].Value = expr;
+                    }
+                    row.Cells[1].Value = update.value;
+                    if (update.value is UiDomElement)
+                        row.Cells[2].Value = "Inspect";
+                    else if (update.value is UiDomRoutine)
+                        row.Cells[2].Value = "Execute";
+                    else
+                        row.Cells[2].Value = "Copy";
+                    row.Visible = !(update.value is UiDomUndefined);
+                }
+            }
             if (TreeUpdates.Count != 0)
             {
                 element_tree.BeginUpdate();
@@ -105,6 +146,40 @@ namespace Xalia.Viewer
         private void UiDomViewer_FormClosed(object sender, FormClosedEventArgs e)
         {
             Environment.Exit(0);
+        }
+
+        private void element_tree_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+            properties_view.Rows.Clear();
+            MainContext.Post((object st) =>
+            {
+                Provider.SetCurrentElement(element_tree.SelectedNode?.Name);
+            }, null);
+        }
+
+        private void properties_view_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex != 2)
+                return;
+            var value = properties_view.Rows[e.RowIndex].Cells[1].Value;
+            if (value is UiDomElement element)
+            {
+                if (element_nodes.TryGetValue(element.DebugId, out var node))
+                {
+                    element_tree.SelectedNode = node;
+                }
+            }
+            else if (value is UiDomRoutine routine)
+            {
+                MainContext.Post((object st) =>
+                {
+                    routine.Pulse();
+                }, null);
+            }
+            else
+            {
+                Clipboard.SetText(value.ToString());
+            }
         }
     }
 }

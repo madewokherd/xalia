@@ -13,7 +13,7 @@ namespace Xalia.Viewer
             UiDomViewer = uiDomViewer;
             Root = root;
             ViewerContext = viewer_context;
-            ElementDescExpression = "element_identifier + (\" \" + role.name or \"\") + (\" \" + id or \"\") + (\" \" + name or \"\")";
+            ElementDescExpression = "element_identifier + (\" \" + role.name or \"\") + (\" \" + id or \"\") + (\" \" + (name or class_name or attributes.tag) or \"\")";
         }
 
         public UiDomViewer UiDomViewer { get; }
@@ -22,6 +22,7 @@ namespace Xalia.Viewer
 
         private struct ElementInfo
         {
+            public UiDomElement element;
             public string[] children;
             public IDisposable children_notifier;
             public ExpressionWatcher desc_notifier;
@@ -43,6 +44,169 @@ namespace Xalia.Viewer
 
         private GudlExpression element_desc_compiled;
 
+        private List<string> property_list = new List<string>
+        {
+            // common identifying attributes
+            "element_identifier",
+            "spi_accessible_id",
+            "role",
+            "name",
+            "application_name",
+            "toolkit_name",
+            "win32_class_name",
+            "win32_control_id",
+
+            // element types
+            "is_hwnd_element",
+            "is_msaa_element",
+            "is_uia_element",
+            "is_uia_fragment",
+            "is_win32_dialog",
+            "is_hwnd_button",
+            "is_hwnd_combo_box",
+            "is_hwnd_track_bar",
+            "is_hwnd_tab_control",
+            "is_hwnd_tab_item",
+            "is_hwnd_list_view",
+            "is_hwnd_list_view_item",
+            "is_hwnd_static",
+            "is_nonclient_scrollbar",
+            "is_hwnd_edit",
+            "is_hwnd_richedit",
+            "is_spi_element",
+            "spi_supported",
+
+            // common declarations
+            "interactable",
+            "targetable",
+            "targeted",
+            "primary_action",
+            "recurse_method",
+            "do_default_action",
+            "index_in_parent",
+
+            // win32 info
+            "win32_hwnd",
+            "win32_pid",
+            "win32_tid",
+            "win32_style",
+            "win32_window_text",
+            "win32_real_class_name",
+
+            // msaa info
+            "msaa_role",
+            "msaa_state",
+            "msaa_name",
+            "msaa_default_action",
+            "msaa_child_id",
+
+            // uia info
+            "uia_control_type",
+            "uia_is_enabled",
+            "uia_is_offscreen",
+
+            // win32 specialized info
+            "win32_dialog_defid",
+            "win32_button_role",
+            "win32_button_default",
+            "win32_button_state",
+            "win32_combo_box_list_element",
+            "win32_combo_box_dropped_state",
+            "win32_track_bar_line_size",
+            "win32_selection_index",
+            // "win32_item_rects",
+            "win32_is_comctl6",
+            "win32_view",
+            "win32_extended_listview_style",
+            // "win32_bounds_x", etc.
+            "win32_vertical",
+            "win32_horizontal",
+            "win32_state",
+            "win32_minimum_value",
+            "win32_maximum_value",
+            "win32_page",
+            "win32_value",
+            "win32_item_count",
+
+            // spi info
+            "spi_role",
+            "spi_state",
+            "spi_name",
+            "spi_description",
+            "spi_attributes",
+            "spi_action",
+            "spi_toolkit_name",
+            "spi_minimum_value",
+            "spi_maximum_value",
+            "spi_minimum_increment",
+
+            // location info
+            "win32_x",
+            "win32_y",
+            "win32_width",
+            "win32_height",
+            "win32_client_x",
+            "win32_client_y",
+            "win32_client_width",
+            "win32_client_height",
+            "msaa_x",
+            "msaa_y",
+            "msaa_width",
+            "msaa_height",
+            "uia_x",
+            "uia_y",
+            "uia_width",
+            "uia_height",
+            "spi_abs_x",
+            "spi_abs_y",
+            "spi_abs_width",
+            "spi_abs_height",
+
+            // routines
+            "win32_button_click",
+            "win32_combo_box_show_drop_down",
+            "win32_combo_box_hide_drop_down",
+            "win32_toggle_checked",
+            "msaa_do_default_action",
+            "spi_select",
+            "spi_deselect",
+            "spi_toggle_selected",
+            "spi_grab_focus",
+            "spi_clear_selection",
+            "win32_enable_window",
+            "win32_disable_window",
+            "win32_set_focus",
+
+            // flags
+            "win32_gui_active",
+            "win32_gui_focus",
+            "win32_gui_capture",
+            "win32_gui_menuowner",
+            "win32_gui_movesize",
+        };
+
+        private List<string> root_property_list = new List<string>
+        {
+            "win32_gui_inmovesize",
+            "win32_gui_inmenumode",
+            "win32_gui_popupmenumode",
+            "win32_gui_systemmenumode",
+            "win32_gui_hwndactive",
+            "win32_gui_hwndfocus",
+            "win32_gui_hwndcapture",
+            "win32_gui_hwndmenuowner",
+            "win32_gui_hwndmovesize",
+            "targeted_element",
+            "target_move_up",
+            "target_move_down",
+            "target_move_left",
+            "target_move_right",
+            "target_next",
+            "target_previous",
+            "show_keyboard",
+        };
+
+        List<ExpressionWatcher> property_watchers;
 
         internal void DoMainThreadSetup()
         {
@@ -94,6 +258,7 @@ namespace Xalia.Viewer
             if (!elements.TryGetValue(element.DebugId, out var info))
             {
                 info = new ElementInfo();
+                info.element = element;
                 info.children = new string[0];
                 info.children_notifier = element.NotifyPropertyChanged(
                     new IdentifierExpression("children"), OnElementChildrenChanged);
@@ -180,6 +345,55 @@ namespace Xalia.Viewer
                 CreateElementInfo(child);
                 SendElementChildren(child);
             }
+            QueuePoke();
+        }
+
+        internal void SetCurrentElement(string name)
+        {
+            if (!(property_watchers is null))
+            {
+                foreach (var watch in property_watchers)
+                {
+                    watch.Dispose();
+                }
+                property_watchers = null;
+            }
+            if (name is null)
+                return;
+            if (elements.TryGetValue(name, out var info))
+            {
+                List<string> property_expressions;
+                if (info.element is UiDomRoot)
+                    property_expressions = root_property_list;
+                else
+                    property_expressions = property_list;
+                property_watchers = new List<ExpressionWatcher>(property_expressions.Count);
+                foreach (var expr in property_expressions)
+                {
+                    var compiled = GudlParser.ParseExpression(expr);
+                    var watcher = new ExpressionWatcher(info.element, Root, compiled);
+                    SendPropertyValue(info.element.DebugId, compiled, watcher.CurrentValue);
+                    watcher.ValueChanged += property_ValueChanged;
+                    property_watchers.Add(watcher);
+                }
+            }
+        }
+
+        private void property_ValueChanged(object sender, EventArgs e)
+        {
+            var watch = (ExpressionWatcher)sender;
+            var element = (UiDomElement)watch.Context;
+            SendPropertyValue(element.DebugId, watch.Expression, watch.CurrentValue);
+        }
+
+        private void SendPropertyValue(string debugId, GudlExpression compiled, UiDomValue currentValue)
+        {
+            UiDomViewer.PropertyUpdates.Enqueue(new UiDomViewer.DataUpdate
+            {
+                element = debugId,
+                expression = compiled,
+                value = currentValue
+            });
             QueuePoke();
         }
     }
