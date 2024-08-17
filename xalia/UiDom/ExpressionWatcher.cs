@@ -27,7 +27,7 @@ namespace Xalia.UiDom
 
         private TaskCompletionSource<bool> changed_task;
 
-        event EventHandler ValueChanged;
+        public event EventHandler ValueChanged;
 
         private void UpdateCurrentValue()
         {
