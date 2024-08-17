@@ -747,7 +747,7 @@ namespace Xalia.Win32
                     case "win32_pos":
                         _watchingWindowRect = true;
                         if (!WindowRectsKnown)
-                            RefreshWindowRects();
+                            Utils.RunIdle(RefreshWindowRects);
                         return true;
                     case "win32_window_text":
                         _watchingWindowText = true;
