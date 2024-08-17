@@ -101,5 +101,10 @@ namespace Xalia.Viewer
                 element_tree.EndUpdate();
             }
         }
+
+        private void UiDomViewer_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Environment.Exit(0);
+        }
     }
 }

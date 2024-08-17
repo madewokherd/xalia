@@ -66,6 +66,7 @@
             this.Controls.Add(this.split_container);
             this.Name = "UiDomViewer";
             this.Text = "UiDomViewer";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.UiDomViewer_FormClosed);
             this.split_container.Panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.split_container)).EndInit();
             this.split_container.ResumeLayout(false);
