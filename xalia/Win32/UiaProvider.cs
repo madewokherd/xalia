@@ -630,10 +630,17 @@ namespace Xalia.Win32
 
             if (hwnd == 0)
             {
-                var value = simple.GetPropertyValue(UIA_NativeWindowHandlePropertyId);
-                if (!(value is null))
+                try
                 {
-                    hwnd = (int)value;
+                    var value = simple.GetPropertyValue(UIA_NativeWindowHandlePropertyId);
+                    if (!(value is null))
+                    {
+                        hwnd = (int)value;
+                    }
+                }
+                catch (NullReferenceException)
+                {
+                    // Not sure why this can happen
                 }
             }
 
