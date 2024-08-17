@@ -28,6 +28,11 @@ namespace Xalia.UiDom
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
+            switch (id)
+            {
+                case "name":
+                    return new UiDomString(Names[0]);
+            }
             return UiDomBoolean.FromBool(Names.Contains(id));
         }
 
