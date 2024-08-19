@@ -240,6 +240,7 @@ namespace Xalia.AtSpi2
 #endif
             switch (e.ErrorName)
             {
+                case "org.freedesktop.DBus.Error.Failed":
                 case "org.freedesktop.DBus.Error.NoReply":
                 case "org.freedesktop.DBus.Error.UnknownObject":
                 case "org.freedesktop.DBus.Error.UnknownInterface":
