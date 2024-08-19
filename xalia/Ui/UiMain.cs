@@ -793,6 +793,64 @@ namespace Xalia.Ui
                 y_direction = 0;
         }
 
+        internal void CheckRelationOverride(UiDomElement candidate_element, Direction direction, ref int xd, ref int yd)
+        {
+            var depends_on = new HashSet<(UiDomElement, GudlExpression)>();
+            var target_left_candidate = candidate_element.EvaluateIdentifier("target_left_candidate", Root, depends_on);
+            var target_right_candidate = candidate_element.EvaluateIdentifier("target_right_candidate", Root, depends_on);
+            var target_up_candidate = candidate_element.EvaluateIdentifier("target_up_candidate", Root, depends_on);
+            var target_down_candidate = candidate_element.EvaluateIdentifier("target_down_candidate", Root, depends_on);
+
+            UiDomValue left_candidate, right_candidate, up_candidate, down_candidate;
+
+            switch (direction)
+            {
+                case Direction.Right:
+                default:
+                    right_candidate = target_right_candidate;
+                    left_candidate = target_left_candidate;
+                    up_candidate = target_up_candidate;
+                    down_candidate = target_down_candidate;
+                    break;
+                case Direction.Left:
+                    right_candidate = target_left_candidate;
+                    left_candidate = target_right_candidate;
+                    up_candidate = target_up_candidate;
+                    down_candidate = target_down_candidate;
+                    break;
+                case Direction.Up:
+                    right_candidate = target_up_candidate;
+                    left_candidate = target_down_candidate;
+                    up_candidate = target_left_candidate;
+                    down_candidate = target_right_candidate;
+                    break;
+                case Direction.Down:
+                    right_candidate = target_down_candidate;
+                    left_candidate = target_up_candidate;
+                    up_candidate = target_left_candidate;
+                    down_candidate = target_right_candidate;
+                    break;
+            }
+
+            if (left_candidate.ToBool())
+                xd = 1;
+            else if (right_candidate.ToBool())
+                xd = -1;
+            else if (xd > 0 && !(left_candidate is UiDomUndefined))
+                xd = 0;
+            else if (xd < 0 && !(right_candidate is UiDomUndefined))
+                xd = 0;
+
+            if (up_candidate.ToBool())
+                yd = 1;
+            else if (down_candidate.ToBool())
+                yd = -1;
+            else if (yd > 0 && !(up_candidate is UiDomUndefined))
+                yd = 0;
+            else if (yd < 0 && !(down_candidate is UiDomUndefined))
+                yd = 0;
+        }
+
         internal void TargetMove(Direction direction)
         {
             if (TargetedElement is null)
@@ -820,6 +878,7 @@ namespace Xalia.Ui
                     if (kvp.Key == TargetedElement)
                         return true;
                     GetBoundsRelation(current_bounds, TranslateBox(kvp.Value, direction), out var xd, out var yd);
+                    CheckRelationOverride(kvp.Key, direction, ref xd, ref yd);
                     if (xd == 0)
                         return true;
                     if (yd != 0)
@@ -850,6 +909,7 @@ namespace Xalia.Ui
                 box_perpendicular = Math.Abs(box.Item2 * 2 + box.Item4 - current_perpendicular);
 
                 GetBoundsRelation(current_bounds, box, out var xd, out var yd);
+                CheckRelationOverride(kvp.Key, direction, ref xd, ref yd);
 
                 if (xd >= 0)
                     // This would be moving "backwards" or "sideways"

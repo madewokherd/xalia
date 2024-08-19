@@ -83,6 +83,10 @@ namespace Xalia.Viewer
             "primary_action",
             "recurse_method",
             "do_default_action",
+            "target_left_candidate",
+            "target_right_candidate",
+            "target_up_candidate",
+            "target_down_candidate",
             "index_in_parent",
 
             // win32 info

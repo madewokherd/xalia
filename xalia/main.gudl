@@ -1117,6 +1117,42 @@ if (not no_scrollable_fallback and interactable and child_count != 0 and
     scroll_view_height: height - (hscroll.height or 0);
 }
 
+if (scrollbar and vertical and this == parent.vscroll and
+    parent.descendent_matches(targeted).x < x) {
+	// Allow right movement from control in scrollable view to vertical scrollbar
+	target_right_candidate: true;
+	target_up_candidate: false;
+	target_down_candidate: false;
+	target_left_candidate: false;
+}
+
+if (not (scrollbar and horizontal and this == parent.hscroll) and
+    ancestor_matches(vscroll.targeted).vscroll.x > x) {
+    // Allow left movement from vertical scrollbar to control in scrollable view
+    target_left_candidate: true;
+    target_right_candidate: false;
+    target_up_candidate: false;
+    target_down_candidate: false;
+}
+
+if (scrollbar and horizontal and this == parent.hscroll and
+    parent.descendent_matches(targeted).y < y) {
+	// Allow down movement from control in scrollable view to horizontal scrollbar
+	target_right_candidate: false;
+	target_up_candidate: false;
+	target_down_candidate: true;
+	target_left_candidate: false;
+}
+
+if (not (scrollbar and vertical and this == parent.vscroll) and
+    ancestor_matches(hscroll.targeted).hscroll.y > y) {
+    // Allow up movement from horizontal scrollbar to control in scrollable view
+    target_left_candidate: false;
+    target_right_candidate: false;
+    target_up_candidate: true;
+    target_down_candidate: false;
+}
+
 // Rules for setting borders of targetable elements
 if (targetable or is_current_view) {
     // "special" rules would go here
