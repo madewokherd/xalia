@@ -312,7 +312,7 @@ namespace Xalia.Win32
             }
         }
 
-        public string FormatStyles()
+        public List<string> StyleNames()
         {
             List<string> styles = new List<string>();
             for (int i=0; i<win32_stylenames.Length; i++)
@@ -347,7 +347,12 @@ namespace Xalia.Win32
                 style_provider.GetStyleNames(Style, styles);
             }
 
-            return $"0x{unchecked((uint)Style):x} [{string.Join("|", styles)}]";
+            return styles;
+        }
+
+        public string FormatStyles()
+        {
+            return $"0x{unchecked((uint)Style):x} [{string.Join("|", StyleNames())}]";
         }
 
         public override void DumpProperties(UiDomElement element)
@@ -399,6 +404,14 @@ namespace Xalia.Win32
                 case "win32_style":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     return new UiDomInt(Style);
+                case "win32_style_names":
+                    {
+                        depends_on.Add((element, new IdentifierExpression("win32_style")));
+                        var names = StyleNames();
+                        if (names.Count == 0)
+                            return UiDomUndefined.Instance;
+                        return new UiDomEnum(names.ToArray());
+                    }
                 case "win32_x":
                     depends_on.Add((element, new IdentifierExpression("win32_pos")));
                     if (WindowRectsKnown)

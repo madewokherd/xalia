@@ -89,7 +89,7 @@ namespace Xalia.Viewer
             "win32_hwnd",
             "win32_pid",
             "win32_tid",
-            "win32_style",
+            "win32_style_names",
             "win32_window_text",
             "win32_real_class_name",
 
