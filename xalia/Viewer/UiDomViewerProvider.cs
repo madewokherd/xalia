@@ -95,7 +95,7 @@ namespace Xalia.Viewer
 
             // msaa info
             "msaa_role",
-            "msaa_state",
+            "msaa_state_names",
             "msaa_name",
             "msaa_default_action",
             "msaa_child_id",

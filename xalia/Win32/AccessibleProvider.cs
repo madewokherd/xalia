@@ -359,6 +359,22 @@ namespace Xalia.Win32
                     if (StateKnown)
                         return new UiDomInt(State);
                     break;
+                case "msaa_state_names":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_state")));
+                    if (StateKnown)
+                    {
+                        List<string> states = new List<string>();
+                        for (int i = 0; i < msaa_state_names.Length; i++)
+                        {
+                            if ((State & (1 << i)) != 0)
+                            {
+                                states.Add(msaa_state_names[i]);
+                            }
+                        }
+                        if (states.Count > 0)
+                            return new UiDomEnum(states.ToArray());
+                    }
+                    break;
                 case "msaa_name":
                     depends_on.Add((Element, new IdentifierExpression(identifier)));
                     if (NameKnown)
