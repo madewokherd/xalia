@@ -403,6 +403,8 @@ namespace Xalia.UiDom
                     return new UiDomMethod("radial_deadzone", UiDomRadialDeadzone.ApplyFn);
                 case "on_release":
                     return new UiDomMethod("on_release", OnReleaseMethod);
+                case "enum":
+                    return new UiDomMethod("enum", EnumMethod);
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))
@@ -427,6 +429,24 @@ namespace Xalia.UiDom
                     return value;
             }
             return UiDomUndefined.Instance;
+        }
+
+        private UiDomValue EnumMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length < 1)
+                return UiDomUndefined.Instance;
+
+            string[] args = new string[arglist.Length];
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                var val = context.Evaluate(arglist[i], root, depends_on);
+                if (!(val is UiDomString str))
+                    return UiDomUndefined.Instance;
+                args[i] = str.Value;
+            }
+
+            return new UiDomEnum(args);
         }
 
         private UiDomValue OnReleaseMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)

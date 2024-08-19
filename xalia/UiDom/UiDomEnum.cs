@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Xalia.Gudl;
 
 namespace Xalia.UiDom
@@ -17,13 +18,25 @@ namespace Xalia.UiDom
         public override bool Equals(object obj)
         {
             if (obj is UiDomEnum en)
-                return Names[0] == en.Names[0];
+            {
+                if (Names.Length != en.Names.Length)
+                    return false;
+                foreach (string name in Names)
+                {
+                    if (!en.Names.Contains(name))
+                        return false;
+                }
+                return true;
+            }
             return false;
         }
 
         public override int GetHashCode()
         {
-            return Names[0].GetHashCode() ^ typeof(UiDomEnum).GetHashCode();
+            var result = typeof(UiDomEnum).GetHashCode();
+            foreach (string name in Names)
+                result ^= name.GetHashCode();
+            return result;
         }
 
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -38,7 +51,18 @@ namespace Xalia.UiDom
 
         public override string ToString()
         {
-            return $"<enum '{Names[0]}'>";
+            var sb = new StringBuilder();
+            sb.Append("enum(\"");
+            sb.Append(Names[0]);
+            sb.Append('"');
+            for (int i = 1; i < Names.Length; i++ )
+            {
+                sb.Append(", \"");
+                sb.Append(Names[i]);
+                sb.Append('"');
+            }
+            sb.Append(')');
+            return sb.ToString();
         }
     }
 }
