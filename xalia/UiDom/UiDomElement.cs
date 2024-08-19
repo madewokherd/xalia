@@ -405,6 +405,8 @@ namespace Xalia.UiDom
                     return new UiDomMethod("on_release", OnReleaseMethod);
                 case "enum":
                     return new UiDomMethod("enum", EnumMethod);
+                case "hex":
+                    return new UiDomMethod("hex", HexMethod);
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))
@@ -429,6 +431,19 @@ namespace Xalia.UiDom
                     return value;
             }
             return UiDomUndefined.Instance;
+        }
+
+        private UiDomValue HexMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+
+            var val = context.Evaluate(arglist[0], root, depends_on);
+
+            if (!(val is UiDomInt i))
+                return UiDomUndefined.Instance;
+
+            return new UiDomString($"0x{i.Value:x}");
         }
 
         private UiDomValue EnumMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
