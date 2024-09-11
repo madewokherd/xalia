@@ -1257,6 +1257,16 @@ if (interactable) {
         adjust_value_up_action: focusable and (set_focus+send_key.up) or adjust_value(-(minimum_increment or 25));
     }
 
+    if (is_hwnd_trackbar) {
+        // set_focus + send_key doesn't work for these for some reason
+        targetable: true;
+
+        adjust_value_action: adjust_scrollbars(this, undefined);
+
+        adjust_value_left_action: adjust_value(-(minimum_increment or 25));
+        adjust_value_right_action: adjust_value(minimum_increment or 25);
+    }
+
     if ((scroll_bar or slider or split_pane) and horizontal) {
         targetable: true;
 
