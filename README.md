@@ -73,7 +73,7 @@ Here are the default controls when using a gamepad:
  * **Y (or top face button)**: Activate the context menu of the targeted control, or right-click.
  * **Start**: Toggle the application menu, click the OK/Yes button if one exists, or press Enter (if the current window has any control that Xalia can interact with).
  * **Back/Select**: Cycle through controls.
- * **Right Stick**: Adjust the selected control (for scrollbars and slider controls), scroll the view, or simulate the mouse wheel.
+ * **Right Stick**: Adjust the selected control (for scrollbars and slider controls), or scroll the view.
  * **LB (or front left shoulder button)** and **RB (or front right shoulder button)**: Switch to the previous or next tab respectively.
 
 This is based on SDL2's GameController mapping, which should use the same layout for whatever controller you have, but the buttons may be labeled differently.

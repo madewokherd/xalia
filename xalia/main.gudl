@@ -71,8 +71,7 @@ root {
         target_adjust_value_action or
         scroll_current_view_action or
         scroll_targeted_view_action or
-        adjust_current_view_action or
-        targeted_element.send_scroll,
+        adjust_current_view_action,
         deadzone);
     action_on_LB: tab_left_action;
     action_on_RB: tab_right_action;
