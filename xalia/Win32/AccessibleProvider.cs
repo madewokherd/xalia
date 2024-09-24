@@ -116,6 +116,10 @@ namespace Xalia.Win32
                 // thrown for stale childid's
                 return true;
             }
+            if (e is NotImplementedException)
+            {
+                return true;
+            }
 #if DEBUG
             return false;
 #else
