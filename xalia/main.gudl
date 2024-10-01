@@ -429,6 +429,19 @@ if (application_name == "xfce4-panel") {
     }
 }
 
+// Toolkit-specific behaviors
+
+// TOOLKIT: Delphi
+
+root (child_matches(win32_class_name == "TApplication" and toplevel_interactable)) {
+    // Sometimes, Delphi will focus a 0x0 window with class TApplication instead of an interactable window
+    delphi_pid_override: child_matches(win32_class_name == "TApplication" and toplevel_interactable).pid;
+}
+
+if (win32_class_name == "TMainForm" and visible and root.delphi_pid_override == pid) {
+    toplevel_interactable: true;
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
