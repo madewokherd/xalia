@@ -13,7 +13,7 @@ namespace Xalia.Interop
         public Win32RemoteProcessMemory(int pid)
         {
             Pid = pid;
-            processHandle = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_LIMITED_INFORMATION,
+            processHandle = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION,
                 false, pid);
             if (processHandle.IsInvalid)
                 throw new Win32Exception();

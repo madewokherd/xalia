@@ -47,6 +47,7 @@ namespace Xalia.Interop
         public const int PROCESS_VM_OPERATION = 0x8;
         public const int PROCESS_VM_READ = 0x10;
         public const int PROCESS_VM_WRITE = 0x20;
+        public const int PROCESS_QUERY_INFORMATION = 0x400;
         public const int PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
         [DllImport(KERNEL_LIB, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
