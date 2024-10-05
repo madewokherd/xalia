@@ -869,7 +869,7 @@ if (is_panel and (root.in_panel_mode or root.panels_always_on)) {
 }
 
 if (root.panels_always_on and ancestor_matches(is_panel)) {
-    target_priority: -1;
+    target_priority_important: -1;
 }
 
 root (descendent_matches(is_panel) and not disable_interactions) {
@@ -1165,6 +1165,14 @@ if (not (scrollbar and vertical and this == parent.vscroll) and
     target_down_candidate: false;
 }
 
+// Prefer to target elements in the current scrollable view
+if (targetable and is_descendent_of(root.targeted_view)) {
+    if (this == root.targeted_view.hscroll or this == root.targeted_view.vscroll) {
+		target_priority_important: 1;
+    }
+    target_priority_important: 2;
+}
+
 // Rules for setting borders of targetable elements
 if (targetable or is_current_view) {
     // "special" rules would go here
@@ -1223,6 +1231,15 @@ root {
     confirm_action: descendent_matches(confirm_action).confirm_action;
 }
 
+root (targeted_view and
+    (not targeted_element or
+        (targeted_element.is_descendent_of(targeted_view) and
+            not targeted_element.ancestor_matches(scrollable))) and
+    targeted_view.(hscroll.targetable or vscroll.targetable)) {
+    // Keep track of this when we lose the target
+    targeted_view: targeted_view;
+}
+
 root (targeted_element) {
     target_primary_action: targeted_element.primary_action;
     target_secondary_action: targeted_element.secondary_action;
@@ -1233,7 +1250,11 @@ root (targeted_element) {
     target_adjust_value_down_action: targeted_element.adjust_value_down_action;
     target_adjust_value_up_action: targeted_element.adjust_value_up_action;
     target_adjust_value_right_action: targeted_element.adjust_value_right_action;
-    scroll_targeted_view_action: targeted_element.ancestor_matches(scrollable).scroll_view_action;
+    targeted_view: targeted_element.ancestor_matches(scrollable);
+}
+
+root (targeted_view) {
+    scroll_targeted_view_action: targeted_view.scroll_view_action;
 }
 
 // Rules that apply to controls in the active window

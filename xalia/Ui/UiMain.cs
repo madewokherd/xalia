@@ -330,6 +330,23 @@ namespace Xalia.Ui
                     continue;
                 }
 
+                // Look for prioritized elements
+                double best_priority, candidate_priority;
+
+                if (!best_element.GetDeclaration("target_priority_important").TryToDouble(out best_priority))
+                    best_priority = 0;
+
+                if (!candidate_element.GetDeclaration("target_priority_important").TryToDouble(out candidate_priority))
+                    candidate_priority = 0;
+
+                if (candidate_priority > best_priority)
+                {
+                    best_element = candidate_element;
+                    continue;
+                }
+                if (best_priority > candidate_priority)
+                    continue;
+
                 // Choose the most recently-targeted element
                 if (element_target_sequence.TryGetValue(candidate_element, out var candidate_seq))
                 {
@@ -351,8 +368,6 @@ namespace Xalia.Ui
                     continue;
 
                 // Look for default or focused elements
-                double best_priority, candidate_priority;
-
                 if (!best_element.GetDeclaration("target_priority").TryToDouble(out best_priority))
                     best_priority = 0;
 
