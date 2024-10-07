@@ -8,7 +8,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndListViewItemProvider : UiDomProviderBase, IWin32LocationChange
+    internal class HwndListViewItemProvider : UiDomProviderBase, IWin32LocationChange, IUiDomScrollToProvider
     {
         public HwndListViewItemProvider(HwndListViewProvider parent, UiDomElement element)
         {
@@ -387,6 +387,12 @@ namespace Xalia.Win32
                 await SendMessageAsync(Parent.Hwnd, LVM_SETITEMSTATE,
                     (IntPtr)(ChildId - 1), (IntPtr)(long)memory.Address);
             }
+        }
+
+        public async Task<bool> ScrollToAsync()
+        {
+            await SendMessageAsync(Parent.Hwnd, LVM_ENSUREVISIBLE, (IntPtr)(ChildId - 1), (IntPtr)(1));
+            return true;
         }
     }
 }

@@ -108,6 +108,7 @@
     <Compile Include="Sdl\SplitOverlayBox.cs" />
     <Compile Include="Sdl\Win32LayeredBox.cs" />
     <Compile Include="UiDom\IUiDomProvider.cs" />
+    <Compile Include="UiDom\IUiDomScrollToProvider.cs" />
     <Compile Include="UiDom\IUiDomValueProvider.cs" />
     <Compile Include="UiDom\UiDomAdjustScrollbars.cs" />
     <Compile Include="Gudl\ApplyExpression.cs" />

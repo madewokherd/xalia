@@ -953,7 +953,7 @@ namespace Xalia.Ui
 
             TargetedElement = best_element;
 
-            ScrollIntoView(TargetedElement);
+            Utils.RunTask(ScrollIntoView(TargetedElement));
         }
 
         private bool AdjustValue(UiDomElement targetedElement, Direction direction)
@@ -1051,8 +1051,18 @@ namespace Xalia.Ui
                 target_box.Hide();
         }
 
-        private void ScrollIntoView(UiDomElement targetedElement)
+        private async Task ScrollIntoView(UiDomElement targetedElement)
         {
+            var scroll_to = targetedElement.ProviderByType<IUiDomScrollToProvider>();
+
+            if (!(scroll_to is null))
+            {
+                if (await scroll_to.ScrollToAsync())
+                {
+                    return;
+                }
+            }
+
             if (!TryGetElementTargetBounds(targetedElement, out var bounds))
                 return;
 
@@ -1105,7 +1115,7 @@ namespace Xalia.Ui
                         queue.Enqueue(st);
                         queue.Enqueue(new InputState(InputStateKind.Disconnected));
 
-                        Utils.RunTask(routine.ProcessInputQueue(queue));
+                        await routine.ProcessInputQueue(queue);
                     }
 
                     break;
