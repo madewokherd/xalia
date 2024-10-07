@@ -276,7 +276,7 @@ namespace Xalia.AtSpi2
                 this.peer = peer;
             }
 
-            public void Dispose()
+            public void RealDispose()
             {
                 var count = connection.poll_count[peer];
 
@@ -293,6 +293,22 @@ namespace Xalia.AtSpi2
                     return;
                 }
                 connection.poll_count[peer] = count - 1;
+            }
+
+            public void Dispose()
+            {
+                if ((connection.poll_known_sources.TryGetValue(peer, out var known_sources) &&
+                     known_sources.Count != 0) ||
+                    (connection.poll_unknown_sources.TryGetValue(peer, out var unknown_sources) &&
+                     unknown_sources.Count != 0))
+                {
+                    // this may resume a task, add some delay so we don't do this recursively
+                    Utils.RunIdle(RealDispose);
+                }
+                else
+                {
+                    connection.poll_count[peer]--;
+                }
             }
         }
     }
