@@ -431,8 +431,44 @@ namespace Xalia.Win32
 
         private void RefreshChildren()
         {
-            // TODO: account for watching_children_visible
-            SetRecurseMethodRange(1, ItemCount + 1);
+            if (watching_children_visible)
+            {
+                Utils.RunTask(RefreshRange(true));
+            }
+            else
+            {
+                SetRecurseMethodRange(1, ItemCount + 1);
+            }
+        }
+
+        private async Task RefreshRange(bool full)
+        {
+            var view = await GetViewAsync();
+            switch (view)
+            {
+                case LV_VIEW_DETAILS:
+                    {
+                        int top_index = Utils.TruncatePtr(
+                            await SendMessageAsync(Hwnd, LVM_GETTOPINDEX, IntPtr.Zero, IntPtr.Zero));
+
+                        int per_page = Utils.TruncatePtr(
+                            await SendMessageAsync(Hwnd, LVM_GETCOUNTPERPAGE, IntPtr.Zero, IntPtr.Zero));
+
+                        per_page++; // There may be a partially-visible item at the end
+
+                        per_page = Math.Min(per_page, ItemCount);
+
+                        SetRecurseMethodRange(top_index + 1, top_index + 1 + per_page);
+
+                        break;
+                    }
+                case LV_VIEW_LIST: // TODO - like details but we need to account for LVM_GETCOLUMNWIDTH ?
+                default:
+                    // No way to know which items are visible
+                    if (full)
+                        SetRecurseMethodRange(1, ItemCount + 1);
+                    break;
+            }
         }
 
         public UiDomElement GetMsaaChild(int ChildId)
@@ -655,7 +691,6 @@ namespace Xalia.Win32
 
         public void MsaaChildCreated(int ChildId)
         {
-            // TODO: account for watching_children_visible
             if (ItemCountKnown)
             {
                 if (ChildId < 1 || ChildId > ItemCount + 1)
@@ -667,6 +702,9 @@ namespace Xalia.Win32
                 ItemCount++;
                 Element.PropertyChanged("win32_item_count", ItemCount);
 
+                if (watching_children && ChildId < first_child_id)
+                    first_child_id++;
+
                 if (!watching_children ||
                     ChildId > Element.RecurseMethodChildCount + first_child_id ||
                     ChildId < first_child_id)
@@ -675,11 +713,10 @@ namespace Xalia.Win32
                     return;
                 }
 
-                if (watching_children)
-                {
-                    var child = CreateChildItem(GetUniqueKey());
-                    Element.AddChild(ChildId - first_child_id, child, true);
-                }
+                var child = CreateChildItem(GetUniqueKey());
+                Element.AddChild(ChildId - first_child_id, child, true);
+                if (watching_children_visible)
+                    Utils.RunTask(RefreshRange(false));
             }
 
             // FIXME: Should only be necessary for items after the one added, and only in LV_VIEW_LIST
@@ -700,6 +737,9 @@ namespace Xalia.Win32
                 ItemCount--;
                 Element.PropertyChanged("win32_item_count", ItemCount);
 
+                if (watching_children && ChildId < first_child_id)
+                    first_child_id--;
+
                 if (!watching_children ||
                     ChildId >= Element.RecurseMethodChildCount + first_child_id ||
                     ChildId < first_child_id)
@@ -709,6 +749,8 @@ namespace Xalia.Win32
                 }
 
                 Element.RemoveChild(ChildId - first_child_id, true);
+                if (watching_children_visible)
+                    Utils.RunTask(RefreshRange(false));
             }
 
             // FIXME: Should only be necessary for items after the one removed, and only in LV_VIEW_LIST
@@ -737,12 +779,20 @@ namespace Xalia.Win32
 
         public void MsaaLocationChange()
         {
+            if (watching_children_visible)
+            {
+                Utils.RunTask(RefreshRange(false));
+            }
             InvalidateChildBounds();
         }
 
         public void MsaaScrolled(int which)
         {
             // FIXME: We should account for scroll offset instead of refreshing every item rectangle
+            if (watching_children_visible)
+            {
+                Utils.RunTask(RefreshRange(false));
+            }
             InvalidateChildBounds();
         }
     }
