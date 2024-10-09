@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using Xalia.Gudl;
@@ -95,7 +96,7 @@ namespace Xalia.AtSpi2
                 if (!first_token)
                     sb.Append(',');
                 first_token = false;
-                sb.Append($"0x{value:x}");
+                sb.Append($"0x{value.ToString("x", CultureInfo.InvariantCulture)}");
             }
             sb.Append(") ");
             first_token = true;

@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Globalization;
+using System.Numerics;
 
 namespace Xalia.Gudl
 {
@@ -30,7 +31,7 @@ namespace Xalia.Gudl
         internal override string ToString(out GudlPrecedence precedence)
         {
             precedence = GudlPrecedence.Atom;
-            return Value.ToString();
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
     }
 }

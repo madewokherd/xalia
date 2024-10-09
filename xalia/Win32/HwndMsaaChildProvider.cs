@@ -23,7 +23,7 @@ namespace Xalia.Win32
 
         public override void DumpProperties(UiDomElement element)
         {
-            Console.WriteLine($"  msaa_child_id: {ChildId}");
+            Utils.DebugWriteLine($"  msaa_child_id: {ChildId}");
             HwndRoot.ChildDumpProperties();
             base.DumpProperties(element);
         }

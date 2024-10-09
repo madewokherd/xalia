@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Xalia.Gudl;
@@ -176,7 +177,7 @@ namespace Xalia.UiDom
 
         public override string ToString()
         {
-            return $"{Context}.(repeat_action({ActionExpression}, {InitialDelay / (double)Stopwatch.Frequency * 1000}, {RepeatDelay / (double)Stopwatch.Frequency * 1000}))";
+            return $"{Context}.(repeat_action({ActionExpression}, {(InitialDelay / (double)Stopwatch.Frequency * 1000).ToString(CultureInfo.InvariantCulture)}, {(RepeatDelay / (double)Stopwatch.Frequency * 1000).ToString(CultureInfo.InvariantCulture)}))";
         }
     }
 }

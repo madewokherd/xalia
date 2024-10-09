@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -136,7 +137,7 @@ namespace Xalia.Sdl
             {
                 if (line.StartsWith("Xft.dpi:\t"))
                 {
-                    if (int.TryParse(line.Substring(9), out int dpi_int))
+                    if (int.TryParse(line.Substring(9), NumberStyles.Integer, CultureInfo.InvariantCulture, out int dpi_int))
                     {
                         dpi = dpi_int;
                         return;

@@ -1253,7 +1253,7 @@ namespace Xalia.AtSpi2
                         }
                         else
                         {
-                            Console.WriteLine($"WARNING: unexpected type for accessible-role: {value}");
+                            Utils.DebugWriteLine($"WARNING: unexpected type for accessible-role: {value}");
                             break;
                         }
                         RoleKnown = true;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Numerics;
 
 namespace Xalia.UiDom
@@ -63,7 +64,7 @@ namespace Xalia.UiDom
 
         public override string ToString()
         {
-            return Value.ToString();
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
 
         public override bool Compare(UiDomValue other, out int sign)

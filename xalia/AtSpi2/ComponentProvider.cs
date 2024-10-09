@@ -94,7 +94,7 @@ namespace Xalia.AtSpi2
                 var success = await CallMethod(provider.Connection.Connection, provider.Peer, provider.Path,
                     IFACE_COMPONENT, "GrabFocus", ReadMessageBoolean);
                 if (!success)
-                    Console.WriteLine($"WARNING: spi_grab_focus failed for {obj.Element}");
+                    Utils.DebugWriteLine($"WARNING: spi_grab_focus failed for {obj.Element}");
             }
             catch (DBusException e)
             {

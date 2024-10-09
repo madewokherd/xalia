@@ -358,20 +358,20 @@ namespace Xalia.AtSpi2
                     }
                     if (debug_this_event)
                     {
-                        Console.WriteLine($"AT-SPI2 EVENT: {iface}.{name} on {signal.peer}:{signal.path}");
+                        Utils.DebugWriteLine($"AT-SPI2 EVENT: {iface}.{name} on {signal.peer}:{signal.path}");
                         if (!string.IsNullOrEmpty(signal.detail))
-                            Console.WriteLine($"  detail: {signal.detail}");
+                            Utils.DebugWriteLine($"  detail: {signal.detail}");
                         if (signal.detail1 != 0)
-                            Console.WriteLine($"  detail1: {signal.detail1}");
+                            Utils.DebugWriteLine($"  detail1: {signal.detail1}");
                         if (signal.detail2 != 0)
-                            Console.WriteLine($"  detail2: {signal.detail2}");
+                            Utils.DebugWriteLine($"  detail2: {signal.detail2}");
                         if (signal.value.Type != VariantValueType.Invalid)
-                            Console.WriteLine($"  value: {signal.value}");
+                            Utils.DebugWriteLine($"  value: {signal.value}");
                         if (!(signal.properties is null))
                         {
                             foreach (var property in signal.properties)
                             {
-                                Console.WriteLine($"  properties[\"{property.Key}\"]: {property.Value}");
+                                Utils.DebugWriteLine($"  properties[\"{property.Key}\"]: {property.Value}");
                             }
                         }
                     }

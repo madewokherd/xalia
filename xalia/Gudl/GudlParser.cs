@@ -2,6 +2,7 @@
 using Superpower.Model;
 using Superpower.Parsers;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -27,7 +28,7 @@ namespace Xalia.Gudl
 
         public static TokenListParser<GudlToken, GudlExpression> DecIntegerExpression =
             from s in Token.EqualTo(GudlToken.DecInteger)
-            select (GudlExpression)new IntegerExpression(BigInteger.Parse(s.ToStringValue()));
+            select (GudlExpression)new IntegerExpression(BigInteger.Parse(s.ToStringValue(), CultureInfo.InvariantCulture));
 
         public static TokenListParser<GudlToken, GudlExpression> HexIntegerExpression =
             from s in Token.EqualTo(GudlToken.HexInteger)
@@ -38,7 +39,7 @@ namespace Xalia.Gudl
 
         public static TokenListParser<GudlToken, GudlExpression> DoubleExpression =
             from s in Token.EqualTo(GudlToken.Double)
-            select (GudlExpression)new DoubleExpression(double.Parse(s.ToStringValue()));
+            select (GudlExpression)new DoubleExpression(double.Parse(s.ToStringValue(), CultureInfo.InvariantCulture));
 
         public static TokenListParser<GudlToken, GudlExpression> UnitExpression =
             ParenExpression
@@ -187,7 +188,7 @@ namespace Xalia.Gudl
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine($"  File {filename}, line {position.Line}");
+            sb.AppendLine($"  File {filename}, line {position.Line.ToString(CultureInfo.InvariantCulture)}");
 
             using (StringReader sr = new StringReader(gudl))
             {

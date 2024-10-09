@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Xalia.Util
 {
@@ -9,7 +10,7 @@ namespace Xalia.Util
         public RangeList(int start, int end)
         {
             if (end < start)
-                throw new ArgumentException($"end ({end}) must be greater than or equal to start ({start})");
+                throw new ArgumentException($"end ({end.ToString(CultureInfo.InvariantCulture)}) must be greater than or equal to start ({start.ToString(CultureInfo.InvariantCulture)})");
             Start = start;
             End = end;
         }

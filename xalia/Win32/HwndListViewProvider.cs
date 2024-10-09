@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 using Xalia.Gudl;
@@ -484,7 +485,7 @@ namespace Xalia.Win32
 
         private string GetUniqueKey()
         {
-            return $"listview-{Hwnd:x}-{++uniqueid}";
+            return $"listview-{Hwnd.ToInt64().ToString("x", CultureInfo.InvariantCulture)}-{(++uniqueid).ToString(CultureInfo.InvariantCulture)}";
         }
 
         private string GetChildKey(int ChildId)

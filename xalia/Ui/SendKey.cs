@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Xalia.Gudl;
 using Xalia.Sdl;
@@ -40,7 +41,7 @@ namespace Xalia.Ui
             {
                 try
                 {
-                    return RoutineForKeyCode((int)i.Value, $"send_key.{i.Value}");
+                    return RoutineForKeyCode((int)i.Value, $"send_key.{i.Value.ToString(CultureInfo.InvariantCulture)}");
                 }
                 catch (OverflowException)
                 {
@@ -63,7 +64,7 @@ namespace Xalia.Ui
             }
             if (right.TryToInt(out int i))
             {
-                return RoutineForKeyCode(i, $"send_key.{i}");
+                return RoutineForKeyCode(i, $"send_key.{i.ToString(CultureInfo.InvariantCulture)}");
             }
             return UiDomUndefined.Instance;
         }
@@ -74,7 +75,7 @@ namespace Xalia.Ui
 
             if (keycode != 0)
             {
-                return RoutineForKeyCode(keycode, $"send_key.{id}");
+                return RoutineForKeyCode(keycode, $"send_key.{id.ToString(CultureInfo.InvariantCulture)}");
             }
 
             return base.EvaluateIdentifierCore(id, root, depends_on);

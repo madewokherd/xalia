@@ -1,6 +1,7 @@
 ﻿#if WINDOWS
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -390,7 +391,7 @@ namespace Xalia.Sdl
                 case "oem_clear":
                     return 0xfe;
             }
-            if (key.StartsWith("f") && int.TryParse(key.Substring(1), out int fkey) &&
+            if (key.StartsWith("f") && int.TryParse(key.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture, out int fkey) &&
                 fkey > 0 && fkey <= 24)
             {
                 return 0x6f + fkey;

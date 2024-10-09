@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -105,15 +106,15 @@ namespace Xalia.Win32
             switch (idObject)
             {
                 case OBJID_WINDOW:
-                    return $"hwnd-{hwnd.ToInt64():x}";
+                    return $"hwnd-{hwnd.ToInt64().ToString("x", CultureInfo.InvariantCulture)}";
                 case OBJID_CLIENT:
                     if (idChild == CHILDID_SELF)
                         goto case OBJID_WINDOW;
-                    return $"hwnd-{hwnd.ToInt64():x}-{idChild}";
+                    return $"hwnd-{hwnd.ToInt64().ToString("x", CultureInfo.InvariantCulture)}-{idChild.ToString(CultureInfo.InvariantCulture)}";
                 case OBJID_VSCROLL:
-                    return $"NonclientVScroll-{hwnd.ToInt64():x}";
+                    return $"NonclientVScroll-{hwnd.ToInt64().ToString("x", CultureInfo.InvariantCulture)}";
                 case OBJID_HSCROLL:
-                    return $"NonclientHScroll-{hwnd.ToInt64():x}";
+                    return $"NonclientHScroll-{hwnd.ToInt64().ToString("x", CultureInfo.InvariantCulture)}";
             }
             return null;
         }
@@ -127,7 +128,7 @@ namespace Xalia.Win32
             if (!(id.acc2 is null))
                 return GetElementName(id.root_hwnd, OBJID_CLIENT, id.acc2_uniqueId);
             if (!(id.punk == IntPtr.Zero))
-                return $"punk-{id.root_hwnd.ToInt64():x}-{id.punk.ToInt64():x}";
+                return $"punk-{id.root_hwnd.ToInt64().ToString("x", CultureInfo.InvariantCulture)}-{id.punk.ToInt64().ToString("x", CultureInfo.InvariantCulture)}";
             return null;
         }
 
@@ -157,7 +158,7 @@ namespace Xalia.Win32
             foreach (int i in runtime_id)
             {
                 sb.Append('-');
-                sb.Append(i.ToString("x"));
+                sb.Append(i.ToString("x", CultureInfo.InvariantCulture));
             }
             return sb.ToString();
         }
@@ -237,7 +238,7 @@ namespace Xalia.Win32
         {
             var element_name = GetElementName(hwnd, idObject, idChild);
             if (element_name is null)
-                throw new InvalidOperationException($"cannot create element for {idObject}/{idChild}");
+                throw new InvalidOperationException($"cannot create element for {idObject.ToString(CultureInfo.InvariantCulture)}/{idChild.ToString(CultureInfo.InvariantCulture)}");
 
             var element = new UiDomElement(element_name, Root);
             switch (idObject)
@@ -296,7 +297,7 @@ namespace Xalia.Win32
             if (name is null)
             {
                 id_counter++;
-                name = $"msaa-{id.root_hwnd.ToInt64():x}-{id_counter}";
+                name = $"msaa-{id.root_hwnd.ToInt64().ToString("x", CultureInfo.InvariantCulture)}-{id_counter.ToString(CultureInfo.InvariantCulture)}";
             }
             
             var result = new UiDomElement(name, Root);

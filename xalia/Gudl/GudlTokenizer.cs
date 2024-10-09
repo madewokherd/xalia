@@ -57,12 +57,12 @@ namespace Xalia.Gudl
             from whole in Numerics.Integer
             from dot in Character.EqualTo('.')
             from dec in Numerics.Integer.OptionalOrDefault(TextSpan.Empty)
-            select double.Parse($"{whole}.{dec}");
+            select double.Parse($"{whole}.{dec}", CultureInfo.InvariantCulture);
 
         public static TextParser<BigInteger> GudlHexConstant =
             from prefix in Span.EqualTo("0x")
             from digits in Numerics.HexDigits
-            select BigInteger.Parse(digits.ToStringValue(), NumberStyles.HexNumber);
+            select BigInteger.Parse(digits.ToStringValue(), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
         public static Tokenizer<GudlToken> Instance =
             new TokenizerBuilder<GudlToken>()

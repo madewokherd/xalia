@@ -1,4 +1,6 @@
-﻿namespace Xalia.Gudl
+﻿using System.Globalization;
+
+namespace Xalia.Gudl
 {
     internal class DoubleExpression : GudlExpression
     {
@@ -28,7 +30,7 @@
         internal override string ToString(out GudlPrecedence precedence)
         {
             precedence = GudlPrecedence.Atom;
-            return Value.ToString();
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
     }
 }

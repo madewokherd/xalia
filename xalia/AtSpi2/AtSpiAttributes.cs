@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -51,7 +52,7 @@ namespace Xalia.AtSpi2
 
         public override string ToString()
         {
-            return $"spi_attributes [{Attributes.Count}]";
+            return $"spi_attributes [{Attributes.Count.ToString(CultureInfo.InvariantCulture)}]";
         }
     }
 }

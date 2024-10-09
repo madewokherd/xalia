@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -443,7 +444,7 @@ namespace Xalia.UiDom
             if (!(val is UiDomInt i))
                 return UiDomUndefined.Instance;
 
-            return new UiDomString($"0x{i.Value:x}");
+            return new UiDomString($"0x{i.Value.ToString("x", CultureInfo.InvariantCulture)}");
         }
 
         private UiDomValue EnumMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
