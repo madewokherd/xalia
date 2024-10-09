@@ -259,6 +259,9 @@ namespace Xalia.Win32
                 case "Static":
                     AddProvider(new HwndStaticProvider(this), index);
                     return;
+                case "SysHeader32":
+                    AddProvider(new HwndHeaderProvider(this), index);
+                    return;
                 case "SysListView32":
                     AddProvider(new HwndListViewProvider(this), index);
                     return;
@@ -299,6 +302,9 @@ namespace Xalia.Win32
                     return;
                 case 65536 + 15:
                     AddProvider(new HwndTabProvider(this), index);
+                    return;
+                case 65536 + 17:
+                    AddProvider(new HwndHeaderProvider(this), index);
                     return;
                 case 65536 + 18:
                     AddProvider(new HwndTrackBarProvider(this), index);

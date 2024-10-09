@@ -64,6 +64,7 @@ namespace Xalia.Viewer
             "is_win32_dialog",
             "is_hwnd_button",
             "is_hwnd_combo_box",
+            "is_hwnd_header",
             "is_hwnd_track_bar",
             "is_hwnd_tab_control",
             "is_hwnd_tab_item",
