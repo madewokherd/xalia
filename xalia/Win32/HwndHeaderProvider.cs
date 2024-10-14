@@ -9,7 +9,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndHeaderProvider : UiDomProviderBase, IWin32Styles, IWin32Container
+    internal class HwndHeaderProvider : UiDomProviderBase, IWin32Styles, IWin32Container, IWin32LocationChange
     {
         public HwndHeaderProvider(HwndProvider hwndProvider)
         {
@@ -22,6 +22,7 @@ namespace Xalia.Win32
         public Win32Connection Connection => HwndProvider.Connection;
         public UiDomElement Element => HwndProvider.Element;
         public int Tid => HwndProvider.Tid;
+        public int Pid => HwndProvider.Pid;
         public UiDomRoot Root => Element.Root;
 
         public CommandThread CommandThread => HwndProvider.CommandThread;
@@ -34,6 +35,8 @@ namespace Xalia.Win32
         private int uniqueid;
 
         private bool watching_children;
+
+        private bool invalidating_child_bounds;
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
@@ -286,6 +289,8 @@ namespace Xalia.Win32
                 var child = CreateChildItem(GetUniqueKey());
                 Element.AddChild(ChildId - 1, child, true);
             }
+
+            InvalidateChildBounds();
         }
 
         public void MsaaChildDestroyed(int ChildId)
@@ -306,11 +311,15 @@ namespace Xalia.Win32
 
                 Element.RemoveChild(ChildId - 1, true);
             }
+
+            InvalidateChildBounds();
         }
         private async Task DoChildrenReordered()
         {
             fetching_item_count = true;
             await FetchItemCount();
+
+            InvalidateChildBounds();
         }
 
         public void MsaaChildrenReordered()
@@ -329,6 +338,31 @@ namespace Xalia.Win32
                     return Element.Children[index];
             }
             return null;
+        }
+
+        private void DoInvalidateChildBounds()
+        {
+            if (watching_children)
+            {
+                for (int i = 0; i < Element.RecurseMethodChildCount; i++)
+                {
+                    Element.Children[i].ProviderByType<HwndHeaderItemProvider>().InvalidateBounds();
+                }
+            }
+            invalidating_child_bounds = false;
+        }
+
+        private void InvalidateChildBounds()
+        {
+            if (!watching_children || invalidating_child_bounds)
+                return;
+            invalidating_child_bounds = true;
+            Utils.RunIdle(DoInvalidateChildBounds);
+        }
+
+        public void MsaaLocationChange()
+        {
+            InvalidateChildBounds();
         }
     }
 }
