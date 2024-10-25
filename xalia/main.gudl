@@ -1320,6 +1320,10 @@ if (interactable) {
         adjust_value_right_action: set_focus+send_key.right;
     }
 
+    column_header {
+        targetable: true;
+    }
+
     // GTK menus
     menu (is_spi_element) {
         targetable: true;
