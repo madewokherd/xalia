@@ -780,7 +780,7 @@ namespace Xalia.AtSpi2
             if (!children_known)
                 return;
             var index = signal.detail1;
-            var child = (signal.value.GetItem(0).GetString(), signal.value.GetItem(1).GetObjectPath());
+            var child = (signal.value.GetItem(0).GetString(), signal.value.GetItem(1).GetObjectPathAsString());
             var child_element = Connection.LookupElement(child);
             switch (signal.detail)
             {
