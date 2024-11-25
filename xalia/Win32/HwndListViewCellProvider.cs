@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -87,23 +88,32 @@ namespace Xalia.Win32
                     return UiDomBoolean.True;
                 case "win32_x":
                 case "win32_width":
-                    if (Column == 0)
                     {
-                        if (identifier == "win32_x")
-                            return Row.Element.EvaluateIdentifier("win32_selectbounds_x", Root, depends_on);
-                        else
-                            return Row.Element.EvaluateIdentifier("win32_selectbounds_width", Root, depends_on);
-                    }
-                    if (!(HeaderProvider is null))
-                    {
-                        depends_on.Add((HeaderControl, new IdentifierExpression("children")));
-                        var header = ColumnHeader;
-                        if (!(header is null))
+                        if (Column == 0 && identifier == "win32_x")
                         {
-                            return header.EvaluateIdentifier(identifier, Root, depends_on);
+                            return Row.Element.EvaluateIdentifier("win32_selectbounds_x", Root, depends_on);
                         }
+                        UiDomValue result = UiDomUndefined.Instance;
+                        if (!(HeaderProvider is null))
+                        {
+                            depends_on.Add((HeaderControl, new IdentifierExpression("children")));
+                            var header = ColumnHeader;
+                            if (!(header is null))
+                            {
+                                result = header.EvaluateIdentifier(identifier, Root, depends_on);
+                            }
+                        }
+                        if (result is UiDomInt && Column == 0) // identifier == "win32_width"
+                        {
+                            // Sometimes selectbounds spans multiple columns (wine bug?)
+                            Row.Element.EvaluateIdentifier("win32_selectbounds_x", Root, depends_on).TryToInt(out var sb_x);
+                            Row.Element.EvaluateIdentifier("win32_selectbounds_width", Root, depends_on).TryToInt(out var sb_width);
+                            ColumnHeader.EvaluateIdentifier("win32_x", Root, depends_on).TryToInt(out var header_x);
+                            ColumnHeader.EvaluateIdentifier("win32_width", Root, depends_on).TryToInt(out var header_width);
+                            return new UiDomInt(Math.Min(header_x + header_width - sb_x, sb_width));
+                        }
+                        return result;
                     }
-                    break;
                 case "win32_y":
                     return Row.Element.EvaluateIdentifier("win32_selectbounds_y", Root, depends_on);
                 case "win32_height":
