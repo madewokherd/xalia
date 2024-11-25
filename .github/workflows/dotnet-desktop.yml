@@ -58,15 +58,15 @@ jobs:
     - name: Upload netcore-linux-noruntime
       uses: actions/upload-artifact@v4
       with:
-        name: net8-linux-noruntime
-        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\publish\**
+        name: net9-linux-noruntime
+        path: xalia\bin-netcore-linux\Release-Linux\net9.0\linux-x64\publish\**
         if-no-files-found: error
 
     - name: Upload netcore-windows-noruntime
       uses: actions/upload-artifact@v4
       with:
-        name: net8-windows-noruntime
-        path: xalia\bin-netcore-windows\Release-Windows\net8.0-windows\win-x64\publish\**
+        name: net9-windows-noruntime
+        path: xalia\bin-netcore-windows\Release-Windows\net9.0-windows\win-x64\publish\**
         if-no-files-found: error
 
     - name: Build netcore-linux
@@ -78,13 +78,13 @@ jobs:
     - name: Upload netcore-linux
       uses: actions/upload-artifact@v4
       with:
-        name: net8-linux
-        path: xalia\bin-netcore-linux\Release-Linux\net8.0\linux-x64\publish\**
+        name: net9-linux
+        path: xalia\bin-netcore-linux\Release-Linux\net9.0\linux-x64\publish\**
         if-no-files-found: error
 
     - name: Upload netcore-windows
       uses: actions/upload-artifact@v4
       with:
-        name: net8-windows
-        path: xalia\bin-netcore-windows\Release-Windows\net8.0-windows\win-x64\publish\**
+        name: net9-windows
+        path: xalia\bin-netcore-windows\Release-Windows\net9.0-windows\win-x64\publish\**
         if-no-files-found: error
