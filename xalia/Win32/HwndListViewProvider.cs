@@ -416,6 +416,7 @@ namespace Xalia.Win32
         private void WatchChildren()
         {
             Element.SetRecurseMethodProvider(this);
+            HwndProvider.HwndChildrenChanged += HwndProvider_HwndChildrenChanged;
             if (ItemCountKnown)
                 RefreshChildren();
             else if (!fetching_item_count)
@@ -427,6 +428,7 @@ namespace Xalia.Win32
 
         private void UnwatchChildren()
         {
+            HwndProvider.HwndChildrenChanged -= HwndProvider_HwndChildrenChanged;
             Element.UnsetRecurseMethodProvider(this);
         }
 
@@ -477,7 +479,8 @@ namespace Xalia.Win32
             if (ChildId >= first_child_id)
             {
                 int index = ChildId - first_child_id;
-                if (index < Element.RecurseMethodChildCount)
+                if (index < Element.RecurseMethodChildCount &&
+                    !(Element.Children[index].ProviderByType<HwndListViewItemProvider>() is null))
                     return Element.Children[index];
             }
             return null;
@@ -498,21 +501,35 @@ namespace Xalia.Win32
 
         private void SetRecurseMethodRange(int start, int end)
         {
-            List<string> keys = new List<string>(end - start);
+            List<(string, IntPtr)> keys = new List<(string, IntPtr)>(end - start);
             for (int i = start; i < end; i++)
             {
-                keys.Add(GetChildKey(i));
+                keys.Add((GetChildKey(i), IntPtr.Zero));
             }
+            foreach (var hwnd in HwndProvider.GetChildHwnds())
+                keys.Add((null, hwnd));
             first_child_id = start;
-            Element.SyncRecurseMethodChildren(keys, (string key) => key,
+            Element.SyncRecurseMethodChildren(keys, ((string, IntPtr) key) => key.Item1 is null ? Connection.GetElementName(key.Item2) : key.Item1,
                 CreateChildItem);
         }
 
-        private UiDomElement CreateChildItem(string key)
+        private UiDomElement CreateChildItem((string, IntPtr) key)
         {
-            var element = new UiDomElement(key, Root);
-            element.AddProvider(new HwndListViewItemProvider(this, element), 0);
-            return element;
+            if (key.Item1 is null)
+            {
+                return Connection.CreateElement(key.Item2);
+            }
+            else
+            {
+                var element = new UiDomElement(key.Item1, Root);
+                element.AddProvider(new HwndListViewItemProvider(this, element), 0);
+                return element;
+            }
+        }
+
+        private void HwndProvider_HwndChildrenChanged(object sender, EventArgs e)
+        {
+            RefreshChildren();
         }
 
         public override bool WatchProperty(UiDomElement element, GudlExpression expression)
@@ -714,7 +731,7 @@ namespace Xalia.Win32
                     return;
                 }
 
-                var child = CreateChildItem(GetUniqueKey());
+                var child = CreateChildItem((GetUniqueKey(), IntPtr.Zero));
                 Element.AddChild(ChildId - first_child_id, child, true);
                 if (watching_children_visible)
                     Utils.RunTask(RefreshRange(false));
@@ -772,7 +789,7 @@ namespace Xalia.Win32
             {
                 for (int i = 0; i < Element.RecurseMethodChildCount; i++)
                 {
-                    Element.Children[i].ProviderByType<HwndListViewItemProvider>().InvalidateBounds();
+                    Element.Children[i].ProviderByType<HwndListViewItemProvider>()?.InvalidateBounds();
                 }
             }
             invalidating_child_bounds = false;
