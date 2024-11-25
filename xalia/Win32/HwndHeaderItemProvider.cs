@@ -141,7 +141,7 @@ namespace Xalia.Win32
             return base.UnwatchProperty(element, expression);
         }
 
-        private async Task FetchLocation()
+        public async Task<(bool, RECT)> QueryClientLocationAsync()
         {
             if (remote_process_memory is null)
                 remote_process_memory = Win32RemoteProcessMemory.FromPid(Parent.Pid);
@@ -154,6 +154,15 @@ namespace Xalia.Win32
             }
 
             if (result == IntPtr.Zero)
+                return (false, default);
+            return (true, rc);
+        }
+
+        private async Task FetchLocation()
+        {
+            var result = await QueryClientLocationAsync();
+
+            if (!result.Item1)
             {
                 if (LocationKnown)
                 {
@@ -163,6 +172,7 @@ namespace Xalia.Win32
             }
             else
             {
+                var rc = result.Item2;
                 if (!LocationKnown || !Location.Equals(rc))
                 {
                     LocationKnown = true;

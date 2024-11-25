@@ -1441,10 +1441,18 @@ if (interactable) {
         targetable: false;
     }
 
-    if (is_hwnd_listview_item) {
+    if (is_hwnd_listview_item and recurse_method != "win32_listview_cell") {
         targetable: true;
         if (parent.checkboxes) {
             primary_action: toggle_checked;
+            secondary_action: send_click;
+        }
+    }
+
+    if (is_hwnd_listview_cell) {
+        targetable: true;
+        if (index_in_parent == 0 and parent.parent.checkboxes) {
+            primary_action: parent.toggle_checked;
             secondary_action: send_click;
         }
     }

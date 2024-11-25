@@ -70,6 +70,7 @@ namespace Xalia.Viewer
             "is_hwnd_tab_item",
             "is_hwnd_list_view",
             "is_hwnd_list_view_item",
+            "is_hwnd_list_view_cell",
             "is_hwnd_static",
             "is_nonclient_scrollbar",
             "is_hwnd_edit",

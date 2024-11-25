@@ -262,6 +262,9 @@ namespace Xalia.Interop
         public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern int MapWindowPoints(IntPtr hWndFrom, IntPtr hWndTo, ref POINT lpPoints, int cPoints);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern bool SetForegroundWindow(IntPtr hwnd);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
