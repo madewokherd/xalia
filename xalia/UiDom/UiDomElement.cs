@@ -873,11 +873,29 @@ namespace Xalia.UiDom
                 return;
             foreach (var prop in changed_properties)
             {
-                if (_propertyChangeNotifiers.TryGetValue(prop, out var notifiers))
-                {
-                    foreach (var notifier in notifiers)
+                bool modified = true;
+                while (modified) {
+                    modified = false;
+                    if (_propertyChangeNotifiers.TryGetValue(prop, out var notifiers))
                     {
-                        notifier.Handler(this, prop);
+                        var e = notifiers.GetEnumerator();
+                        while (true)
+                        {
+                            bool next;
+                            try
+                            {
+                                next = e.MoveNext();
+                            }
+                            catch (InvalidOperationException)
+                            {
+                                // Collection was modified
+                                modified = true;
+                                break;
+                            }
+                            if (!next)
+                                break;
+                            e.Current.Handler(this, prop);
+                        }
                     }
                 }
             }
