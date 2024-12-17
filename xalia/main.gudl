@@ -379,6 +379,18 @@ application (name == "plasmashell") {
     }
 }
 
+// APPLICATION: Unity3D launchers
+dialog (child_matches(win32_class_name == "SysTabControl32" and win32_control_id == 1016 and win32_item_count == 2) and
+        child_matches(image and win32_control_id == 1001))
+{
+    is_unity3d_launcher: true;
+}
+
+cell (parent.parent.parent.parent.is_unity3d_launcher)
+{
+    primary_action: on_release(send_click+send_click);
+}
+
 // APPLICATION: VLC
 layered_pane (spi_application.name == "vlc") {
     // Buttons along the top of preferences window are checkboxes that do not update the UI on Toggle
