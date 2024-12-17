@@ -100,7 +100,10 @@ namespace Xalia.Win32
                             var header = ColumnHeader;
                             if (!(header is null))
                             {
-                                result = header.EvaluateIdentifier(identifier, Root, depends_on);
+                                if (identifier == "win32_x")
+                                    result = header.EvaluateIdentifier("x", Root, depends_on);
+                                else
+                                    result = header.EvaluateIdentifier("width", Root, depends_on);
                             }
                         }
                         if (result is UiDomInt && Column == 0) // identifier == "win32_width"
@@ -108,8 +111,8 @@ namespace Xalia.Win32
                             // Sometimes selectbounds spans multiple columns (wine bug?)
                             Row.Element.EvaluateIdentifier("win32_selectbounds_x", Root, depends_on).TryToInt(out var sb_x);
                             Row.Element.EvaluateIdentifier("win32_selectbounds_width", Root, depends_on).TryToInt(out var sb_width);
-                            ColumnHeader.EvaluateIdentifier("win32_x", Root, depends_on).TryToInt(out var header_x);
-                            ColumnHeader.EvaluateIdentifier("win32_width", Root, depends_on).TryToInt(out var header_width);
+                            ColumnHeader.EvaluateIdentifier("x", Root, depends_on).TryToInt(out var header_x);
+                            ColumnHeader.EvaluateIdentifier("width", Root, depends_on).TryToInt(out var header_width);
                             return new UiDomInt(Math.Min(header_x + header_width - sb_x, sb_width));
                         }
                         return result;
