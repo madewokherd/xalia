@@ -404,6 +404,8 @@ namespace Xalia.UiDom
                     return new UiDomMethod("radial_deadzone", UiDomRadialDeadzone.ApplyFn);
                 case "on_release":
                     return new UiDomMethod("on_release", OnReleaseMethod);
+                case "wait":
+                    return new UiDomMethod("wait", WaitMethod);
                 case "enum":
                     return new UiDomMethod("enum", EnumMethod);
                 case "hex":
@@ -432,6 +434,25 @@ namespace Xalia.UiDom
                     return value;
             }
             return UiDomUndefined.Instance;
+        }
+
+        private UiDomValue WaitMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+
+            var val = context.Evaluate(arglist[0], root, depends_on);
+
+            if (!val.TryToDouble(out var timeout))
+                return UiDomUndefined.Instance;
+
+            return new UiDomRoutineAsync("wait", new UiDomValue[] { val }, WaitRoutine);
+        }
+
+        private async Task WaitRoutine(UiDomRoutineAsync obj)
+        {
+            obj.Arglist[0].TryToDouble(out double timeout);
+            await Task.Delay((int)(timeout * 1000));
         }
 
         private UiDomValue HexMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
