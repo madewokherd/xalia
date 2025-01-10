@@ -387,9 +387,14 @@ dialog (child_matches(win32_class_name == "SysTabControl32" and win32_control_id
     supported: true;
 }
 
-cell (parent.parent.parent.parent.is_unity3d_launcher)
+if ((is_hwnd_listview_cell or is_hwnd_header_item) and (parent.parent.parent.parent.is_unity3d_launcher))
 {
-    primary_action: on_release(send_click+send_click);
+    // This is the table on the Input tab. For most games these are so broken that we can't work with it in Xalia.
+    // The most common observed behavior in a small sample is that pressing any gamepad button queues it as an
+    // input, and attempting to bind a control will immediately bind it to that button. Thus, pressing the button
+    // to activate the cell will just bind it to A.
+    targetable: false;
+    // primary_action: on_release(send_click+send_click);
 }
 
 // APPLICATION: VLC
