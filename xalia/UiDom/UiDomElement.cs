@@ -410,6 +410,8 @@ namespace Xalia.UiDom
                     return new UiDomMethod("enum", EnumMethod);
                 case "hex":
                     return new UiDomMethod("hex", HexMethod);
+                case "environ":
+                    return UiDomEnviron.Instance;
             }
             var result = root.Application.EvaluateIdentifierHook(this, id, depends_on);
             if (!(result is null))

@@ -147,6 +147,7 @@
     <Compile Include="UiDom\UiDomDoActionRoutine.cs" />
     <Compile Include="UiDom\UiDomDouble.cs" />
     <Compile Include="UiDom\UiDomEnum.cs" />
+    <Compile Include="UiDom\UiDomEnviron.cs" />
     <Compile Include="UiDom\UiDomInt.cs" />
     <Compile Include="UiDom\UiDomElement.cs" />
     <Compile Include="UiDom\UiDomIsRelationship.cs" />
