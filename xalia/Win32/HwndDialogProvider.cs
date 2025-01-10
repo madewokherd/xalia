@@ -32,6 +32,7 @@ namespace Xalia.Win32
             switch (identifier)
             {
                 case "is_win32_dialog":
+                case "is_hwnd_dialog":
                     return UiDomBoolean.True;
                 case "win32_dialog_defid":
                     depends_on.Add((element, new IdentifierExpression("win32_dialog_defid")));
