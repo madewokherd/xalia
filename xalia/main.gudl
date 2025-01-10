@@ -384,6 +384,7 @@ dialog (child_matches(win32_class_name == "SysTabControl32" and win32_control_id
         child_matches(image and win32_control_id == 1001))
 {
     is_unity3d_launcher: true;
+    supported: true;
 }
 
 cell (parent.parent.parent.parent.is_unity3d_launcher)
@@ -751,6 +752,12 @@ if (is_win32_virtual_scrollbar) {
 
 // Top-level objects
 
+root {
+    if (environ.XALIA_SUPPORTED_ONLY and environ.XALIA_SUPPORTED_ONLY != "0") {
+        supported_only: true;
+    }
+}
+
 if (role.(desktop_frame or application)) {
     recurse: true;
 }
@@ -832,6 +839,10 @@ window (framework_id == "Slate") { // Unreal Engine's GUI toolkit
 if (application_supports_gamepad) {
     interactable: false;
     toplevel_interactable: false;
+}
+
+if (root.supported_only and toplevel_interactable and not supported) {
+    interactable: false;
 }
 
 if (toplevel_interactable or is_active_modal) {
