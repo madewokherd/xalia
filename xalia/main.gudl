@@ -460,6 +460,23 @@ if (win32_class_name == "TMainForm" and visible and root.delphi_pid_override == 
     toplevel_interactable: true;
 }
 
+// TOOLKIT: Win32
+if (is_hwnd_dialog) {
+    supported: child_matches(supported) and not child_matches(not supported);
+}
+
+if (is_hwnd_button) {
+    supported: not splitbutton;
+}
+
+if (is_hwnd_static) {
+    supported: not child_matches(not supported);
+}
+
+if (is_hwnd_combobox or is_hwnd_trackbar) {
+    supported: true;
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
