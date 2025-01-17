@@ -492,6 +492,11 @@ if (win32_real_class_name == "SysIPAddress32") {
     supported: true;
 }
 
+if (win32_real_class_name == "msctls_progress32") {
+    // Progress bar. Generally no user inputs accepted.
+    supported: true;
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
