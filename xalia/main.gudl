@@ -800,6 +800,11 @@ root {
     }
 }
 
+if (parent.is_root and not is_msaa_element and not is_uia_element) {
+    // Fallback for pure Win32 with custom toplevel window class.
+    supported: child_matches(supported and not is_win32_nonclient) and not child_matches(not supported);
+}
+
 if (role.(desktop_frame or application)) {
     recurse: true;
 }
