@@ -878,15 +878,38 @@ namespace Xalia.Win32
         {
             // Returns true if this is a bridged UIA element.
             // May return false and a non-null provider if it's a native IAccessible with a UIA provider.
-            if (UiaProviderFromIAccessible(obj, 0, UIA_PFIA_UNWRAP_BRIDGE, out uiaprov) == 0)
-            {
-                return true;
-            }
 
             IServiceProvider sp = obj as IServiceProvider;
 
             if (!(sp is null))
             {
+                try
+                {
+                    Guid sid = SID_IRawElemWrap, iid = IID_IUnknown;
+                    var raw_prov = sp.QueryService(ref sid, ref iid);
+                    if (raw_prov != IntPtr.Zero)
+                    {
+                        object obj_prov = Marshal.GetObjectForIUnknown(raw_prov);
+                        uiaprov = obj_prov as IRawElementProviderSimple;
+                        return true;
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                }
+                catch (NotImplementedException)
+                {
+                }
+                catch (InvalidCastException)
+                {
+                }
+                catch (ArgumentException)
+                {
+                }
+                catch (COMException)
+                {
+                }
+
                 try
                 {
                     Guid sid = IID_IAccessibleEx;
@@ -895,6 +918,7 @@ namespace Xalia.Win32
                     {
                         object obj_accex = Marshal.GetObjectForIUnknown(raw_accex);
                         uiaprov = obj_accex as IRawElementProviderSimple;
+                        return false;
                     }
                 }
                 catch (InvalidOperationException)
@@ -914,6 +938,7 @@ namespace Xalia.Win32
                 }
             }
 
+            uiaprov = null;
             return false;
         }
 

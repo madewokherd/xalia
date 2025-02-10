@@ -618,6 +618,7 @@ namespace Xalia.Interop
             }
         }
 
+        public static readonly Guid IID_IUnknown = new Guid("00000000-0000-0000-c000-000000000046");
         public static readonly Guid IID_IAccessible = new Guid("618736e0-3c3d-11cf-810c-00aa00389b71");
         public static readonly Guid IID_IAccessible2 = new Guid("e89f726e-c4f4-4c19-bb19-b647d7fa8478");
         public static readonly Guid IID_IAccessibleApplication = new Guid("d49ded83-5b25-43f4-9b95-93b44595979e");
@@ -1416,6 +1417,8 @@ namespace Xalia.Interop
         public static extern bool UiaNodeRelease(IntPtr hnode);
 
         public static readonly int UiaAppendRuntimeId = 3;
+
+        public static readonly Guid SID_IRawElemWrap = new Guid("ad6af07f-2bca-4858-9a1a-c8d099b840e7");
 
         public static readonly Guid IID_IAccessibleEx = new Guid("f8b80ada-2c44-48d0-89be-5ff23c9cd875");
 
