@@ -262,6 +262,9 @@ namespace Xalia.Win32
                 case "SysHeader32":
                     AddProvider(new HwndHeaderProvider(this), index);
                     return;
+                case "SysLink":
+                    AddProvider(new HwndSysLinkProvider(this), index);
+                    return;
                 case "SysListView32":
                     AddProvider(new HwndListViewProvider(this), index);
                     return;
