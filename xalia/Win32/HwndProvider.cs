@@ -263,7 +263,7 @@ namespace Xalia.Win32
                     AddProvider(new HwndHeaderProvider(this), index);
                     return;
                 case "SysLink":
-                    AddProvider(new HwndSysLinkProvider(this), index);
+                    AddProvider(new HwndSysLinkProvider(this), 0); // Override the MSAA provider so we get a proper role
                     return;
                 case "SysListView32":
                     AddProvider(new HwndListViewProvider(this), index);
