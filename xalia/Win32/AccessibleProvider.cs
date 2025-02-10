@@ -864,8 +864,12 @@ namespace Xalia.Win32
             for (int i = 0; i < count; i++)
             {
                 var v = IAccessible.get_accChild(i + 1);
-                if (v is int vi && vi == CHILDID_SELF)
+                if (v is null)
+                {
+                    // simple child - use parent IAccessible
+                    result.Add(ElementIdFromVariantBackground(i + 1));
                     continue;
+                }
                 if (!seen.Add(v))
                     continue;
                 result.Add(ElementIdFromVariantBackground(v));
