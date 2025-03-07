@@ -449,6 +449,14 @@ if (application_name == "xfce4-panel") {
 
 // Toolkit-specific behaviors
 
+// TOOLKIT: RPG Maker
+
+if (win32_class_name == "TFormLcfGameMain")
+{
+    // The game window contains only a button control that is technically visible+enabled but actually hidden.
+    interactable: false;
+}
+
 // TOOLKIT: Delphi
 
 root (child_matches(win32_class_name == "TApplication" and toplevel_interactable)) {
