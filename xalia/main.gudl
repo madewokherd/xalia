@@ -481,6 +481,13 @@ if (is_hwnd_dialog) {
 
 if (is_hwnd_button) {
     supported: not splitbutton;
+
+    if (ownerdraw) {
+        recurse: true;
+        if (interactable) {
+            targetable: not descendent_matches(targetable);
+        }
+    }
 }
 
 if (is_hwnd_static) {

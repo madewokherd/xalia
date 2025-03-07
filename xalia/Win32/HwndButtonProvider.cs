@@ -36,7 +36,7 @@ namespace Xalia.Win32
             new UiDomEnum(new string[] { "userbutton", "button" }),
             new UiDomEnum(new string[] { "autoradiobutton", "radiobutton", "radio_button" }),
             new UiDomEnum(new string[] { "pushbox", "pushbutton", "push_button", "button" }),
-            new UiDomEnum(new string[] { "ownerdraw", "button" }),
+            new UiDomEnum(new string[] { "ownerdraw" }),
             new UiDomEnum(new string[] { "splitbutton", "pushbutton", "push_button", "button" }),
             new UiDomEnum(new string[] { "defsplitbutton", "splitbutton", "pushbutton", "push_button", "button" }),
             new UiDomEnum(new string[] { "commandlink", "pushbutton", "push_button", "button" }),
