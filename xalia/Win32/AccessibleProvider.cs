@@ -134,8 +134,6 @@ namespace Xalia.Win32
 
         static Dictionary<string, string> property_aliases = new Dictionary<string, string>
         {
-            { "role", "msaa_role" },
-            { "control_type", "msaa_role" },
             { "name", "msaa_name" },
             { "x", "msaa_x" },
             { "y", "msaa_y" },
@@ -446,6 +444,12 @@ namespace Xalia.Win32
                     depends_on.Add((Element, new IdentifierExpression("msaa_default_action")));
                     if (DefaultActionKnown && !(DefaultAction is null))
                         return Element.EvaluateIdentifier("msaa_do_default_action", Element.Root, depends_on);
+                    break;
+                case "role":
+                case "control_type":
+                    depends_on.Add((Element, new IdentifierExpression("msaa_role")));
+                    if (RoleKnown && Role != ROLE_SYSTEM_CLIENT)
+                        return RoleAsValue;
                     break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))

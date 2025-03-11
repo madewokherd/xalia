@@ -425,6 +425,8 @@ namespace Xalia.Interop
             [MarshalAs(UnmanagedType.BStr)] public string variant;
         }
 
+        public const int ROLE_SYSTEM_CLIENT = 10;
+
         [ComImport, Guid("618736e0-3c3d-11cf-810c-00aa00389b71")]
         [InterfaceType(ComInterfaceType.InterfaceIsDual)]
         public interface IAccessible
