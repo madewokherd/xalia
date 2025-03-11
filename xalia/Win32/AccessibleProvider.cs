@@ -898,6 +898,9 @@ namespace Xalia.Win32
                         return true;
                     }
                 }
+                catch (NullReferenceException)
+                {
+                }
                 catch (InvalidOperationException)
                 {
                 }
