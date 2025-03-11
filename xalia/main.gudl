@@ -379,6 +379,12 @@ application (name == "plasmashell") {
     }
 }
 
+// APPLICATION: Trine launcher
+
+if (win32_process_name == "trine1_launcher") {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: Unity3D launchers
 dialog (child_matches(win32_class_name == "SysTabControl32" and win32_control_id == 1016 and win32_item_count == 2) and
         child_matches(image and win32_control_id == 1001))
