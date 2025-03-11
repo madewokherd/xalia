@@ -474,6 +474,12 @@ if (win32_class_name == "TMainForm" or win32_class_name == "TPanel" or
     supported: not child_matches(not supported);
 }
 
+// TOOLKIT: wxWidgets (Win32)
+
+if (class_name == "wxWindowClassNR") {
+    supported: not child_matches(not supported);
+}
+
 // TOOLKIT: Win32
 if (is_hwnd_dialog) {
     supported: child_matches(supported) and not child_matches(not supported);
