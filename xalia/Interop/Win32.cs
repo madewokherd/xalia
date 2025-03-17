@@ -36,6 +36,9 @@ namespace Xalia.Interop
         public static extern int NtSetInformationProcess(IntPtr process, PROCESSINFOCLASS infoclass,
             out SafeWaitHandle handle, int size);
 
+        public const int ERROR_FILE_NOT_FOUND = 2;
+        public const int ERROR_PATH_NOT_FOUND = 3;
+
         public static IntPtr GetCurrentProcess()
         {
             return new IntPtr(-1);

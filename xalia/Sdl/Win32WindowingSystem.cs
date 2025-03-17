@@ -1,5 +1,6 @@
 ﻿#if WINDOWS
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -26,10 +27,20 @@ namespace Xalia.Sdl
             }
             catch (COMException)
             {
-                // If TabTip.exe is not running, we can get REGDB_E_CLASSNOTREG
-                Process.Start(Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                    @"Common Files\microsoft shared\ink\TabTip.exe"));
+                try
+                {
+                    // If TabTip.exe is not running, we can get REGDB_E_CLASSNOTREG
+                    Process.Start(Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                        @"Common Files\microsoft shared\ink\TabTip.exe"));
+                }
+                catch (Win32Exception e)
+                {
+                    if (e.NativeErrorCode == ERROR_FILE_NOT_FOUND || e.NativeErrorCode == ERROR_PATH_NOT_FOUND)
+                        Utils.DebugWriteLine("show_keyboard failed");
+                    else
+                        throw;
+                }
             }
 
             return Task.CompletedTask;
