@@ -209,6 +209,7 @@
     <Compile Include="Win32\HwndTrackBarProvider.cs" />
     <Compile Include="Win32\IWin32Container.cs" />
     <Compile Include="Win32\IWin32LocationChange.cs" />
+    <Compile Include="Win32\IWin32NameChange.cs" />
     <Compile Include="Win32\IWin32Scrollable.cs" />
     <Compile Include="Win32\IWin32ScrollChange.cs" />
     <Compile Include="Win32\IWin32Styles.cs" />

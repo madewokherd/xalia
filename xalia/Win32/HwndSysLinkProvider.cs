@@ -5,7 +5,7 @@ using Xalia.UiDom;
 
 namespace Xalia.Win32
 {
-    internal class HwndSysLinkProvider : UiDomProviderBase, IWin32Styles
+    internal class HwndSysLinkProvider : UiDomProviderBase, IWin32Styles, IWin32NameChange
     {
         public HwndSysLinkProvider(HwndProvider hwndProvider)
         {
@@ -85,6 +85,16 @@ namespace Xalia.Win32
                 {
                     names.Add(style_names[i]);
                 }
+            }
+        }
+
+        public void MsaaNameChange()
+        {
+            Element.ProviderByType<AccessibleProvider>()?.MsaaChildrenReordered();
+            Win32Connection.RecursiveLocationChange(Element);
+            foreach (var child in Element.Children)
+            {
+                child.ProviderByType<AccessibleProvider>()?.MsaaNameChange();
             }
         }
     }

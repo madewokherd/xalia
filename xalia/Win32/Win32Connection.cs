@@ -724,6 +724,7 @@ namespace Xalia.Win32
                         {
                             element?.ProviderByType<AccessibleProvider>()?.MsaaNameChange();
                             element?.ProviderByType<HwndProvider>()?.MsaaNameChange();
+                            element?.ProviderByType<IWin32NameChange>()?.MsaaNameChange();
                         }
                         break;
                     }
