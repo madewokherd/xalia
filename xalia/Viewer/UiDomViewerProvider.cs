@@ -120,6 +120,8 @@ namespace Xalia.Viewer
             "win32_combo_box_dropped_state",
             "win32_track_bar_line_size",
             "win32_selection_index",
+            "win32_item_height",
+            "win32_top_index",
             // "win32_item_rects",
             "win32_is_comctl6",
             "win32_view",

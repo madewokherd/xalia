@@ -194,7 +194,9 @@
     <Compile Include="Win32\HwndEditProvider.cs" />
     <Compile Include="Win32\HwndHeaderItemProvider.cs" />
     <Compile Include="Win32\HwndHeaderProvider.cs" />
+    <Compile Include="Win32\HwndListBoxItemProvider.cs" />
     <Compile Include="Win32\HwndListBoxProvider.cs" />
+    <Compile Include="Win32\HwndListBoxScrollProvider.cs" />
     <Compile Include="Win32\HwndListViewCellProvider.cs" />
     <Compile Include="Win32\HwndListViewItemProvider.cs" />
     <Compile Include="Win32\HwndListViewProvider.cs" />
