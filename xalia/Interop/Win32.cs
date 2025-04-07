@@ -1271,6 +1271,9 @@ namespace Xalia.Interop
         public const int HDM_GETITEMCOUNT = HDM_FIRST + 0;
         public const int HDM_GETITEMRECT = HDM_FIRST + 7;
 
+        // List Box
+        public const int LB_GETCOUNT = 0x18b;
+
         // List view
         public const int LVS_ICON = 0x0;
         public const int LVS_REPORT = 0x1;
