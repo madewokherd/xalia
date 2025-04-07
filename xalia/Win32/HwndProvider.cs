@@ -253,6 +253,9 @@ namespace Xalia.Win32
                 case "Edit":
                     AddProvider(new HwndEditProvider(this), index);
                     return;
+                case "ListBox":
+                    AddProvider(new HwndListBoxProvider(this), index);
+                    return;
                 case "msctls_trackbar32":
                     AddProvider(new HwndTrackBarProvider(this), index);
                     return;
@@ -291,6 +294,9 @@ namespace Xalia.Win32
             }
             switch((long)lr)
             {
+                case 65536 + 0:
+                    AddProvider(new HwndListBoxProvider(this), index);
+                    return;
                 case 65536 + 2:
                     AddProvider(new HwndButtonProvider(this), index);
                     return;
