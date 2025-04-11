@@ -159,6 +159,9 @@ namespace Xalia.Win32
         {
             switch (identifier)
             {
+                case "role":
+                case "control_type":
+                    return role;
                 case "scrollbar":
                 case "scroll_bar":
                     return UiDomBoolean.True;

@@ -514,6 +514,14 @@ if (is_hwnd_tab_control) {
     supported: not child_matches(not is_hwnd_tab_item and not supported);
 }
 
+if (is_hwnd_listbox) {
+    supported: true;
+}
+
+if (is_hwnd_listbox_item and interactable) {
+    targetable: true;
+}
+
 if (win32_real_class_name == "SysIPAddress32") {
     // IP Address control. We get support for free because it's a container of 4 edit controls
     supported: true;

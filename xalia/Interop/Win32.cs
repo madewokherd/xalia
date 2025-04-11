@@ -1272,7 +1272,12 @@ namespace Xalia.Interop
         public const int HDM_GETITEMRECT = HDM_FIRST + 7;
 
         // List Box
+        public const int LBS_MULTICOLUMN = 0x200;
+
         public const int LB_GETCOUNT = 0x18b;
+        public const int LB_GETITEMRECT = 0x198;
+
+        public const int LB_ERR = -1;
 
         // List view
         public const int LVS_ICON = 0x0;

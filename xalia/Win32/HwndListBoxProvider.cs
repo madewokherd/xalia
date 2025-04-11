@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
@@ -8,7 +10,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndListBoxProvider : UiDomProviderBase, IWin32Styles, IWin32Container
+    internal class HwndListBoxProvider : UiDomProviderBase, IWin32Styles, IWin32Container, IWin32ScrollChange, IWin32LocationChange
     {
         public HwndListBoxProvider(HwndProvider hwndProvider)
         {
@@ -25,6 +27,7 @@ namespace Xalia.Win32
         public UiDomRoot Root => Element.Root;
 
         static UiDomEnum role = new UiDomEnum(new string[] { "list", "list_box", "listbox" });
+        public CommandThread CommandThread => HwndProvider.CommandThread;
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
@@ -79,6 +82,8 @@ namespace Xalia.Win32
         bool watching_children;
         bool watching_children_visible;
 
+        bool invalidating_child_bounds;
+
         public override UiDomValue EvaluateIdentifier(UiDomElement element, string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             switch (identifier)
@@ -86,9 +91,6 @@ namespace Xalia.Win32
                 case "is_hwnd_list_box":
                 case "is_hwnd_listbox":
                     return UiDomBoolean.True;
-                case "role":
-                case "control_type":
-                    return role;
                 case "win32_item_count":
                     depends_on.Add((element, new IdentifierExpression(identifier)));
                     if (ItemCountKnown)
@@ -105,7 +107,19 @@ namespace Xalia.Win32
                 case "list":
                 case "list_box":
                 case "listbox":
+                case "visible":
+                case "enabled":
+                case "focusable":
                     return UiDomBoolean.True;
+                case "role":
+                case "control_type":
+                    return role;
+                case "recurse_method":
+                    if (Element.EvaluateIdentifier("recurse", Root, depends_on).ToBool())
+                    {
+                        return new UiDomString("win32_list_visible");
+                    }
+                    break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
             {
@@ -137,7 +151,9 @@ namespace Xalia.Win32
             IntPtr result;
             try
             {
+                Utils.DebugWriteLine("--> LB_GETCOUNT");
                 result = await SendMessageAsync(Hwnd, LB_GETCOUNT, IntPtr.Zero, IntPtr.Zero);
+                Utils.DebugWriteLine("<-- LB_GETCOUNT");
             }
             catch (Win32Exception ex)
             {
@@ -212,7 +228,7 @@ namespace Xalia.Win32
         {
             if (watching_children_visible)
             {
-                Utils.RunTask(RefreshRange(true));
+                Utils.RunTask(RefreshRange());
             }
             else
             {
@@ -220,9 +236,47 @@ namespace Xalia.Win32
             }
         }
 
-        private async Task RefreshRange(bool full)
+        private async Task RefreshRange()
         {
-            // TODO: Use scrollbar info to figure out range
+            if (!ItemCountKnown)
+            {
+                Utils.DebugWriteLine("RefreshRange --> FetchItemCount");
+                await FetchItemCount();
+                Utils.DebugWriteLine("RefreshRange <-- FetchItemCount");
+            }
+
+            if ((Utils.TruncatePtr(GetWindowLong(Hwnd, GWL_STYLE)) & (WS_HSCROLL|WS_VSCROLL)) == 0)
+            {
+                // No scrolling
+                SetRecurseMethodRange(1, ItemCount + 1);
+            }
+
+            SCROLLINFO info;
+            try
+            {
+                Utils.DebugWriteLine("RefreshRange --> GetScrollInfo");
+                info = await CommandThread.OnBackgroundThread(() =>
+                {
+                    var si = new SCROLLINFO();
+                    si.cbSize = Marshal.SizeOf<SCROLLINFO>();
+                    si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
+                    if (!GetScrollInfo(Hwnd, ((HwndProvider.Style & LBS_MULTICOLUMN) != 0) ? SB_VERT : SB_HORZ, ref si))
+                        throw new Win32Exception();
+
+                    return si;
+                }, CommandThreadPriority.Query);
+                Utils.DebugWriteLine("RefreshRange <-- GetScrollInfo");
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return;
+            }
+
+            SetRecurseMethodRange(
+                info.nPos + 1,
+                Math.Min(info.nPos + info.nPage + 2, ItemCount + 1));
         }
 
         public UiDomElement GetMsaaChild(int ChildId)
@@ -316,10 +370,41 @@ namespace Xalia.Win32
             return base.UnwatchProperty(element, expression);
         }
 
+        internal void InvalidateChildBounds()
+        {
+            if (!watching_children || invalidating_child_bounds)
+                return;
+            invalidating_child_bounds = true;
+            Utils.RunIdle(DoInvalidateChildBounds);
+        }
+
+        private void DoInvalidateChildBounds()
+        {
+            if (watching_children)
+            {
+                for (int i = 0; i < Element.RecurseMethodChildCount; i++)
+                {
+                    Element.Children[i].ProviderByType<HwndListViewItemProvider>()?.InvalidateBounds();
+                }
+            }
+            invalidating_child_bounds = false;
+        }
+
+        public void MsaaLocationChange()
+        {
+            if (watching_children_visible)
+            {
+                Utils.RunTask(RefreshRange());
+            }
+            InvalidateChildBounds();
+        }
+
         private async Task DoChildrenReordered()
         {
             fetching_item_count = true;
+            Utils.DebugWriteLine("DoChildrenReordered --> FetchItemCount");
             await FetchItemCount();
+            Utils.DebugWriteLine("DoChildrenReordered <-- FetchItemCount");
 
             // This leaves us in an odd state where we may have existing
             // children that are actually different items now, so we
@@ -332,12 +417,6 @@ namespace Xalia.Win32
 
         public void MsaaChildrenReordered()
         {
-            view_change_count++;
-            if (watching_view)
-                Utils.RunTask(FetchView());
-            else
-                ViewKnown = false;
-
             ItemCountKnown = false;
             if (watching_children || watching_item_count)
                 Utils.RunTask(DoChildrenReordered());
@@ -370,7 +449,7 @@ namespace Xalia.Win32
                 var child = CreateChildItem((GetUniqueKey(), IntPtr.Zero));
                 Element.AddChild(ChildId - first_child_id, child, true);
                 if (watching_children_visible)
-                    Utils.RunTask(RefreshRange(false));
+                    Utils.RunTask(RefreshRange());
             }
 
             // FIXME: Should only be necessary for items after the one added, and only in LV_VIEW_LIST
@@ -404,10 +483,10 @@ namespace Xalia.Win32
 
                 Element.RemoveChild(ChildId - first_child_id, true);
                 if (watching_children_visible)
-                    Utils.RunTask(RefreshRange(false));
+                    Utils.RunTask(RefreshRange());
             }
 
-            // FIXME: Should only be necessary for items after the one removed, and only in LV_VIEW_LIST
+            // FIXME: Should only be necessary for items after the one removed
             InvalidateChildBounds();
         }
 
@@ -415,7 +494,7 @@ namespace Xalia.Win32
         {
             if (watching_children_visible)
             {
-                Utils.RunTask(RefreshRange(false));
+                Utils.RunTask(RefreshRange());
             }
             InvalidateChildBounds();
         }
