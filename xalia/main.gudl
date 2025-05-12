@@ -440,16 +440,16 @@ if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherW
         targetable: false;
     }
 
-    if (msaa_role.list_item and interactable) {
-        targetable: true;
+    if (msaa_role.list_item) {
+        valid_target: true;
     }
 }
 
 // APPLICATION: xfce4-panel
 if (application_name == "xfce4-panel") {
-    panel (interactable and child_count == 1 and child_at_index(0).(filler and child_count == 0)) {
+    panel (child_count == 1 and child_at_index(0).(filler and child_count == 0)) {
         // Whisker menu
-        targetable: true;
+        valid_target: true;
     }
 }
 
@@ -496,9 +496,7 @@ if (is_hwnd_button) {
 
     if (ownerdraw) {
         recurse: true;
-        if (interactable) {
-            targetable: not descendent_matches(targetable);
-        }
+        valid_target: not descendent_matches(valid_target or targetable);
     }
 }
 
@@ -518,8 +516,8 @@ if (is_hwnd_listbox) {
     supported: not ownerdrawvariable;
 }
 
-if (is_hwnd_listbox_item and interactable) {
-    targetable: true;
+if (is_hwnd_listbox_item) {
+    valid_target: true;
 }
 
 if (win32_real_class_name == "SysIPAddress32") {
@@ -1279,7 +1277,7 @@ if (targetable and is_descendent_of(root.targeted_view)) {
 }
 
 // Rules for setting borders of targetable elements
-if (targetable or is_current_view) {
+if (targetable or valid_target or is_current_view) {
     // "special" rules would go here
 
     toggle_button (expandable) {
@@ -1363,151 +1361,151 @@ root (targeted_view) {
 }
 
 // Rules that apply to controls in the active window
+combo_box (not (uia_expand_collapse_state.leaf_node or simple)) {
+    valid_target: true;
+
+    primary_action: spi_action.(press or Press) or uia_expand or uia_invoke or do_default_action;
+    primary_action_name: "Select";
+
+    if (child_matches(text_box)) {
+        secondary_action: child_matches(text_box).(focusable and set_focus or send_click)+show_keyboard;
+        secondary_action_name: "Show Keyboard";
+    }
+}
+
+if ((scroll_bar or slider) and not (is_win32_element or is_win32_subelement or spi_state.(vertical or horizontal) or uia_orientation)) {
+    // Qt doesn't set these states
+    vertical: height > width;
+    horizontal: width > height;
+}
+
+scroll_bar (is_win32_scroll_bar) {
+    adjust_value_action: send_scroll;
+}
+
+if ((scroll_bar or slider or split_pane) and vertical) {
+    valid_target: true;
+
+    adjust_value_action: adjust_scrollbars(undefined, this);
+
+    adjust_value_down_action: focusable and (set_focus+send_key.down) or adjust_value(minimum_increment or 25);
+    adjust_value_up_action: focusable and (set_focus+send_key.up) or adjust_value(-(minimum_increment or 25));
+}
+
+if (is_hwnd_trackbar) {
+    // set_focus + send_key doesn't work for these for some reason
+    valid_target: true;
+
+    adjust_value_action: adjust_scrollbars(this, undefined);
+
+    adjust_value_left_action: adjust_value(-(minimum_increment or 25));
+    adjust_value_right_action: adjust_value(minimum_increment or 25);
+}
+
+if ((scroll_bar or slider or split_pane) and horizontal) {
+    valid_target: true;
+
+    adjust_value_action: adjust_scrollbars(this, undefined);
+
+    adjust_value_left_action: focusable and (set_focus+send_key.left) or adjust_value(-(minimum_increment or 25));
+    adjust_value_right_action: focusable and (set_focus+send_key.right) or adjust_value(minimum_increment or 25);
+}
+
+spin_button {
+    valid_target: true;
+
+    primary_action: (focusable and set_focus or send_click)+show_keyboard;
+
+    adjust_value_action: adjust_scrollbars(this, undefined);
+
+    adjust_value_left_action: set_focus+send_key.left;
+    adjust_value_right_action: set_focus+send_key.right;
+}
+
+column_header {
+    valid_target: true;
+}
+
+// GTK menus
+menu (is_spi_element) {
+    valid_target: true;
+}
+
+// Qt/AT-SPI2 does its menu bars this way
+menu_item (parent.spi_role.menu_bar and spi_action.ShowMenu)
+{
+    valid_target: true;
+
+    primary_action: spi_action.ShowMenu;
+    primary_action_name: "Click";
+}
+
+// UI Automation menu
+menu_item (is_uia_element and parent.menu_bar)
+{
+    valid_target: true;
+
+    primary_action: uia_invoke or msaa_do_default_action;
+    primary_action_name: "Click";
+}
+
+page_tab {
+    valid_target: true;
+    primary_action: spi_action.Press or select;
+    primary_action_name: "Select Tab";
+}
+
+if ((button or radio_button or hyperlink) and manual_buttons)
+{
+    valid_target: true;
+    primary_action: send_click;
+    primary_action_name: "Click";
+}
+
+if (button or radio_button or hyperlink) {
+    valid_target: true;
+}
+
+check_box (manual_checkboxes) {
+    valid_target: true;
+    primary_action: send_click;
+    primary_action_name: "Toggle";
+}
+
+if (uia_control_type.check_box) {
+    valid_target: true;
+    primary_action: uia_invoke or msaa_do_default_action;
+    primary_action_name: "Toggle";
+}
+
+if (edit or
+    (is_uia_element and uia_control_type.document and not first_child)) { // Qt web controls show up as document but aren't really editable
+    valid_target: true;
+    if (is_uia_element and acc2_toolkit_name == "Qt" and ancestor_matches(uia_control_type.document)) {
+        // set_focus doesn't seem to work for Qt web views
+        primary_action: send_click+show_keyboard;
+    }
+    primary_action: (focusable and set_focus or send_click)+show_keyboard;
+    primary_action_name: "Show Keyboard";
+}
+
+// Tab bar navigation
+
+// GTK2: Sometimes the initially selected tab does not have the selected state.
+page_tab (spi_application.toolkit_name == "GAIL" and child_matches(spi_state.showing)) {
+    selected: true;
+}
+
+// Qt/AT-SPI2: The selected state is not set, but we can infer it using the sibling layered_pane
+page_tab (spi_application.toolkit_name == "Qt" and
+    parent.spi_role.page_tab_list and
+    parent.parent.spi_role.filler and
+    parent.first_sibling.spi_role.layered_pane and
+    parent.first_sibling.child_at_index(index_in_parent).spi_state.showing) {
+    selected: true;
+}
+
 if (interactable) {
-    combo_box (not (uia_expand_collapse_state.leaf_node or simple)) {
-        targetable: true;
-
-        primary_action: spi_action.(press or Press) or uia_expand or uia_invoke or do_default_action;
-        primary_action_name: "Select";
-
-        if (child_matches(text_box)) {
-            secondary_action: child_matches(text_box).(focusable and set_focus or send_click)+show_keyboard;
-            secondary_action_name: "Show Keyboard";
-        }
-    }
-
-    if ((scroll_bar or slider) and not (is_win32_element or is_win32_subelement or spi_state.(vertical or horizontal) or uia_orientation)) {
-        // Qt doesn't set these states
-        vertical: height > width;
-        horizontal: width > height;
-    }
-
-    scroll_bar (is_win32_scroll_bar) {
-        adjust_value_action: send_scroll;
-    }
-
-    if ((scroll_bar or slider or split_pane) and vertical) {
-        targetable: true;
-
-        adjust_value_action: adjust_scrollbars(undefined, this);
-
-        adjust_value_down_action: focusable and (set_focus+send_key.down) or adjust_value(minimum_increment or 25);
-        adjust_value_up_action: focusable and (set_focus+send_key.up) or adjust_value(-(minimum_increment or 25));
-    }
-
-    if (is_hwnd_trackbar) {
-        // set_focus + send_key doesn't work for these for some reason
-        targetable: true;
-
-        adjust_value_action: adjust_scrollbars(this, undefined);
-
-        adjust_value_left_action: adjust_value(-(minimum_increment or 25));
-        adjust_value_right_action: adjust_value(minimum_increment or 25);
-    }
-
-    if ((scroll_bar or slider or split_pane) and horizontal) {
-        targetable: true;
-
-        adjust_value_action: adjust_scrollbars(this, undefined);
-
-        adjust_value_left_action: focusable and (set_focus+send_key.left) or adjust_value(-(minimum_increment or 25));
-        adjust_value_right_action: focusable and (set_focus+send_key.right) or adjust_value(minimum_increment or 25);
-    }
-
-    spin_button {
-        targetable: true;
-
-        primary_action: (focusable and set_focus or send_click)+show_keyboard;
-
-        adjust_value_action: adjust_scrollbars(this, undefined);
-
-        adjust_value_left_action: set_focus+send_key.left;
-        adjust_value_right_action: set_focus+send_key.right;
-    }
-
-    column_header {
-        targetable: true;
-    }
-
-    // GTK menus
-    menu (is_spi_element) {
-        targetable: true;
-    }
-
-    // Qt/AT-SPI2 does its menu bars this way
-    menu_item (parent.spi_role.menu_bar and spi_action.ShowMenu)
-    {
-        targetable: true;
-
-        primary_action: spi_action.ShowMenu;
-        primary_action_name: "Click";
-    }
-
-    // UI Automation menu
-    menu_item (is_uia_element and parent.menu_bar)
-    {
-        targetable: true;
-
-        primary_action: uia_invoke or msaa_do_default_action;
-        primary_action_name: "Click";
-    }
-
-    page_tab {
-        targetable: true;
-        primary_action: spi_action.Press or select;
-        primary_action_name: "Select Tab";
-    }
-
-    if ((button or radio_button or hyperlink) and manual_buttons)
-    {
-        targetable: true;
-        primary_action: send_click;
-        primary_action_name: "Click";
-    }
-
-    if (button or radio_button or hyperlink) {
-        targetable: true;
-    }
-
-    check_box (manual_checkboxes) {
-        targetable: true;
-        primary_action: send_click;
-        primary_action_name: "Toggle";
-    }
-
-    if (uia_control_type.check_box) {
-        targetable: true;
-        primary_action: uia_invoke or msaa_do_default_action;
-        primary_action_name: "Toggle";
-    }
-
-    if (edit or
-        (is_uia_element and uia_control_type.document and not first_child)) { // Qt web controls show up as document but aren't really editable
-        targetable: true;
-		if (is_uia_element and acc2_toolkit_name == "Qt" and ancestor_matches(uia_control_type.document)) {
-			// set_focus doesn't seem to work for Qt web views
-			primary_action: send_click+show_keyboard;
-		}
-		primary_action: (focusable and set_focus or send_click)+show_keyboard;
-		primary_action_name: "Show Keyboard";
-    }
-
-    // Tab bar navigation
-
-    // GTK2: Sometimes the initially selected tab does not have the selected state.
-    page_tab (spi_application.toolkit_name == "GAIL" and child_matches(spi_state.showing)) {
-        selected: true;
-    }
-
-    // Qt/AT-SPI2: The selected state is not set, but we can infer it using the sibling layered_pane
-    page_tab (spi_application.toolkit_name == "Qt" and
-        parent.spi_role.page_tab_list and
-        parent.parent.spi_role.filler and
-        parent.first_sibling.spi_role.layered_pane and
-        parent.first_sibling.child_at_index(index_in_parent).spi_state.showing) {
-        selected: true;
-    }
-
     page_tab (previous_sibling_matches(interactable).(page_tab and selected)) {
         tab_right_action: primary_action or send_click;
         tab_right_action_name: spi_name;
@@ -1534,80 +1532,94 @@ if (interactable) {
         cancel_action: primary_action or send_click;
         cancel_action_name: name;
     }
+}
 
-    toggle_button {
-        targetable: true;
+toggle_button {
+    valid_target: true;
+}
+
+table_cell (parent.table_cell) {
+    // Table cells in GTK can have child table cells that intersect the scrollbar
+    // This is a problem for target navigation as it leads to up/down moving from list items to scrollbar
+
+    targetable: false;
+}
+
+if (is_hwnd_listview_item and recurse_method != "win32_listview_cell") {
+    valid_target: true;
+    if (parent.checkboxes) {
+        primary_action: toggle_checked;
+        secondary_action: send_click;
+    }
+}
+
+if (is_hwnd_listview_cell) {
+    valid_target: true;
+    if (index_in_parent == 0 and parent.parent.checkboxes) {
+        primary_action: parent.toggle_checked;
+        secondary_action: send_click;
+    }
+}
+
+if (is_hwnd_button and not frame)
+{
+    valid_target: true;
+}
+
+if ((table_cell or table_row or list_item) and targetable) {
+    if (expandable and spi_action("expand or contract")) {
+        secondary_action: spi_action("expand or contract");
     }
 
-    table_cell (parent.table_cell) {
-        // Table cells in GTK can have child table cells that intersect the scrollbar
-        // This is a problem for target navigation as it leads to up/down moving from list items to scrollbar
+    // Actions on table cells don't always do anything
+    primary_action: send_click;
+    secondary_action: send_click + send_click;
+}
 
+if (group or panel or frame) {
+    targetable: false;
+}
+
+if (focusable and not descendent_matches(targetable or valid_target)) {
+    // A control being focusable is a good hint that it's something to click on
+    valid_target: true;
+}
+
+if (spi_action.menu) {
+    context_menu_action: spi_action.menu;
+}
+
+table_cell (ancestor_matches(file_chooser)) {
+    // GTK file chooser does not respond to "activate" on table cells
+    primary_action: send_click;
+}
+
+if (is_spi_element != false)
+{
+    // This ignores the old Uia backend
+    if (do_default_action) {
+        primary_action: do_default_action;
+    }
+}
+
+if (spi_action.(click or Press or activate or toggle or Toggle)) {
+    primary_action: spi_action.(click or Press or activate or toggle or Toggle);
+}
+
+if (adjust_value_action) {
+    primary_action: descend_action;
+}
+
+if (valid_target and interactable) {
+    if (ancestor_matches(toplevel_interactable) and
+        (target_x + target_width <= ancestor_matches(toplevel_interactable).x or 
+         target_y + target_height <= ancestor_matches(toplevel_interactable).y or
+         target_x >= ancestor_matches(toplevel_interactable).(x + width) or
+         target_y >= ancestor_matches(toplevel_interactable).(y + height)))
+    {
+        // Outside the bounds of parent window
         targetable: false;
     }
 
-    if (is_hwnd_listview_item and recurse_method != "win32_listview_cell") {
-        targetable: true;
-        if (parent.checkboxes) {
-            primary_action: toggle_checked;
-            secondary_action: send_click;
-        }
-    }
-
-    if (is_hwnd_listview_cell) {
-        targetable: true;
-        if (index_in_parent == 0 and parent.parent.checkboxes) {
-            primary_action: parent.toggle_checked;
-            secondary_action: send_click;
-        }
-    }
-
-    if (is_hwnd_button and not frame)
-    {
-        targetable: true;
-    }
-
-    if ((table_cell or table_row or list_item) and targetable) {
-        if (expandable and spi_action("expand or contract")) {
-            secondary_action: spi_action("expand or contract");
-        }
-
-        // Actions on table cells don't always do anything
-        primary_action: send_click;
-        secondary_action: send_click + send_click;
-    }
-
-    if (group or panel or frame) {
-        targetable: false;
-    }
-
-    if (focusable and not descendent_matches(targetable)) {
-        // A control being focusable is a good hint that it's something to click on
-        targetable: true;
-    }
-
-    if (spi_action.menu) {
-        context_menu_action: spi_action.menu;
-    }
-
-    table_cell (ancestor_matches(file_chooser)) {
-        // GTK file chooser does not respond to "activate" on table cells
-        primary_action: send_click;
-    }
-
-    if (is_spi_element != false)
-    {
-        // This ignores the old Uia backend
-        if (do_default_action) {
-            primary_action: do_default_action;
-        }
-    }
-
-    if (spi_action.(click or Press or activate or toggle or Toggle)) {
-        primary_action: spi_action.(click or Press or activate or toggle or Toggle);
-    }
-
-    if (adjust_value_action) {
-        primary_action: descend_action;
-    }
+    targetable: true;
 }
