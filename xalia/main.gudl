@@ -1509,7 +1509,7 @@ if ((table_cell or table_row or list_item) and targetable) {
 }
 
 if (group or panel or frame) {
-    targetable: false;
+    valid_target: false;
 }
 
 if (focusable and not descendent_matches(targetable or valid_target)) {
