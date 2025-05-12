@@ -530,6 +530,10 @@ if (win32_real_class_name == "msctls_progress32") {
     supported: true;
 }
 
+if (is_hwnd_syslink) {
+    supported: true;
+}
+
 // General behaviors:
 
 if (spi_attributes.xalia_ignore)
