@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using static SDL2.SDL;
+using static SDL3.SDL;
 using static Xalia.Interop.Win32;
 
 namespace Xalia.Sdl
@@ -170,7 +170,7 @@ namespace Xalia.Sdl
             float dpi_br = WindowingSystem.GetDpi(X + Width, Y + Height);
             int pixel_width = (int)Math.Round(Math.Max(dpi_ul, dpi_br) / 96.0);
 
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BlendMode.SDL_BLENDMODE_NONE);
+            SDL_SetRenderDrawBlendMode(renderer, 0); // SDL_BLENDMODE_NONE
 
             // outer pixel border
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -180,7 +180,7 @@ namespace Xalia.Sdl
             // colored border
             SDL_SetRenderDrawColor(renderer, Color.r, Color.g, Color.b, Color.a);
 
-            SDL_Rect rc;
+            SDL_FRect rc;
 
             rc.x = pixel_width;
             rc.y = pixel_width;
@@ -212,7 +212,7 @@ namespace Xalia.Sdl
             SDL_RenderPresent(renderer);
         }
 
-        private void UpdateWindowRegion()
+        private unsafe void UpdateWindowRegion()
         {
             int width = Width + EffectiveThickness * 2;
             int height = Height + EffectiveThickness * 2;
@@ -229,7 +229,7 @@ namespace Xalia.Sdl
             try
             {
                 // create a surface to render to the dib
-                IntPtr surface = SDL_CreateRGBSurfaceWithFormatFrom(bits, width, height, 32, width * 4, SDL_PIXELFORMAT_ARGB8888);
+                IntPtr surface = (IntPtr)SDL_CreateSurfaceFrom(width, height, SDL_PixelFormat.SDL_PIXELFORMAT_ARGB8888, bits, width * 4);
                 if (surface == IntPtr.Zero)
                     throw new Exception(SDL_GetError());
                 try
@@ -242,7 +242,7 @@ namespace Xalia.Sdl
                 }
                 finally
                 {
-                    SDL_FreeSurface(surface);
+                    SDL_DestroySurface(surface);
                 }
 
                 //select DIB into an HDC

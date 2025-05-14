@@ -42,7 +42,6 @@
     <Compile Remove="bin-netcore-windows\**" />
     <Compile Remove="bin-netcore\**" />
     <Compile Remove="bin\**" />
-    <Compile Remove="external\SDL2-CS\gitlab-ci\**" />
     <Compile Remove="obj-netcore-linux\**" />
     <Compile Remove="obj-netcore-windows\**" />
     <Compile Remove="obj-netcore\**" />
@@ -51,9 +50,10 @@
     <Compile Remove="packages-netcore-windows\**" />
     <Compile Remove="packages-netcore\**" />
     <Compile Remove="xalia-netcore\**" />
+    <Compile Remove="external\SDL3-CS\GenerateBindings\**" />
+    <Compile Remove="external\SDL3-CS\SDL3\SDL3.Legacy.cs" />
     <EmbeddedResource Remove="bin-netcore\**" />
     <EmbeddedResource Remove="bin\**" />
-    <EmbeddedResource Remove="external\SDL2-CS\gitlab-ci\**" />
     <EmbeddedResource Remove="obj-netcore\**" />
     <EmbeddedResource Remove="obj\**" />
     <EmbeddedResource Remove="packages-netcore-linux\**" />
@@ -63,7 +63,6 @@
     <None Remove="bin-netcore-windows\**" />
     <None Remove="bin-netcore\**" />
     <None Remove="bin\**" />
-    <None Remove="external\SDL2-CS\gitlab-ci\**" />
     <None Remove="obj-netcore-linux\**" />
     <None Remove="obj-netcore-windows\**" />
     <None Remove="obj-netcore\**" />
@@ -74,20 +73,6 @@
     <None Remove="xalia-netcore\**" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="external\SDL2-CS\src\SDL2_gfx.cs" />
-    <Compile Remove="external\SDL2-CS\src\SDL2_image.cs" />
-    <Compile Remove="external\SDL2-CS\src\SDL2_mixer.cs" />
-    <Compile Remove="external\SDL2-CS\src\SDL2_ttf.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="external\SDL2-CS\.gitignore" />
-    <None Remove="external\SDL2-CS\.gitlab-ci.yml" />
-    <None Remove="external\SDL2-CS\app.config" />
-    <None Remove="external\SDL2-CS\LICENSE" />
-    <None Remove="external\SDL2-CS\Makefile" />
-    <None Remove="external\SDL2-CS\README" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Superpower" Version="3.0.0" />
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
   </ItemGroup>
@@ -95,10 +80,7 @@
     <None Update="main.gudl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="README-SDL.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="SDL2.dll">
+    <None Update="SDL3.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -543,6 +543,18 @@ namespace Xalia.Sdl
             SendInput(i, inputs, Marshal.SizeOf<INPUT>());
             return Task.CompletedTask;
         }
+
+        public override float GetDpi(int x, int y)
+        {
+            POINT pt = new POINT();
+            pt.x = x;
+            pt.y = y;
+            IntPtr monitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+            int hr = GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, out int dpix, out int dpiy);
+            if (hr < 0)
+                return 96;
+            return dpix;
+        }
     }
 }
 #endif

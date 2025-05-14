@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 
-using static SDL2.SDL;
+using static SDL3.SDL;
 
 namespace Xalia.Sdl
 {
@@ -33,7 +33,7 @@ namespace Xalia.Sdl
         {
         }
 
-        public void Init(uint flags)
+        public void Init(SDL_InitFlags flags)
         {
             if (Interlocked.CompareExchange(ref _main_thread_obj, Thread.CurrentThread, null) != null)
             {
@@ -52,7 +52,7 @@ namespace Xalia.Sdl
 
         public void Init()
         {
-            Init(SDL_INIT_EVERYTHING);
+            Init(SDL_InitFlags.SDL_INIT_EVENTS);
         }
 
         public void AssertMainThread()
@@ -96,7 +96,7 @@ namespace Xalia.Sdl
                     send.completed_event.Set();
                     continue;
                 }
-                if (SDL_PollEvent(out var poll_e) != 0)
+                if (SDL_PollEvent(out var poll_e))
                 {
                     try
                     {
@@ -113,7 +113,7 @@ namespace Xalia.Sdl
                     post.Item1(post.Item2);
                     continue;
                 }
-                if (SDL_WaitEvent(out var wait_e) != 0)
+                if (SDL_WaitEvent(out var wait_e))
                 {
                     HandleEvent(wait_e);
                     continue;
@@ -129,7 +129,7 @@ namespace Xalia.Sdl
                 handler(this, eventargs);
             if (eventargs.Cancel)
                 return;
-            if (e.type == SDL_EventType.SDL_QUIT)
+            if ((SDL_EventType)e.type == SDL_EventType.SDL_EVENT_QUIT)
                 Quit();
         }
 
@@ -138,7 +138,7 @@ namespace Xalia.Sdl
             if (Thread.CurrentThread == MainThread && !force)
                 return;
             SDL_Event e = new SDL_Event();
-            e.type = (SDL_EventType)_queue_updated_event;
+            e.type = _queue_updated_event;
             SDL_PushEvent(ref e);
         }
 
