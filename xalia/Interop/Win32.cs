@@ -6,7 +6,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using static SDL2.SDL;
+using static SDL3.SDL;
 
 namespace Xalia.Interop
 {
@@ -282,6 +282,9 @@ namespace Xalia.Interop
         public const int MONITOR_DEFAULTTONULL = 0;
         public const int MONITOR_DEFAULTTOPRIMARY = 1;
         public const int MONITOR_DEFAULTTONEAREST = 2;
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
+        public static extern IntPtr MonitorFromPoint(POINT pt, int dwFlags);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, SetLastError = true)]
         public static extern IntPtr MonitorFromWindow(IntPtr hwnd, int dwFlags);
@@ -1196,14 +1199,7 @@ namespace Xalia.Interop
 
         public static IntPtr GetSdlWindowHwnd(IntPtr sdl_window)
         {
-            SDL_SysWMinfo info = default;
-
-            SDL_VERSION(out info.version);
-
-            if (SDL_GetWindowWMInfo(sdl_window, ref info) != SDL_bool.SDL_TRUE)
-                throw new Exception(SDL_GetError());
-
-            return info.info.win.window;
+            return SDL_GetPointerProperty(SDL_GetWindowProperties(sdl_window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, IntPtr.Zero);
         }
 
         // Button

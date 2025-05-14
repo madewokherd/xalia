@@ -1,6 +1,6 @@
 ﻿using System;
 
-using static SDL2.SDL;
+using static SDL3.SDL;
 
 #if WINDOWS
 using static Xalia.Interop.Win32;
@@ -20,21 +20,22 @@ namespace Xalia.Sdl
             CreateWindow();
         }
 
+        internal IntPtr _parentWindow;
         internal IntPtr _window;
         internal uint _windowID;
         internal IntPtr _renderer;
         private readonly WindowingSystem windowingSystem;
+        internal int _effectiveThickness;
 
         private void OnSdlEvent(object sender, SdlSynchronizationContext.SdlEventArgs e)
         {
-            switch (e.SdlEvent.type)
+            switch ((SDL_EventType)e.SdlEvent.type)
             {
-                case SDL_EventType.SDL_WINDOWEVENT:
+                case SDL_EventType.SDL_EVENT_WINDOW_EXPOSED:
+                case SDL_EventType.SDL_EVENT_WINDOW_SHOWN:
                     {
                         var windowEvent = e.SdlEvent.window;
-                        if (windowEvent.windowID == _windowID &&
-                            (windowEvent.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_EXPOSED ||
-                             windowEvent.windowEvent == SDL_WindowEventID.SDL_WINDOWEVENT_SHOWN))
+                        if (windowEvent.windowID == _windowID)
                         {
                             Redraw();
                         }
@@ -45,13 +46,16 @@ namespace Xalia.Sdl
 
         private void CreateWindow()
         {
-            _window = SDL_CreateShapedWindow("overlay box",
+            _parentWindow = SDL_CreateWindow("parent", 1, 1, SDL_WindowFlags.SDL_WINDOW_HIDDEN);
+
+            _window = SDL_CreatePopupWindow(_parentWindow,
                 0,
                 0,
                 10,
                 10,
                 SDL_WindowFlags.SDL_WINDOW_ALWAYS_ON_TOP |
                 SDL_WindowFlags.SDL_WINDOW_BORDERLESS |
+                SDL_WindowFlags.SDL_WINDOW_NOT_FOCUSABLE |
                 SDL_WindowFlags.SDL_WINDOW_TOOLTIP |
                 SDL_WindowFlags.SDL_WINDOW_HIDDEN);
 
@@ -60,7 +64,9 @@ namespace Xalia.Sdl
 
             _windowID = SDL_GetWindowID(_window);
 
-            _renderer = SDL_CreateRenderer(_window, -1, 0);
+            _effectiveThickness = (int)Math.Round(Thickness * SDL_GetWindowDisplayScale(_window));
+
+            _renderer = SDL_CreateRenderer(_window, null);
 
             if (_renderer == IntPtr.Zero)
                 throw new Exception(SDL_GetError());
@@ -87,8 +93,8 @@ namespace Xalia.Sdl
 
             SDL_SetWindowSize(_window, window_width, window_height);
 
-            var surface = SDL_CreateRGBSurfaceWithFormat(0, window_width, window_height, 16,
-                SDL_PIXELFORMAT_BGRA5551);
+            var surface = SDL_CreateSurface(window_width, window_height,
+                SDL_PixelFormat.SDL_PIXELFORMAT_BGRA5551);
 
             try
             {
@@ -100,7 +106,7 @@ namespace Xalia.Sdl
 
                     SDL_RenderClear(surface_renderer);
 
-                    var rect = new SDL_Rect();
+                    var rect = new SDL_FRect();
 
                     SDL_SetRenderDrawColor(surface_renderer, 0, 0, 0, 0);
 
@@ -130,14 +136,11 @@ namespace Xalia.Sdl
                     SDL_DestroyRenderer(surface_renderer);
                 }
 
-                var mode = new SDL_WindowShapeMode();
-                mode.mode = WindowShapeMode.ShapeModeDefault;
-
-                SDL_SetWindowShape(_window, surface, ref mode);
+                SDL_SetWindowShape(_window, surface);
             }
             finally
             {
-                SDL_FreeSurface(surface);
+                SDL_DestroySurface(surface);
             }
         }
 
@@ -158,6 +161,11 @@ namespace Xalia.Sdl
                 SDL_DestroyWindow(_window);
                 _window = IntPtr.Zero;
                 _windowID = 0;
+            }
+            if (_parentWindow != IntPtr.Zero)
+            {
+                SDL_DestroyWindow(_parentWindow);
+                _parentWindow = IntPtr.Zero;
             }
             if (_renderer != IntPtr.Zero)
             {
@@ -219,7 +227,7 @@ namespace Xalia.Sdl
 
             SDL_SetRenderDrawColor(_renderer, Color.r, Color.g, Color.b, Color.a);
 
-            SDL_Rect rc;
+            SDL_FRect rc;
 
             rc.x = pixel_width;
             rc.y = pixel_width;

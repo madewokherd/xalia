@@ -1,6 +1,6 @@
 ﻿using System;
 
-using static SDL2.SDL;
+using static SDL3.SDL;
 
 namespace Xalia.Sdl
 {

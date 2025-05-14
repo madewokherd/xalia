@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-using static SDL2.SDL;
+using static SDL3.SDL;
 
 namespace Xalia.Interop
 {
@@ -53,14 +53,6 @@ namespace Xalia.Interop
             public IntPtr atom; // Atom
             public IntPtr time; // Time
             public int state;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct SDL_SysWMmsg_X11
-        {
-            public SDL_version version;
-            public SDL_SYSWM_TYPE subsystem;
-            public XEvent xev;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -146,5 +138,11 @@ namespace Xalia.Interop
 
         [DllImport(XTEST_LIB)]
         public extern static int XTestFakeMotionEvent(IntPtr display, int screen, int x, int y, IntPtr delay);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate SDLBool SDL_X11EventHook(IntPtr userdata, XEvent xevent);
+
+        [DllImport("SDL3")]
+        public extern static void SDL_SetX11EventHook(SDL_X11EventHook callback, IntPtr userdata);
     }
 }

@@ -1,5 +1,5 @@
 # Introduction
-Xalia is a program that provides a gamepad UI for traditional desktop applications. It does this using accessibility platforms like AT-SPI2 and UIAutomation, a unique rule-based language, the .NET standard, and SDL2.
+Xalia is a program that provides a gamepad UI for traditional desktop applications. It does this using accessibility platforms like AT-SPI2 and UIAutomation, a unique rule-based language, the .NET standard, and SDL3.
 
 Rather than directly simulate a keyboard or mouse through gamepad inputs (which can be done using AntiMicroX or Steam Input), Xalia scans the active window for controls it can interact with, such as buttons and text boxes. An analog joystick or D-Pad can then be used to navigate to a specific control. There is no virtual mouse cursor, it simply jumps to a control in the direction pressed. The way you then interact with the control depends on what it is, but in simple cases like buttons it can be activated with the A button by default.
 
@@ -25,7 +25,7 @@ The latest release can be downloaded from https://github.com/madewokherd/xalia/r
 
 Requirements:
  * A .NET runtime. This can either be Mono or .NET 6. The "self-contained" archives contain a build of .NET 6. When using Mono, the "Facade" assemblies (which are needed to support .NET Standard applications) are required; for some reason, Ubuntu has them in the `mono-devel` package.
- * SDL2. This should just be a matter of installing the libsdl2 packages on your distribution (`libsdl2-2.0-0` on Ubuntu).
+ * SDL3. This should just be a matter of installing the libsdl3 packages on your distribution.
  * AT-SPI2. This is probably included with your desktop environment, but you will need to enable it.
 
 You will need to enable AT-SPI2. On XFCE, this can be done by starting "Accessibility" in the applications menu and enabling the checkbox labeled "Enable assistive technologies". On Plasma, the option is in Accessibility settings under the Screen Reader tab, misleadingly named "Screen reader enabled". You will need to log in again for the change to take effect.
@@ -42,7 +42,7 @@ Once all of the setup is complete, run `mono xalia.exe`, `dotnet xalia.dll`, or 
 
 Run `xalia.exe` from the net48-mono or net9-windows zip.
 
-If you are using 32-bit Windows, you will need to use the net48-mono build and replace SDL2.dll with a win32-x86 version from http://libsdl.org/download-2.0.php.
+If you are using 32-bit Windows, you will need to use the net48-mono build and replace SDL3.dll with a win32-x86 version from https://github.com/libsdl-org/SDL/releases/latest.
 
 # Building
 
@@ -76,7 +76,7 @@ Here are the default controls when using a gamepad:
  * **Right Stick**: Adjust the selected control (for scrollbars and slider controls), or scroll the view.
  * **LB (or front left shoulder button)** and **RB (or front right shoulder button)**: Switch to the previous or next tab respectively.
 
-This is based on SDL2's GameController mapping, which should use the same layout for whatever controller you have, but the buttons may be labeled differently.
+This is based on SDL3's GameController mapping, which should use the same layout for whatever controller you have, but the buttons may be labeled differently.
 
 # GUDL
 

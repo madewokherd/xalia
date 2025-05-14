@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using static SDL2.SDL;
+using static SDL3.SDL;
 
 using static Xalia.Interop.X11;
 
@@ -20,23 +20,18 @@ namespace Xalia.Sdl
 
         private bool xtest_supported;
 
+        private static SDL_X11EventHook x11hook;
+
         public X11WindowingSystem()
         {
-            IntPtr window = SDL_CreateWindow("dummy window", 0, 0, 1, 1, SDL_WindowFlags.SDL_WINDOW_HIDDEN);
+            IntPtr window = SDL_CreateWindow("dummy window", 1, 1, SDL_WindowFlags.SDL_WINDOW_HIDDEN);
 
             if (window == IntPtr.Zero)
                 throw new Exception(SDL_GetError());
 
-            SDL_SysWMinfo info = default;
-
-            SDL_VERSION(out info.version);
-
-            if (SDL_GetWindowWMInfo(window, ref info) != SDL_bool.SDL_TRUE)
-                throw new Exception(SDL_GetError());
+            display = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_X11_DISPLAY_POINTER, IntPtr.Zero);
 
             SDL_DestroyWindow(window);
-
-            display = info.info.x11.display;
 
             root_window = XDefaultRootWindow(display);
 
@@ -54,23 +49,20 @@ namespace Xalia.Sdl
 
             EnableInputMask(root_window, PropertyChangeMask);
             
-            ((SdlSynchronizationContext)SynchronizationContext.Current).SdlEvent += OnSdlEvent;
+            x11hook = new SDL_X11EventHook(OnX11Event);
 
-            SDL_EventState(SDL_EventType.SDL_SYSWMEVENT, SDL_ENABLE);
+            SDL_SetX11EventHook(x11hook, IntPtr.Zero);
         }
 
-        private void OnSdlEvent(object sender, SdlSynchronizationContext.SdlEventArgs e)
+        private SDLBool OnX11Event(IntPtr userdata, XEvent xev)
         {
-            if (e.SdlEvent.type == SDL_EventType.SDL_SYSWMEVENT)
+            if (xev.type == PropertyNotify && xev.xproperty.window == root_window &&
+                xev.xproperty.atom == XA_RESOURCE_MANAGER)
             {
-                var syswm = Marshal.PtrToStructure<SDL_SysWMmsg_X11>(e.SdlEvent.syswm.msg);
-
-                if (syswm.xev.type == PropertyNotify && syswm.xev.xproperty.window == root_window &&
-                    syswm.xev.xproperty.atom == XA_RESOURCE_MANAGER)
-                {
-                    dpi_checked = false;
-                }
+                dpi_checked = false;
             }
+
+            return true;
         }
 
         private void EnableInputMask(IntPtr window, IntPtr mask)
