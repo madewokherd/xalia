@@ -13,7 +13,7 @@ using Xalia.Ui;
 using Xalia.UiDom;
 using Xalia.Sdl;
 
-using static SDL2.SDL;
+using static SDL3.SDL;
 #if WINDOWS
 using static Xalia.Interop.Win32;
 using Xalia.Win32;
@@ -100,7 +100,7 @@ namespace Xalia
 
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
-            SdlSynchronizationContext.Instance.Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
+            SdlSynchronizationContext.Instance.Init(SDL_InitFlags.SDL_INIT_VIDEO | SDL_InitFlags.SDL_INIT_JOYSTICK | SDL_InitFlags.SDL_INIT_GAMEPAD);
 
 #if WINDOWS
             if (Utils.IsWindows() &&
@@ -134,14 +134,14 @@ namespace Xalia
 
             switch ($"{Environment.OSVersion.Platform}:{libraryName}")
             {
-                case "Win32NT:SDL2":
-                    actual_library = "SDL2.dll";
+                case "Win32NT:SDL3":
+                    actual_library = "SDL3.dll";
                     break;
-                case "Unix:SDL2":
-                    actual_library = "libSDL2-2.0.so.0";
+                case "Unix:SDL3":
+                    actual_library = "libSDL3.so.0";
                     break;
-                case "MacOSX:SDL2":
-                    actual_library = "libSDL2-2.0.0.dylib";
+                case "MacOSX:SDL3":
+                    actual_library = "libSDL3.0.dylib";
                     break;
                 case "Unix:X11":
                     actual_library = "libX11.so.6";
