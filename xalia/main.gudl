@@ -323,9 +323,7 @@ dialog (process_name == "Launcher" and name == "Oddworld: Stranger's Wrath HD Co
     child (button and pushlike) {
         primary_action: on_release(send_click);
         if (pushed) {
-            root {
-                disable_interactions: true;
-            }
+            disable_interactions: true;
         }
     }
 }
@@ -337,9 +335,7 @@ dialog (process_name == "GamepadConfig" and child_matches(button and name == "Cl
         primary_action: on_release(click);
         if (name == "Scanning")
         {
-			root {
-				disable_interactions: true;
-			}
+            disable_interactions: true;
         }
     }
 }
@@ -859,6 +855,11 @@ if (root.supported_only and toplevel_interactable and not supported) {
 
 if (toplevel_interactable or is_active_modal) {
     deepest_modal: descendent_matches(is_active_modal).deepest_modal or this;
+}
+
+root (descendent_matches(disable_interactions))
+{
+    disable_interactions: true;
 }
 
 if (toplevel_interactable and not root.disable_interactions and deepest_modal == this and
