@@ -15,20 +15,31 @@ namespace Xalia.Sdl
             {
                 throw new PlatformNotSupportedException("X shape extension not supported");
             }
+
+            window = XCreateSimpleWindow(Display, XDefaultRootWindow(Display),
+                0, 0, 1, 1, // xywh
+                0, // boder_width
+                IntPtr.Zero, // border
+                IntPtr.Zero); // background
         }
 
         private X11WindowingSystem WindowingSystem { get; }
 
         private IntPtr Display => WindowingSystem.display;
 
+        private IntPtr window;
+
         protected override void Dispose(bool disposing)
         {
-            throw new NotImplementedException ();
+            if (disposing && window != IntPtr.Zero)
+            {
+                XDestroyWindow(Display, window);
+                window = IntPtr.Zero;
+            }
         }
 
         protected override void Update(UpdateFlags flags)
         {
-            throw new NotImplementedException ();
         }
     }
 }
