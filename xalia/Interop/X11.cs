@@ -44,6 +44,26 @@ namespace Xalia.Interop
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct XSetWindowAttributes
+        {
+            public IntPtr background_pixmap;
+            public IntPtr background_pixel;
+            public IntPtr border_pixmap;
+            public IntPtr border_pixel;
+            public int bit_gravity;
+            public int win_gravity;
+            public int backing_store;
+            public IntPtr backing_planes;
+            public IntPtr backing_pixel;
+            public int save_under;
+            public IntPtr event_mask;
+            public IntPtr do_not_propagate_mask;
+            public int override_redirect;
+            public IntPtr colormap;
+            public IntPtr cursor;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         public struct XPropertyEvent
         {
             public int type;
@@ -100,9 +120,14 @@ namespace Xalia.Interop
         public const int True = 1;
         public const int False = 0;
 
+        public const int CWOverrideRedirect = 1<<9;
+
         public const int PropertyNotify = 28;
 
         public static IntPtr PropertyChangeMask => (IntPtr)(1 << 22);
+
+        [DllImport(X11_LIB)]
+        public extern static IntPtr XChangeWindowAttributes(IntPtr display, IntPtr window, IntPtr valuemask, ref XSetWindowAttributes attributes);
 
         [DllImport(X11_LIB)]
         public extern static IntPtr XCreateSimpleWindow(IntPtr display, IntPtr parent, int x, int y, int width, int height, int border_width, IntPtr border, IntPtr background);
@@ -129,7 +154,13 @@ namespace Xalia.Interop
         public extern static IntPtr XInternAtom(IntPtr display, string atom_name, int only_if_exists);
 
         [DllImport(X11_LIB)]
+        public extern static int XMapWindow(IntPtr display, IntPtr window);
+
+        [DllImport(X11_LIB)]
         public extern static int XSelectInput(IntPtr display, IntPtr window, IntPtr event_mask);
+
+        [DllImport(X11_LIB)]
+        public extern static int XUnmapWindow(IntPtr display, IntPtr window);
 
         [DllImport(X11_LIB)]
         public extern static IntPtr XKeysymToKeycode(IntPtr display, IntPtr keysym);
