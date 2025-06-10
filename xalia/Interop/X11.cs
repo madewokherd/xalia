@@ -105,7 +105,13 @@ namespace Xalia.Interop
         public static IntPtr PropertyChangeMask => (IntPtr)(1 << 22);
 
         [DllImport(X11_LIB)]
+        public extern static IntPtr XCreateSimpleWindow(IntPtr display, IntPtr parent, int x, int y, int width, int height, int border_width, IntPtr border, IntPtr background);
+
+        [DllImport(X11_LIB)]
         public extern static IntPtr XDefaultRootWindow(IntPtr display);
+
+        [DllImport(X11_LIB)]
+        public extern static int XDestroyWindow(IntPtr display, IntPtr window);
 
         [DllImport(X11_LIB)]
         public extern static int XGetWindowAttributes(IntPtr display, IntPtr window, ref XWindowAttributes window_attributes_return);
