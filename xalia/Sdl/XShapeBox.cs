@@ -17,10 +17,15 @@ namespace Xalia.Sdl
             }
 
             window = XCreateSimpleWindow(Display, XDefaultRootWindow(Display),
-                0, 0, 1, 1, // xywh
+                15, 15, 15, 15, // xywh
                 0, // boder_width
                 IntPtr.Zero, // border
                 IntPtr.Zero); // background
+            
+            XSetWindowAttributes attributes = default;
+            attributes.override_redirect = 1;
+
+            XChangeWindowAttributes(Display, window, new IntPtr(CWOverrideRedirect), ref attributes);
         }
 
         private X11WindowingSystem WindowingSystem { get; }
@@ -40,6 +45,14 @@ namespace Xalia.Sdl
 
         protected override void Update(UpdateFlags flags)
         {
+            if ((flags & UpdateFlags.Visible) == 0)
+            {
+                XUnmapWindow(Display, window);
+            }
+            if ((flags & UpdateFlags.Show) != 0)
+            {
+                XMapWindow(Display, window);
+            }
         }
     }
 }
