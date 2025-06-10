@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Xalia.Sdl
 {
-    internal class XdgWindowingSystem : WindowingSystem
+    internal abstract class XdgWindowingSystem : WindowingSystem
     {
         public override bool CanShowKeyboard()
         {

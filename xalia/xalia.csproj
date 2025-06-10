@@ -105,6 +105,7 @@
     <Compile Include="Interop\Win32RemoteProcessMemory.cs" />
     <Compile Include="Interop\Win32WaitHandle.cs" />
     <Compile Include="Sdl\OverlayBox.cs" />
+    <Compile Include="Sdl\XShapeBox.cs" />
     <Compile Include="Sdl\Win32LayeredBox.cs" />
     <Compile Include="UiDom\IUiDomProvider.cs" />
     <Compile Include="UiDom\IUiDomScrollToProvider.cs" />
@@ -174,7 +175,6 @@
     <Compile Include="Ui\TargetMoveRoutine.cs" />
     <Compile Include="Ui\UiMain.cs" />
     <Compile Include="Utils.cs" />
-    <Compile Include="Sdl\SdlOverlayBox.cs" />
     <Compile Include="Sdl\WindowingSystem.cs" />
     <Compile Include="external\SDL3-CS\SDL3\SDL3.Legacy.cs" />
     <Compile Include="Util\RangeList.cs" />
