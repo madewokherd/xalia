@@ -48,10 +48,7 @@ namespace Xalia.Sdl
 
         public override OverlayBox CreateOverlayBox()
         {
-            if (!Utils.TryGetEnvironmentVariable("XALIA_LAYERED_BOX", out var value) ||
-                value != "0")
-                return new Win32LayeredBox(this);
-            return base.CreateOverlayBox();
+            return new Win32LayeredBox(this);
         }
 
         public override bool CanSendKeys => true;

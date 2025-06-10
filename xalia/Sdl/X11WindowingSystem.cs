@@ -192,5 +192,10 @@ namespace Xalia.Sdl
             }
             return base.SendMouseButton(button, is_press);
         }
+
+        public override OverlayBox CreateOverlayBox()
+        {
+            return new XShapeBox(this);
+        }
     }
 }

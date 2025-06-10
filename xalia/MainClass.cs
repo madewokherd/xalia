@@ -146,6 +146,9 @@ namespace Xalia
                 case "Unix:X11":
                     actual_library = "libX11.so.6";
                     break;
+                case "Unix:Xext":
+                    actual_library = "libXext.so.6";
+                    break;
                 case "Unix:Xtst":
                     actual_library = "libXtst.so.6";
                     break;

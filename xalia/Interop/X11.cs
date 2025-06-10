@@ -8,6 +8,7 @@ namespace Xalia.Interop
     internal static class X11
     {
         const string X11_LIB = "X11";
+        const string XEXT_LIB = "Xext";
         const string XTEST_LIB = "Xtst";
 
         public static IntPtr XA_RESOURCE_MANAGER => (IntPtr)23;
@@ -126,6 +127,9 @@ namespace Xalia.Interop
 
         [DllImport(X11_LIB)]
         public extern static IntPtr XKeysymToKeycode(IntPtr display, IntPtr keysym);
+
+        [DllImport(XEXT_LIB)]
+        public extern static int XShapeQueryExtension(IntPtr display, ref int event_basep, ref int error_basep);
 
         [DllImport(XTEST_LIB)]
         public extern static int XTestQueryExtension(IntPtr display, ref int event_basep, ref int error_basep, ref int majorp, ref int minorp);

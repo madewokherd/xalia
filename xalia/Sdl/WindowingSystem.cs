@@ -5,7 +5,7 @@ using static SDL3.SDL;
 
 namespace Xalia.Sdl
 {
-    internal class WindowingSystem
+    internal abstract class WindowingSystem
     {
         protected WindowingSystem()
         {
@@ -25,14 +25,12 @@ namespace Xalia.Sdl
             {
                 case "x11":
                     return new X11WindowingSystem();
-                case "wayland":
-                    return new XdgWindowingSystem();
 #if WINDOWS
                 case "windows":
                     return new Win32WindowingSystem();
 #endif
                 default:
-                    return new WindowingSystem();
+                    throw new PlatformNotSupportedException($"Video driver {driver} not supported");
             }
         }
 
@@ -46,10 +44,7 @@ namespace Xalia.Sdl
             }
         }
 
-        public virtual OverlayBox CreateOverlayBox()
-        {
-            return new SdlOverlayBox(this);
-        }
+        public abstract OverlayBox CreateOverlayBox();
 
         public virtual float GetDpi(int x, int y)
         {
