@@ -53,6 +53,56 @@ namespace Xalia.Sdl
             {
                 XMapWindow(Display, window);
             }
+
+            UpdateWindowRegion();
+        }
+
+        private IntPtr ColorFromSdl(SDL_Color color)
+        {
+            long result = color.a << 24 | color.b << 16 | color.g << 8 | color.r;
+
+            return unchecked((IntPtr)result);
+        }
+
+        private void UpdateWindowRegion()
+        {
+            float dpi_ul = WindowingSystem.GetDpi(X, Y);
+            float dpi_br = WindowingSystem.GetDpi(X + Width, Y + Height);
+            int pixel_width = (int)Math.Round(Math.Max(dpi_ul, dpi_br) / 96.0);
+
+            int width = Width + EffectiveThickness * 2;
+            int height = Height + EffectiveThickness * 2;
+
+            XResizeWindow(Display, window, width, height);
+
+            XGCValues values = default;
+
+            values.function = GXcopy;
+            values.fill_style = FillSolid;
+            values.foreground = unchecked((IntPtr)0xff000000);
+
+            IntPtr gc = XCreateGC(Display, window, (IntPtr)(GCFunction|GCFillStyle|GCForeground), ref values);
+
+            XFillRectangle(Display, window, gc, 0, 0, width, height);
+
+            values.foreground = ColorFromSdl(Color);
+
+            XChangeGC(Display, gc, (IntPtr)GCForeground, ref values);
+
+            XFillRectangle(Display, window, gc, pixel_width, pixel_width,
+                Width + EffectiveThickness * 2 - pixel_width * 2,
+                Height + EffectiveThickness * 2 - pixel_width * 2);
+
+            values.foreground = unchecked((IntPtr)0xff000000);
+
+            XChangeGC(Display, gc, (IntPtr)GCForeground, ref values);
+
+            XFillRectangle(Display, window, gc,
+                EffectiveThickness - pixel_width, EffectiveThickness - pixel_width,
+                Width + pixel_width * 2,
+                Height + pixel_width * 2);
+
+            XFreeGC(Display, gc);
         }
     }
 }

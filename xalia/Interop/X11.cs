@@ -14,6 +14,33 @@ namespace Xalia.Interop
         public static IntPtr XA_RESOURCE_MANAGER => (IntPtr)23;
         public static IntPtr XA_STRING => (IntPtr)31;
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct XGCValues
+        {
+            public int function;
+            public IntPtr plane_mask;
+            public IntPtr foreground;
+            public IntPtr background;
+            public int line_width;
+            public int line_style;
+            public int cap_style;
+            public int join_style;
+            public int fill_style;
+            public int fill_rule;
+            public int arc_mode;
+            public IntPtr tile;
+            public IntPtr stipple;
+            public int ts_x_origin;
+            public int ts_y_origin;
+            public IntPtr font;
+            public int subwindow_mode;
+            public int graphics_exposures;
+            public int clip_x_origin;
+            public int clip_y_origin;
+            public IntPtr clip_mask;
+            public int dash_offset;
+            public byte dashes;
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         public struct XWindowAttributes
@@ -122,12 +149,26 @@ namespace Xalia.Interop
 
         public const int CWOverrideRedirect = 1<<9;
 
+        public const int GCFunction = 1<<0;
+        public const int GCForeground = 1<<2;
+        public const int GCFillStyle = 1<<8;
+
+        public const int GXcopy = 3;
+
+        public const int FillSolid = 0;
+
         public const int PropertyNotify = 28;
 
         public static IntPtr PropertyChangeMask => (IntPtr)(1 << 22);
 
         [DllImport(X11_LIB)]
+        public extern static IntPtr XChangeGC(IntPtr display, IntPtr gc, IntPtr valuemask, ref XGCValues values);
+
+        [DllImport(X11_LIB)]
         public extern static IntPtr XChangeWindowAttributes(IntPtr display, IntPtr window, IntPtr valuemask, ref XSetWindowAttributes attributes);
+
+        [DllImport(X11_LIB)]
+        public extern static IntPtr XCreateGC(IntPtr display, IntPtr drawable, IntPtr valuemask, ref XGCValues values);
 
         [DllImport(X11_LIB)]
         public extern static IntPtr XCreateSimpleWindow(IntPtr display, IntPtr parent, int x, int y, int width, int height, int border_width, IntPtr border, IntPtr background);
@@ -137,6 +178,12 @@ namespace Xalia.Interop
 
         [DllImport(X11_LIB)]
         public extern static int XDestroyWindow(IntPtr display, IntPtr window);
+
+        [DllImport(X11_LIB)]
+        public extern static int XFillRectangle(IntPtr display, IntPtr drawable, IntPtr gc, int x, int y, int width, int height);
+
+        [DllImport(X11_LIB)]
+        public extern static int XFreeGC(IntPtr display, IntPtr gc);
 
         [DllImport(X11_LIB)]
         public extern static int XGetWindowAttributes(IntPtr display, IntPtr window, ref XWindowAttributes window_attributes_return);
@@ -155,6 +202,9 @@ namespace Xalia.Interop
 
         [DllImport(X11_LIB)]
         public extern static int XMapWindow(IntPtr display, IntPtr window);
+
+        [DllImport(X11_LIB)]
+        public extern static int XResizeWindow(IntPtr display, IntPtr window, int width, int height);
 
         [DllImport(X11_LIB)]
         public extern static int XSelectInput(IntPtr display, IntPtr window, IntPtr event_mask);
