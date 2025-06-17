@@ -106,6 +106,28 @@ namespace Xalia.Sdl
 
             // Make our window transparent to pointer input
             XShapeCombineRectangles(Display, window, ShapeInput, 0, 0, new XRectangle[] { }, 0, ShapeSet, Unsorted);
+
+            XRectangle[] bounding_shape = new XRectangle[4];
+
+            // top
+            bounding_shape[0].width = (short)width;
+            bounding_shape[0].height = (short)EffectiveThickness;
+
+            // left
+            bounding_shape[1].width = (short)EffectiveThickness;
+            bounding_shape[1].height = (short)height;
+
+            // right
+            bounding_shape[2].x = (short)(width - EffectiveThickness);
+            bounding_shape[2].width = (short)EffectiveThickness;
+            bounding_shape[2].height = (short)height;
+
+            // bottom
+            bounding_shape[3].y = (short)(height - EffectiveThickness);
+            bounding_shape[3].width = (short)width;
+            bounding_shape[3].height = (short)EffectiveThickness;
+
+            XShapeCombineRectangles(Display, window, ShapeBounding, 0, 0, bounding_shape, 4, ShapeSet, Unsorted);
         }
     }
 }
