@@ -103,6 +103,9 @@ namespace Xalia.Sdl
                 Height + pixel_width * 2);
 
             XFreeGC(Display, gc);
+
+            // Make our window transparent to pointer input
+            XShapeCombineRectangles(Display, window, ShapeInput, 0, 0, new XRectangle[] { }, 0, ShapeSet, Unsorted);
         }
     }
 }

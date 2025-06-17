@@ -71,6 +71,11 @@ namespace Xalia.Interop
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct XRectangle {
+            public short x, y, width, height;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         public struct XSetWindowAttributes
         {
             public IntPtr background_pixmap;
@@ -159,6 +164,14 @@ namespace Xalia.Interop
 
         public const int PropertyNotify = 28;
 
+        public const int ShapeBounding = 0;
+        public const int ShapeClip = 1;
+        public const int ShapeInput = 2;
+
+        public const int ShapeSet = 0;
+
+        public const int Unsorted = 0;
+
         public static IntPtr PropertyChangeMask => (IntPtr)(1 << 22);
 
         [DllImport(X11_LIB)]
@@ -217,6 +230,10 @@ namespace Xalia.Interop
 
         [DllImport(XEXT_LIB)]
         public extern static int XShapeQueryExtension(IntPtr display, ref int event_basep, ref int error_basep);
+
+        [DllImport(XEXT_LIB)]
+        public extern static void XShapeCombineRectangles(IntPtr display, IntPtr window, int dest_kind, int x_off, int y_off,
+            [MarshalAs(UnmanagedType.LPArray)] XRectangle[] rectangles, int n_rects, int op, int ordering);
 
         [DllImport(XTEST_LIB)]
         public extern static int XTestQueryExtension(IntPtr display, ref int event_basep, ref int error_basep, ref int majorp, ref int minorp);
