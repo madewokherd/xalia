@@ -50,6 +50,9 @@ namespace Xalia.Sdl
                 XUnmapWindow(Display, window);
             }
 
+            if ((flags & UpdateFlags.PositionChanged) != 0)
+                UpdateWindowPosition();
+
             if ((flags & (UpdateFlags.SizeChanged|UpdateFlags.ThicknessChanged|UpdateFlags.EffectiveThicknessChanged)) != 0)
                 UpdateWindowRegion();
 
@@ -60,6 +63,11 @@ namespace Xalia.Sdl
             {
                 XMapWindow(Display, window);
             }
+        }
+
+        private void UpdateWindowPosition()
+        {
+            XMoveWindow(Display, window, X - EffectiveThickness, Y - EffectiveThickness);
         }
 
         private IntPtr ColorFromSdl(SDL_Color color)

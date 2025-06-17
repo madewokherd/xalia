@@ -217,6 +217,9 @@ namespace Xalia.Interop
         public extern static int XMapWindow(IntPtr display, IntPtr window);
 
         [DllImport(X11_LIB)]
+        public extern static int XMoveWindow(IntPtr display, IntPtr window, int x, int y);
+
+        [DllImport(X11_LIB)]
         public extern static int XResizeWindow(IntPtr display, IntPtr window, int width, int height);
 
         [DllImport(X11_LIB)]
