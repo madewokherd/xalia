@@ -49,12 +49,17 @@ namespace Xalia.Sdl
             {
                 XUnmapWindow(Display, window);
             }
+
+            if ((flags & (UpdateFlags.SizeChanged|UpdateFlags.ThicknessChanged|UpdateFlags.EffectiveThicknessChanged)) != 0)
+                UpdateWindowRegion();
+
+            if ((flags & (UpdateFlags.SizeChanged|UpdateFlags.ThicknessChanged|UpdateFlags.EffectiveThicknessChanged|UpdateFlags.ColorChanged)) != 0)
+                Redraw();
+
             if ((flags & UpdateFlags.Show) != 0)
             {
                 XMapWindow(Display, window);
             }
-
-            UpdateWindowRegion();
         }
 
         private IntPtr ColorFromSdl(SDL_Color color)
@@ -64,7 +69,7 @@ namespace Xalia.Sdl
             return unchecked((IntPtr)result);
         }
 
-        private void UpdateWindowRegion()
+        private void Redraw()
         {
             float dpi_ul = WindowingSystem.GetDpi(X, Y);
             float dpi_br = WindowingSystem.GetDpi(X + Width, Y + Height);
@@ -72,8 +77,6 @@ namespace Xalia.Sdl
 
             int width = Width + EffectiveThickness * 2;
             int height = Height + EffectiveThickness * 2;
-
-            XResizeWindow(Display, window, width, height);
 
             XGCValues values = default;
 
@@ -103,6 +106,18 @@ namespace Xalia.Sdl
                 Height + pixel_width * 2);
 
             XFreeGC(Display, gc);
+        }
+
+        private void UpdateWindowRegion()
+        {
+            float dpi_ul = WindowingSystem.GetDpi(X, Y);
+            float dpi_br = WindowingSystem.GetDpi(X + Width, Y + Height);
+            int pixel_width = (int)Math.Round(Math.Max(dpi_ul, dpi_br) / 96.0);
+
+            int width = Width + EffectiveThickness * 2;
+            int height = Height + EffectiveThickness * 2;
+
+            XResizeWindow(Display, window, width, height);
 
             // Make our window transparent to pointer input
             XShapeCombineRectangles(Display, window, ShapeInput, 0, 0, new XRectangle[] { }, 0, ShapeSet, Unsorted);
