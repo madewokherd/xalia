@@ -96,6 +96,19 @@ namespace Xalia.Interop
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct XExposeEvent
+        {
+            public int type;
+            public UIntPtr serial;
+            public int send_event; // Bool
+            public IntPtr display; // Display*
+            public IntPtr window; // Window
+            public int x, y;
+            public int width, height;
+            public int count;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         public struct XPropertyEvent
         {
             public int type;
@@ -145,6 +158,8 @@ namespace Xalia.Interop
             [FieldOffset(0)]
             public XPropertyEvent xproperty;
             [FieldOffset(0)]
+            public XExposeEvent xexpose;
+            [FieldOffset(0)]
             XEventPad pad;
         }
 
@@ -162,6 +177,7 @@ namespace Xalia.Interop
 
         public const int FillSolid = 0;
 
+        public const int Expose = 12;
         public const int PropertyNotify = 28;
 
         public const int ShapeBounding = 0;
@@ -172,6 +188,7 @@ namespace Xalia.Interop
 
         public const int Unsorted = 0;
 
+        public static IntPtr ExposureMask => (IntPtr)(1 << 15);
         public static IntPtr PropertyChangeMask => (IntPtr)(1 << 22);
 
         [DllImport(X11_LIB)]

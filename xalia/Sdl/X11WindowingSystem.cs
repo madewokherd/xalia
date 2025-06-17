@@ -22,6 +22,8 @@ namespace Xalia.Sdl
 
         private static SDL_X11EventHook x11hook;
 
+        public event EventHandler<XEvent> X11Event;
+
         public X11WindowingSystem()
         {
             IntPtr window = SDL_CreateWindow("dummy window", 1, 1, SDL_WindowFlags.SDL_WINDOW_HIDDEN);
@@ -62,10 +64,13 @@ namespace Xalia.Sdl
                 dpi_checked = false;
             }
 
+            if (X11Event != null)
+                X11Event(this, xev);
+
             return true;
         }
 
-        private void EnableInputMask(IntPtr window, IntPtr mask)
+        public void EnableInputMask(IntPtr window, IntPtr mask)
         {
             XWindowAttributes window_attributes = default;
             XGetWindowAttributes(display, window, ref window_attributes);

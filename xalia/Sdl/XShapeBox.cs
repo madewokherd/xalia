@@ -26,6 +26,9 @@ namespace Xalia.Sdl
             attributes.override_redirect = 1;
 
             XChangeWindowAttributes(Display, window, new IntPtr(CWOverrideRedirect), ref attributes);
+
+            WindowingSystem.EnableInputMask(window, ExposureMask);
+            WindowingSystem.X11Event += OnX11Event;
         }
 
         private X11WindowingSystem WindowingSystem { get; }
@@ -40,6 +43,7 @@ namespace Xalia.Sdl
             {
                 XDestroyWindow(Display, window);
                 window = IntPtr.Zero;
+                WindowingSystem.X11Event -= OnX11Event;
             }
         }
 
@@ -151,6 +155,14 @@ namespace Xalia.Sdl
             bounding_shape[3].height = (short)EffectiveThickness;
 
             XShapeCombineRectangles(Display, window, ShapeBounding, 0, 0, bounding_shape, 4, ShapeSet, Unsorted);
+        }
+
+        private void OnX11Event(object sender, XEvent xev)
+        {
+            if (xev.type == Expose && xev.xexpose.window == window)
+            {
+                Redraw();
+            }
         }
     }
 }
