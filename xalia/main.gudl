@@ -375,6 +375,12 @@ application (name == "plasmashell") {
     }
 }
 
+// APPLICATION: Rockstar Games Launcher Installer
+
+if (win32_class_name == "Rockstar Games Launcher Installer") {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: Trine launcher
 
 if (win32_process_name == "trine1_launcher" or win32_process_name == "trine2_launcher") {
