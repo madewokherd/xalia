@@ -73,7 +73,7 @@
     <None Remove="xalia-netcore\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Superpower" Version="3.0.0" />
+    <PackageReference Include="Superpower" Version="3.1.0" />
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
   </ItemGroup>
   <ItemGroup>
