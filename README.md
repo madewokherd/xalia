@@ -11,7 +11,7 @@ Global actions are also possible, such as opening a program's menus or switching
 
 Linux/X11 is supported using AT-SPI2.
 
-Wayland has not been tested yet, but it probably does not work.
+Wayland is not supported. Currently, the accessibility architecture on Wayland doesn't have the capabilities needed to support Xalia.
 
 ## Windows
 
@@ -46,13 +46,15 @@ If you are using 32-bit Windows, you will need to use the net48-mono build and r
 
 # Building
 
-I do my development on Windows using Visual Studio.
+SDL.dll from https://github.com/libsdl-org/SDL/releases need to be dropped into the `xalia` project directory before building.
 
-SDL.dll and README-SDL.txt from http://libsdl.org/download-2.0.php need to be dropped into the `xalia` project directory before building.
+The single-assembly version (which works on both Linux/Mono and Windows/.NET Framework 4.8), can be built from xalia.sln using Visual Studio.
 
-Mono should hopefully also be able to build the project, but I have not tried it.
-
-The single-assembly version (which works on both Linux/Mono and Windows/.NET Framework 4.8), can be built from xalia.sln.
+On a Linux machine, the single-assembly version can be built with
+```
+nuget restore xalia.sln
+msbuild xalia.sln
+```
 
 A .NET 8 version can be built with one of the following commands:
 
