@@ -100,6 +100,7 @@ namespace Xalia.Win32
                     case unchecked((int)0x80020003): // DISP_E_MEMBERNOTFOUND
                     case unchecked((int)0x800401FD): // CO_E_OBJNOTCONNECTED
                     case unchecked((int)0x80040201): // EVENT_E_ALL_SUBSCRIBERS_FAILED
+                    case unchecked((int)0x80070490): // HRESULT_FROM_WIN32(ERROR_NOT_FOUND)
                     case unchecked((int)0x800706B5): // RPC_S_UNKNOWN_IF
                     case unchecked((int)0x800706BA): // RPC_E_SERVER_UNAVAILABLE
                     case unchecked((int)0x800706BE): // RPC_S_CALL_FAILED

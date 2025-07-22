@@ -842,6 +842,7 @@ namespace Xalia.Win32
             {
                 case 5: // Access denied
                 case 1400: // Invalid window handle
+                case 1447: // Window has no scrollbars
                     return true;
                 default:
                     if (accepted_errors.Contains(e.NativeErrorCode))
