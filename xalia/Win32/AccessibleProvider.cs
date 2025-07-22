@@ -423,7 +423,7 @@ namespace Xalia.Win32
             switch (identifier)
             {
                 case "recurse_method":
-                    if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
+                    if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool() && ChildId == CHILDID_SELF)
                         return new UiDomString("msaa");
                     break;
                 case "enabled":
@@ -1080,6 +1080,9 @@ namespace Xalia.Win32
                             }
                         }
                         else
+                            new_method = RecurseMethod.None;
+                        if (ChildId != CHILDID_SELF && new_method != RecurseMethod.accNavigate)
+                            // Only accNavigate makes sense for simple children
                             new_method = RecurseMethod.None;
                         WatchChildren(new_method);
                         break;
