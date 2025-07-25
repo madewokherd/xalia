@@ -613,6 +613,25 @@ namespace Xalia.Win32
                             case OBJID_WINDOW:
                             case OBJID_CLIENT:
                                 {
+                                    if (idChild == CHILDID_SELF) {
+                                        // Check for reparenting
+                                        var parent_hwnd = GetAncestor(hwnd, GA_PARENT);
+                                        UiDomElement parent_hwnd_element;
+                                        if (parent_hwnd == GetDesktopWindow())
+                                            parent_hwnd_element = Root;
+                                        else
+                                            parent_hwnd_element = LookupElement(parent_hwnd, OBJID_WINDOW, CHILDID_SELF);
+                                        var child_element = LookupElement(hwnd, idObject, idChild);
+
+                                        if (!(parent_hwnd_element is null) && (child_element is null || child_element.Parent != parent_hwnd_element)) {
+                                            // This doesn't always indicate a reparent, but PollChildren will figure it out.
+                                            if (parent_hwnd_element == Root)
+                                                UpdateToplevels();
+                                            else
+                                                parent_hwnd_element.ProviderByType<HwndProvider>()?.MsaaChildWindowAdded();
+                                        }
+                                    }
+
                                     var element = LookupElement(hwnd, idObject, idChild);
                                     if (!(element is null))
                                     {

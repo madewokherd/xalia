@@ -108,6 +108,9 @@ namespace Xalia.Win32
                         var list_element = Connection.LookupElement(HwndList);
                         if (!(list_element is null))
                             return list_element;
+                        else
+                            // Due to reparenting, we may not have seen the list element yet
+                            depends_on.Add((Element.Root, new IdentifierExpression("children")));
                         break;
                     }
                 case "win32_combo_box_dropped_state":
@@ -125,6 +128,9 @@ namespace Xalia.Win32
                             if (!(provider is null))
                                 return UiDomBoolean.FromBool((provider.Style & WS_VISIBLE) != 0);
                         }
+                        else
+                            // Due to reparenting, we may not have seen the list element yet
+                            depends_on.Add((Element.Root, new IdentifierExpression("children")));
                     }
                     break;
             }
