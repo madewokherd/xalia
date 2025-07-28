@@ -381,6 +381,20 @@ if (win32_class_name == "Rockstar Games Launcher Installer") {
     application_supports_gamepad: true;
 }
 
+// APPLICATION: STAR WARS Starfighter launcher
+
+if (process_name == "Starfighter" and win32_class_name == "CltWin:400000:8:100a8:0:100ba" and
+    win32_gui_active and win32_gui_focus)
+{
+    in_menu_navigation: true;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_left_action: send_key.left;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc;
+}
+
 // APPLICATION: Trine launcher
 
 if (win32_process_name == "trine1_launcher" or win32_process_name == "trine2_launcher") {
