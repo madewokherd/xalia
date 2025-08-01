@@ -6,15 +6,16 @@ namespace Xalia.UiDom
 {
     internal class UiDomMethod : UiDomValue
     {
-        public UiDomElement Element { get; }
+        public UiDomValue Value { get; }
+        public UiDomElement Element { get => Value as UiDomElement; }
         public string Name { get; }
         public ApplyFn ApplyFunction { get; }
 
         public delegate UiDomValue ApplyFn(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on);
 
-        public UiDomMethod(UiDomElement element, string name, ApplyFn apply_function)
+        public UiDomMethod(UiDomValue value, string name, ApplyFn apply_function)
         {
-            Element = element;
+            Value = value;
             Name = name;
             ApplyFunction = apply_function;
         }
@@ -34,21 +35,21 @@ namespace Xalia.UiDom
                 return true;
             if (obj is UiDomMethod m)
             {
-                return m.Element == Element && m.Name == Name;
+                return m.Value == Value && m.Name == Name;
             }
             return false;
         }
 
         public override int GetHashCode()
         {
-            return typeof(UiDomMethod).GetHashCode() ^ (Element, Name).GetHashCode();
+            return typeof(UiDomMethod).GetHashCode() ^ (Value, Name).GetHashCode();
         }
 
         public override string ToString()
         {
-            if (Element is null)
+            if (Value is null)
                 return Name;
-            return $"{Element}.{Name}";
+            return $"{Value}.{Name}";
         }
     }
 }
