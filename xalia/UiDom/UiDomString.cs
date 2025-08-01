@@ -1,4 +1,10 @@
-﻿namespace Xalia.UiDom
+﻿using System.Collections.Generic;
+using System.Globalization;
+using System.Runtime.InteropServices;
+
+using Xalia.Gudl;
+
+namespace Xalia.UiDom
 {
     public class UiDomString : UiDomValue
     {
@@ -41,6 +47,51 @@
                 return true;
             }
             return base.Compare(other, out sign);
+        }
+
+        protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root,
+            [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            switch (id)
+            {
+                case "startswith":
+                    return new UiDomMethod(this, "startswith", StartsWithMethod);
+                case "endswith":
+                    return new UiDomMethod(this, "endswith", EndsWithMethod);
+            }
+            return base.EvaluateIdentifierCore(id, root, depends_on);
+        }
+
+        private static UiDomValue StartsWithMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist,
+            UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            var s = method.Value as UiDomString;
+
+            foreach (var arg in arglist)
+            {
+                var s2 = context.Evaluate(arg, root, depends_on) as UiDomString;
+
+                if (!(s2 is null) && s.Value.StartsWith(s2.Value, false, CultureInfo.InvariantCulture))
+                    return UiDomBoolean.True;
+            }
+
+            return UiDomBoolean.False;
+        }
+
+        private static UiDomValue EndsWithMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist,
+            UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            var s = method.Value as UiDomString;
+
+            foreach (var arg in arglist)
+            {
+                var s2 = context.Evaluate(arg, root, depends_on) as UiDomString;
+
+                if (!(s2 is null) && s.Value.EndsWith(s2.Value, false, CultureInfo.InvariantCulture))
+                    return UiDomBoolean.True;
+            }
+
+            return UiDomBoolean.False;
         }
     }
 }
