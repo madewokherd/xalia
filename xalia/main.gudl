@@ -318,6 +318,16 @@ if (win32_process_name == "gvim") {
     }
 }
 
+// APPLICATION: LocoCycle launcher
+
+if (process_name == "Launcher" and class_name.startswith("BUTTON_")) {
+    supported: true;
+    valid_target: true;
+    if (class_name == "BUTTON_64") {
+        confirm_action: send_click;
+    }
+}
+
 // APPLICATION: Oddworld: Stranger's Wrath HD
 dialog (process_name == "Launcher" and name == "Oddworld: Stranger's Wrath HD Controls Configuration") {
     child (button and pushlike) {
