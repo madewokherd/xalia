@@ -506,6 +506,16 @@ if (win32_class_name == "TMainForm" or win32_class_name == "TPanel" or
     supported: not child_matches(not supported);
 }
 
+// TOOLKIT: Tk (Win32)
+
+if (class_name == "TkChild" or class_name == "TkTopLevel") {
+    supported: not child_matches(not supported);
+    manual_buttons: true;
+    descendent (win32_class_name == "Button" and ownerdraw) {
+        button: true;
+    }
+}
+
 // TOOLKIT: wxWidgets (Win32)
 
 if (class_name == "wxWindowClassNR") {
