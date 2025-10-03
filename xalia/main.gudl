@@ -1549,7 +1549,7 @@ if ((table_cell or table_row or list_item) and targetable) {
     secondary_action: send_click + send_click;
 }
 
-if (group or panel or frame) {
+if (role.(group or panel or frame)) {
     valid_target: false;
 }
 
