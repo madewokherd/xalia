@@ -55,6 +55,7 @@ namespace Xalia.Win32
             { "tid", "win32_tid" },
             { "process_name", "win32_process_name" },
             { "application_name", "win32_process_name" },
+            { "hwnd_element", "win32_hwnd_element" },
         };
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
@@ -582,6 +583,8 @@ namespace Xalia.Win32
                         }
                     }
                     return new UiDomString(ProcessName);
+                case "win32_hwnd_element":
+                    return Element;
             }
             return UiDomUndefined.Instance;
         }
