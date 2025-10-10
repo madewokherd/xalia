@@ -849,10 +849,13 @@ namespace Xalia.Win32
 
             List<ElementIdentifier> result = new List<ElementIdentifier>(count);
             HashSet<object> seen = new HashSet<object>(count);
-            foreach (var v in variants)
+            foreach (var value in variants)
             {
+                object v = value;
                 if (v is int i && i == CHILDID_SELF)
                     continue;
+                if (v is null)
+                    v = result.Count + 1;
                 if (!seen.Add(v))
                     continue;
                 result.Add(ElementIdFromVariantBackground(v));
