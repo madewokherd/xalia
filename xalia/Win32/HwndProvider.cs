@@ -218,7 +218,7 @@ namespace Xalia.Win32
             {
                 try
                 {
-                    (IAccessible, IRawElementProviderSimple) res = await CommandThread.OnBackgroundThread(() =>
+                    (IAccessible, IAccessible2, IRawElementProviderSimple) res = await CommandThread.OnBackgroundThread(() =>
                     {
                         int hr = ObjectFromLresult(lr, IID_IAccessible, IntPtr.Zero, out var obj);
                         Marshal.ThrowExceptionForHR(hr);
@@ -226,10 +226,16 @@ namespace Xalia.Win32
                         if (AccessibleProvider.UiaProviderFromIAccessibleBackground(obj, out var uiaprov))
                             obj = null;
 
-                        return (obj, uiaprov);
+                        IAccessible2 acc2 = null;
+                        if (!(obj is null))
+                            acc2 = QueryIAccessible2(obj);
+
+                        return (obj, acc2, uiaprov);
                     }, CommandThreadPriority.Query);
+                    if (!(res.Item3 is null))
+                        AddProvider(new UiaProvider(this, Element, res.Item3), index++);
                     if (!(res.Item2 is null))
-                        AddProvider(new UiaProvider(this, Element, res.Item2), index++);
+                        AddProvider(new Accessible2Provider(this, Element, res.Item2), index++);
                     if (!(res.Item1 is null))
                         AddProvider(new AccessibleProvider(this, Element, res.Item1, 0), index++);
                 }

@@ -59,6 +59,7 @@ namespace Xalia.Viewer
             // element types
             "is_hwnd_element",
             "is_msaa_element",
+            "is_accessible2_element",
             "is_uia_element",
             "is_uia_fragment",
             "is_win32_dialog",

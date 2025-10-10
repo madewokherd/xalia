@@ -313,6 +313,7 @@ namespace Xalia.Win32
 
             if (!(id.acc2 is null))
             {
+                result.AddProvider(new Accessible2Provider(root_hwnd, result, id.acc2));
                 result.AddProvider(new AccessibleProvider(root_hwnd, result, id.acc, CHILDID_SELF));
             }
             else if (!(id.acc is null))

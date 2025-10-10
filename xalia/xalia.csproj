@@ -185,6 +185,7 @@
       <DependentUpon>UiDomViewer.cs</DependentUpon>
     </Compile>
     <Compile Include="Viewer\UiDomViewerProvider.cs" />
+    <Compile Include="Win32\Accessible2Provider.cs" />
     <Compile Include="Win32\AccessibleProvider.cs" />
     <Compile Include="Win32\ElementIdentifier.cs" />
     <Compile Include="Win32\HwndButtonProvider.cs" />
