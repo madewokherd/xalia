@@ -80,6 +80,7 @@ namespace Xalia.Viewer
 
             // common declarations
             "interactable",
+            "valid_target",
             "targetable",
             "targeted",
             "primary_action",
