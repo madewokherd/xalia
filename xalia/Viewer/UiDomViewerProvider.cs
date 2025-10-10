@@ -83,6 +83,7 @@ namespace Xalia.Viewer
             "targetable",
             "targeted",
             "primary_action",
+            "supported",
             "recurse_method",
             "do_default_action",
             "target_left_candidate",
