@@ -102,6 +102,9 @@ namespace Xalia.Viewer
             "win32_window_text",
             "win32_real_class_name",
 
+            // ia2 info
+            "ia2_role",
+
             // msaa info
             "msaa_role",
             "msaa_state_names",
