@@ -523,6 +523,25 @@ if (class_name == "TkChild" or class_name == "TkTopLevel") {
     }
 }
 
+// TOOLKIT: WPF
+
+if (uia_framework_id == "WPF") {
+    if (parent.is_root and uia_class_name == "Popup" and enabled and visible) {
+        // Combo Box popup
+		in_menu_navigation: true;
+		menu_up_action: send_key.up;
+		menu_down_action: send_key.down;
+		menu_left_action: send_key.left;
+		menu_right_action: send_key.right;
+		menu_select_action: send_key.enter;
+		menu_back_action: send_key.esc;
+    }
+
+    if (uia_class_name == "ComboBox") {
+        supported: true;
+    }
+}
+
 // TOOLKIT: wxWidgets (Win32)
 
 if (class_name == "wxWindowClassNR") {
