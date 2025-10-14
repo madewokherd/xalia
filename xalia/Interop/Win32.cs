@@ -1442,6 +1442,7 @@ namespace Xalia.Interop
         public const int UIA_AutomationIdPropertyId = 30011;
         public const int UIA_NativeWindowHandlePropertyId = 30020;
         public const int UIA_IsOffscreenPropertyId = 30022;
+        public const int UIA_FrameworkIdPropertyId = 30024;
 
         [ComImport, Guid("d6dd68d1-86fd-4332-8666-9abedea2d24c")]
         [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

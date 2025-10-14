@@ -31,6 +31,7 @@ namespace Xalia.Win32
         {
             { "automation_id", "uia_automation_id" },
             { "role", "uia_control_type" },
+            { "framework_id", "uia_framework_id" },
             { "control_type", "uia_control_type" },
             { "enabled", "uia_is_enabled" },
             { "offscreen", "uia_is_offscreen" },
@@ -142,6 +143,7 @@ namespace Xalia.Win32
         {
             new PropertyInfo(UIA_AutomationIdPropertyId, "uia_automation_id"),
             new PropertyInfo(UIA_ControlTypePropertyId, "uia_control_type"),
+            new PropertyInfo(UIA_FrameworkIdPropertyId, "uia_framework_id"),
             new PropertyInfo(UIA_IsEnabledPropertyId, "uia_is_enabled"),
             new PropertyInfo(UIA_IsOffscreenPropertyId, "uia_is_offscreen"),
         };
@@ -150,6 +152,7 @@ namespace Xalia.Win32
         {
             AutomationId,
             ControlType,
+            FrameworkId,
             Enabled,
             Offscreen,
         }
@@ -219,6 +222,8 @@ namespace Xalia.Win32
                     return EvaluateProperty(Property.AutomationId, depends_on);
                 case "uia_control_type":
                     return EvaluateProperty(Property.ControlType, depends_on);
+                case "uia_framework_id":
+                    return EvaluateProperty(Property.FrameworkId, depends_on);
                 case "uia_is_enabled":
                     return EvaluateProperty(Property.Enabled, depends_on);
                 case "uia_is_offscreen":
@@ -353,6 +358,9 @@ namespace Xalia.Win32
                     case "uia_control_type":
                         WatchProperty(Property.ControlType);
                         return true;
+                    case "uia_framework_id":
+                        WatchProperty(Property.FrameworkId);
+                        return true;
                     case "uia_is_enabled":
                         WatchProperty(Property.Enabled);
                         return true;
@@ -468,6 +476,9 @@ namespace Xalia.Win32
                         return true;
                     case "uia_control_type":
                         UnwatchProperty(Property.ControlType);
+                        return true;
+                    case "uia_framework_id":
+                        UnwatchProperty(Property.FrameworkId);
                         return true;
                     case "uia_is_enabled":
                         UnwatchProperty(Property.Enabled);
@@ -721,6 +732,9 @@ namespace Xalia.Win32
                     break;
                 case UIA_ControlTypePropertyId:
                     PropertyChanged(Property.ControlType, new_value);
+                    break;
+                case UIA_FrameworkIdPropertyId:
+                    PropertyChanged(Property.FrameworkId, new_value);
                     break;
                 case UIA_IsEnabledPropertyId:
                     PropertyChanged(Property.Enabled, new_value);
