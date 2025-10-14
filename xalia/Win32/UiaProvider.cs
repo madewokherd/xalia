@@ -380,7 +380,7 @@ namespace Xalia.Win32
                         {
                             watching_bounding_rectangle = true;
                             if (!bounding_rectangle_known)
-                                Utils.RunTask(FetchBoundingRectangle());
+                                Utils.RunTask(FetchBoundingRectangle(false));
                         }
                         return true;
                 }
@@ -388,7 +388,7 @@ namespace Xalia.Win32
             return base.WatchProperty(element, expression);
         }
 
-        private async Task FetchBoundingRectangle()
+        private async Task FetchBoundingRectangle(bool refresh)
         {
             await RootHwnd.AddEvent(Win32Connection.UiaEvent.PropertyChanged);
 
@@ -414,7 +414,7 @@ namespace Xalia.Win32
                 return;
             }
 
-            if (bounding_rectangle_known || !result.Item2)
+            if ((bounding_rectangle_known && !refresh) || !result.Item2)
             {
                 return;
             }
@@ -499,7 +499,6 @@ namespace Xalia.Win32
                         return true;
                     case "uia_bounding_rectangle":
                         watching_bounding_rectangle = false;
-                        bounding_rectangle_known = false;
                         return true;
                 }
             }
@@ -758,7 +757,6 @@ namespace Xalia.Win32
                     break;
                 case UIA_BoundingRectanglePropertyId:
                     {
-
                         double[] values = (double[])new_value;
                         if (new_value is null)
                         {
@@ -780,9 +778,19 @@ namespace Xalia.Win32
 
                         Element.PropertyChanged("uia_bounding_rectangle",
                             $"{bounding_rectangle.left},{bounding_rectangle.top} {bounding_rectangle.width}x{bounding_rectangle.height}");
+
+                        Win32Connection.RecursiveLocationChange(Element, false);
                         break;
                     }
             }
+        }
+
+        internal void MsaaAncestorLocationChange()
+        {
+            if (watching_bounding_rectangle)
+                Utils.RunTask(FetchBoundingRectangle(true));
+            else
+                bounding_rectangle_known = false;
         }
     }
 }
