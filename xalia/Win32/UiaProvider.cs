@@ -33,6 +33,7 @@ namespace Xalia.Win32
             { "role", "uia_control_type" },
             { "framework_id", "uia_framework_id" },
             { "control_type", "uia_control_type" },
+            { "class_name", "uia_class_name" },
             { "enabled", "uia_is_enabled" },
             { "offscreen", "uia_is_offscreen" },
             { "x", "uia_x" },
@@ -142,6 +143,7 @@ namespace Xalia.Win32
         private PropertyInfo[] properties = // keep synced with Property enum
         {
             new PropertyInfo(UIA_AutomationIdPropertyId, "uia_automation_id"),
+            new PropertyInfo(UIA_ClassNamePropertyId, "uia_class_name"),
             new PropertyInfo(UIA_ControlTypePropertyId, "uia_control_type"),
             new PropertyInfo(UIA_FrameworkIdPropertyId, "uia_framework_id"),
             new PropertyInfo(UIA_IsEnabledPropertyId, "uia_is_enabled"),
@@ -151,6 +153,7 @@ namespace Xalia.Win32
         private enum Property
         {
             AutomationId,
+            ClassName,
             ControlType,
             FrameworkId,
             Enabled,
@@ -220,6 +223,8 @@ namespace Xalia.Win32
                     break;
                 case "uia_automation_id":
                     return EvaluateProperty(Property.AutomationId, depends_on);
+                case "uia_class_name":
+                    return EvaluateProperty(Property.ClassName, depends_on);
                 case "uia_control_type":
                     return EvaluateProperty(Property.ControlType, depends_on);
                 case "uia_framework_id":
@@ -355,6 +360,9 @@ namespace Xalia.Win32
                     case "uia_automation_id":
                         WatchProperty(Property.AutomationId);
                         return true;
+                    case "uia_class_name":
+                        WatchProperty(Property.ClassName);
+                        return true;
                     case "uia_control_type":
                         WatchProperty(Property.ControlType);
                         return true;
@@ -473,6 +481,9 @@ namespace Xalia.Win32
                 {
                     case "uia_automation_id":
                         UnwatchProperty(Property.AutomationId);
+                        return true;
+                    case "uia_class_name":
+                        UnwatchProperty(Property.ClassName);
                         return true;
                     case "uia_control_type":
                         UnwatchProperty(Property.ControlType);
@@ -729,6 +740,9 @@ namespace Xalia.Win32
             {
                 case UIA_AutomationIdPropertyId:
                     PropertyChanged(Property.AutomationId, new_value);
+                    break;
+                case UIA_ClassNamePropertyId:
+                    PropertyChanged(Property.ClassName, new_value);
                     break;
                 case UIA_ControlTypePropertyId:
                     PropertyChanged(Property.ControlType, new_value);

@@ -114,6 +114,7 @@ namespace Xalia.Viewer
 
             // uia info
             "uia_control_type",
+            "uia_class_name",
             "uia_automation_id",
             "uia_framework_id",
             "uia_is_enabled",

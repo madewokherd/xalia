@@ -943,6 +943,7 @@ namespace Xalia.Win32
                                     UIA_IsOffscreenPropertyId,
                                     UIA_BoundingRectanglePropertyId,
                                     UIA_FrameworkIdPropertyId,
+                                    UIA_ClassNamePropertyId,
                                 };
                                 fixed (int* pProperties = properties)
                                 {

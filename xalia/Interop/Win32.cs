@@ -1440,6 +1440,7 @@ namespace Xalia.Interop
         public const int UIA_ControlTypePropertyId = 30003;
         public const int UIA_IsEnabledPropertyId = 30010;
         public const int UIA_AutomationIdPropertyId = 30011;
+        public const int UIA_ClassNamePropertyId = 30012;
         public const int UIA_NativeWindowHandlePropertyId = 30020;
         public const int UIA_IsOffscreenPropertyId = 30022;
         public const int UIA_FrameworkIdPropertyId = 30024;
