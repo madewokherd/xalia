@@ -29,6 +29,7 @@ namespace Xalia.Win32
 
         static Dictionary<string, string> property_aliases = new Dictionary<string, string>
         {
+            { "automation_id", "uia_automation_id" },
             { "role", "uia_control_type" },
             { "control_type", "uia_control_type" },
             { "enabled", "uia_is_enabled" },
@@ -139,6 +140,7 @@ namespace Xalia.Win32
 
         private PropertyInfo[] properties = // keep synced with Property enum
         {
+            new PropertyInfo(UIA_AutomationIdPropertyId, "uia_automation_id"),
             new PropertyInfo(UIA_ControlTypePropertyId, "uia_control_type"),
             new PropertyInfo(UIA_IsEnabledPropertyId, "uia_is_enabled"),
             new PropertyInfo(UIA_IsOffscreenPropertyId, "uia_is_offscreen"),
@@ -146,6 +148,7 @@ namespace Xalia.Win32
 
         private enum Property
         {
+            AutomationId,
             ControlType,
             Enabled,
             Offscreen,
@@ -212,6 +215,8 @@ namespace Xalia.Win32
                             return UiDomBoolean.True;
                     }
                     break;
+                case "uia_automation_id":
+                    return EvaluateProperty(Property.AutomationId, depends_on);
                 case "uia_control_type":
                     return EvaluateProperty(Property.ControlType, depends_on);
                 case "uia_is_enabled":
@@ -342,6 +347,9 @@ namespace Xalia.Win32
                             Utils.RunTask(CheckFragmentSupport());
                         }
                         return true;
+                    case "uia_automation_id":
+                        WatchProperty(Property.AutomationId);
+                        return true;
                     case "uia_control_type":
                         WatchProperty(Property.ControlType);
                         return true;
@@ -455,6 +463,9 @@ namespace Xalia.Win32
             {
                 switch (id.Name)
                 {
+                    case "uia_automation_id":
+                        UnwatchProperty(Property.AutomationId);
+                        return true;
                     case "uia_control_type":
                         UnwatchProperty(Property.ControlType);
                         return true;
@@ -705,6 +716,9 @@ namespace Xalia.Win32
         {
             switch (prop_id)
             {
+                case UIA_AutomationIdPropertyId:
+                    PropertyChanged(Property.AutomationId, new_value);
+                    break;
                 case UIA_ControlTypePropertyId:
                     PropertyChanged(Property.ControlType, new_value);
                     break;
