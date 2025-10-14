@@ -835,6 +835,11 @@ namespace Xalia.Win32
                                         ref cache_request, out var ppRequestedData, out string ppTreeStructure);
                                     Marshal.ThrowExceptionForHR(hr);
 
+                                    if (ppRequestedData == null)
+                                    {
+                                        break;
+                                    }
+
                                     IntPtr node2 = (IntPtr)(long)ppRequestedData[0, 0];
 
                                     try
