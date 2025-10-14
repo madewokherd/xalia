@@ -204,6 +204,12 @@ namespace Xalia.Win32
         {
             int index = 0;
 
+            if (RealClassName.StartsWith("HwndWrapper["))
+            {
+                // WPF tends to return 0 if we send WM_GETOBJECT too fast
+                await Task.Delay(200);
+            }
+
             IntPtr lr = default;
             try
             {
