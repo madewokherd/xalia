@@ -220,6 +220,13 @@ group (parent.(uia_control_type.custom and parent.uia_class_name == "eax::servic
     offset_target_y: parent.child_matches(uia_control_type.button).height;
 }
 
+// APPLICATION: Final Fantasy IX launcher
+if (application_name == "FF9_Launcher") {
+    if (automation_id == "PlayButton" or automation_id == "windowedCheckbox") {
+        valid_target: true;
+    }
+}
+
 // APPLICATION: Firefox
 window (uia_class_name == "MozillaWindowClass") {
     firefox_use_offscreen_menu: true;
