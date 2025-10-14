@@ -540,6 +540,14 @@ if (uia_framework_id == "WPF") {
     if (uia_class_name == "ComboBox") {
         supported: true;
     }
+
+    if (uia_class_name == "Image") {
+        supported: true;
+    }
+
+    if (uia_class_name == "Window") {
+        supported: not child_matches(not supported);
+    }
 }
 
 // TOOLKIT: wxWidgets (Win32)
