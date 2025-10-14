@@ -937,6 +937,7 @@ namespace Xalia.Win32
                             {
                                 int[] properties = new int[]
                                 {
+                                    UIA_AutomationIdPropertyId,
                                     UIA_ControlTypePropertyId,
                                     UIA_IsEnabledPropertyId,
                                     UIA_IsOffscreenPropertyId,
