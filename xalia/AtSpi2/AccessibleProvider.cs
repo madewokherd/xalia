@@ -276,6 +276,8 @@ namespace Xalia.AtSpi2
                     names = new[] { "table_row", "tablerow", "row" };
                 else if (name == "link")
                     names = new[] { "link", "hyperlink" };
+                else if (name == "spin_button")
+                    names = new[] { "spin_button", "spinbutton", "spinner" };
                 else if (name.Contains("_"))
                     names = new[] { name, name.Replace("_", "") };
                 else

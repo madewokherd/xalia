@@ -108,6 +108,8 @@ namespace Xalia.Win32
                     names = new string[] { "text", "label" };
                 else if (name == "hyperlink")
                     names = new string[] { "hyperlink", "link" };
+                else if (name == "spinner")
+                    names = new[] { "spinner", "spin_button", "spinbutton" };
                 else if (name.Contains("_"))
                     names = new string[] { name, name.Replace("-", "") };
                 else
