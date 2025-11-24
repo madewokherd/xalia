@@ -486,6 +486,18 @@ if (application_name == "xfce4-panel") {
     }
 }
 
+// APPLICATION: Ys SEVEN launcher
+button (application_name == "Ys7Launcher" and control_id >= 1022 and control_id <= 1046)
+{
+    // Buttons in key config dialog
+    primary_action: on_release(click);
+    if (name == "")
+    {
+        // Waiting for input
+        disable_interactions: true;
+    }
+}
+
 // Toolkit-specific behaviors
 
 // TOOLKIT: RPG Maker
