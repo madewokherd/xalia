@@ -1418,6 +1418,9 @@ namespace Xalia.Interop
         public const int TB_THUMBTRACK = 5;
         public const int TB_ENDTRACK = 8;
 
+        // UpDown
+        public const int UDS_HORZ = 0x40;
+
         // UI Automation:
 
         [DllImport(UIA_LIB, CallingConvention = CallingConvention.Winapi)]

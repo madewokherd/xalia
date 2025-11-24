@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
+using static Xalia.Interop.Win32;
+
 namespace Xalia.Win32
 {
     internal class HwndUpDownProvider : UiDomProviderBase, IWin32Styles
@@ -15,8 +17,15 @@ namespace Xalia.Win32
         public HwndProvider HwndProvider { get; }
         public IntPtr Hwnd => HwndProvider.Hwnd;
         public UiDomElement Element => HwndProvider.Element;
+        public Win32Connection Connection => HwndProvider.Connection;
+        public UiDomRoot Root => Element.Root;
+        public bool Horizontal => (HwndProvider.Style & UDS_HORZ) == UDS_HORZ;
+
+        private bool watching_children;
 
         static UiDomEnum role = new UiDomEnum(new string[] { "spinner", "spin_button", "spinbutton" });
+
+        static readonly string[] tracked_properties = new string[] { "recurse_method" };
 
         static string[] style_names =
         {
@@ -68,6 +77,12 @@ namespace Xalia.Win32
                 case "spin_button":
                 case "spinbutton":
                     return UiDomBoolean.True;
+                case "recurse_method":
+                    if (element.EvaluateIdentifier("recurse", element.Root, depends_on).ToBool())
+                    {
+                        return new UiDomString("win32_updown_button");
+                    }
+                    break;
             }
             if (style_flags.TryGetValue(identifier, out int style))
             {
@@ -87,6 +102,62 @@ namespace Xalia.Win32
                     names.Add(style_names[i]);
                 }
             }
+        }
+
+        public override string[] GetTrackedProperties()
+        {
+            return tracked_properties;
+        }
+
+        public override void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
+        {
+            if (name == "recurse_method")
+            {
+                string string_value = new_value is UiDomString id ? id.Value : string.Empty;
+                if (string_value == "win32_updown_button")
+                {
+                    if (!watching_children)
+                    {
+                        watching_children = true;
+                        WatchChildren();
+                    }
+                }
+                else
+                {
+                    if (watching_children)
+                    {
+                        watching_children = false;
+                        UnwatchChildren();
+                    }
+                }
+            }
+            base.TrackedPropertyChanged(element, name, new_value);
+        }
+
+        private void UnwatchChildren()
+        {
+            Element.UnsetRecurseMethodProvider(this);
+        }
+
+        private void WatchChildren()
+        {
+            Element.SetRecurseMethodProvider(this);
+
+            int[] child_ids = new int[] { 1, 2 };
+
+            Element.SyncRecurseMethodChildren(child_ids, ChildIdToId, ChildIdToElement);
+        }
+
+        private UiDomElement ChildIdToElement(int child_id)
+        {
+            var element = new UiDomElement(Connection.GetElementName(Hwnd, OBJID_CLIENT, child_id), Root);
+            element.AddProvider(new HwndUpDownButtonProvider(this, child_id));
+            return element;
+        }
+
+        private string ChildIdToId(int child_id)
+        {
+            return Connection.GetElementName(Hwnd, OBJID_CLIENT, child_id);
         }
     }
 }

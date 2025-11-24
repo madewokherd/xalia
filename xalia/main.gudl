@@ -574,7 +574,7 @@ if (is_hwnd_static) {
     supported: not child_matches(not supported);
 }
 
-if (is_hwnd_combobox or is_hwnd_trackbar or is_hwnd_edit or is_hwnd_listview or is_nonclient_scrollbar) {
+if (is_hwnd_combobox or is_hwnd_trackbar or is_hwnd_edit or is_hwnd_listview or is_nonclient_scrollbar or is_hwnd_updown) {
     supported: true;
 }
 
@@ -1419,7 +1419,9 @@ if ((scroll_bar or slider or split_pane) and horizontal) {
 }
 
 spin_button {
-    valid_target: true;
+    recurse: true;
+
+    valid_target: not child_matches(button);
 
     primary_action: (focusable and set_focus or send_click)+show_keyboard;
 
