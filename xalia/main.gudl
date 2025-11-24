@@ -568,6 +568,15 @@ if (class_name == "wxWindowClassNR") {
     supported: not child_matches(not supported);
 }
 
+// TOOLKIT: Visual Basic 6
+if (class_name == "ThunderRT6FormDC") {
+    supported: not child_matches(not supported);
+}
+
+if (class_name == "ThunderRT6PictureBoxDC" or class_name == "ThunderRT6Timer") {
+    supported: true;
+}
+
 // TOOLKIT: Win32
 if (is_hwnd_dialog) {
     supported: child_matches(supported) and not child_matches(not supported);
