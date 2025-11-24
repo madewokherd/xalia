@@ -571,6 +571,7 @@ if (class_name == "wxWindowClassNR") {
 // TOOLKIT: Win32
 if (is_hwnd_dialog) {
     supported: child_matches(supported) and not child_matches(not supported);
+    valid_target: false;
 }
 
 if (is_hwnd_button) {
