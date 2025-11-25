@@ -220,6 +220,13 @@ group (parent.(uia_control_type.custom and parent.uia_class_name == "eax::servic
     offset_target_y: parent.child_matches(uia_control_type.button).height;
 }
 
+// APPLICATION: Embark Studios games (ARC Raiders and THE FINALS)
+dialog (child_matches(edit and readonly and multiline and autovscroll and autohscroll and win32_control_id == 1005))
+{
+    // GPU driver warning - BM_CLICK dismisses dialog but doesn't start the game
+    manual_buttons: true;
+}
+
 // APPLICATION: Final Fantasy IX launcher
 if (application_name == "FF9_Launcher") {
     if (automation_id == "PlayButton" or automation_id == "windowedCheckbox") {
