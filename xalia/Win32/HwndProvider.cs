@@ -251,22 +251,32 @@ namespace Xalia.Win32
                         throw;
                 }
             }
-            
-            switch (RealClassName)
+
+            string class_name = RealClassName;
+            if (class_name.StartsWith("WindowsForms10."))
+            {
+                class_name = class_name.Split('.')[1];
+            }
+
+            switch (class_name)
             {
                 case "#32770":
                     AddProvider(new HwndDialogProvider(this), index);
                     return;
                 case "Button":
+                case "BUTTON":
                     AddProvider(new HwndButtonProvider(this), index);
                     return;
                 case "ComboBox":
+                case "COMBOBOX":
                     AddProvider(new HwndComboBoxProvider(this), index);
                     return;
                 case "Edit":
+                case "EDIT":
                     AddProvider(new HwndEditProvider(this), index);
                     return;
                 case "ListBox":
+                case "LISTBOX":
                     AddProvider(new HwndListBoxProvider(this), index);
                     return;
                 case "msctls_trackbar32":
@@ -276,6 +286,7 @@ namespace Xalia.Win32
                     AddProvider(new HwndUpDownProvider(this), index);
                     return;
                 case "Static":
+                case "STATIC":
                     AddProvider(new HwndStaticProvider(this), index);
                     return;
                 case "SysHeader32":
