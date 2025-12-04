@@ -29,6 +29,7 @@ namespace Xalia.Win32
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
             { "selection_index", "win32_selection_index" },
+            { "selected_item", "win32_selected_item" },
             { "item_count", "win32_item_count" },
         };
 
@@ -171,6 +172,12 @@ namespace Xalia.Win32
                     depends_on.Add((element, new IdentifierExpression(identifier)));
                     if (SelectionIndexKnown)
                         return new UiDomInt(SelectionIndex);
+                    break;
+                case "win32_selected_item":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    depends_on.Add((element, new IdentifierExpression("children")));
+                    if (SelectionIndexKnown && SelectionIndex >= 0 && Element.Children.Count > SelectionIndex)
+                        return Element.Children[SelectionIndex];
                     break;
                 case "win32_item_rects":
                     {
