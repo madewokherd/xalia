@@ -755,7 +755,7 @@ combo_box (uia_expand_collapse_state.expanded) {
 }
 
 // Win32 Combo list boxes
-if (is_hwnd_combo_box and expanded) {
+if (is_hwnd_combo_box and win32_combo_box_dropped_state) {
     in_menu_navigation: true;
 
     menu_up_action: send_key.up;
