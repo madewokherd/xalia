@@ -405,6 +405,25 @@ if (win32_class_name == "Rockstar Games Launcher Installer") {
     application_supports_gamepad: true;
 }
 
+// APPLICATION: Samurai Aces III: Sengoku Cannon config tool
+
+if (win32_process_name == "setting")
+{
+    combo_box (parent.dialog and parent.parent.dialog and
+        parent.parent.child_matches(is_hwnd_tab_control).selected_item.name == "Joystick Settings" and
+        width < parent.width / 2 and // Ignore joystick selection
+        win32_combo_box_list_element.item_count != 1) // Make sure a joystick is actually selected
+    {
+        // Settings dialog is listening for input while combo box is open or focused
+        primary_action: on_release(assign("disable_interactions", true) + do_default_action + wait_until(focused and not expanded) + parent.parent.child_matches(is_hwnd_tab_control).set_focus + assign("disable_interactions", undefined));
+        in_menu_navigation: false;
+        if (expanded or focused)
+        {
+            disable_interactions: true;
+        }
+    }
+}
+
 // APPLICATION: STAR WARS Starfighter launcher
 
 if (process_name == "Starfighter" and win32_class_name == "CltWin:400000:8:100a8:0:100ba" and
