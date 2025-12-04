@@ -165,6 +165,39 @@ namespace Xalia.Interop
             {
                 return Read<T>(0);
             }
+
+            internal unsafe string ReadStringUni(ulong offset, int len)
+            {
+                int read_len = len != -1 ? len : (int)((Size - offset) / 2);
+
+                byte[] data = ReadBytes(offset, (ulong)(read_len * 2));
+
+                string result;
+
+                fixed (byte* ptr = data)
+                {
+                    result = Marshal.PtrToStringUni(new IntPtr(ptr), read_len);
+                }
+
+                if (len == -1)
+                {
+                    var end = result.IndexOf('\0');
+                    if (end != -1)
+                        return result.Substring(0, end);
+                }
+
+                return result;
+            }
+
+            internal string ReadStringUni(ulong offset)
+            {
+                return ReadStringUni(offset, -1);
+            }
+
+            internal string ReadStringUni()
+            {
+                return ReadStringUni(0, -1);
+            }
         }
 
         private bool disposedValue;

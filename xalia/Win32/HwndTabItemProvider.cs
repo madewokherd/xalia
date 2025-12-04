@@ -1,7 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Xalia.Gudl;
+using Xalia.Interop;
 using Xalia.UiDom;
+
+using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
@@ -15,6 +20,8 @@ namespace Xalia.Win32
 
         public HwndTabProvider Parent { get; }
         public UiDomElement Element { get; }
+        public int Pid => Parent.Pid;
+        public IntPtr Hwnd => Parent.Hwnd;
 
         public int ChildId
         {
@@ -24,8 +31,14 @@ namespace Xalia.Win32
             }
         }
 
+        private bool fetching_name;
+        public bool NameKnown { get; private set; }
+        public string Name { get; private set; }
+
         public override void DumpProperties(UiDomElement element)
         {
+            if (NameKnown)
+                Utils.DebugWriteLine($"  win32_name: {Name}");
             if (Parent.SelectionIndexKnown)
                 Utils.DebugWriteLine($"  selected: {Parent.SelectionIndex == ChildId - 1}");
             if (Parent.ItemRectsKnown && ChildId <= Parent.ItemRects.Length)
@@ -44,6 +57,11 @@ namespace Xalia.Win32
                 case "is_hwnd_tab_item":
                 case "is_hwnd_subelement":
                     return UiDomBoolean.True;
+                case "win32_name":
+                    depends_on.Add((element, new IdentifierExpression(identifier)));
+                    if (NameKnown && Name != null)
+                        return new UiDomString(Name);
+                    break;
             }
             return base.EvaluateIdentifier(element, identifier, depends_on);
         }
@@ -104,6 +122,8 @@ namespace Xalia.Win32
                 case "role":
                 case "control_type":
                     return role;
+                case "name":
+                    return EvaluateIdentifier(element, "win32_name", depends_on);
             }
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
         }
@@ -125,6 +145,116 @@ namespace Xalia.Win32
             }
 
             return await base.GetClickablePointAsync(element);
+        }
+
+        const int BUFFER_LENGTH = 64;
+
+        private async Task<ulong> FetchName64(Win32RemoteProcessMemory mem, Win32RemoteProcessMemory.MemoryAllocation mem_text)
+        {
+            TCITEMW64 item = default;
+            item.mask = TCIF_TEXT;
+            item.pszText = mem_text.Address;
+            item.cchTextMax = BUFFER_LENGTH;
+            using (var mem_item = mem.WriteAlloc(item))
+            {
+                var msg_result = await SendMessageAsync(Hwnd, TCM_GETITEMW,
+                    new IntPtr(Element.IndexInParent), new IntPtr(unchecked((long)mem_item.Address)));
+                if (msg_result == IntPtr.Zero)
+                    return 0;
+
+                var ret_item = mem_item.Read<TCITEMW64>();
+                return ret_item.pszText;
+            }
+        }
+
+        private async Task<ulong> FetchName32(Win32RemoteProcessMemory mem, Win32RemoteProcessMemory.MemoryAllocation mem_text)
+        {
+            TCITEMW32 item = default;
+            item.mask = TCIF_TEXT;
+            item.pszText = (uint)mem_text.Address;
+            item.cchTextMax = BUFFER_LENGTH;
+            using (var mem_item = mem.WriteAlloc(item))
+            {
+                var msg_result = await SendMessageAsync(Hwnd, TCM_GETITEMW,
+                    new IntPtr(Element.IndexInParent), new IntPtr(unchecked((long)mem_item.Address)));
+                if (msg_result == IntPtr.Zero)
+                    return 0;
+
+                var ret_item = mem_item.Read<TCITEMW32>();
+                return ret_item.pszText;
+            }
+        }
+
+        private async Task FetchName()
+        {
+            var mem = Win32RemoteProcessMemory.FromPid(Pid);
+            try {
+                using (var mem_text = mem.Alloc(2 * BUFFER_LENGTH))
+                {
+                    ulong mem_result;
+                    if (mem.Is64Bit())
+                        mem_result = await FetchName64(mem, mem_text);
+                    else
+                        mem_result = await FetchName32(mem, mem_text);
+
+                    if (mem_result == 0)
+                        // No text associated with this item
+                        return;
+
+                    if (mem_result != mem_text.Address)
+                    {
+                        // MSDN says the control can change this pointer, but it's not clear how to safely read it if so
+                        Utils.DebugWriteLine("WARNING: HwndTabItemProvider.FetchName got changed pointer");
+                        return;
+                    }
+
+                    NameKnown = true;
+                    Name = mem_text.ReadStringUni();
+                    Element.PropertyChanged("win32_name", Name);
+                }
+            }
+            catch (Win32Exception ex)
+            {
+                if (!HwndProvider.IsExpectedException(ex))
+                    throw;
+                return;
+            }
+            finally
+            {
+                mem.Unref();
+            }
+        }
+
+        public override bool WatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_name":
+                        if (!NameKnown && !fetching_name)
+                        {
+                            // TODO: Account for name changes?
+                            fetching_name = true;
+                            Utils.RunTask(FetchName());
+                        }
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        public override bool UnwatchProperty(UiDomElement element, GudlExpression expression)
+        {
+            if (expression is IdentifierExpression id)
+            {
+                switch (id.Name)
+                {
+                    case "win32_name":
+                        return true;
+                }
+            }
+            return false;
         }
     }
 }

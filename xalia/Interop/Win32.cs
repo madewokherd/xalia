@@ -1399,6 +1399,33 @@ namespace Xalia.Interop
         public const int TCM_GETITEMCOUNT = TCM_FIRST + 4;
         public const int TCM_GETITEMRECT = TCM_FIRST + 10;
         public const int TCM_GETCURSEL = TCM_FIRST + 11;
+        public const int TCM_GETITEMW = TCM_FIRST + 60;
+
+        public const int TCIF_TEXT = 0x1;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct TCITEMW32
+        {
+            public int mask;
+            public int dwState;
+            public int dwStateMask;
+            public uint pszText;
+            public int cchTextMax;
+            public int iImage;
+            public uint lParam;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct TCITEMW64
+        {
+            public int mask;
+            public int dwState;
+            public int dwStateMask;
+            public ulong pszText;
+            public int cchTextMax;
+            public int iImage;
+            public ulong lParam;
+        }
 
         // Trackbar
         public const int TBS_AUTOTICKS = 0x00000001;
