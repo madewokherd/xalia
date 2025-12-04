@@ -561,6 +561,13 @@ if (class_name == "TkChild" or class_name == "TkTopLevel") {
     }
 }
 
+// TOOLKIT: Winforms
+
+if (win32_class_name.startswith("WindowsForms10."))
+{
+    focusable: win32_style_names.tabstop;
+}
+
 // TOOLKIT: WPF
 
 if (uia_framework_id == "WPF") {
