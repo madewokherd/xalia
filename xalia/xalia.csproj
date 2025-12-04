@@ -168,6 +168,7 @@
     <Compile Include="UiDom\UiDomString.cs" />
     <Compile Include="UiDom\UiDomUndefined.cs" />
     <Compile Include="UiDom\UiDomValue.cs" />
+    <Compile Include="UiDom\WaitUntilRoutine.cs" />
     <Compile Include="Ui\CurrentViewRoutine.cs" />
     <Compile Include="Ui\SendKey.cs" />
     <Compile Include="Ui\SendScroll.cs" />

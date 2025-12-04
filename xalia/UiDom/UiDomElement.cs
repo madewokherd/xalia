@@ -406,6 +406,8 @@ namespace Xalia.UiDom
                     return new UiDomMethod("on_release", OnReleaseMethod);
                 case "wait":
                     return new UiDomMethod("wait", WaitMethod);
+                case "wait_until":
+                    return new UiDomMethod("wait_until", WaitUntilMethod);
                 case "enum":
                     return new UiDomMethod("enum", EnumMethod);
                 case "hex":
@@ -455,6 +457,17 @@ namespace Xalia.UiDom
         {
             obj.Arglist[0].TryToDouble(out double timeout);
             await Task.Delay((int)(timeout * 1000));
+        }
+
+        private UiDomValue WaitUntilMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+
+            // We don't need the value now, but "watching" it early is helpful.
+            context.Evaluate(arglist[0], root, depends_on);
+
+            return new WaitUntilRoutine(context, arglist[0], root);
         }
 
         private UiDomValue HexMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
