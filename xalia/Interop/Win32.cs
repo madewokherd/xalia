@@ -1445,6 +1445,10 @@ namespace Xalia.Interop
         public const int TB_THUMBTRACK = 5;
         public const int TB_ENDTRACK = 8;
 
+        // TreeView
+        public const int TV_FIRST = 0x1100;
+        public const int TVM_GETEXTENDEDSTYLE = TV_FIRST + 45;
+
         // UpDown
         public const int UDS_HORZ = 0x40;
 

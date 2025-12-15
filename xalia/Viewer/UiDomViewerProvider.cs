@@ -133,6 +133,7 @@ namespace Xalia.Viewer
             "win32_combo_box_list_element",
             "win32_combo_box_dropped_state",
             "win32_track_bar_line_size",
+            "win32_extended_treeview_style_names",
             "win32_selection_index",
             "win32_item_height",
             "win32_top_index",
