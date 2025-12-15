@@ -107,6 +107,7 @@
     <Compile Include="Sdl\OverlayBox.cs" />
     <Compile Include="Sdl\XShapeBox.cs" />
     <Compile Include="Sdl\Win32LayeredBox.cs" />
+    <Compile Include="Win32\HwndTreeViewItemProvider.cs" />
     <Compile Include="UiDom\IUiDomProvider.cs" />
     <Compile Include="UiDom\IUiDomScrollToProvider.cs" />
     <Compile Include="UiDom\IUiDomValueProvider.cs" />

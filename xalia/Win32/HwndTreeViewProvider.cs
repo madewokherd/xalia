@@ -9,18 +9,18 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    class HwndTreeViewProvider : UiDomProviderBase, IWin32Styles
+    class HwndTreeViewProvider : HwndTreeViewItemProvider, IWin32Styles
     {
-        public HwndTreeViewProvider(HwndProvider hwndProvider)
+        public HwndTreeViewProvider(HwndProvider hwndProvider) : base(null, hwndProvider.Element, IntPtr.Zero)
         {
             HwndProvider = hwndProvider;
         }
 
-        public HwndProvider HwndProvider { get; }
-        public IntPtr Hwnd => HwndProvider.Hwnd;
-        public UiDomElement Element => HwndProvider.Element;
+        public new HwndProvider HwndProvider { get; }
+        public new IntPtr Hwnd => HwndProvider.Hwnd;
+        public new UiDomElement Element => HwndProvider.Element;
         public Win32Connection Connection => HwndProvider.Connection;
-        public UiDomRoot Root => Element.Root;
+        public new UiDomRoot Root => Element.Root;
 
         static UiDomEnum role = new UiDomEnum(new string[] { "tree", "tree_view", "treeview", "outline" });
 

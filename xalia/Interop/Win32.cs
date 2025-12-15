@@ -1447,7 +1447,11 @@ namespace Xalia.Interop
 
         // TreeView
         public const int TV_FIRST = 0x1100;
+        public const int TVM_GETNEXTITEM = TV_FIRST + 10;
         public const int TVM_GETEXTENDEDSTYLE = TV_FIRST + 45;
+
+        public const int TVGN_NEXT = 1;
+        public const int TVGN_CHILD = 4;
 
         // UpDown
         public const int UDS_HORZ = 0x40;
