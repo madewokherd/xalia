@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -10,6 +11,8 @@ namespace Xalia.UiDom
     {
         public UiDomEnum(string[] names)
         {
+            if (names.Length == 0)
+                throw new ArgumentException("must not be empty", "names");
             Names = names;
         }
 
