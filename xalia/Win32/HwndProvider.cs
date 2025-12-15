@@ -301,6 +301,9 @@ namespace Xalia.Win32
                 case "SysTabControl32":
                     AddProvider(new HwndTabProvider(this), index);
                     return;
+                case "SysTreeView32":
+                    AddProvider(new HwndTreeViewProvider(this), index);
+                    return;
                 case "RICHEDIT60W":
                 case "RICHEDIT50W":
                 case "RichEdit20A":
@@ -350,6 +353,9 @@ namespace Xalia.Win32
                     return;
                 case 65536 + 22:
                     AddProvider(new HwndUpDownProvider(this), index);
+                    return;
+                case 65536 + 25:
+                    AddProvider(new HwndTreeViewProvider(this), index);
                     return;
                 case 65536 + 28:
                     AddProvider(new HwndRichEditProvider(this), index);

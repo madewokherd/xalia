@@ -211,6 +211,7 @@
     <Compile Include="Win32\HwndTabItemProvider.cs" />
     <Compile Include="Win32\HwndTabProvider.cs" />
     <Compile Include="Win32\HwndTrackBarProvider.cs" />
+    <Compile Include="Win32\HwndTreeViewProvider.cs" />
     <Compile Include="Win32\HwndUpDownButtonProvider.cs" />
     <Compile Include="Win32\HwndUpDownProvider.cs" />
     <Compile Include="Win32\IWin32Container.cs" />
