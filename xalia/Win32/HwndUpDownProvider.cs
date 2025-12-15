@@ -86,6 +86,7 @@ namespace Xalia.Win32
             }
             if (style_flags.TryGetValue(identifier, out int style))
             {
+                depends_on.Add((Element, new IdentifierExpression("win32_style")));
                 return UiDomBoolean.FromBool((HwndProvider.Style & style) != 0);
             }
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
