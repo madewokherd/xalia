@@ -399,6 +399,13 @@ application (name == "plasmashell") {
     }
 }
 
+// APPLICATION: Rayman: Raving Rabbids launcher
+if (win32_process_name == "SettingsApplication" and dialog and
+    index_in_parent == 6 and first_sibling.(dialog and visible)) {
+    // Contents of audio tab sometimes is visible behind the graphics tab
+    interactable: false;
+}
+
 // APPLICATION: Rockstar Games Launcher Installer
 
 if (win32_class_name == "Rockstar Games Launcher Installer") {
