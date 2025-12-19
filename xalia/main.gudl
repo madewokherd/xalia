@@ -588,6 +588,13 @@ if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element
     supported: not child_matches(not supported);
 }
 
+if (win32_class_name.startswith("WindowsForms10.Window.") and msaa_role.grouping) // GroupBox control
+{
+    valid_target: false;
+    recurse_method: "win32";
+    supported: not child_matches(not supported);
+}
+
 // TOOLKIT: WPF
 
 if (uia_framework_id == "WPF") {
