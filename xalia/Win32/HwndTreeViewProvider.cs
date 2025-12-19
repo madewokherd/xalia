@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 using Xalia.Gudl;
+using Xalia.Interop;
 using Xalia.UiDom;
 
 using static Xalia.Interop.Win32;
@@ -24,8 +26,38 @@ namespace Xalia.Win32
 
         static UiDomEnum role = new UiDomEnum(new string[] { "tree", "tree_view", "treeview", "outline" });
 
+        internal Dictionary<IntPtr, HwndTreeViewItemProvider> tree_items = new Dictionary<IntPtr, HwndTreeViewItemProvider>();
+
         public int ExtendedStyle;
         public bool ExtendedStyleKnown;
+
+        Win32RemoteProcessMemory remote_process_memory;
+
+        internal Win32RemoteProcessMemory RemoteProcessMemory
+        {
+            get
+            {
+                if (!Element.IsAlive)
+                {
+                    return null;
+                }
+                if (remote_process_memory == null)
+                {
+                    remote_process_memory = Win32RemoteProcessMemory.FromPid(HwndProvider.Pid);
+                }
+                return remote_process_memory;
+            }
+        }
+
+        public override void NotifyElementRemoved(UiDomElement element)
+        {
+            if (!(remote_process_memory is null))
+            {
+                remote_process_memory.Unref();
+                remote_process_memory = null;
+            }
+            base.NotifyElementRemoved(element);
+        }
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
@@ -102,7 +134,7 @@ namespace Xalia.Win32
                     seen_any_styles = true;
                 }
             }
-            return $"0x{style:x} ({style_list})";
+            return $"0x{style.ToString("x", CultureInfo.InvariantCulture)} ({style_list})";
         }
 
         private static UiDomValue ExtendedStyleToEnum(int style)
@@ -231,6 +263,25 @@ namespace Xalia.Win32
                 }
             }
             return base.UnwatchProperty(element, expression);
+        }
+
+        public void MsaaStateChange(int childId)
+        {
+            Utils.RunTask(MsaaStateChangeAsync(childId));
+        }
+
+        private async Task MsaaStateChangeAsync(int childId)
+        {
+            // This is inherently racey, as accessibility id's can change. SO THAT'S COOL.
+            var hItem = await SendMessageAsync(Hwnd, TVM_MAPACCIDTOHTREEITEM, (IntPtr)childId, IntPtr.Zero);
+
+            if (hItem == IntPtr.Zero)
+            {
+                hItem = (IntPtr)childId;
+            }
+
+            if (tree_items.TryGetValue(hItem, out var item))
+                await item.MsaaStateChange();
         }
     }
 }

@@ -640,6 +640,12 @@ namespace Xalia.Win32
                                         element.ProviderByType<AccessibleProvider>()?.MsaaStateChange();
                                         element.ProviderByType<HwndProvider>()?.MsaaStateChange();
                                     }
+
+                                    var hwnd_element = LookupElement(hwnd);
+                                    if (!(hwnd_element is null))
+                                    {
+                                        hwnd_element.ProviderByType<HwndTreeViewProvider>()?.MsaaStateChange(idChild);
+                                    }
                                     break;
                                 }
                             case OBJID_HSCROLL:

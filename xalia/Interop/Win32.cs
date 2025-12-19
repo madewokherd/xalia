@@ -1448,10 +1448,82 @@ namespace Xalia.Interop
         // TreeView
         public const int TV_FIRST = 0x1100;
         public const int TVM_GETNEXTITEM = TV_FIRST + 10;
+        public const int TVM_MAPACCIDTOHTREEITEM = TV_FIRST + 42;
+        public const int TVM_MAPHTREEITEMTOACCID = TV_FIRST + 43;
         public const int TVM_GETEXTENDEDSTYLE = TV_FIRST + 45;
+        public const int TVM_GETITEMW = TV_FIRST + 62;
+
+        public const int TVS_CHECKBOXES = 0x100;
+
+        public const int TVS_EX_PARTIALCHECKBOXES = 0x80;
+        public const int TVS_EX_EXCLUSIONCHECKBOXES = 0x100;
+        public const int TVS_EX_DIMMEDCHECKBOXES = 0x200;
 
         public const int TVGN_NEXT = 1;
         public const int TVGN_CHILD = 4;
+
+        public const int TVIF_TEXT = 0x1;
+        public const int TVIF_IMAGE = 0x2;
+        public const int TVIF_PARAM = 0x4;
+        public const int TVIF_STATE = 0x8;
+        public const int TVIF_HANDLE = 0x10;
+        public const int TVIF_SELECTEDIMAGE = 0x20;
+        public const int TVIF_CHILDREN = 0x40;
+        public const int TVIF_INTEGRAL = 0x80;
+        public const int TVIF_STATEEX = 0x100;
+        public const int TVIF_EXPANDEDIMAGE = 0x200;
+
+        public const int TVIS_FOCUSED = 0x1;
+        public const int TVIS_SELECTED = 0x2;
+        public const int TVIS_CUT = 0x4;
+        public const int TVIS_DROPHILITED = 0x8;
+        public const int TVIS_BOLD = 0x10;
+        public const int TVIS_EXPANDED = 0x20;
+        public const int TVIS_EXPANDEDONCE = 0x40;
+        public const int TVIS_EXPANDEDPARTIAL = 0x80;
+        public const int TVIS_OVERLAYMASK = 0xf00;
+        public const int TVIS_STATEIMAGEMASK = 0xf000;
+        public const int TVIS_USERMASK = 0xf000;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct TVITEMEXW32
+        {
+            public int mask;
+            public uint hItem;
+            public int state;
+            public int stateMask;
+            public uint pszText;
+            public int cchTextMax;
+            public int iImage;
+            public int iSelectedImage;
+            public int cChildren;
+            public uint lParam;
+            public int iIntegral;
+            public int uStateEx;
+            public uint hwnd;
+            public int iExpandedImage;
+            public int iReserved;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct TVITEMEXW64
+        {
+            public int mask;
+            public ulong hItem;
+            public int state;
+            public int stateMask;
+            public ulong pszText;
+            public int cchTextMax;
+            public int iImage;
+            public int iSelectedImage;
+            public int cChildren;
+            public ulong lParam;
+            public int iIntegral;
+            public int uStateEx;
+            public ulong hwnd;
+            public int iExpandedImage;
+            public int iReserved;
+        }
 
         // UpDown
         public const int UDS_HORZ = 0x40;
