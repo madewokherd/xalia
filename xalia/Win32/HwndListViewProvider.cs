@@ -567,7 +567,17 @@ namespace Xalia.Win32
 
         private async Task PollExtendedStyle()
         {
-            var style = (int)(long)await SendMessageAsync(Hwnd, LVM_GETEXTENDEDLISTVIEWSTYLE, IntPtr.Zero, IntPtr.Zero);
+            int style;
+            try
+            {
+                style = (int)(long)await SendMessageAsync(Hwnd, LVM_GETEXTENDEDLISTVIEWSTYLE, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch (Win32Exception ex)
+            {
+                if (!HwndProvider.IsExpectedException(ex))
+                    throw;
+                return;
+            }
 
             if (!ExtendedStyleKnown || ExtendedStyle != style)
             {
