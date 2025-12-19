@@ -7,20 +7,20 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "xalia-netcore", "xalia\xali
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug-Windows|Any CPU = Debug-Windows|Any CPU
-		Release-Windows|Any CPU = Release-Windows|Any CPU
 		Debug-Linux|Any CPU = Debug-Linux|Any CPU
+		Debug-Windows|Any CPU = Debug-Windows|Any CPU
 		Release-Linux|Any CPU = Release-Linux|Any CPU
+		Release-Windows|Any CPU = Release-Windows|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Debug-Windows|Any CPU.ActiveCfg = Debug-Windows|Any CPU
-		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Debug-Windows|Any CPU.Build.0 = Debug-Windows|Any CPU
-		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Release-Windows|Any CPU.ActiveCfg = Release-Windows|Any CPU
-		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Release-Windows|Any CPU.Build.0 = Release-Windows|Any CPU
 		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Debug-Linux|Any CPU.ActiveCfg = Debug-Linux|Any CPU
 		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Debug-Linux|Any CPU.Build.0 = Debug-Linux|Any CPU
+		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Debug-Windows|Any CPU.ActiveCfg = Debug-Windows|Any CPU
+		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Debug-Windows|Any CPU.Build.0 = Debug-Windows|Any CPU
 		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Release-Linux|Any CPU.ActiveCfg = Release-Linux|Any CPU
 		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Release-Linux|Any CPU.Build.0 = Release-Linux|Any CPU
+		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Release-Windows|Any CPU.ActiveCfg = Release-Windows|Any CPU
+		{1E49C5CD-BB47-4FFD-9AF1-DDBE234CBFB1}.Release-Windows|Any CPU.Build.0 = Release-Windows|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
