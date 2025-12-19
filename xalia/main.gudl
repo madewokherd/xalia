@@ -582,6 +582,12 @@ if (win32_class_name.startswith("WindowsForms10.SysTabControl32.")) {
     }
 }
 
+if (win32_class_name.startswith("WindowsForms10.LISTBOX.")) {
+    if (recurse) {
+        recurse_method: "win32_list_visible";
+    }
+}
+
 if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element and msaa_role.client and not win32_style_names.tabstop) {
     // IAccessible is likely to not give us children
     recurse_method: "win32";
