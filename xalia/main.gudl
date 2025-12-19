@@ -575,11 +575,17 @@ if (win32_class_name.startswith("WindowsForms10."))
     focusable: win32_style_names.tabstop;
 }
 
-if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element and msaa_role.client and not win32_style_names.tabstop
-    and not child_matches(not supported))
-{
-    // Can't get detailed type info from winforms, sadly, but it seems reasonable to guess there's nothing special about this control.
-    supported: true;
+if (win32_class_name.startswith("WindowsForms10.SysTabControl32.")) {
+    // This will default to using winforms' IAccessible to recurse, which doesn't work
+    if (recurse) {
+        recurse_method: "win32_tab";
+    }
+}
+
+if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element and msaa_role.client and not win32_style_names.tabstop) {
+    // IAccessible is likely to not give us children
+    recurse_method: "win32";
+    supported: not child_matches(not supported);
 }
 
 // TOOLKIT: WPF
