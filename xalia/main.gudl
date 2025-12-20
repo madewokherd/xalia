@@ -294,6 +294,18 @@ if (application_name == "Firefox" or application_name == "firefox") {
     }
 }
 
+// APPLICATION: Giana Sisters: Twisted Dreams - Rise of the Owlverlord launcher
+if (win32_process_name == "GSLauncher") {
+    if (parent.is_root and not child_matches(not win32_class_name.startswith("WindowsForms10.BUTTON."))) {
+        // Main window
+        application_supports_gamepad: true;
+    }
+    button {
+        // Since the main window responds to gamepad input, pressing Cancel while a gamepad button is pressed would immediately reopen the settings window.
+        primary_action: on_release(do_default_action);
+    }
+}
+
 // APPLICATION: gnome-shell
 if (application_name == "gnome-shell") {
     window
