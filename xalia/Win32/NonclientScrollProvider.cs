@@ -33,6 +33,10 @@ namespace Xalia.Win32
             { "value", "win32_value" },
         };
 
+        private static string[] tracked_properties = new string[] { "win32_use_set_scroll_info" };
+
+        bool use_set_scroll_info;
+
         public bool Vertical { get; }
 
         const int SBI_LOCATION = 0;
@@ -189,6 +193,19 @@ namespace Xalia.Win32
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, element.Root, depends_on);
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
+        }
+
+        public override string[] GetTrackedProperties()
+        {
+            return tracked_properties;
+        }
+
+        public override void TrackedPropertyChanged(UiDomElement element, string name, UiDomValue new_value)
+        {
+            if (name == "win32_use_set_scroll_info")
+            {
+                use_set_scroll_info = new_value.ToBool();
+            }
         }
 
         private int CalculateMinimumIncrement(SCROLLBARINFO sbi, SCROLLINFO si)
@@ -445,6 +462,17 @@ namespace Xalia.Win32
 
         public async Task SetValueAsync(int value)
         {
+            if (use_set_scroll_info) {
+                await CommandThread.OnBackgroundThread(() =>
+                {
+                    var si = new SCROLLINFO();
+                    si.cbSize = Marshal.SizeOf<SCROLLINFO>();
+                    si.fMask = SIF_POS;
+                    si.nPos = value;
+
+                    SetScrollInfo(Hwnd, Vertical ? SB_VERT : SB_HORZ, ref si, true);
+                }, CommandThreadPriority.Query);
+            }
             int msg = Vertical ? WM_VSCROLL : WM_HSCROLL;
             await SendMessageAsync(Hwnd, msg, MAKEWPARAM(SB_THUMBTRACK, unchecked((ushort)value)), IntPtr.Zero);
             await SendMessageAsync(Hwnd, msg, MAKEWPARAM(SB_THUMBPOSITION, unchecked((ushort)value)), IntPtr.Zero); ;

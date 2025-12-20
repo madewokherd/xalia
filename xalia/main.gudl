@@ -598,6 +598,11 @@ if (class_name == "TkChild" or class_name == "TkTopLevel") {
 
 // TOOLKIT: Winforms
 
+if (is_nonclient_scrollbar and parent.win32_class_name.startswith("WindowsForms10.Window.")) {
+    // Winforms tends to rely on GetScrollInfo giving it a correct value for thumb scrolling
+    win32_use_set_scroll_info: true;
+}
+
 if (win32_class_name.startswith("WindowsForms10.SysTabControl32.")) {
     // This will default to using winforms' IAccessible to recurse, which doesn't work
     if (recurse) {
