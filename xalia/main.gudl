@@ -588,10 +588,14 @@ if (win32_class_name.startswith("WindowsForms10.LISTBOX.")) {
     }
 }
 
-if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element and msaa_role.client and not win32_style_names.tabstop) {
+if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element and msaa_role.client) {
     // IAccessible is likely to not give us children
     recurse_method: "win32";
-    supported: not child_matches(not supported);
+    // We have no information on the type of this control. Assume it's an ordinary container if it has children.
+    supported: child_count > 0 and not child_matches(not supported);
+    if (child_count > 0) {
+        valid_target: false;
+    }
 }
 
 if (win32_class_name.startswith("WindowsForms10.Window.") and msaa_role.grouping) // GroupBox control
