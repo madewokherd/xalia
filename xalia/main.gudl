@@ -619,8 +619,9 @@ if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element
     }
 }
 
-if (win32_class_name.startswith("WindowsForms10.Window.") and msaa_role.grouping) // GroupBox control
+if (class_name == "System.Windows.Forms.GroupBox")
 {
+    focusable: false;
     valid_target: false;
     recurse_method: "win32";
     supported: not child_matches(not supported);

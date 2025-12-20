@@ -4,8 +4,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using Xalia.Gudl;
+using Xalia.Interop;
 using Xalia.UiDom;
 using static Xalia.Interop.Win32;
 using IServiceProvider = Xalia.Interop.Win32.IServiceProvider;
@@ -60,7 +62,6 @@ namespace Xalia.Win32
 
         private static Dictionary<string, string> property_aliases = new Dictionary<string, string>()
         {
-            { "class_name", "win32_class_name" },
             { "real_class_name", "win32_real_class_name" },
             { "style", "win32_style" },
             { "x", "win32_x" },
@@ -133,6 +134,11 @@ namespace Xalia.Win32
         public bool WindowTextKnown { get; private set; }
 
         public string ProcessName { get; private set; }
+
+        bool is_winforms;
+        bool fetching_winforms_control_type;
+        string winforms_control_type;
+        static int WM_GETCONTROLTYPE;
 
         private HashSet<Win32Connection.UiaEvent> added_events;
 
@@ -255,6 +261,7 @@ namespace Xalia.Win32
             string class_name = RealClassName;
             if (class_name.StartsWith("WindowsForms10."))
             {
+                is_winforms = true;
                 class_name = class_name.Split('.')[1];
             }
 
@@ -409,6 +416,8 @@ namespace Xalia.Win32
         public override void DumpProperties(UiDomElement element)
         {
             ChildDumpProperties();
+            if (winforms_control_type != null)
+                Utils.DebugWriteLine($"  winforms_control_type: \"{winforms_control_type}\"");
             Utils.DebugWriteLine($"  win32_class_name: \"{ClassName}\"");
             Utils.DebugWriteLine($"  win32_real_class_name: \"{RealClassName}\"");
             Utils.DebugWriteLine($"  win32_style: {FormatStyles()}");
@@ -525,6 +534,13 @@ namespace Xalia.Win32
                     return new UiDomRoutineSync(Element, "win32_disable_window", DisableWindowRoutine);
                 case "win32_set_focus":
                     return new UiDomRoutineAsync(Element, "win32_set_focus", SetFocusRoutine);
+                case "winforms_control_type":
+                    if (is_winforms) {
+                        depends_on.Add((element, new IdentifierExpression(identifier)));
+                        if (winforms_control_type != null)
+                            return new UiDomString(winforms_control_type);
+                    }
+                    break;
             }
             return ChildEvaluateIdentifier(identifier, depends_on);
         }
@@ -651,6 +667,21 @@ namespace Xalia.Win32
                 case "pane":
                     return element.EvaluateIdentifier("role", element.Root, depends_on).
                         EvaluateIdentifier(identifier, element.Root, depends_on);
+                case "class_name":
+                    if (is_winforms)
+                    {
+                        depends_on.Add((element, new IdentifierExpression("winforms_control_type")));
+                        if (winforms_control_type != null)
+                        {
+                            int comma_idx = winforms_control_type.IndexOf(',');
+                            if (comma_idx == -1)
+                                comma_idx = winforms_control_type.Length;
+                            return new UiDomString(winforms_control_type.Substring(0, comma_idx));
+                        }
+                    }
+                    else
+                        return element.EvaluateIdentifier("win32_class_name", element.Root, depends_on);
+                    break;
             }
             if (property_aliases.TryGetValue(identifier, out var aliased))
                 return element.EvaluateIdentifier(aliased, element.Root, depends_on);
@@ -823,9 +854,59 @@ namespace Xalia.Win32
                             Utils.RunTask(FetchWindowText());
                         }
                         break;
+                    case "winforms_control_type":
+                        if (is_winforms && !fetching_winforms_control_type) {
+                            fetching_winforms_control_type = true;
+                            Utils.RunTask(FetchWinformsControlType());
+                        }
+                        break;
                 }
             }
             return false;
+        }
+
+        private async Task FetchWinformsControlType()
+        {
+            try
+            {
+                var remote_process_memory = Win32RemoteProcessMemory.FromPid(Pid);
+                try
+                {
+                    if (WM_GETCONTROLTYPE == 0)
+                        WM_GETCONTROLTYPE = RegisterWindowMessageW("WM_GETCONTROLTYPE");
+
+                    IntPtr size = await SendMessageAsync(Hwnd, WM_GETCONTROLTYPE, IntPtr.Zero, IntPtr.Zero);
+                    Utils.DebugWriteLine($"returned size: {size}");
+
+                    using (var remote_memory = remote_process_memory.Alloc((ulong)size))
+                    {
+                        // returned size is in bytes, but passed in size is in characters
+                        IntPtr ret_len = await SendMessageAsync(Hwnd, WM_GETCONTROLTYPE, size, unchecked((IntPtr)remote_memory.Address));
+
+                        if (ret_len != new IntPtr(-1))
+                        {
+                            string result = Encoding.Unicode.GetString(remote_memory.ReadBytes()).Substring(0, (int)ret_len - 1);
+
+                            winforms_control_type = result;
+                            Element.PropertyChanged("winforms_control_type", result);
+                        }
+                        else
+                        {
+                            Utils.DebugWriteLine("WARNING: Error from WM_GETCONTROLTYPE");
+                        }
+                    }
+                }
+                finally
+                {
+                    remote_process_memory.Unref();
+                }
+            }
+            catch (Win32Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
         }
 
         private async Task FetchWindowText()
