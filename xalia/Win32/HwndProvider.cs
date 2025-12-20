@@ -135,10 +135,13 @@ namespace Xalia.Win32
 
         public string ProcessName { get; private set; }
 
-        bool is_winforms;
+        bool IsWinforms => ClassName.StartsWith("WindowsForms10.");
         bool fetching_winforms_control_type;
         string winforms_control_type;
         static int WM_GETCONTROLTYPE;
+        bool fetching_winforms_control_name;
+        string winforms_control_name;
+        static int WM_GETCONTROLNAME;
 
         private HashSet<Win32Connection.UiaEvent> added_events;
 
@@ -261,7 +264,6 @@ namespace Xalia.Win32
             string class_name = RealClassName;
             if (class_name.StartsWith("WindowsForms10."))
             {
-                is_winforms = true;
                 class_name = class_name.Split('.')[1];
             }
 
@@ -418,6 +420,8 @@ namespace Xalia.Win32
             ChildDumpProperties();
             if (winforms_control_type != null)
                 Utils.DebugWriteLine($"  winforms_control_type: \"{winforms_control_type}\"");
+            if (winforms_control_name != null)
+                Utils.DebugWriteLine($"  winforms_control_name: \"{winforms_control_name}\"");
             Utils.DebugWriteLine($"  win32_class_name: \"{ClassName}\"");
             Utils.DebugWriteLine($"  win32_real_class_name: \"{RealClassName}\"");
             Utils.DebugWriteLine($"  win32_style: {FormatStyles()}");
@@ -535,10 +539,17 @@ namespace Xalia.Win32
                 case "win32_set_focus":
                     return new UiDomRoutineAsync(Element, "win32_set_focus", SetFocusRoutine);
                 case "winforms_control_type":
-                    if (is_winforms) {
+                    if (IsWinforms) {
                         depends_on.Add((element, new IdentifierExpression(identifier)));
                         if (winforms_control_type != null)
                             return new UiDomString(winforms_control_type);
+                    }
+                    break;
+                case "winforms_control_name":
+                    if (IsWinforms) {
+                        depends_on.Add((element, new IdentifierExpression(identifier)));
+                        if (winforms_control_name != null)
+                            return new UiDomString(winforms_control_name);
                     }
                     break;
             }
@@ -668,7 +679,7 @@ namespace Xalia.Win32
                     return element.EvaluateIdentifier("role", element.Root, depends_on).
                         EvaluateIdentifier(identifier, element.Root, depends_on);
                 case "class_name":
-                    if (is_winforms)
+                    if (IsWinforms)
                     {
                         depends_on.Add((element, new IdentifierExpression("winforms_control_type")));
                         if (winforms_control_type != null)
@@ -855,9 +866,15 @@ namespace Xalia.Win32
                         }
                         break;
                     case "winforms_control_type":
-                        if (is_winforms && !fetching_winforms_control_type) {
+                        if (IsWinforms && !fetching_winforms_control_type) {
                             fetching_winforms_control_type = true;
                             Utils.RunTask(FetchWinformsControlType());
+                        }
+                        break;
+                    case "winforms_control_name":
+                        if (IsWinforms && !fetching_winforms_control_name) {
+                            fetching_winforms_control_name = true;
+                            Utils.RunTask(FetchWinformsControlName());
                         }
                         break;
                 }
@@ -876,7 +893,6 @@ namespace Xalia.Win32
                         WM_GETCONTROLTYPE = RegisterWindowMessageW("WM_GETCONTROLTYPE");
 
                     IntPtr size = await SendMessageAsync(Hwnd, WM_GETCONTROLTYPE, IntPtr.Zero, IntPtr.Zero);
-                    Utils.DebugWriteLine($"returned size: {size}");
 
                     using (var remote_memory = remote_process_memory.Alloc((ulong)size))
                     {
@@ -893,6 +909,49 @@ namespace Xalia.Win32
                         else
                         {
                             Utils.DebugWriteLine("WARNING: Error from WM_GETCONTROLTYPE");
+                        }
+                    }
+                }
+                finally
+                {
+                    remote_process_memory.Unref();
+                }
+            }
+            catch (Win32Exception e)
+            {
+                if (!IsExpectedException(e))
+                    throw;
+                return;
+            }
+        }
+
+        private async Task FetchWinformsControlName()
+        {
+            try
+            {
+                var remote_process_memory = Win32RemoteProcessMemory.FromPid(Pid);
+                try
+                {
+                    if (WM_GETCONTROLNAME == 0)
+                        WM_GETCONTROLNAME = RegisterWindowMessageW("WM_GETCONTROLNAME");
+
+                    IntPtr size = await SendMessageAsync(Hwnd, WM_GETCONTROLNAME, IntPtr.Zero, IntPtr.Zero);
+
+                    using (var remote_memory = remote_process_memory.Alloc((ulong)size))
+                    {
+                        // returned size is in bytes, but passed in size is in characters
+                        IntPtr ret_len = await SendMessageAsync(Hwnd, WM_GETCONTROLNAME, size, unchecked((IntPtr)remote_memory.Address));
+
+                        if (ret_len != new IntPtr(-1))
+                        {
+                            string result = Encoding.Unicode.GetString(remote_memory.ReadBytes()).Substring(0, (int)ret_len - 1);
+
+                            winforms_control_name = result;
+                            Element.PropertyChanged("winforms_control_name", result);
+                        }
+                        else
+                        {
+                            Utils.DebugWriteLine("WARNING: Error from WM_GETCONTROLNAME");
                         }
                     }
                 }
