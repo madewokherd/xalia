@@ -588,6 +588,15 @@ if (win32_class_name.startswith("WindowsForms10.LISTBOX.")) {
     }
 }
 
+if (win32_class_name.startswith("WindowsForms10.BUTTON.") and not is_uia_element and msaa_role.client and ownerdraw) {
+    // Button control - sets BS_OWNERDRAW but does not set a role
+    role: enum("pushbutton", "push_button", "button");
+    control_type: enum("pushbutton", "push_button", "button");
+    button: true;
+    pushbutton: true;
+    push_button: true;
+}
+
 if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element and msaa_role.client) {
     // IAccessible is likely to not give us children
     recurse_method: "win32";
