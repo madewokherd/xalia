@@ -90,6 +90,28 @@ button (interactable and parent.parent.class_name == "KOEI_RYZALAUNCHER_WINDOW" 
 	target_priority: 1;
 }
 
+// APPLICATION: Batman Arkham Asylum GOTY launcher
+
+if (class_name == "BmLauncher.ERG_BitmapButton") {
+    role: enum("pushbutton", "push_button", "button");
+    control_type: enum("pushbutton", "push_button", "button");
+    button: true;
+    pushbutton: true;
+    push_button: true;
+    supported: true;
+}
+
+if (class_name == "BmLauncher.ERG_BitmapLabel") {
+    valid_target: false;
+    supported: true;
+}
+
+if (class_name == "BmLauncher.FormControls") {
+    recurse_method: "win32";
+    valid_target: false;
+    supported: not child_matches(not supported);
+}
+
 // APPLICATION: Bethesda Launchers
 dialog (child_matches(image and x == parent.x and y = parent.y and width == parent.width and height == parent.height))
 {
