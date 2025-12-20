@@ -109,7 +109,8 @@ if (class_name == "BmLauncher.ERG_BitmapLabel") {
 if (class_name == "BmLauncher.FormControls") {
     recurse_method: "win32";
     valid_target: false;
-    supported: not child_matches(not supported);
+    supported: not child_matches(not supported) and
+        child_matches(winforms_control_name == "buttonGadgets"); // Filters out Arkham City GOTY launcher, which has broken scrollbars
 }
 
 // APPLICATION: Bethesda Launchers
