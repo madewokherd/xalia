@@ -592,7 +592,7 @@ if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element
     // IAccessible is likely to not give us children
     recurse_method: "win32";
     // We have no information on the type of this control. Assume it's an ordinary container if it has children.
-    supported: child_count > 0 and not child_matches(not supported);
+    supported: (not win32_style_names.tabstop or child_count > 0) and not child_matches(not supported);
     if (child_count > 0) {
         valid_target: false;
     }
