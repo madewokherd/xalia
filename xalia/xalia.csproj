@@ -169,6 +169,8 @@
     <Compile Include="UiDom\UiDomString.cs" />
     <Compile Include="UiDom\UiDomUndefined.cs" />
     <Compile Include="UiDom\UiDomValue.cs" />
+    <Compile Include="UiDom\VirtualChildProvider.cs" />
+    <Compile Include="UiDom\VirtualChildrenProvider.cs" />
     <Compile Include="UiDom\WaitUntilRoutine.cs" />
     <Compile Include="Ui\CurrentViewRoutine.cs" />
     <Compile Include="Ui\SendKey.cs" />

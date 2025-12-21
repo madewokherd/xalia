@@ -625,6 +625,33 @@ if (win32_class_name.startswith("WindowsForms10.BUTTON.") and not is_uia_element
     push_button: true;
 }
 
+if (class_name == "System.Windows.Forms.UpDownBase+UpDownButtons") {
+    // No way to actually see the children, so just make some up
+    recurse_method: "virtual";
+    virtual_child_count: 2;
+    supported: true;
+    child {
+        // FIXME: We need to pull the left border in because otherwise it obscures the textbox contents, but an arbitrary adjustment is not ideal
+        x: parent.x + 5;
+        target_x: parent.x + 5;
+        y: parent.y + ((parent.height - parent.height % 2) / 2 * virtual_child_index);
+        target_y: parent.y + ((parent.height - parent.height % 2) / 2 * virtual_child_index);
+        width: parent.width - 9;
+        target_width: parent.width - 9;
+        height: (parent.height - parent.height % 2) / 2;
+        target_height: (parent.height - parent.height % 2) / 2;
+        button: true;
+        valid_target: true;
+        interactable: parent.interactable;
+    }
+}
+
+if (class_name == "System.Windows.Forms.NumericUpDown" or class_name == "System.Windows.Forms.DomainUpDown") {
+    recurse_method: "win32";
+    supported: not child_matches(not supported);
+    valid_target: false;
+}
+
 if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element and msaa_role.client) {
     // IAccessible is likely to not give us children
     recurse_method: "win32";

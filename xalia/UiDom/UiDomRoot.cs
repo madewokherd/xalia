@@ -10,6 +10,7 @@ namespace Xalia.UiDom
             Rules = GudlSelector.Flatten(rules).AsReadOnly();
             Application = application;
             Application.RootElementCreated(this);
+            AddGlobalProvider(new VirtualChildrenProvider());
         }
 
         public IReadOnlyCollection<(GudlExpression, GudlDeclaration[])> Rules { get; }
