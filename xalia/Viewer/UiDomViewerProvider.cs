@@ -54,6 +54,7 @@ namespace Xalia.Viewer
             "application_name",
             "toolkit_name",
             "winforms_control_type",
+            "winforms_control_name",
             "win32_class_name",
             "win32_control_id",
 
