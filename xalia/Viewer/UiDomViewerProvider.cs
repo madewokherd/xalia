@@ -94,6 +94,8 @@ namespace Xalia.Viewer
             "primary_action",
             "supported",
             "recurse_method",
+            "virtual_child_count",
+            "virtual_child_index",
             "do_default_action",
             "target_left_candidate",
             "target_right_candidate",
