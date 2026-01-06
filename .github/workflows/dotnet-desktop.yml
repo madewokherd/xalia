@@ -31,7 +31,7 @@ jobs:
       uses: nuget/setup-nuget@v2
 
     - name: Fetch SDL
-      run: curl -L -o sdl.zip "https://github.com/libsdl-org/SDL/releases/download/release-3.2.26/SDL3-3.2.26-win32-x64.zip"
+      run: curl -L -o sdl.zip "https://github.com/libsdl-org/SDL/releases/download/release-3.4.0/SDL3-3.4.0-win32-x64.zip"
 
     - name: Extract SDL
       run: tar -C xalia -xf sdl.zip
