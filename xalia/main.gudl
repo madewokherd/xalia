@@ -673,6 +673,7 @@ if (class_name == "System.Windows.Forms.GroupBox")
 if (win32_class_name.startswith("WindowsForms10."))
 {
     focusable: win32_style_names.tabstop;
+    visible: win32_style_names.visible;
 }
 
 // TOOLKIT: WPF
