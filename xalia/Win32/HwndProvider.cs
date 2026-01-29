@@ -588,11 +588,9 @@ namespace Xalia.Win32
                 return UiDomUndefined.Instance;
             }
 
-            POINT client_pos = default;
-            client_pos.x = coordinate;
-            if (!ClientToScreen(Hwnd, ref client_pos))
-                return UiDomUndefined.Instance;
-            return new UiDomInt(client_pos.x);
+            RECT client_pos = default;
+            client_pos.left = coordinate;
+            return new UiDomInt(ClientRectToScreen(client_pos).left);
         }
 
         private UiDomValue ClientYToScreenMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
@@ -607,11 +605,9 @@ namespace Xalia.Win32
                 return UiDomUndefined.Instance;
             }
 
-            POINT client_pos = default;
-            client_pos.y = coordinate;
-            if (!ClientToScreen(Hwnd, ref client_pos))
-                return UiDomUndefined.Instance;
-            return new UiDomInt(client_pos.y);
+            RECT client_pos = default;
+            client_pos.top = coordinate;
+            return new UiDomInt(ClientRectToScreen(client_pos).top);
         }
 
         private void EnableWindowRoutine(UiDomRoutineSync sync)
@@ -1219,7 +1215,7 @@ namespace Xalia.Win32
             POINT origin = new POINT();
             ClientToScreen(Hwnd, ref origin);
 
-            DpiAdjustScreenRect(input);
+            input = DpiAdjustScreenRect(input);
             input.left += origin.x;
             input.right += origin.x;
             input.top += origin.y;
