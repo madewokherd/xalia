@@ -434,6 +434,41 @@ if (win32_process_name == "SettingsApplication" and dialog and
     interactable: false;
 }
 
+// APPLICATION: Red Faction: Armageddon launcher
+if (process_name == "rf4_launcher" and win32_class_name == "Static" and bitmap) {
+    // Image map. Layout is entirely static, so we can just hard-code positions
+    recurse_method: "virtual";
+    virtual_child_count: 2;
+    supported: true;
+    interactable: parent.interactable;
+    child {
+        button: true;
+        valid_target: true;
+        primary_action: send_click;
+        interactable: parent.interactable;
+        target_x: x;
+        target_y: y;
+        target_width: width;
+        target_height: height;
+    }
+    child (virtual_child_index == 0) {
+        // DirectX 9
+        x: parent.client_x_to_screen(338);
+        y: parent.client_y_to_screen(149);
+        width: parent.client_x_to_screen(338+114) - x;
+        height: parent.client_y_to_screen(150+24) - y;
+    }
+    child (virtual_child_index == 1) {
+        // DirectX 10 & 11
+        x: parent.client_x_to_screen(338);
+        y: parent.client_y_to_screen(184);
+        width: parent.client_x_to_screen(338+176) - x;
+        height: parent.client_y_to_screen(184+47) - y;
+        confirm_action: send_click;
+        target_priority: 1;
+    }
+}
+
 // APPLICATION: Rockstar Games Launcher Installer
 
 if (win32_class_name == "Rockstar Games Launcher Installer") {
