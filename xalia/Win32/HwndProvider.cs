@@ -69,7 +69,9 @@ namespace Xalia.Win32
             { "width", "win32_width" },
             { "height", "win32_height" },
             { "client_x", "win32_client_x" },
+            { "client_x_to_screen", "win32_client_x_to_screen" },
             { "client_y", "win32_client_y" },
+            { "client_y_to_screen", "win32_client_y_to_screen" },
             { "client_width", "win32_client_width" },
             { "client_height", "win32_client_height" },
             { "control_id", "win32_control_id" },
@@ -516,6 +518,12 @@ namespace Xalia.Win32
                     if (WindowRectsKnown)
                         return new UiDomInt(ClientRect.height);
                     break;
+                case "win32_client_x_to_screen":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    return new UiDomMethod(Element, "win32_client_x_to_screen", ClientXToScreenMethod);
+                case "win32_client_y_to_screen":
+                    depends_on.Add((element, new IdentifierExpression("win32_pos")));
+                    return new UiDomMethod(Element, "win32_client_y_to_screen", ClientYToScreenMethod);
                 case "win32_control_id":
                     depends_on.Add((element, new IdentifierExpression("win32_style")));
                     if ((Style & WS_CHILD) != 0)
@@ -566,6 +574,44 @@ namespace Xalia.Win32
 
                 AttachThreadInput(GetCurrentThreadId(), Tid, false);
             }, CommandThreadPriority.User);
+        }
+
+        private UiDomValue ClientXToScreenMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+
+            UiDomValue evaluated_arg = context.Evaluate(arglist[0], root, depends_on);
+
+            if (!evaluated_arg.TryToInt(out var coordinate))
+            {
+                return UiDomUndefined.Instance;
+            }
+
+            POINT client_pos = default;
+            client_pos.x = coordinate;
+            if (!ClientToScreen(Hwnd, ref client_pos))
+                return UiDomUndefined.Instance;
+            return new UiDomInt(client_pos.x);
+        }
+
+        private UiDomValue ClientYToScreenMethod(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+
+            UiDomValue evaluated_arg = context.Evaluate(arglist[0], root, depends_on);
+
+            if (!evaluated_arg.TryToInt(out var coordinate))
+            {
+                return UiDomUndefined.Instance;
+            }
+
+            POINT client_pos = default;
+            client_pos.y = coordinate;
+            if (!ClientToScreen(Hwnd, ref client_pos))
+                return UiDomUndefined.Instance;
+            return new UiDomInt(client_pos.y);
         }
 
         private void EnableWindowRoutine(UiDomRoutineSync sync)
