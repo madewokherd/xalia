@@ -257,6 +257,84 @@ if (application_name == "FF9_Launcher") {
     }
 }
 
+// APPLICATION: Final Fantasy X/X-2 HD Remaster launcher
+if (process_name == "FFX&X-2_LAUNCHER" and winforms_control_type == "GameLauncher.MainForm, GameLauncher, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null") {
+    // Static image map
+    recurse_method: "virtual";
+    virtual_child_count: 7;
+    supported: true;
+    child {
+        button: true;
+        valid_target: true;
+        primary_action: send_click;
+        interactable: parent.interactable;
+        x: parent.client_x_to_screen(client_x);
+        y: parent.client_y_to_screen(client_y);
+        width: parent.client_x_to_screen(client_x + client_width) - x;
+        height: parent.client_y_to_screen(client_y + client_height) - y;
+        target_x: x;
+        target_y: y;
+        target_width: width;
+        target_height: height;
+    }
+    child (virtual_child_index == 0) {
+        // FINAL FANTASY X
+        client_x: 102;
+        client_y: 128;
+        client_width: 335;
+        client_height: 61;
+    }
+    child (virtual_child_index == 1) {
+        // FINAL FANTASY X: Eternal Calm
+        client_x: 102;
+        client_y: 210;
+        client_width: 335;
+        client_height: 61;
+    }
+    child (virtual_child_index == 2) {
+        // FINAL FANTASY X-2
+        client_x: 102;
+        client_y: 292;
+        client_width: 335;
+        client_height: 61;
+    }
+    child (virtual_child_index == 3) {
+        // FINAL FANTASY X-2: Last Mission
+        client_x: 102;
+        client_y: 374;
+        client_width: 335;
+        client_height: 61;
+    }
+    child (virtual_child_index == 4) {
+        // Credits & Bonus Audio
+        client_x: 102;
+        client_y: 457;
+        client_width: 335;
+        client_height: 61;
+    }
+    child (virtual_child_index == 5) {
+        // Additional Credits
+        client_x: 102;
+        client_y: 527;
+        client_width: 335;
+        client_height: 18;
+    }
+    child (virtual_child_index == 6) {
+        // Setting
+        client_x: 102;
+        client_y: 563;
+        client_width: 335;
+        client_height: 18;
+    }
+}
+
+if (process_name == "FFX&X-2_LAUNCHER" and winforms_control_type == "GameLauncher.CreditForm, GameLauncher, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" and active) {
+    in_menu_navigation: true;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_back_action: send_key.esc;
+}
+
 // APPLICATION: Firefox
 window (uia_class_name == "MozillaWindowClass") {
     firefox_use_offscreen_menu: true;
