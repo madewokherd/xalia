@@ -941,16 +941,16 @@ namespace Xalia.Win32
                         // returned size is in bytes, but passed in size is in characters
                         IntPtr ret_len = await SendMessageAsync(Hwnd, WM_GETCONTROLTYPE, size, unchecked((IntPtr)remote_memory.Address));
 
-                        if (ret_len != new IntPtr(-1))
+                        if (Utils.TruncatePtr(ret_len) > 0)
                         {
-                            string result = Encoding.Unicode.GetString(remote_memory.ReadBytes()).Substring(0, (int)ret_len - 1);
+                            string result = Encoding.Unicode.GetString(remote_memory.ReadBytes()).Substring(0, Utils.TruncatePtr(ret_len) - 1);
 
                             winforms_control_type = result;
                             Element.PropertyChanged("winforms_control_type", result);
                         }
                         else
                         {
-                            Utils.DebugWriteLine("WARNING: Error from WM_GETCONTROLTYPE");
+                            Utils.DebugWriteLine($"WARNING: Error from WM_GETCONTROLTYPE {ret_len}");
                         }
                     }
                 }
@@ -984,16 +984,16 @@ namespace Xalia.Win32
                         // returned size is in bytes, but passed in size is in characters
                         IntPtr ret_len = await SendMessageAsync(Hwnd, WM_GETCONTROLNAME, size, unchecked((IntPtr)remote_memory.Address));
 
-                        if (ret_len != new IntPtr(-1))
+                        if (Utils.TruncatePtr(ret_len) > 0)
                         {
-                            string result = Encoding.Unicode.GetString(remote_memory.ReadBytes()).Substring(0, (int)ret_len - 1);
+                            string result = Encoding.Unicode.GetString(remote_memory.ReadBytes()).Substring(0, Utils.TruncatePtr(ret_len) - 1);
 
                             winforms_control_name = result;
                             Element.PropertyChanged("winforms_control_name", result);
                         }
                         else
                         {
-                            Utils.DebugWriteLine("WARNING: Error from WM_GETCONTROLNAME");
+                            Utils.DebugWriteLine("WARNING: Error from WM_GETCONTROLNAME {ret_len}");
                         }
                     }
                 }
