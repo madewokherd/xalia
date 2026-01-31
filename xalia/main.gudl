@@ -674,6 +674,21 @@ button (application_name == "Ys7Launcher" and control_id >= 1022 and control_id 
 
 // Toolkit-specific behaviors
 
+// TOOLKIT: Setup UI dll (ATL)
+
+if (win32_class_name.startswith("ATL:") and child_matches(msaa_role.link and focusable and linked)) {
+    // custom(?) link control
+    supported: true;
+
+    child (msaa_role.link) {
+        visible: true;
+        enabled: true;
+        valid_target: true;
+    }
+}
+
+// TOOLKIT: ATL
+
 // TOOLKIT: RPG Maker
 
 if (win32_class_name == "TFormLcfGameMain")
