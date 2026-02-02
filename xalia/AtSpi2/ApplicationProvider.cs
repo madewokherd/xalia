@@ -67,7 +67,7 @@ namespace Xalia.AtSpi2
                 result = await GetProperty(Connection.Connection, Peer, Path,
                     IFACE_APPLICATION, "ToolkitName");
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;

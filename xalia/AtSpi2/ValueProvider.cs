@@ -140,7 +140,7 @@ namespace Xalia.AtSpi2
             {
                 result = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumValue");
             }
-            catch (DBusException e) {
+            catch (DBusErrorReplyException e) {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return;
@@ -164,7 +164,7 @@ namespace Xalia.AtSpi2
             {
                 result = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MaximumValue");
             }
-            catch (DBusException e) {
+            catch (DBusErrorReplyException e) {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return;
@@ -188,7 +188,7 @@ namespace Xalia.AtSpi2
             {
                 result = await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumIncrement");
             }
-            catch (DBusException e) {
+            catch (DBusErrorReplyException e) {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return;
@@ -211,7 +211,7 @@ namespace Xalia.AtSpi2
             {
                 return await GetPropertyDouble(Connection.Connection, Peer, Path, IFACE_VALUE, "MinimumIncrement");
             }
-            catch (DBusException e) {
+            catch (DBusErrorReplyException e) {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
                 return 0;
@@ -247,7 +247,7 @@ namespace Xalia.AtSpi2
                 if (new_value != current_value)
                     await SetProperty(Connection.Connection, Peer, Path, IFACE_VALUE, "CurrentValue", new_value);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;

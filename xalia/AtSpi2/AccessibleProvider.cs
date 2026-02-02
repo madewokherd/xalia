@@ -478,7 +478,7 @@ namespace Xalia.AtSpi2
                     Utils.DebugWriteLine($"WARNING: SelectChild failed for {obj.Element}");
                 }
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -505,7 +505,7 @@ namespace Xalia.AtSpi2
                     Utils.DebugWriteLine($"WARNING: DeselectChild failed for {obj.Element}");
                 }
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -546,7 +546,7 @@ namespace Xalia.AtSpi2
                     Utils.DebugWriteLine($"WARNING: Toggling selection failed for {obj.Element}");
                 }
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -642,7 +642,7 @@ namespace Xalia.AtSpi2
                 return await CallMethod(Connection.Connection, Peer, Path,
                     IFACE_ACCESSIBLE, "GetChildren", ReadMessageElementList);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -669,7 +669,7 @@ namespace Xalia.AtSpi2
 
                 return children;
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -980,7 +980,7 @@ namespace Xalia.AtSpi2
                 result = await CallMethod(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE,
                     "GetAttributes", ReadMessageStringDictionary);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (AtSpiConnection.IsExpectedException(e))
                     return;
@@ -1013,7 +1013,7 @@ namespace Xalia.AtSpi2
                 result = await CallMethod(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE,
                     "GetApplication", ReadMessageElement);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -1034,7 +1034,7 @@ namespace Xalia.AtSpi2
                 SupportedInterfaces = await CallMethod(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE,
                     "GetInterfaces", ReadMessageStringArray);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -1105,7 +1105,7 @@ namespace Xalia.AtSpi2
                 result = await CallMethod(Connection.Connection, Peer, Path,
                     IFACE_ACCESSIBLE, "GetState", ReadMessageUint32Array);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -1132,7 +1132,7 @@ namespace Xalia.AtSpi2
 
                 result = await GetProperty(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE, "Name");
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -1155,7 +1155,7 @@ namespace Xalia.AtSpi2
 
                 result = await GetProperty(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE, "Description");
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -1178,7 +1178,7 @@ namespace Xalia.AtSpi2
 
                 result = await GetPropertyString(Connection.Connection, Peer, Path, IFACE_ACCESSIBLE, "AccessibleId");
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -1298,7 +1298,7 @@ namespace Xalia.AtSpi2
                 result = await CallMethod(Connection.Connection, Peer, Path,
                     IFACE_ACCESSIBLE, "GetRole", ReadMessageInt32);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;

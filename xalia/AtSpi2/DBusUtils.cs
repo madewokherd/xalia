@@ -12,7 +12,7 @@ namespace Xalia.AtSpi2
 
         public static void WriteNoObjects(ref MessageWriter writer) { }
 
-        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+        public static Task<T> CallMethod<T>(DBusConnection connection, string peer, string path,
             string iface, string member, string signature, MessageFlags flags, ObjectWriter body_writer,
             MessageValueReader<T> reply_reader)
         {
@@ -34,7 +34,7 @@ namespace Xalia.AtSpi2
             }
         } 
 
-        public static Task CallMethod(Connection connection, string peer, string path,
+        public static Task CallMethod(DBusConnection connection, string peer, string path,
             string iface, string member, string signature, MessageFlags flags, ObjectWriter body_writer)
         {
             MessageWriter message = connection.GetMessageWriter();
@@ -55,25 +55,25 @@ namespace Xalia.AtSpi2
             }
         } 
 
-        public static Task CallMethod(Connection connection, string peer, string path,
+        public static Task CallMethod(DBusConnection connection, string peer, string path,
             string iface, string member, string signature, ObjectWriter body_writer)
         {
             return CallMethod(connection, peer, path, iface, member, signature, MessageFlags.None, body_writer);
         } 
 
-        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+        public static Task<T> CallMethod<T>(DBusConnection connection, string peer, string path,
             string iface, string member, string signature, ObjectWriter body_writer, MessageValueReader<T> reply_reader)
         {
             return CallMethod(connection, peer, path, iface, member, signature, MessageFlags.None, body_writer, reply_reader);
         }
 
-        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+        public static Task<T> CallMethod<T>(DBusConnection connection, string peer, string path,
             string iface, string member, MessageValueReader<T> reply_reader)
         {
             return CallMethod(connection, peer, path, iface, member, null, MessageFlags.None, WriteNoObjects, reply_reader);
         }
 
-        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+        public static Task<T> CallMethod<T>(DBusConnection connection, string peer, string path,
             string iface, string member, string arg1, MessageValueReader<T> reply_reader)
         {
             return CallMethod(connection, peer, path, iface, member, "s", MessageFlags.None, (ref MessageWriter writer) =>
@@ -82,7 +82,7 @@ namespace Xalia.AtSpi2
             }, reply_reader);
         }
 
-        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+        public static Task<T> CallMethod<T>(DBusConnection connection, string peer, string path,
             string iface, string member, int arg1, MessageValueReader<T> reply_reader)
         {
             return CallMethod(connection, peer, path, iface, member, "i", MessageFlags.None, (ref MessageWriter writer) =>
@@ -91,7 +91,7 @@ namespace Xalia.AtSpi2
             }, reply_reader);
         }
 
-        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+        public static Task<T> CallMethod<T>(DBusConnection connection, string peer, string path,
             string iface, string member, uint arg1, MessageValueReader<T> reply_reader)
         {
             return CallMethod(connection, peer, path, iface, member, "u", MessageFlags.None, (ref MessageWriter writer) =>
@@ -100,7 +100,7 @@ namespace Xalia.AtSpi2
             }, reply_reader);
         }
 
-        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+        public static Task<T> CallMethod<T>(DBusConnection connection, string peer, string path,
             string iface, string member, string arg1, uint arg2, MessageValueReader<T> reply_reader)
         {
             return CallMethod(connection, peer, path, iface, member, "su", MessageFlags.None, (ref MessageWriter writer) =>
@@ -110,7 +110,7 @@ namespace Xalia.AtSpi2
             }, reply_reader);
         }
 
-        public static Task<T> CallMethod<T>(Connection connection, string peer, string path,
+        public static Task<T> CallMethod<T>(DBusConnection connection, string peer, string path,
             string iface, string member, string arg1, int arg2, MessageValueReader<T> reply_reader)
         {
             return CallMethod(connection, peer, path, iface, member, "si", MessageFlags.None, (ref MessageWriter writer) =>
@@ -120,7 +120,7 @@ namespace Xalia.AtSpi2
             }, reply_reader);
         }
 
-        public static Task CallMethod(Connection connection, string peer, string path,
+        public static Task CallMethod(DBusConnection connection, string peer, string path,
             string iface, string member, string arg1)
         {
             return CallMethod(connection, peer, path, iface, member, "s", MessageFlags.None, (ref MessageWriter writer) =>
@@ -129,7 +129,7 @@ namespace Xalia.AtSpi2
             });
         }
 
-        public static Task CallMethod(Connection connection, string peer, string path,
+        public static Task CallMethod(DBusConnection connection, string peer, string path,
             string iface, string member, string arg1, uint arg2)
         {
             return CallMethod(connection, peer, path, iface, member, "su", MessageFlags.None, (ref MessageWriter writer) =>
@@ -139,7 +139,7 @@ namespace Xalia.AtSpi2
             });
         }
 
-        public static Task CallMethod(Connection connection, string peer, string path,
+        public static Task CallMethod(DBusConnection connection, string peer, string path,
             string iface, string member, string arg1, int arg2)
         {
             return CallMethod(connection, peer, path, iface, member, "si", MessageFlags.None, (ref MessageWriter writer) =>
@@ -149,7 +149,7 @@ namespace Xalia.AtSpi2
             });
         }
 
-        public static Task<VariantValue> GetProperty(Connection connection, string peer, string path,
+        public static Task<VariantValue> GetProperty(DBusConnection connection, string peer, string path,
             string iface, string prop)
         {
             return CallMethod(connection, peer, path, IFACE_PROPERTIES,
@@ -160,25 +160,25 @@ namespace Xalia.AtSpi2
                 }, ReadMessageVariant);
         } 
 
-        public static async Task<double> GetPropertyDouble(Connection connection, string peer, string path,
+        public static async Task<double> GetPropertyDouble(DBusConnection connection, string peer, string path,
             string iface, string prop)
         {
             return (await GetProperty(connection, peer, path, iface, prop)).GetDouble();
         }
 
-        public static async Task<int> GetPropertyInt(Connection connection, string peer, string path,
+        public static async Task<int> GetPropertyInt(DBusConnection connection, string peer, string path,
             string iface, string prop)
         {
             return (await GetProperty(connection, peer, path, iface, prop)).GetInt32();
         }
 
-        public static async Task<string> GetPropertyString(Connection connection, string peer, string path,
+        public static async Task<string> GetPropertyString(DBusConnection connection, string peer, string path,
             string iface, string prop)
         {
             return (await GetProperty(connection, peer, path, iface, prop)).GetString();
         }
 
-        public static Task SetProperty(Connection connection, string peer, string path,
+        public static Task SetProperty(DBusConnection connection, string peer, string path,
             string iface, string prop, bool value)
         {
             return CallMethod(connection, peer, path, IFACE_PROPERTIES,
@@ -190,7 +190,7 @@ namespace Xalia.AtSpi2
                 });
         }
 
-        public static Task SetProperty(Connection connection, string peer, string path,
+        public static Task SetProperty(DBusConnection connection, string peer, string path,
             string iface, string prop, double value)
         {
             return CallMethod(connection, peer, path, IFACE_PROPERTIES,
@@ -340,7 +340,7 @@ namespace Xalia.AtSpi2
 
         static bool debug_events = Utils.TryGetEnvironmentVariable("XALIA_DEBUG_EVENTS", out var debug) && debug != "0";
 
-        public static Task<IDisposable> MatchAtSpiSignal(Connection connection, string iface, string name, Action<AtSpiSignal> handler)
+        public static Task<IDisposable> MatchAtSpiSignal(DBusConnection connection, string iface, string name, Action<AtSpiSignal> handler)
         {
             bool debug_this_event = (debug_events ||
                 (Utils.TryGetEnvironmentVariable($"XALIA_DEBUG_EVENT_{name.ToUpperInvariant()}", out var value) && value != "0"));

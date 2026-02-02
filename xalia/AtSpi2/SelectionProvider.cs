@@ -57,7 +57,7 @@ namespace Xalia.AtSpi2
                     Utils.DebugWriteLine($"WARNING: ClearSelection failed for {obj.Element}");
                 }
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;

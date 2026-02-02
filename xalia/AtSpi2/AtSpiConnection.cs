@@ -12,7 +12,7 @@ namespace Xalia.AtSpi2
 {
     internal class AtSpiConnection : UiDomProviderBase
     {
-        public Connection Connection { get; }
+        public DBusConnection Connection { get; }
         public UiDomRoot Root { get; }
         public UiDomElement DesktopFrame { get; private set; }
 
@@ -23,7 +23,7 @@ namespace Xalia.AtSpi2
         private Dictionary<string, Queue<TaskCompletionSource<IDisposable>>> poll_known_sources = new Dictionary<string, Queue<TaskCompletionSource<IDisposable>>>();
         private Dictionary<string, Queue<TaskCompletionSource<IDisposable>>> poll_unknown_sources = new Dictionary<string, Queue<TaskCompletionSource<IDisposable>>>();
 
-        private AtSpiConnection(Connection connection, UiDomRoot root)
+        private AtSpiConnection(DBusConnection connection, UiDomRoot root)
         {
             Connection = connection;
             Root = root;
@@ -37,7 +37,7 @@ namespace Xalia.AtSpi2
         {
             string result = Environment.GetEnvironmentVariable("AT_SPI_BUS_ADDRESS");
 
-            var session = Connection.Session;
+            var session = DBusConnection.Session;
 
             // Request that accessibility support be enabled, before fetching address.
             await SetProperty(session, SERVICE_BUS, PATH_BUS, IFACE_STATUS,
@@ -86,7 +86,7 @@ namespace Xalia.AtSpi2
                 return null;
             }
 
-            var connection = new Connection(bus);
+            var connection = new DBusConnection(bus);
             await connection.ConnectAsync();
 
             var result = new AtSpiConnection(connection, root);
@@ -229,7 +229,7 @@ namespace Xalia.AtSpi2
             return source.Task;
         }
 
-        internal static bool IsExpectedException(DBusException e, params string[] extra_errors)
+        internal static bool IsExpectedException(DBusErrorReplyException e, params string[] extra_errors)
         {
 #if DEBUG
             if (DebugExceptions)

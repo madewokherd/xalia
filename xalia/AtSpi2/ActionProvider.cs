@@ -98,7 +98,7 @@ namespace Xalia.AtSpi2
                         "GetName", i, ReadMessageString);
                 }
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e, "org.freedesktop.DBus.Error.Failed"))
                     throw;
@@ -118,7 +118,7 @@ namespace Xalia.AtSpi2
                 success = await CallMethod(Connection.Connection, Peer, Path,
                     IFACE_ACTION, "DoAction", index, ReadMessageBoolean);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;

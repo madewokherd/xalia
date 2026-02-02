@@ -96,7 +96,7 @@ namespace Xalia.AtSpi2
                 if (!success)
                     Utils.DebugWriteLine($"WARNING: spi_grab_focus failed for {obj.Element}");
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -120,7 +120,7 @@ namespace Xalia.AtSpi2
                 extents = await CallMethod(Connection.Connection, Peer, Path,
                     IFACE_COMPONENT, "GetExtents", ATSPI_COORD_TYPE_SCREEN, ReadMessageExtents);
             }
-            catch (DBusException e)
+            catch (DBusErrorReplyException e)
             {
                 if (!AtSpiConnection.IsExpectedException(e))
                     throw;
@@ -191,7 +191,7 @@ namespace Xalia.AtSpi2
                     result = await CallMethod(Connection.Connection, Peer, Path,
                         IFACE_COMPONENT, "GetExtents", ATSPI_COORD_TYPE_SCREEN, ReadMessageExtents);
                 }
-                catch (DBusException e)
+                catch (DBusErrorReplyException e)
                 {
                     if (!AtSpiConnection.IsExpectedException(e))
                         throw;
