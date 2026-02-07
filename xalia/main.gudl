@@ -113,6 +113,12 @@ if (class_name == "BmLauncher.FormControls") {
         child_matches(winforms_control_name == "buttonGadgets"); // Filters out Arkham City GOTY launcher, which has broken scrollbars
 }
 
+// APPLICATION: BattlEye installer
+
+if (class_name == "BIS Setup") {
+    supported: not child_matches(not supported);
+}
+
 // APPLICATION: Bethesda Launchers
 dialog (child_matches(image and x == parent.x and y = parent.y and width == parent.width and height == parent.height))
 {
