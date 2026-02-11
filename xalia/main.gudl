@@ -444,6 +444,16 @@ if (win32_process_name == "gvim") {
     }
 }
 
+// APPLICATION: Graze Counter launcher
+
+if (process_name == "KeyConfig" and class_name == "System.Windows.Forms.TextBox" and
+    parent.class_name == "KeyConfig.FormMainUserControl.UserControlPad") {
+    if (win32_gui_focus) {
+        disable_interactions: true;
+    }
+    primary_action: on_release(assign("disable_interactions", true) + win32_set_focus + wait_until(not win32_gui_focus) + parent.parent.child_matches(focusable).win32_set_focus + assign("disable_interactions", undefined));
+}
+
 // APPLICATION: LocoCycle launcher
 
 if (process_name == "Launcher" and class_name.startswith("BUTTON_")) {
