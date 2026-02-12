@@ -590,7 +590,7 @@ if (win32_process_name == "setting")
 
 // APPLICATION: STAR WARS Starfighter launcher
 
-if (process_name == "Starfighter" and win32_class_name == "CltWin:400000:8:100a8:0:100ba" and
+if (process_name == "Starfighter" and win32_class_name.startswith("CltWin:400000:8:") and
     win32_gui_active and win32_gui_focus)
 {
     in_menu_navigation: true;
