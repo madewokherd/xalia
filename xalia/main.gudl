@@ -730,6 +730,12 @@ if (win32_class_name == "TFormLcfGameMain")
     interactable: false;
 }
 
+// TOOLKIT: TntWare Delphi Unicode Controls
+
+if (win32_class_name == "TTntRadioGroup.UnicodeClass") {
+    supported: not child_matches(not supported);
+}
+
 // TOOLKIT: Delphi
 
 root (child_matches(win32_class_name == "TApplication" and toplevel_interactable)) {
