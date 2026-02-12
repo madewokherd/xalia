@@ -588,6 +588,15 @@ if (win32_process_name == "setting")
     }
 }
 
+// APPLICATION: SONIC THE HEDGEHOG 4 Episode II
+
+if (process_name == "Launcher" and
+    class_name == "System.Windows.Forms.Panel" and winforms_control_name == "pnlPlayerPage" and visible and
+    sibling_matches(class_name == "System.Windows.Forms.Panel" and winforms_control_name == "pnlSettingsPage" and visible))
+{
+    interactable: false;
+}
+
 // APPLICATION: STAR WARS Starfighter launcher
 
 if (process_name == "Starfighter" and win32_class_name.startswith("CltWin:400000:8:") and
