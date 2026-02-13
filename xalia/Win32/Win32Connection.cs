@@ -917,71 +917,79 @@ namespace Xalia.Win32
             return UiaEventThread.OnBackgroundThread(() => {
                 ref UiaEventInfo info = ref uia_events[(int)ev];
                 int hr;
-                if (info.handle == IntPtr.Zero)
+                try
                 {
-                    UiaCacheRequest cache_request = new UiaCacheRequest()
+                    if (info.handle == IntPtr.Zero)
                     {
-                        Scope = TreeScope.Element,
-                        automationElementMode = AutomationElementMode.Full
-                    };
-
-                    cache_request.pViewCondition = Marshal.AllocCoTaskMem(Marshal.SizeOf<UiaCondition>());
-                    try
-                    {
-                        UiaCondition view_condition = new UiaCondition
+                        UiaCacheRequest cache_request = new UiaCacheRequest()
                         {
-                            ConditionType = ConditionType.True,
+                            Scope = TreeScope.Element,
+                            automationElementMode = AutomationElementMode.Full
                         };
-                        Marshal.StructureToPtr(view_condition, cache_request.pViewCondition, false);
 
-                        hr = UiaGetRootNode(out var root_node);
-                        Marshal.ThrowExceptionForHR(hr);
+                        cache_request.pViewCondition = Marshal.AllocCoTaskMem(Marshal.SizeOf<UiaCondition>());
                         try
                         {
-                            IntPtr handle;
-
-                            if (ev == UiaEvent.PropertyChanged)
+                            UiaCondition view_condition = new UiaCondition
                             {
-                                int[] properties = new int[]
+                                ConditionType = ConditionType.True,
+                            };
+                            Marshal.StructureToPtr(view_condition, cache_request.pViewCondition, false);
+
+                            hr = UiaGetRootNode(out var root_node);
+                            Marshal.ThrowExceptionForHR(hr);
+                            try
+                            {
+                                IntPtr handle;
+
+                                if (ev == UiaEvent.PropertyChanged)
                                 {
-                                    UIA_AutomationIdPropertyId,
-                                    UIA_ControlTypePropertyId,
-                                    UIA_IsEnabledPropertyId,
-                                    UIA_IsOffscreenPropertyId,
-                                    UIA_BoundingRectanglePropertyId,
-                                    UIA_FrameworkIdPropertyId,
-                                    UIA_ClassNamePropertyId,
-                                };
-                                fixed (int* pProperties = properties)
+                                    int[] properties = new int[]
+                                    {
+                                        UIA_AutomationIdPropertyId,
+                                        UIA_ControlTypePropertyId,
+                                        UIA_IsEnabledPropertyId,
+                                        UIA_IsOffscreenPropertyId,
+                                        UIA_BoundingRectanglePropertyId,
+                                        UIA_FrameworkIdPropertyId,
+                                        UIA_ClassNamePropertyId,
+                                    };
+                                    fixed (int* pProperties = properties)
+                                    {
+                                        hr = UiaAddEvent(root_node, info.eventid,
+                                            EventCallback, TreeScope.Subtree, (IntPtr)pProperties, properties.Length,
+                                            ref cache_request, out handle);
+                                        Marshal.ThrowExceptionForHR(hr);
+                                    }
+                                }
+                                else
                                 {
                                     hr = UiaAddEvent(root_node, info.eventid,
-                                        EventCallback, TreeScope.Subtree, (IntPtr)pProperties, properties.Length,
-                                        ref cache_request, out handle);
+                                        EventCallback, TreeScope.Subtree, IntPtr.Zero, 0, ref cache_request,
+                                        out handle);
                                     Marshal.ThrowExceptionForHR(hr);
                                 }
+                                info.handle = handle;
                             }
-                            else
+                            finally
                             {
-                                hr = UiaAddEvent(root_node, info.eventid,
-                                    EventCallback, TreeScope.Subtree, IntPtr.Zero, 0, ref cache_request,
-                                    out handle);
-                                Marshal.ThrowExceptionForHR(hr);
+                                UiaNodeRelease(root_node);
                             }
-                            info.handle = handle;
                         }
                         finally
                         {
-                            UiaNodeRelease(root_node);
+                            Marshal.FreeCoTaskMem(cache_request.pViewCondition);
                         }
                     }
-                    finally
-                    {
-                        Marshal.FreeCoTaskMem(cache_request.pViewCondition);
-                    }
-                }
 
-                hr = UiaEventAddWindow(info.handle, hwnd);
-                Marshal.ThrowExceptionForHR(hr);
+                    hr = UiaEventAddWindow(info.handle, hwnd);
+                    Marshal.ThrowExceptionForHR(hr);
+                }
+                catch (NotImplementedException)
+                {
+                    // Not yet implemented on Wine
+                    return;
+                }
                 info.refcount++;
             }, CommandThreadPriority.Query);
         }
