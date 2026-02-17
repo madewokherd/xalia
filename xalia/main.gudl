@@ -170,6 +170,16 @@ image (interactable and parent.is_bethesda_launcher and
     }
 }
 
+// APPLICATION: Disney Bolt launcher
+
+edit (process_name == "DisneyBolt" and parent.index_in_parent == 3) {
+    // Gamepad binding controls. These will seemingly listen for gamepad input *forever* once activated, so best to ignore them entirely.
+    valid_target: false;
+    if (win32_gui_focus) {
+        disable_interactions: true;
+    }
+}
+
 // APPLICATION: EA App
 
 window (uia_class_name == "eax::services::windowing::QmlView") {
