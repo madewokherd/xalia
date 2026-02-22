@@ -917,79 +917,73 @@ namespace Xalia.Win32
             return UiaEventThread.OnBackgroundThread(() => {
                 ref UiaEventInfo info = ref uia_events[(int)ev];
                 int hr;
-                try
+                if (info.handle == IntPtr.Zero)
                 {
-                    if (info.handle == IntPtr.Zero)
+                    UiaCacheRequest cache_request = new UiaCacheRequest()
                     {
-                        UiaCacheRequest cache_request = new UiaCacheRequest()
-                        {
-                            Scope = TreeScope.Element,
-                            automationElementMode = AutomationElementMode.Full
-                        };
+                        Scope = TreeScope.Element,
+                        automationElementMode = AutomationElementMode.Full
+                    };
 
-                        cache_request.pViewCondition = Marshal.AllocCoTaskMem(Marshal.SizeOf<UiaCondition>());
+                    cache_request.pViewCondition = Marshal.AllocCoTaskMem(Marshal.SizeOf<UiaCondition>());
+                    try
+                    {
+                        UiaCondition view_condition = new UiaCondition
+                        {
+                            ConditionType = ConditionType.True,
+                        };
+                        Marshal.StructureToPtr(view_condition, cache_request.pViewCondition, false);
+
+                        hr = UiaGetRootNode(out var root_node);
+                        Marshal.ThrowExceptionForHR(hr);
                         try
                         {
-                            UiaCondition view_condition = new UiaCondition
-                            {
-                                ConditionType = ConditionType.True,
-                            };
-                            Marshal.StructureToPtr(view_condition, cache_request.pViewCondition, false);
+                            IntPtr handle;
 
-                            hr = UiaGetRootNode(out var root_node);
-                            Marshal.ThrowExceptionForHR(hr);
-                            try
+                            if (ev == UiaEvent.PropertyChanged)
                             {
-                                IntPtr handle;
-
-                                if (ev == UiaEvent.PropertyChanged)
+                                int[] properties = new int[]
                                 {
-                                    int[] properties = new int[]
-                                    {
-                                        UIA_AutomationIdPropertyId,
-                                        UIA_ControlTypePropertyId,
-                                        UIA_IsEnabledPropertyId,
-                                        UIA_IsOffscreenPropertyId,
-                                        UIA_BoundingRectanglePropertyId,
-                                        UIA_FrameworkIdPropertyId,
-                                        UIA_ClassNamePropertyId,
-                                    };
-                                    fixed (int* pProperties = properties)
-                                    {
-                                        hr = UiaAddEvent(root_node, info.eventid,
-                                            EventCallback, TreeScope.Subtree, (IntPtr)pProperties, properties.Length,
-                                            ref cache_request, out handle);
-                                        Marshal.ThrowExceptionForHR(hr);
-                                    }
-                                }
-                                else
+                                    UIA_AutomationIdPropertyId,
+                                    UIA_ControlTypePropertyId,
+                                    UIA_IsEnabledPropertyId,
+                                    UIA_IsOffscreenPropertyId,
+                                    UIA_BoundingRectanglePropertyId,
+                                    UIA_FrameworkIdPropertyId,
+                                    UIA_ClassNamePropertyId,
+                                };
+                                fixed (int* pProperties = properties)
                                 {
                                     hr = UiaAddEvent(root_node, info.eventid,
-                                        EventCallback, TreeScope.Subtree, IntPtr.Zero, 0, ref cache_request,
-                                        out handle);
+                                        EventCallback, TreeScope.Subtree, (IntPtr)pProperties, properties.Length,
+                                        ref cache_request, out handle);
+                                    if (hr == E_NOTIMPL)
+                                        return; // Not implemented in Wine
                                     Marshal.ThrowExceptionForHR(hr);
                                 }
-                                info.handle = handle;
                             }
-                            finally
+                            else
                             {
-                                UiaNodeRelease(root_node);
+                                hr = UiaAddEvent(root_node, info.eventid,
+                                    EventCallback, TreeScope.Subtree, IntPtr.Zero, 0, ref cache_request,
+                                    out handle);
+                                Marshal.ThrowExceptionForHR(hr);
                             }
+                            info.handle = handle;
                         }
                         finally
                         {
-                            Marshal.FreeCoTaskMem(cache_request.pViewCondition);
+                            UiaNodeRelease(root_node);
                         }
                     }
+                    finally
+                    {
+                        Marshal.FreeCoTaskMem(cache_request.pViewCondition);
+                    }
+                }
 
-                    hr = UiaEventAddWindow(info.handle, hwnd);
-                    Marshal.ThrowExceptionForHR(hr);
-                }
-                catch (NotImplementedException)
-                {
-                    // Not yet implemented on Wine
-                    return;
-                }
+                hr = UiaEventAddWindow(info.handle, hwnd);
+                Marshal.ThrowExceptionForHR(hr);
                 info.refcount++;
             }, CommandThreadPriority.Query);
         }
@@ -1010,6 +1004,8 @@ namespace Xalia.Win32
                 else
                 {
                     hr = UiaEventRemoveWindow(info.handle, hwnd);
+                    if (hr == E_NOTIMPL)
+                        return; // Not implemented in Wine
                     Marshal.ThrowExceptionForHR(hr);
                     info.refcount--;
                 }

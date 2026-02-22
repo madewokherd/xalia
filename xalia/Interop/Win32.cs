@@ -39,6 +39,8 @@ namespace Xalia.Interop
         public const int ERROR_FILE_NOT_FOUND = 2;
         public const int ERROR_PATH_NOT_FOUND = 3;
 
+        public const int E_NOTIMPL = unchecked((int)0x80004001);
+
         public static IntPtr GetCurrentProcess()
         {
             return new IntPtr(-1);
