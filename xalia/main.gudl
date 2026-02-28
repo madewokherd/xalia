@@ -273,6 +273,11 @@ if (application_name == "FF9_Launcher") {
     }
 }
 
+// APPLICATION: Final Fantasy VII and Final Fantasy VIII - Remastered launchers:
+if (class_name.startswith("FF") and (class_name.endswith("Launcher") or class_name.endswith("_Launcher.Setting"))) {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: Final Fantasy X/X-2 HD Remaster launcher
 if (process_name == "FFX&X-2_LAUNCHER" and winforms_control_type == "GameLauncher.MainForm, GameLauncher, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null") {
     // Static image map
