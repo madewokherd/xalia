@@ -923,6 +923,16 @@ if (is_hwnd_combobox or is_hwnd_trackbar or is_hwnd_listview or is_nonclient_scr
     supported: true;
 }
 
+if (is_hwnd_combobox and win32_combo_box_dropped_state) {
+    in_menu_navigation: true;
+
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_select_action: collapse;
+    menu_back_action: collapse;
+    menu_close_action: collapse;
+}
+
 if (is_hwnd_edit) {
     supported: true;
     win32_use_nonclient: true;
@@ -1054,28 +1064,6 @@ combo_box (uia_expand_collapse_state.expanded) {
     menu_select_action: send_key.enter;
     menu_back_action: uia_collapse or send_key.esc;
     menu_close_action: uia_collapse or send_key.esc;
-}
-
-// Win32 Combo list boxes
-if (is_hwnd_combo_box and win32_combo_box_dropped_state) {
-    in_menu_navigation: true;
-
-    menu_up_action: send_key.up;
-    menu_down_action: send_key.down;
-    menu_select_action: collapse;
-    menu_back_action: collapse;
-    menu_close_action: collapse;
-}
-
-if (parent.is_root and uia_class_name == "ComboLBox"
-    and visible and enabled) {
-    in_menu_navigation: true;
-
-    menu_up_action: send_key.up;
-    menu_down_action: send_key.down;
-    menu_select_action: send_key.enter;
-    menu_back_action: send_key.esc;
-    menu_close_action: send_key.esc;
 }
 
 // Qt/AT-SPI2 menus
