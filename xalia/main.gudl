@@ -974,20 +974,26 @@ if (spi_attributes.xalia_ignore)
 
 // Menus
 
-root (descendent_matches(in_menu_navigation)) {
+if (in_menu_navigation and not application_supports_gamepad) {
+    menu_navigation_control: this;
+}
+
+if (not application_supports_gamepad and child_matches(menu_navigation_control)) {
+    menu_navigation_control: child_matches(menu_navigation_control).menu_navigation_control;
+}
+
+root (menu_navitation_control) {
     disable_interactions: true;
 
-    current_menu: descendent_matches(in_menu_navigation);
+    menu_move_action: menu_navigation_control.(map_directions(menu_left_action, menu_down_action, menu_up_action, menu_right_action));
 
-    menu_move_action: descendent_matches(in_menu_navigation).(map_directions(menu_left_action, menu_down_action, menu_up_action, menu_right_action));
-
-    menu_left_action: descendent_matches(in_menu_navigation).menu_left_action;
-    menu_down_action: descendent_matches(in_menu_navigation).menu_down_action;
-    menu_up_action: descendent_matches(in_menu_navigation).menu_up_action;
-    menu_right_action: descendent_matches(in_menu_navigation).menu_right_action;
-    menu_select_action: descendent_matches(in_menu_navigation).menu_select_action;
-    menu_back_action: descendent_matches(in_menu_navigation).menu_back_action;
-    menu_close_action: descendent_matches(in_menu_navigation).menu_close_action;
+    menu_left_action: menu_navigation_control.menu_left_action;
+    menu_down_action: menu_navigation_control.menu_down_action;
+    menu_up_action: menu_navigation_control.menu_up_action;
+    menu_right_action: menu_navigation_control.menu_right_action;
+    menu_select_action: menu_navigation_control.menu_select_action;
+    menu_back_action: menu_navigation_control.menu_back_action;
+    menu_close_action: menu_navigation_control.menu_close_action;
 }
 
 // If a menu is open, we shouldn't try to interact with anything else.
