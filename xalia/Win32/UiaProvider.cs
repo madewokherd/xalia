@@ -685,10 +685,17 @@ namespace Xalia.Win32
                 return result;
             }
 
-            // Is this a bridged MSAA element?
-            if (UiaIAccessibleFromProvider(simple, UIA_IAFP_UNWRAP_BRIDGE, out var acc, out var childid) == 0)
+            try
             {
-                return AccessibleProvider.ElementIdFromVariantBackground(childid, acc, RootHwnd.Hwnd);
+                // Is this a bridged MSAA element?
+                if (UiaIAccessibleFromProvider(simple, UIA_IAFP_UNWRAP_BRIDGE, out var acc, out var childid) == 0)
+                {
+                    return AccessibleProvider.ElementIdFromVariantBackground(childid, acc, RootHwnd.Hwnd);
+                }
+            }
+            catch (EntryPointNotFoundException)
+            {
+                // Not yet implemented on Wine
             }
 
             // Non-hwnd UIA element
