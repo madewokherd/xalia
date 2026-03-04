@@ -298,6 +298,35 @@ if (class_name.startswith("FF") and (class_name.endswith("Launcher") or class_na
     application_supports_gamepad: true;
 }
 
+// APPLICATION: Final Fantasy VIII launcher
+if (win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget") {
+    supported: true;
+    recurse: true;
+}
+if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget" and win32_window_text == "Notice") and
+    index_in_parent == 0) {
+    valid_target: true;
+    primary_action: send_click;
+    if (interactable) {
+        confirm_action: send_click;
+        target_priority: 1;
+    }
+}
+if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget" and win32_window_text == "Main") and
+    index_in_parent == 1) {
+    valid_target: true;
+    primary_action: send_click;
+    if (interactable) {
+        confirm_action: send_click;
+        target_priority: 1;
+    }
+}
+if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget" and win32_window_text == "Main") and
+    (index_in_parent == 2 or index_in_parent == 3 or index_in_parent == 4 or index_in_parent == 6 or index_in_parent == 7 or index_in_parent == 8)) {
+    valid_target: true;
+    primary_action: send_click;
+}
+
 // APPLICATION: Final Fantasy X/X-2 HD Remaster launcher
 if (process_name == "FFX&X-2_LAUNCHER" and winforms_control_type == "GameLauncher.MainForm, GameLauncher, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null") {
     // Static image map
