@@ -518,6 +518,26 @@ if (process_name == "KeyConfig" and class_name == "System.Windows.Forms.TextBox"
     primary_action: on_release(assign("disable_interactions", true) + win32_set_focus + wait_until(not win32_gui_focus) + parent.parent.child_matches(focusable).win32_set_focus + assign("disable_interactions", undefined));
 }
 
+// Application: Gumboy: Crazy Adventures launcher
+
+if (process_name == "GumboyCrazyAdventures") {
+    if (win32_class_name == "TTntPanel.UnicodeClass" and parent.win32_class_name == "TOptionsForm.UnicodeClass" and child_count == 0) {
+        valid_target: true;
+    }
+
+    if (win32_class_name == "TStartForm" and visible and
+        ((win32_gui_active and win32_gui_focus) or
+         root.child_matches(process_name == "GumboyCrazyAdventures" and class_name == "TApplication" and win32_gui_active and win32_gui_focus))) {
+            in_menu_navigation: true;
+            menu_up_action: send_key.up;
+            menu_down_action: send_key.down;
+            menu_left_action: send_key.left;
+            menu_right_action: send_key.right;
+            menu_select_action: send_key.enter;
+            menu_back_action: send_key.esc;
+    }
+}
+
 // APPLICATION: LocoCycle launcher
 
 if (process_name == "Launcher" and class_name.startswith("BUTTON_")) {
