@@ -273,6 +273,26 @@ if (application_name == "FF9_Launcher") {
     }
 }
 
+// APPLICATION: Final Fantasy VII (2013) launcher
+if (win32_process_name == "FF7_Launcher" and win32_class_name == "QWidget") {
+    supported: true;
+    recurse: true;
+}
+if (parent.(win32_process_name == "FF7_Launcher" and win32_class_name == "QWidget" and win32_window_text == "Main") and
+    index_in_parent == 1) {
+    poll_msaa_state: true;
+    valid_target: true;
+    primary_action: send_click;
+    confirm_action: send_click;
+    target_priority: 1;
+}
+if (parent.(win32_process_name == "FF7_Launcher" and win32_class_name == "QWidget" and win32_window_text == "Main") and
+    (index_in_parent == 2 or index_in_parent == 3 or index_in_parent == 4 or index_in_parent == 6)) {
+    poll_msaa_state: true;
+    valid_target: true;
+    primary_action: send_click;
+}
+
 // APPLICATION: Final Fantasy VII and Final Fantasy VIII - Remastered launchers:
 if (class_name.startswith("FF") and (class_name.endswith("Launcher") or class_name.endswith("_Launcher.Setting"))) {
     application_supports_gamepad: true;
