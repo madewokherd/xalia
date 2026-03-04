@@ -796,7 +796,7 @@ if (win32_class_name == "TFormLcfGameMain")
 
 // TOOLKIT: TntWare Delphi Unicode Controls
 
-if (win32_class_name == "TTntRadioGroup.UnicodeClass") {
+if (win32_class_name == "TTntRadioGroup.UnicodeClass" or win32_class_name == "TTntPanel.UnicodeClass") {
     supported: not child_matches(not supported);
 }
 
