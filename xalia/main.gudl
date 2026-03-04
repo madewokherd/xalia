@@ -1031,7 +1031,7 @@ if (not application_supports_gamepad and child_matches(menu_navigation_control))
     menu_navigation_control: child_matches(menu_navigation_control).menu_navigation_control;
 }
 
-root (menu_navitation_control) {
+root (menu_navigation_control) {
     disable_interactions: true;
 
     menu_move_action: menu_navigation_control.(map_directions(menu_left_action, menu_down_action, menu_up_action, menu_right_action));
