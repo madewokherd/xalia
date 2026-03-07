@@ -302,11 +302,13 @@ if (class_name.startswith("FF") and (class_name.endswith("Launcher") or class_na
 if (win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget") {
     supported: true;
     recurse: true;
+    poll_msaa_state: true;
 }
 if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget" and win32_window_text == "Notice") and
     index_in_parent == 0) {
     valid_target: true;
     primary_action: send_click;
+    poll_msaa_state: true;
     if (interactable) {
         confirm_action: send_click;
         target_priority: 1;
@@ -316,6 +318,7 @@ if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidge
     index_in_parent == 1) {
     valid_target: true;
     primary_action: send_click;
+    poll_msaa_state: true;
     if (interactable) {
         confirm_action: send_click;
         target_priority: 1;
@@ -325,6 +328,24 @@ if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidge
     (index_in_parent == 2 or index_in_parent == 3 or index_in_parent == 4 or index_in_parent == 6 or index_in_parent == 7 or index_in_parent == 8)) {
     valid_target: true;
     primary_action: send_click;
+    poll_msaa_state: true;
+}
+if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget" and win32_window_text == "ChocoboRPG") and
+    (index_in_parent == 3 or index_in_parent == 5)) {
+    valid_target: true;
+    primary_action: send_click;
+    poll_msaa_state: true;
+}
+
+if (process_name.startswith("Chocobo_") and win32_class_name == "ChocoboRPG" and active) {
+    in_menu_navigation: true;
+    menu_left_action: map_to_key.left;
+    menu_down_action: map_to_key.down;
+    menu_up_action: map_to_key.up;
+    menu_right_action: map_to_key.right;
+    menu_select_action: map_to_key.left_control;
+    menu_back_action: send_key.esc;
+    menu_close_action: map_to_key.left_control;
 }
 
 // APPLICATION: Final Fantasy X/X-2 HD Remaster launcher
