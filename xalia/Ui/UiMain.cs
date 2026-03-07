@@ -663,6 +663,12 @@ namespace Xalia.Ui
                         return new SendKey(Windowing);
                     }
                     break;
+                case "map_to_key":
+                    if (Windowing.CanSendKeys)
+                    {
+                        return new MapToKey(Windowing);
+                    }
+                    break;
                 case "send_click":
                     return new UiDomRoutineAsync(element, "send_click", SendClick);
                 case "send_right_click":

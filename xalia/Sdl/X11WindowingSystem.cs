@@ -160,7 +160,7 @@ namespace Xalia.Sdl
 
         public override bool CanSendKeys => xtest_supported || base.CanSendKeys;
 
-        public override async Task SendKey(int keysym)
+        public override async Task SendKey(int keysym, bool press, bool release)
         {
             if (xtest_supported)
             {
@@ -171,8 +171,10 @@ namespace Xalia.Sdl
                     return;
                 }
                 //TODO: check XkbGetSlowKeysDelay
-                XTestFakeKeyEvent(display, keycode, True, IntPtr.Zero);
-                XTestFakeKeyEvent(display, keycode, False, IntPtr.Zero);
+                if (press)
+                    XTestFakeKeyEvent(display, keycode, True, IntPtr.Zero);
+                if (release)
+                    XTestFakeKeyEvent(display, keycode, False, IntPtr.Zero);
                 return;
             }
             await base.SendKey(keysym);

@@ -63,7 +63,12 @@ namespace Xalia.Sdl
 
         public virtual bool CanSendKeys => false;
 
-        public virtual Task SendKey(int keysym)
+        public Task SendKey(int keysym)
+        {
+            return SendKey(keysym, true, true);
+        }
+
+        public virtual Task SendKey(int keysym, bool press, bool release)
         {
             throw new NotImplementedException();
         }

@@ -412,7 +412,7 @@ namespace Xalia.Sdl
             return base.GetKeySym(key);
         }
 
-        unsafe public override Task SendKey(int keysym)
+        unsafe public override Task SendKey(int keysym, bool press, bool release)
         {
             int modifier_flags = 0;
             bool packet = false;
@@ -435,13 +435,20 @@ namespace Xalia.Sdl
 
             if (packet)
             {
-                inputs[0].type = INPUT_KEYBOARD;
-                inputs[0].u.ki.wScan = (short)(keysym >> 16);
-                inputs[0].u.ki.dwFlags = KEYEVENTF_UNICODE;
-                inputs[1].type = INPUT_KEYBOARD;
-                inputs[1].u.ki.wScan = (short)(keysym >> 16);
-                inputs[1].u.ki.dwFlags = KEYEVENTF_UNICODE|KEYEVENTF_KEYUP;
-                num_inputs = 2;
+                if (press)
+                {
+                    inputs[num_inputs].type = INPUT_KEYBOARD;
+                    inputs[num_inputs].u.ki.wScan = (short)(keysym >> 16);
+                    inputs[num_inputs].u.ki.dwFlags = KEYEVENTF_UNICODE;
+                    num_inputs++;
+                }
+                if (release)
+                {
+                    inputs[num_inputs].type = INPUT_KEYBOARD;
+                    inputs[num_inputs].u.ki.wScan = (short)(keysym >> 16);
+                    inputs[num_inputs].u.ki.dwFlags = KEYEVENTF_UNICODE|KEYEVENTF_KEYUP;
+                    num_inputs++;
+                }
             }
             else
             {
@@ -463,11 +470,22 @@ namespace Xalia.Sdl
                     inputs[num_inputs].u.ki.wVk = VK_MENU;
                     num_inputs++;
                 }
-                inputs[num_inputs].type = INPUT_KEYBOARD;
-                inputs[num_inputs].u.ki.wVk = (short)keysym;
-                num_inputs++;
+                int modifier_inputs = num_inputs;
+                if (press)
+                {
+                    inputs[num_inputs].type = INPUT_KEYBOARD;
+                    inputs[num_inputs].u.ki.wVk = (short)keysym;
+                    num_inputs++;
+                }
+                if (release)
+                {
+                    inputs[num_inputs].type = INPUT_KEYBOARD;
+                    inputs[num_inputs].u.ki.wVk = (short)keysym;
+                    inputs[num_inputs].u.ki.dwFlags |= KEYEVENTF_KEYUP;
+                    num_inputs++;
+                }
 
-                for (int i = num_inputs-1; i >= 0; i--)
+                for (int i = modifier_inputs-1; i >= 0; i--)
                 {
                     inputs[num_inputs] = inputs[i];
                     inputs[num_inputs].u.ki.dwFlags |= KEYEVENTF_KEYUP;
