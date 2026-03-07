@@ -304,6 +304,25 @@ if (win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget") {
     recurse: true;
     poll_msaa_state: true;
 }
+if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget") and not is_hwnd_element) {
+    // Sometimes the IAccessible just forgets the location???
+    if (x or y or width or height) {
+        saved_x: x - parent.x;
+        saved_y: y - parent.y;
+        saved_width: width;
+        saved_height: height;
+    }
+    if (not (x or y or width or height)) {
+        target_x: saved_x + parent.x;
+        target_y: saved_y + parent.y;
+        target_width: saved_width;
+        target_height: saved_height;
+        saved_x: saved_x;
+        saved_y: saved_y;
+        saved_width: saved_width;
+        saved_height: saved_height;
+    }
+}
 if (parent.(win32_process_name == "FF8_Launcher" and win32_class_name == "QWidget" and win32_window_text == "Notice") and
     index_in_parent == 0) {
     valid_target: true;
