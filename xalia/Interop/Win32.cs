@@ -850,6 +850,9 @@ namespace Xalia.Interop
         }
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode)]
+        public static extern int MapVirtualKeyW(int uCode, int uMapType);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode)]
         public static extern short VkKeyScanW(char ch);
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode, SetLastError = true)]
@@ -882,6 +885,8 @@ namespace Xalia.Interop
         public const int VK_SHIFT = 0x10;
         public const int VK_CONTROL = 0x11;
         public const int VK_MENU = 0x12;
+
+        public const int MAPVK_VK_TO_VSC_EX = 4;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct MOUSEINPUT

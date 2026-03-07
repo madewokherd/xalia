@@ -157,13 +157,13 @@ namespace Xalia.Sdl
                 case "home":
                     return 0x24;
                 case "left":
-                    return 0x25;
+                    return 0x2e04b;
                 case "up":
-                    return 0x26;
+                    return 0x2e048;
                 case "right":
-                    return 0x27;
+                    return 0x2e04d;
                 case "down":
-                    return 0x28;
+                    return 0x2e050;
                 case "select":
                     return 0x29;
                 case "print":
@@ -407,7 +407,7 @@ namespace Xalia.Sdl
             if (key.Length == 1)
             {
                 // Can't get an actual virtual key code for this, just use some private encoding to pass it through
-                return key[0] << 16;
+                return key[0] | 0x10000;
             }
             return base.GetKeySym(key);
         }
@@ -418,19 +418,32 @@ namespace Xalia.Sdl
             bool packet = false;
             INPUT[] inputs = new INPUT[8];
             int num_inputs = 0;
+            short scan;
+            bool extended = false;
 
-            if ((keysym & 0xffff) == 0)
+            if ((keysym & 0x10000) != 0)
             {
                 // This is a character passed directly from GetKeySym.
-                short scan = VkKeyScanW((char)(keysym >> 16));
+                scan = VkKeyScanW((char)(keysym & 0xffff));
+            }
+            else if ((keysym & 0x20000) != 0)
+            {
+                // This is a scan code passed directly from GetKeySym.
+                scan = (short)(keysym & 0xffff);
+            }
+            else
+            {
+                scan = (short)MapVirtualKeyW(keysym, MAPVK_VK_TO_VSC_EX);
+            }
 
-                if ((scan & 0xf800) != 0) // Either -1 or flags we don't know how to handle
-                    packet = true;
-                else
-                {
-                    keysym = scan & 0xff;
-                    modifier_flags = scan >> 8;
-                }
+            if ((scan & 0x1800) != 0) // Either -1 or flags we don't know how to handle
+                packet = true;
+            else if (scan != 0)
+            {
+                if ((scan & 0xe000) == 0xe000)
+                    extended = true;
+                modifier_flags = scan >> 8;
+                scan = (short)(scan & 0xff);
             }
 
             if (packet)
@@ -438,14 +451,14 @@ namespace Xalia.Sdl
                 if (press)
                 {
                     inputs[num_inputs].type = INPUT_KEYBOARD;
-                    inputs[num_inputs].u.ki.wScan = (short)(keysym >> 16);
+                    inputs[num_inputs].u.ki.wScan = (short)(keysym & 0xffff);
                     inputs[num_inputs].u.ki.dwFlags = KEYEVENTF_UNICODE;
                     num_inputs++;
                 }
                 if (release)
                 {
                     inputs[num_inputs].type = INPUT_KEYBOARD;
-                    inputs[num_inputs].u.ki.wScan = (short)(keysym >> 16);
+                    inputs[num_inputs].u.ki.wScan = (short)(keysym & 0xffff);
                     inputs[num_inputs].u.ki.dwFlags = KEYEVENTF_UNICODE|KEYEVENTF_KEYUP;
                     num_inputs++;
                 }
@@ -475,13 +488,23 @@ namespace Xalia.Sdl
                 {
                     inputs[num_inputs].type = INPUT_KEYBOARD;
                     inputs[num_inputs].u.ki.wVk = (short)keysym;
+                    inputs[num_inputs].u.ki.wScan = scan;
+                    if (scan != 0)
+                        inputs[num_inputs].u.ki.dwFlags |= KEYEVENTF_SCANCODE;
+                    if (extended)
+                        inputs[num_inputs].u.ki.dwFlags |= KEYEVENTF_EXTENDEDKEY;
                     num_inputs++;
                 }
                 if (release)
                 {
                     inputs[num_inputs].type = INPUT_KEYBOARD;
                     inputs[num_inputs].u.ki.wVk = (short)keysym;
+                    inputs[num_inputs].u.ki.wScan = scan;
                     inputs[num_inputs].u.ki.dwFlags |= KEYEVENTF_KEYUP;
+                    if (scan != 0)
+                        inputs[num_inputs].u.ki.dwFlags |= KEYEVENTF_SCANCODE;
+                    if (extended)
+                        inputs[num_inputs].u.ki.dwFlags |= KEYEVENTF_EXTENDEDKEY;
                     num_inputs++;
                 }
 
