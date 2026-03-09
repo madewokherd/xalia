@@ -578,6 +578,12 @@ if (process_name == "GumboyCrazyAdventures") {
     }
 }
 
+// APPLICATION: LIGHTNING RETURNS: FINAL FANTASY XIII
+
+if (process_name == "LRFF13" and win32_class_name == "SQEX.CDev.Engine.Framework.Window") {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: LocoCycle launcher
 
 if (process_name == "Launcher" and class_name.startswith("BUTTON_")) {
