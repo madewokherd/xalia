@@ -45,7 +45,10 @@ namespace Xalia.Sdl
 
             SDL_SetMainReady();
 
-            SDL_Init(flags);
+            if (!SDL_Init(flags))
+            {
+                throw new ApplicationException(SDL_GetError());
+            }
 
             _queue_updated_event = SDL_RegisterEvents(1);
         }
