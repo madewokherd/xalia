@@ -170,6 +170,12 @@ image (interactable and parent.is_bethesda_launcher and
     }
 }
 
+// APPLICATION: Death Stranding 2
+
+dialog (process_name == "DS2" and parent.is_root) {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: Disney Bolt launcher
 
 edit (process_name == "DisneyBolt" and parent.index_in_parent == 3) {
