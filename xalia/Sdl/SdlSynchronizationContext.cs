@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 
 using static SDL3.SDL;
@@ -16,13 +17,14 @@ namespace Xalia.Sdl
 
         private bool _quitting;
 
-        ConcurrentQueue<(SendOrPostCallback, object)> _posts = new ConcurrentQueue<(SendOrPostCallback, object)>();
+        ConcurrentQueue<(SendOrPostCallback, object, StackTrace)> _posts = new ConcurrentQueue<(SendOrPostCallback, object, StackTrace)>();
 
         private class SendCallback
         {
             public SendOrPostCallback callback;
             public object state;
             public EventWaitHandle completed_event;
+            public StackTrace stacktrace;
         }
 
         ConcurrentQueue<SendCallback> _sends = new ConcurrentQueue<SendCallback>();
@@ -69,6 +71,8 @@ namespace Xalia.Sdl
         public void Quit()
         {
             AssertMainThread();
+            if (DebugMainLoop)
+                Utils.DebugWriteLine($"MAINLOOP: Queued quit");
             _quitting = true;
             SDL_Quit();
         }
@@ -88,6 +92,9 @@ namespace Xalia.Sdl
 
         public event SdlEventHandler SdlEvent;
 
+        static bool DebugMainLoop = !(Environment.GetEnvironmentVariable("XALIA_DEBUG_MAINLOOP") is null &&
+            Environment.GetEnvironmentVariable("XALIA_DEBUG_INPUT") != "0");
+
         public void MainLoop()
         {
             AssertMainThread();
@@ -95,12 +102,19 @@ namespace Xalia.Sdl
             {
                 if (_sends.TryDequeue(out var send))
                 {
+
+                    if (DebugMainLoop)
+                        Utils.DebugWriteLine($"MAINLOOP: Handling Send: {send.stacktrace}");
                     send.callback(send.state);
                     send.completed_event.Set();
+                    if (DebugMainLoop)
+                        Utils.DebugWriteLine($"MAINLOOP: Completed handling Send");
                     continue;
                 }
                 if (SDL_PollEvent(out var poll_e))
                 {
+                    if (DebugMainLoop)
+                        Utils.DebugWriteLine($"MAINLOOP: Handling SDL event: {(SDL_EventType)poll_e.type}");
                     try
                     {
                         HandleEvent(poll_e);
@@ -109,19 +123,42 @@ namespace Xalia.Sdl
                     {
                         Utils.OnError(e);
                     }
+                    if (DebugMainLoop)
+                        Utils.DebugWriteLine($"MAINLOOP: Completed handling event");
                     continue;
                 }
                 if (_posts.TryDequeue(out var post))
                 {
+                    if (DebugMainLoop)
+                        Utils.DebugWriteLine($"MAINLOOP: Handling Post: {post.Item3}");
                     post.Item1(post.Item2);
+                    if (DebugMainLoop)
+                        Utils.DebugWriteLine($"MAINLOOP: Completed handling Post");
                     continue;
                 }
+                if (DebugMainLoop)
+                    Utils.DebugWriteLine($"MAINLOOP: waiting for events");
                 if (SDL_WaitEvent(out var wait_e))
                 {
-                    HandleEvent(wait_e);
+                    if (DebugMainLoop)
+                        Utils.DebugWriteLine($"MAINLOOP: Handling SDL event: {(SDL_EventType)wait_e.type}");
+                    try
+                    {
+                        HandleEvent(wait_e);
+                    }
+                    catch (Exception e)
+                    {
+                        Utils.OnError(e);
+                    }
+                    if (DebugMainLoop)
+                        Utils.DebugWriteLine($"MAINLOOP: Completed handling event");
                     continue;
                 }
+                else
+                    throw new ApplicationException(SDL_GetError());
             }
+            if (DebugMainLoop)
+                Utils.DebugWriteLine($"MAINLOOP: Quitting");
         }
 
         private void HandleEvent(SDL_Event e)
@@ -147,7 +184,11 @@ namespace Xalia.Sdl
 
         public override void Post(SendOrPostCallback d, object state)
         {
-            _posts.Enqueue((d, state));
+            _posts.Enqueue((d, state, DebugMainLoop ? new StackTrace() : null));
+
+            if (DebugMainLoop)
+                Utils.DebugWriteLine($"MAINLOOP: queued Post");
+
             NotifyQueue(_posts.Count == 1);
         }
 
@@ -162,8 +203,15 @@ namespace Xalia.Sdl
             callback.callback = d;
             callback.state = state;
             callback.completed_event = new EventWaitHandle(false, EventResetMode.ManualReset);
+            if (DebugMainLoop)
+            {
+                callback.stacktrace = new StackTrace();
+            }
 
             _sends.Enqueue(callback);
+
+            if (DebugMainLoop)
+                Utils.DebugWriteLine($"MAINLOOP: queued Send");
 
             NotifyQueue(false);
 
