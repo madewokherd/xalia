@@ -594,6 +594,15 @@ if (process_name == "Launcher" and class_name.startswith("BUTTON_")) {
     }
 }
 
+// APPLICATION: Nixxes Launcher
+if (class_name == "GameNxApp") {
+    application_supports_gamepad: true;
+}
+
+dialog (parent.is_root and root.child_matches(class_name == "GameNxApp").pid == pid) {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: Oddworld: Stranger's Wrath HD
 dialog (process_name == "Launcher" and name == "Oddworld: Stranger's Wrath HD Controls Configuration") {
     child (button and pushlike) {
