@@ -594,6 +594,17 @@ if (process_name == "Launcher" and class_name.startswith("BUTTON_")) {
     }
 }
 
+// APPLICATION: Hitman: Absolution Launcher
+if (class_name == "Hitman: Absolution" and win32_gui_active and win32_gui_focus) {
+    in_menu_navigation: true;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_left_action: send_key.left;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc;
+}
+
 // APPLICATION: Nixxes Launcher
 if (class_name == "GameNxApp") {
     application_supports_gamepad: true;
