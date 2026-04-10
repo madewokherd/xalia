@@ -626,6 +626,16 @@ dialog (parent.is_root and root.child_matches(class_name == "GameNxApp").pid == 
     application_supports_gamepad: true;
 }
 
+if (class_name.endswith("NxApp") and class_name != "GameNxApp" and win32_gui_active and win32_gui_focus) {
+    in_menu_navigation: true;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_left_action: send_key.left;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc;
+}
+
 // APPLICATION: Oddworld: Stranger's Wrath HD
 dialog (process_name == "Launcher" and name == "Oddworld: Stranger's Wrath HD Controls Configuration") {
     child (button and pushlike) {
