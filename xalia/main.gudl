@@ -578,6 +578,18 @@ if (process_name == "GumboyCrazyAdventures") {
     }
 }
 
+// APPLICATION: Lara Croft and the Temple of Osiris Launcher
+
+if (class_name == "NixxesLC2" and win32_gui_active and win32_gui_focus) {
+    in_menu_navigation: true;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_left_action: send_key.left;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc;
+}
+
 // APPLICATION: LIGHTNING RETURNS: FINAL FANTASY XIII
 
 if (process_name == "LRFF13" and win32_class_name == "SQEX.CDev.Engine.Framework.Window") {
