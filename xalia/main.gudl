@@ -769,6 +769,18 @@ if (win32_process_name == "Sen1Launcher" or win32_process_name == "Sen2Launcher"
     application_supports_gamepad: true;
 }
 
+// APPLICATION: Thief Launcher
+
+if (class_name == "Thief" and process_name == "Shipping-ThiefGame" and win32_gui_active and win32_gui_focus) {
+    in_menu_navigation: true;
+    menu_up_action: send_key.up;
+    menu_down_action: send_key.down;
+    menu_left_action: send_key.left;
+    menu_right_action: send_key.right;
+    menu_select_action: send_key.enter;
+    menu_back_action: send_key.esc;
+}
+
 // APPLICATION: Tomb Raider (2013) Launcher
 
 if (class_name == "Tomb Raider" and win32_gui_active and win32_gui_focus) {
