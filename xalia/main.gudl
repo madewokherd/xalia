@@ -170,6 +170,11 @@ image (interactable and parent.is_bethesda_launcher and
     }
 }
 
+// APPLICATION: Deadly Premonition: The Director's Cut launcher
+dialog (process_name == "DPLauncher") {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: Disney Bolt launcher
 
 edit (process_name == "DisneyBolt" and parent.index_in_parent == 3) {
