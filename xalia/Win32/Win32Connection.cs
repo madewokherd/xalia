@@ -31,6 +31,8 @@ namespace Xalia.Win32
             SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_UNCLOAKED, IntPtr.Zero,
                 eventprocdelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
 
+            Root.SetRecurseMethodProvider(this);
+
             Utils.RunIdle(UpdateToplevels);
             Utils.RunIdle(UpdateGuiThreadInfo);
         }
@@ -165,28 +167,9 @@ namespace Xalia.Win32
 
         private void UpdateToplevels()
         {
-            HashSet<IntPtr> toplevels_to_remove = new HashSet<IntPtr>(toplevel_hwnds);
+            var hwnds = EnumWindows();
 
-            foreach (var hwnd in EnumWindows())
-            {
-                if (toplevels_to_remove.Contains(hwnd))
-                {
-                    // already known
-                    toplevels_to_remove.Remove(hwnd);
-                    continue;
-                }
-
-                var element = CreateElement(hwnd);
-                Root.AddChild(Root.Children.Count, element);
-                toplevel_hwnds.Add(hwnd);
-            }
-
-            foreach (var hwnd in toplevels_to_remove)
-            {
-                toplevel_hwnds.Remove(hwnd);
-                var element = elements_by_id[GetElementName(hwnd)];
-                Root.RemoveChild(Root.Children.IndexOf(element));
-            }
+            Root.SyncRecurseMethodChildren(hwnds, (IntPtr hwnd) => GetElementName(hwnd), (IntPtr hwnd) => CreateElement(hwnd));
         }
 
         public UiDomElement LookupElement(string element_name)
