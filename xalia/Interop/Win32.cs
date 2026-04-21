@@ -659,7 +659,7 @@ namespace Xalia.Interop
                     pIA2 = sp.QueryService(ref service_id, ref iid);
                 }
 
-                return (IAccessible2)Marshal.GetTypedObjectForIUnknown(pIA2, typeof(IAccessible2));
+                return (IAccessible2)Marshal.GetObjectForIUnknown(pIA2);
             }
             catch (InvalidOperationException)
             {
