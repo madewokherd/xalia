@@ -14,7 +14,7 @@ using IServiceProvider = Xalia.Interop.Win32.IServiceProvider;
 
 namespace Xalia.Win32
 {
-    internal class HwndProvider : UiDomProviderBase
+    internal class HwndProvider : UiDomProviderBase, IReleaseChildren
     {
         public HwndProvider(IntPtr hwnd, UiDomElement element, Win32Connection connection)
         {
@@ -778,24 +778,11 @@ namespace Xalia.Win32
             while (i < child_hwnds.Count)
             {
                 var existing = Connection.LookupElement(child_hwnds[i]);
-                if (!(existing is null) && existing.Parent != Element)
-                {
-                    // duplicate elsewhere in tree
-                    var hwnd_existing_parent = existing.Parent.ProviderByType<HwndProvider>();
-                    if (!(hwnd_existing_parent is null))
-                    {
-                        // try asking the other parent to remove it
-                        hwnd_existing_parent.ReleaseChildren();
-                        if (!existing.IsAlive)
-                        {
-                            i++;
-                            continue;
-                        }
-                    }
+                if (existing is null || existing.Parent == Element || existing.ReleaseFromParent())
+                    i++;
+                else if (!(existing is null))
+                    // existing element couldn't be released from its parent
                     child_hwnds.RemoveAt(i);
-                    continue;
-                }
-                i++;
             }
 
             return child_hwnds;
@@ -812,7 +799,7 @@ namespace Xalia.Win32
                 (IntPtr hwnd) => Connection.CreateElement(hwnd));
         }
 
-        internal void ReleaseChildren()
+        public void ReleaseChildren(UiDomElement child)
         {
             // Remove any child HWNDs that no longer belong to this element
             List<string> new_children = new List<string>(Element.RecurseMethodChildCount);
@@ -822,7 +809,7 @@ namespace Xalia.Win32
                 var child_provider = Element.Children[i].ProviderByType<HwndProvider>();
                 if (child_provider is null)
                 {
-                    new_children.Add(Element.DebugId);
+                    new_children.Add(Element.Children[i].DebugId);
                     continue;
                 }
                 var child_hwnd = child_provider.Hwnd;
@@ -832,7 +819,7 @@ namespace Xalia.Win32
                     changed = true;
                     continue;
                 }
-                new_children.Add(Element.DebugId);
+                new_children.Add(Element.Children[i].DebugId);
             }
             if (changed)
             {

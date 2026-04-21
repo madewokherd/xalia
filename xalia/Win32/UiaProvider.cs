@@ -621,24 +621,11 @@ namespace Xalia.Win32
             while (i < children.Count)
             {
                 var existing = Connection.LookupElement(children[i]);
-                if (!(existing is null) && existing.Parent != Element)
-                {
-                    // duplicate elsewhere in tree
-                    var hwnd_existing_parent = existing.Parent.ProviderByType<HwndProvider>();
-                    if (!(hwnd_existing_parent is null))
-                    {
-                        // try asking the other parent to remove it
-                        hwnd_existing_parent.ReleaseChildren();
-                        if (!existing.IsAlive)
-                        {
-                            i++;
-                            continue;
-                        }
-                    }
+                if (existing is null || existing.Parent == Element || existing.ReleaseFromParent())
+                    i++;
+                else if (!(existing is null))
+                    // existing element couldn't be released from its parent
                     children.RemoveAt(i);
-                    continue;
-                }
-                i++;
             }
 
             Element.SyncRecurseMethodChildren(children, Connection.GetElementName, Connection.CreateElement);

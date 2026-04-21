@@ -11,7 +11,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class Win32Connection : UiDomProviderBase
+    internal class Win32Connection : UiDomProviderBase, IReleaseChildren
     {
         public Win32Connection(UiDomRoot root)
         {
@@ -169,7 +169,51 @@ namespace Xalia.Win32
         {
             var hwnds = EnumWindows();
 
+            // Remove or ignore any existing children
+            int i = 0;
+            while (i < hwnds.Count)
+            {
+                var existing = LookupElement(hwnds[i]);
+                if (existing is null || existing.Parent == Root || existing.ReleaseFromParent())
+                    i++;
+                else if (!(existing is null))
+                    // existing element couldn't be released from its parent
+                    hwnds.RemoveAt(i);
+            }
+
             Root.SyncRecurseMethodChildren(hwnds, (IntPtr hwnd) => GetElementName(hwnd), (IntPtr hwnd) => CreateElement(hwnd));
+        }
+
+        public void ReleaseChildren(UiDomElement child)
+        {
+            // Remove any child HWNDs that no longer belong to this element
+            List<string> new_children = new List<string>(Root.RecurseMethodChildCount);
+            bool changed = false;
+            for (int i = 0; i < Root.RecurseMethodChildCount; i++)
+            {
+                var child_provider = Root.Children[i].ProviderByType<HwndProvider>();
+                if (child_provider is null)
+                {
+                    new_children.Add(Root.Children[i].DebugId);
+                    continue;
+                }
+                var child_hwnd = child_provider.Hwnd;
+                var child_root_hwnd = GetAncestor(child_hwnd, GA_ROOT);
+                if (child_root_hwnd != child_hwnd)
+                {
+                    changed = true;
+                    continue;
+                }
+                new_children.Add(Root.Children[i].DebugId);
+            }
+            if (changed)
+            {
+                Root.SyncRecurseMethodChildren(new_children, (string id) => id,
+                    (string id) =>
+                    {
+                        throw new Exception("ReleaseChildren should not create new children");
+                    });
+            }
         }
 
         public UiDomElement LookupElement(string element_name)

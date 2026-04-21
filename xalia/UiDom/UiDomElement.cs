@@ -1328,5 +1328,22 @@ namespace Xalia.UiDom
                 Children[i].cached_index_in_parent = i;
             }
         }
+
+        public bool ReleaseFromParent()
+        {
+            if (!IsAlive || Parent is null)
+                return true;
+
+            var release = Parent.recurse_method_provider as IReleaseChildren;
+            if (!(release is null))
+            {
+                release.ReleaseChildren(this);
+            }
+
+            if (IsAlive)
+                Utils.DebugWriteLine($"XALIA WARNING: Unable to release element {this} from parent {this.Parent}");
+
+            return !IsAlive;
+        }
     }
 }

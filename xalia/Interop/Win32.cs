@@ -683,6 +683,7 @@ namespace Xalia.Interop
         public static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
 
         public const uint GA_PARENT = 1;
+        public const uint GA_ROOT = 2;
 
         [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
         public static extern IntPtr GetDesktopWindow();
