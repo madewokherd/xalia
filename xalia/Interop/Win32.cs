@@ -1016,8 +1016,6 @@ namespace Xalia.Interop
         public const int SB_RIGHT = 7;
         public const int SB_ENDSCROLL = 8;
 
-        public const int SBS_VERT = 0x1;
-
         public static int HIWORD(int dword)
         {
             return (dword >> 16) & 0xffff;
@@ -1368,6 +1366,13 @@ namespace Xalia.Interop
             public long piColFmt; // pointer - int*
             public int iGroup;
         }
+
+        // Scrollbar control
+        public const int SBS_VERT = 0x0001;
+        public const int SBS_TOPALIGN = 0x0002;
+        public const int SBS_BOTTOMALIGN = 0x0004;
+        public const int SBS_SIZEBOX = 0x0008;
+        public const int SBS_SIZEGRIP = 0x0010;
 
         // Static Control
         public const int SS_LEFT = 0x0000;

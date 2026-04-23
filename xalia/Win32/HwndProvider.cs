@@ -296,6 +296,9 @@ namespace Xalia.Win32
                 case "msctls_updown32":
                     AddProvider(new HwndUpDownProvider(this), index);
                     return;
+                case "ScrollBar":
+                    AddProvider(new HwndScrollBar(this), index);
+                    return;
                 case "Static":
                 case "STATIC":
                     AddProvider(new HwndStaticProvider(this), index);
@@ -349,6 +352,9 @@ namespace Xalia.Win32
                     return;
                 case 65536 + 5:
                     AddProvider(new HwndComboBoxProvider(this), index);
+                    return;
+                case 65536 + 10:
+                    AddProvider(new HwndScrollBar(this), index);
                     return;
                 case 65536 + 15:
                     AddProvider(new HwndTabProvider(this), index);
