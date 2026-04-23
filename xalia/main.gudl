@@ -1020,7 +1020,7 @@ if (class_name == "System.Windows.Forms.NumericUpDown" or class_name == "System.
     valid_target: false;
 }
 
-if (win32_class_name.startswith("WindowsForms10.Window.") and not is_uia_element and msaa_role.client) {
+if (win32_class_name.startswith("WindowsForms10.Window.") and msaa_role.client) {
     // IAccessible is likely to not give us children
     recurse_method: "win32";
     // We have no information on the type of this control. Assume it's an ordinary container if it has children.
