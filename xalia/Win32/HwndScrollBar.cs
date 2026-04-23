@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Xalia.Gudl;
 using Xalia.UiDom;
 
@@ -7,7 +10,7 @@ using static Xalia.Interop.Win32;
 
 namespace Xalia.Win32
 {
-    internal class HwndScrollBar : UiDomProviderBase, IWin32Styles
+    internal class HwndScrollBar : UiDomProviderBase, IWin32Styles, IUiDomValueProvider
     {
         public HwndScrollBar(HwndProvider hwndProvider)
         {
@@ -17,6 +20,7 @@ namespace Xalia.Win32
         public HwndProvider HwndProvider { get; }
         public IntPtr Hwnd => HwndProvider.Hwnd;
         public UiDomElement Element => HwndProvider.Element;
+        public CommandThread CommandThread => HwndProvider.CommandThread;
 
         static UiDomEnum role = new UiDomEnum(new string[] { "scroll_bar", "scrollbar" });
 
@@ -109,6 +113,115 @@ namespace Xalia.Win32
                     return UiDomBoolean.FromBool((HwndProvider.Style & SBS_SIZEGRIP) != 0);
             }
             return base.EvaluateIdentifierLate(element, identifier, depends_on);
+        }
+
+        private int CalculateMinimumIncrement(SCROLLBARINFO sbi, SCROLLINFO si)
+        {
+            bool vertical = (HwndProvider.Style & SBS_VERT) != 0;
+
+            var scrollbar_size = vertical ? sbi.rcScrollBar.height : sbi.rcScrollBar.width;
+
+            var desired_scroll_pixels = 25.0 * HwndProvider.GetWindowMonitorDpi(vertical) / 96.0;
+
+            var result = (int)Math.Round(desired_scroll_pixels * si.nPage / scrollbar_size);
+
+            if (result == 0)
+                return 1;
+
+            return result;
+        }
+
+        public async Task<double> GetMinimumIncrementAsync(UiDomElement element)
+        {
+            try
+            {
+                return await CommandThread.OnBackgroundThread(() =>
+                {
+                    var sbi = new SCROLLBARINFO();
+                    sbi.cbSize = Marshal.SizeOf<SCROLLBARINFO>();
+                    if (!GetScrollBarInfo(Hwnd, OBJID_CLIENT, ref sbi))
+                        throw new Win32Exception();
+
+                    var si = new SCROLLINFO();
+                    si.cbSize = Marshal.SizeOf<SCROLLINFO>();
+                    si.fMask = SIF_PAGE;
+                    if (!GetScrollInfo(Hwnd, SB_CTL, ref si))
+                        throw new Win32Exception();
+
+                    return CalculateMinimumIncrement(sbi, si);
+                }, CommandThreadPriority.User);
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return 1.0;
+            }
+        }
+
+        public async Task SetValueAsync(int value)
+        {
+            bool vertical = (HwndProvider.Style & SBS_VERT) != 0;
+            await CommandThread.OnBackgroundThread(() =>
+            {
+                var si = new SCROLLINFO();
+                si.cbSize = Marshal.SizeOf<SCROLLINFO>();
+                si.fMask = SIF_POS;
+                si.nPos = value;
+
+                SetScrollInfo(Hwnd, SB_CTL, ref si, true);
+            }, CommandThreadPriority.Query);
+            int msg = vertical ? WM_VSCROLL : WM_HSCROLL;
+            IntPtr hwnd = GetAncestor(Hwnd, GA_PARENT);
+            await SendMessageAsync(hwnd, msg, MAKEWPARAM(SB_THUMBTRACK, unchecked((ushort)value)), Hwnd);
+            await SendMessageAsync(hwnd, msg, MAKEWPARAM(SB_THUMBPOSITION, unchecked((ushort)value)), Hwnd); ;
+            await SendMessageAsync(hwnd, msg, MAKEWPARAM(SB_ENDSCROLL, 0), Hwnd);
+        }
+
+        double _offsetRemainder;
+
+        public async Task<bool> OffsetValueAsync(UiDomElement element, double offset)
+        {
+            try
+            {
+                SCROLLINFO si = await CommandThread.OnBackgroundThread(() =>
+                {
+                    var bg_si = new SCROLLINFO();
+                    bg_si.cbSize = Marshal.SizeOf<SCROLLINFO>();
+                    bg_si.fMask = SIF_POS | SIF_PAGE | SIF_RANGE;
+                    if (!GetScrollInfo(Hwnd, SB_CTL, ref bg_si))
+                        throw new Win32Exception();
+
+                    return bg_si;
+                }, CommandThreadPriority.User);
+
+                if (si.max_value <= si.nMin)
+                    return false;
+
+                double new_pos = si.nPos + offset + _offsetRemainder;
+
+                if (new_pos < si.nMin)
+                    new_pos = si.nMin;
+                else if (new_pos > si.max_value)
+                    new_pos = si.max_value;
+
+                int new_pos_int = (int)Math.Round(new_pos);
+
+                if (new_pos_int != si.nPos)
+                {
+                    await SetValueAsync(new_pos_int);
+                }
+
+                _offsetRemainder = new_pos - new_pos_int;
+
+                return true;
+            }
+            catch (Win32Exception e)
+            {
+                if (!HwndProvider.IsExpectedException(e))
+                    throw;
+                return false;
+            }
         }
     }
 }

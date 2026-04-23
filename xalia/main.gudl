@@ -1101,6 +1101,10 @@ if (is_hwnd_button) {
     }
 }
 
+if (is_hwnd_scrollbar) {
+    supported: vert or horz;
+}
+
 if (is_hwnd_static) {
     supported: not child_matches(not supported);
 }
