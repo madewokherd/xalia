@@ -170,6 +170,13 @@ image (interactable and parent.is_bethesda_launcher and
     }
 }
 
+// APPLICATION: Call of Duty: Modern Warfare 2 (2009)
+
+if (process_name == "iw4sp") {
+    // Safe Mode window, which appears if the game is uncleanly terminated, doesn't like BM_CLICK.
+    manual_buttons: true;
+}
+
 // APPLICATION: Deadly Premonition: The Director's Cut launcher
 dialog (process_name == "DPLauncher") {
     application_supports_gamepad: true;
