@@ -638,6 +638,10 @@ dialog (parent.is_root and root.child_matches(class_name == "GameNxApp").pid == 
     application_supports_gamepad: true;
 }
 
+if (class_name == "NxApp" and process_name == "DXMD") {
+    application_supports_gamepad: true;
+}
+
 if (class_name.endswith("NxApp") and class_name != "GameNxApp" and win32_gui_active and win32_gui_focus) {
     in_menu_navigation: true;
     menu_up_action: send_key.up;
