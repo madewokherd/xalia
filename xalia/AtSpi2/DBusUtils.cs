@@ -349,27 +349,27 @@ namespace Xalia.AtSpi2
             rule.Member = name;
             rule.Type = MessageType.Signal;
             return connection.AddMatchAsync(rule, ReadAtSpiSignal,
-                (Exception e, AtSpiSignal signal, object st1, object st2) =>
+                (Notification<AtSpiSignal> n) =>
                 {
-                    if (!(e is null))
+                    if (!(n.Exception is null))
                     {
-                        Utils.OnError(e);
+                        Utils.OnError(n.Exception);
                         return;
                     }
                     if (debug_this_event)
                     {
-                        Utils.DebugWriteLine($"AT-SPI2 EVENT: {iface}.{name} on {signal.peer}:{signal.path}");
-                        if (!string.IsNullOrEmpty(signal.detail))
-                            Utils.DebugWriteLine($"  detail: {signal.detail}");
-                        if (signal.detail1 != 0)
-                            Utils.DebugWriteLine($"  detail1: {signal.detail1}");
-                        if (signal.detail2 != 0)
-                            Utils.DebugWriteLine($"  detail2: {signal.detail2}");
-                        if (signal.value.Type != VariantValueType.Invalid)
-                            Utils.DebugWriteLine($"  value: {signal.value}");
-                        if (!(signal.properties is null))
+                        Utils.DebugWriteLine($"AT-SPI2 EVENT: {iface}.{name} on {n.Value.peer}:{n.Value.path}");
+                        if (!string.IsNullOrEmpty(n.Value.detail))
+                            Utils.DebugWriteLine($"  detail: {n.Value.detail}");
+                        if (n.Value.detail1 != 0)
+                            Utils.DebugWriteLine($"  detail1: {n.Value.detail1}");
+                        if (n.Value.detail2 != 0)
+                            Utils.DebugWriteLine($"  detail2: {n.Value.detail2}");
+                        if (n.Value.value.Type != VariantValueType.Invalid)
+                            Utils.DebugWriteLine($"  value: {n.Value.value}");
+                        if (!(n.Value.properties is null))
                         {
-                            foreach (var property in signal.properties)
+                            foreach (var property in n.Value.properties)
                             {
                                 Utils.DebugWriteLine($"  properties[\"{property.Key}\"]: {property.Value}");
                             }
@@ -382,13 +382,13 @@ namespace Xalia.AtSpi2
                         {
                             var sig = (AtSpiSignal)state;
                             handler(sig);
-                        }, signal);
+                        }, n.Value);
                     }
                     catch (Exception e2)
                     {
                         Utils.OnError(e2);
                     }
-                }, ObserverFlags.None).AsTask();
+                }).AsTask();
         }
 
         public const string SERVICE_DBUS = "org.freedesktop.DBus";
