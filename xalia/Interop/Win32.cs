@@ -334,6 +334,12 @@ namespace Xalia.Interop
         public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc,
             WINEVENTPROC pfnWinEventProc, int idProcess, int idThread, uint dwFlags);
 
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi, CharSet = CharSet.Unicode)]
+        public static extern IntPtr GetPropW(IntPtr hWnd, string lpString);
+
+        [DllImport(USER_LIB, CallingConvention = CallingConvention.Winapi)]
+        public static extern IntPtr GetPropW(IntPtr hWnd, IntPtr atom);
+
         public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
         public const uint EVENT_SYSTEM_MENUSTART = 0x0004;
         public const uint EVENT_SYSTEM_MENUEND = 0x0005;

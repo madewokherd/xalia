@@ -1176,10 +1176,14 @@ if (is_hwnd_syslink) {
 
 // General behaviors:
 
-if (spi_attributes.xalia_ignore)
+if (spi_attributes.xalia_ignore or spi_attributes.__xalia__ignore or win32_has_window_property("__xalia__ignore"))
 {
     recurse: false;
     stop: true;
+}
+
+if (spi_attributes.__xalia__supports_gamepad or win32_has_window_property("__xalia__supports_gamepad")) {
+    application_supports_gamepad: true;
 }
 
 // Menus

@@ -81,6 +81,7 @@ namespace Xalia.Win32
             { "enable_window", "win32_enable_window" },
             { "disable_window", "win32_disable_window" },
             { "set_focus", "win32_set_focus" },
+            { "has_window_property", "win32_has_window_property" },
         };
 
         private static string[] win32_stylenames =
@@ -552,6 +553,8 @@ namespace Xalia.Win32
                     return new UiDomRoutineSync(Element, "win32_disable_window", DisableWindowRoutine);
                 case "win32_set_focus":
                     return new UiDomRoutineAsync(Element, "win32_set_focus", SetFocusRoutine);
+                case "win32_has_window_property":
+                    return new UiDomMethod(Element, "win32_has_window_property", HasWindowProperty);
                 case "winforms_control_type":
                     if (IsWinforms) {
                         depends_on.Add((element, new IdentifierExpression(identifier)));
@@ -666,6 +669,24 @@ namespace Xalia.Win32
             }
 
             await SendMessageAsync(Hwnd, msg, wparam, lparam);
+        }
+
+        private UiDomValue HasWindowProperty(UiDomMethod method, UiDomValue context, GudlExpression[] arglist, UiDomRoot root, HashSet<(UiDomElement, GudlExpression)> depends_on)
+        {
+            if (arglist.Length != 1)
+                return UiDomUndefined.Instance;
+
+            UiDomValue prop = context.Evaluate(arglist[0], root, depends_on);
+
+            IntPtr result;
+            if (prop is UiDomString s)
+                result = GetPropW(Hwnd, s.Value);
+            else if (prop.TryToInt(out var i) && (i & 0xffff) == 0)
+                result = GetPropW(Hwnd, new IntPtr(i));
+            else
+                return UiDomUndefined.Instance;
+
+            return UiDomBoolean.FromBool(result != IntPtr.Zero);
         }
 
         internal UiDomValue ChildEvaluateIdentifier(string identifier, HashSet<(UiDomElement, GudlExpression)> depends_on)
