@@ -457,6 +457,11 @@ if (process_name == "FFX&X-2_LAUNCHER" and winforms_control_type == "GameLaunche
     menu_back_action: send_key.esc;
 }
 
+// APPLICATION: Final Fantasy XI launcher
+if (win32_process_name == "FFXiPadConfig") {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: Firefox
 window (uia_class_name == "MozillaWindowClass") {
     firefox_use_offscreen_menu: true;
