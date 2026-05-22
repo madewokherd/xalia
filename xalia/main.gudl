@@ -462,6 +462,10 @@ if (win32_process_name == "FFXiPadConfig") {
     application_supports_gamepad: true;
 }
 
+dialog (win32_process_name == "polcfg" and (name == "PlayOnline Viewer Config - Gamepad Configuration" or name == "Calibrate Gamepad")) {
+    application_supports_gamepad: true;
+}
+
 // APPLICATION: Firefox
 window (uia_class_name == "MozillaWindowClass") {
     firefox_use_offscreen_menu: true;
