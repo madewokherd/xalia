@@ -74,7 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Superpower" Version="3.2.1" />
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.93.0" />
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="main.gudl">
