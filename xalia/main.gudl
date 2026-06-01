@@ -887,6 +887,12 @@ if (class_name == "TermControl") {
     }
 }
 
+// APPLICATION: WiX installers
+if (class_name == "WixStdBA" and visible and root.child_matches(win32_gui_active).process_name == process_name and
+    root.child_matches(win32_gui_active).class_name == "WixBurnMessageWindow") {
+    toplevel_interactable: true;
+}
+
 // APPLICATION: X-Blades (launcher)
 if (process_name == "launcher" and ancestor_matches(class_name == "GameLauncherWnd")) {
 	recurse: invisible == false;
