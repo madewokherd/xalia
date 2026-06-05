@@ -760,6 +760,22 @@ if (process_name == "rf4_launcher" and win32_class_name == "Static" and bitmap) 
     }
 }
 
+// APPLICATION: RefRain - prism memories -
+
+button (parent.class_name == "System.Windows.Forms.GroupBox" and
+    parent.parent.class_name == "RefRainConfig.FrmMain")
+{
+    // Can't use gamepad config buttons because we can't tell when they want gamepad input
+    valid_target: false;
+    gamepad_button: true;
+}
+
+if (class_name == "RefRainConfig.FrmMain" and (gamepad_config_used or descendent_matches(gamepad_button and focused)))
+{
+    gamepad_config_used: false;
+    stop_interactable: true;
+}
+
 // APPLICATION: Rockstar Games Launcher Installer
 
 if (win32_class_name == "Rockstar Games Launcher Installer") {
