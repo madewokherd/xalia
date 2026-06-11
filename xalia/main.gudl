@@ -638,6 +638,16 @@ if (class_name == "Hitman: Absolution" and win32_gui_active and win32_gui_focus)
     menu_back_action: send_key.esc;
 }
 
+// APPLICATION: Memories Off #5 Togireta Film
+edit (process_name == "Launcher" and 
+    (ancestor_matches(parent.is_root).name == "设定触控板" or ancestor_matches(parent.is_root).name == "手把設定")) {
+    primary_action: on_release(assign("disable_interactions", true) + send_click + wait_until(focused) + wait_until(not focused) + parent.child_matches(combo_box).set_focus + assign("disable_interactions", undefined));
+
+    if (focused) {
+        disable_interactions: true;
+    }
+}
+
 // APPLICATION: Nixxes Launcher
 if (class_name == "GameNxApp") {
     application_supports_gamepad: true;
