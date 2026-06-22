@@ -599,6 +599,17 @@ if (process_name == "GumboyCrazyAdventures") {
     }
 }
 
+// APPLICATION: Kega Fusion
+if (process_name == "Fusion") {
+    button (win32_window_text == "Define") {
+        primary_action: on_release(click);
+    }
+
+    label (win32_window_text.startswith("Press ")) {
+        disable_interactions: true;
+    }
+}
+
 // APPLICATION: Lara Croft and the Temple of Osiris Launcher
 
 if (class_name == "NixxesLC2" and win32_gui_active and win32_gui_focus) {
