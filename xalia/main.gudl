@@ -604,6 +604,30 @@ if (process_name == "GumboyCrazyAdventures") {
     }
 }
 
+// APPLICATION: HITMAN World of Assassination
+if (process_name == "Launcher" and parent.win32_class_name == "Options_window_class" and
+    win32_class_name == "Static" and child_count > 0 and sibling_matches(win32_class_name == "ScrollBar"))
+{
+    scrollable: true;
+    no_scrollable_fallback: true;
+
+    vscroll: sibling_matches(win32_class_name == "ScrollBar");
+
+    scroll_view_action: adjust_scrollbars(hscroll, vscroll);
+
+    scroll_target_margin: 0;
+
+    scroll_pane_x: x;
+    scroll_pane_y: y;
+    scroll_pane_width: width;
+    scroll_pane_height: height;
+
+    scroll_view_x: x;
+    scroll_view_y: y;
+    scroll_view_width: width;
+    scroll_view_height: height;
+}
+
 // APPLICATION: Kega Fusion
 if (process_name == "Fusion") {
     button (win32_window_text == "Define") {
