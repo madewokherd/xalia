@@ -1187,7 +1187,7 @@ if (is_hwnd_combobox and win32_combo_box_dropped_state) {
 
     menu_up_action: send_key.up;
     menu_down_action: send_key.down;
-    menu_select_action: collapse;
+    menu_select_action: send_key.enter;
     menu_back_action: collapse;
     menu_close_action: collapse;
 }
