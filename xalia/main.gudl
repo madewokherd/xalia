@@ -1175,6 +1175,7 @@ if (is_hwnd_scrollbar) {
 
 if (is_hwnd_static) {
     supported: not child_matches(not supported);
+    recurse: true;
 }
 
 if (is_hwnd_combobox or is_hwnd_trackbar or is_hwnd_listview or is_nonclient_scrollbar or is_hwnd_updown) {
