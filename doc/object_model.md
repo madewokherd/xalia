@@ -6,7 +6,7 @@ An *element* in Xalia is a logical UI object. Elements might correspond to windo
 
 ## Element Properties
 
-Elements can have properties, accessed in GUDL as `element.property` or, implicitly for the current element, `property`. The special name `this` refers to the current element.
+Elements can have properties, accessed in GUDL as `element.property` or, implicitly for the current element, `property`. The special property `this` refers to the current element.
 
 When a property is accessed in GUDL, the following sources are queried, in this order:
 * All providers attached to the element (using the `EvaluateIdentifier` method in C#).
@@ -14,7 +14,7 @@ When a property is accessed in GUDL, the following sources are queried, in this 
 * A set of builtin properties implemented in `UiDomElement.EvaluateIdentifierCore`, which are core to the object system.
 * Properties implemented in `UiMain.EvaluateIdentifierHook`, which was separated to leave open the possibility of a different application using the Xalia object system. (TODO: This should really be a global provider instead of having a special mechanism, and it should probably be split into multiple classes.)
 * An active declaration in GUDL.
-* A property stored on the element using the `assign_property` action.
+* A property stored on the element using the `assign_property` routine.
 * All providers attached to the element (using the `EvaluateIdentifierLate` method in C#).
 * All global providers (using the `EvaluateIdentifierLate` method in C#).
 
