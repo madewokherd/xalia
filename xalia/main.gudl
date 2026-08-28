@@ -527,8 +527,15 @@ if (application_name == "Firefox" or application_name == "firefox") {
 }
 
 // APPLICATION: FreestyleFootball R
-bitmap (win32_process_name == "Launcher" and win32_control_id == 1022 and not sibling_matches(not bitmap)) {
-    valid_target: true;
+dialog (win32_process_name == "Launcher" and not child_matches(not bitmap)) {
+    freestyle_football_r: true;
+}
+
+bitmap (win32_process_name == "Launcher" and parent.freestyle_football_r) {
+    freestyle_football_r: true;
+    if (win32_control_id == 1022 or tabstop) {
+        valid_target: true;
+    }
 }
 
 // APPLICATION: Giana Sisters: Twisted Dreams - Rise of the Owlverlord launcher
