@@ -88,3 +88,19 @@ jobs:
         name: net9-windows
         path: xalia\bin-netcore-windows\Release-Windows\net9.0-windows\win-x64\publish\**
         if-no-files-found: error
+
+    - name: Fetch ARM64 SDL
+      run: curl -L -o sdl.zip "https://github.com/libsdl-org/SDL/releases/download/release-3.4.0/SDL3-3.4.0-win32-arm64.zip"
+
+    - name: Extract ARM64 SDL
+      run: tar -C xalia -xf sdl.zip
+
+    - name: Build ARM64 net48-mono
+      run: msbuild xalia.sln /p:Configuration=Release-NetStandard /p:Platform=ARM64
+
+    - name: Upload ARM64 net48-mono
+      uses: actions/upload-artifact@v4
+      with:
+        name: net48-arm64-mono
+        path: xalia\bin\ARM64\Release-NetStandard\**
+        if-no-files-found: error
