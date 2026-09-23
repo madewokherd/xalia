@@ -255,6 +255,7 @@ namespace Xalia.UiDom
         protected override UiDomValue EvaluateIdentifierCore(string id, UiDomRoot root, [In, Out] HashSet<(UiDomElement, GudlExpression)> depends_on)
         {
             UiDomValue value;
+            depends_on.Add((this, new IdentifierExpression("providers")));
             foreach (var provider in Providers)
             {
                 value = provider.EvaluateIdentifier(this, id, depends_on);
@@ -1144,12 +1145,11 @@ namespace Xalia.UiDom
             var tracked = provider.GetTrackedProperties();
             if (!(tracked is null))
                 RegisterTrackedProperties(tracked, provider);
-            if (QueueEvaluateRules() && MatchesDebugCondition())
-                Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
             foreach (var expression in _propertyChangeNotifiers.Keys)
             {
                 provider.WatchProperty(this, expression);
             }
+            PropertyChanged("providers");
         }
 
         public void AddProvider(IUiDomProvider provider, int index)
