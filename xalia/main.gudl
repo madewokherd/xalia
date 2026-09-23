@@ -458,7 +458,7 @@ if (process_name == "FFX&X-2_LAUNCHER" and winforms_control_type == "GameLaunche
 }
 
 // APPLICATION: Final Fantasy XI launcher
-if (win32_process_name == "FFXiPadConfig") {
+if (win32_process_name == "FFXiPadConfig" and child_matches(check_box)) {
     application_supports_gamepad: true;
 }
 
