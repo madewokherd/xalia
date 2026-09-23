@@ -74,7 +74,7 @@ namespace Xalia.UiDom
                     {
                         var tracked = provider.GetTrackedProperties();
                         if (!(tracked is null))
-                            RegisterTrackedProperties(tracked);
+                            RegisterTrackedProperties(tracked, provider);
                     }
                     QueueEvaluateRules();
                 }
@@ -1054,9 +1054,20 @@ namespace Xalia.UiDom
             }
         }
 
-        protected void RegisterTrackedProperties(string[] properties)
+        protected void RegisterTrackedProperties(string[] properties, IUiDomProvider provider)
         {
             tracked_property_lists.AddLast(properties);
+            foreach (string property in properties)
+            {
+                // If we were already tracking one of these properties, and it has a value,
+                // UpdateTrackedProperties will not notify the provider of that value until
+                // it changes. Rather than expecting each provider to check all of its
+                // tracked properties at creation time, we notify when it's added.
+                if (tracked_property_values.TryGetValue(property, out var value) && value != UiDomUndefined.Instance)
+                {
+                    provider.TrackedPropertyChanged(this, property, value);
+                }
+            }
             if (!updating_tracked_properties)
             {
                 updating_tracked_properties = true;
@@ -1132,7 +1143,7 @@ namespace Xalia.UiDom
         {
             var tracked = provider.GetTrackedProperties();
             if (!(tracked is null))
-                RegisterTrackedProperties(tracked);
+                RegisterTrackedProperties(tracked, provider);
             if (QueueEvaluateRules() && MatchesDebugCondition())
                 Utils.DebugWriteLine($"queued rule evaluation for {this} because {provider} was added");
             foreach (var expression in _propertyChangeNotifiers.Keys)
