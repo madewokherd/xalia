@@ -97,8 +97,7 @@ namespace Xalia.Sdl
             }
         }
 
-        static bool DebugInput = !(Environment.GetEnvironmentVariable("XALIA_DEBUG_INPUT") is null &&
-            Environment.GetEnvironmentVariable("XALIA_DEBUG_INPUT") != "0");
+        static bool DebugInput = (Environment.GetEnvironmentVariable("XALIA_DEBUG_INPUT") ?? "0") != "0";
 
         private void OnSdlEvent(object sender, SdlSynchronizationContext.SdlEventArgs e)
         {

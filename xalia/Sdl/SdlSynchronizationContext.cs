@@ -110,8 +110,7 @@ namespace Xalia.Sdl
 
         public event SdlEventHandler SdlEvent;
 
-        static bool DebugMainLoop = !(Environment.GetEnvironmentVariable("XALIA_DEBUG_MAINLOOP") is null &&
-            Environment.GetEnvironmentVariable("XALIA_DEBUG_INPUT") != "0");
+        static bool DebugMainLoop = (Environment.GetEnvironmentVariable("XALIA_DEBUG_MAINLOOP") ?? "0") != "0";
 
         public void MainLoop()
         {
