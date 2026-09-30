@@ -648,7 +648,7 @@ if (process_name == "Fusion") {
 
 // APPLICATION: Lara Croft and the Temple of Osiris Launcher
 
-if (class_name == "NixxesLC2" and win32_gui_active and win32_gui_focus) {
+if (class_name == "NixxesLC2" and win32_gui_active and win32_gui_focus and not clipchildren) {
     in_menu_navigation: true;
     menu_up_action: send_key.up;
     menu_down_action: send_key.down;
