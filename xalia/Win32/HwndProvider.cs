@@ -1094,12 +1094,12 @@ namespace Xalia.Win32
             }
         }
 
-        public void MsaaStateChange()
+        public void MsaaStateChange(bool ancestor_shown = false)
         {
             int new_style = unchecked((int)(long)GetWindowLong(Hwnd, GWL_STYLE));
-            if (new_style != Style)
+            int old_style = Style;
+            if (new_style != old_style)
             {
-                var old_style = Style;
                 Style = new_style;
                 if (Element.MatchesDebugCondition())
                 {
@@ -1108,17 +1108,16 @@ namespace Xalia.Win32
                 Element.PropertyChanged("win32_style");
                 if (_useNonclient)
                     RefreshNonclientChildren();
-                if ((new_style & WS_VISIBLE) == WS_VISIBLE &&
-                    (old_style & WS_VISIBLE) == 0 &&
-                    (_watchingChildren || HwndChildrenChanged != null))
+            }
+            if ((new_style & WS_VISIBLE) == WS_VISIBLE &&
+                ((old_style & WS_VISIBLE) == 0 || ancestor_shown))
+            {
+                // Children may also be newly-visible
+                for (int i = 0; i < Element.RecurseMethodChildCount; i++)
                 {
-                    // Children may also be newly-visible
-                    for (int i = 0; i < Element.RecurseMethodChildCount; i++)
-                    {
-                        var child = Element.Children[i];
-                        child.ProviderByType<AccessibleProvider>()?.MsaaStateChange();
-                        child.ProviderByType<HwndProvider>()?.MsaaStateChange();
-                    }
+                    var child = Element.Children[i];
+                    child.ProviderByType<AccessibleProvider>()?.MsaaStateChange();
+                    child.ProviderByType<HwndProvider>()?.MsaaStateChange(true);
                 }
             }
             Element.ProviderByType<HwndButtonProvider>()?.MsaaStateChange();
