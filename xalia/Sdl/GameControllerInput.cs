@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Xalia.Input;
 
@@ -60,7 +61,10 @@ namespace Xalia.Sdl
 
         List<uint>[] controllers_providing_button;
         bool[] buttons_watched;
+
         bool needs_polling;
+        CancellationTokenSource cancel_polling;
+        const int joystick_poll_ms = 16;
 
         InputMapping[][] button_mappings;
         InputMapping[] empty_mapping = new InputMapping[] { };
@@ -297,6 +301,23 @@ namespace Xalia.Sdl
             }
         }
 
+        private async Task DoPollLoop()
+        {
+            using (CancellationTokenSource cancel = new CancellationTokenSource())
+            {
+                cancel_polling = cancel;
+                try
+                {
+                    while (cancel_polling != null)
+                    {
+                        SDL_UpdateJoysticks();
+                        await Task.Delay(joystick_poll_ms, cancel.Token);
+                    }
+                }
+                catch (TaskCanceledException) { }
+            }
+        }
+
         private void CheckNeedsPolling()
         {
             bool new_needs_polling = false;
@@ -317,13 +338,14 @@ namespace Xalia.Sdl
                 {
                     if (DebugInput)
                         Utils.DebugWriteLine($"Starting game controller polling");
-                    SDL_SetHint(SDL_HINT_AUTO_UPDATE_JOYSTICKS, "1");
+                    Utils.RunTask(DoPollLoop());
                 }
                 else
                 {
                     if (DebugInput)
                         Utils.DebugWriteLine($"Stopping game controller polling");
-                    SDL_SetHint(SDL_HINT_AUTO_UPDATE_JOYSTICKS, "0");
+                    cancel_polling.Cancel();
+                    cancel_polling = null;
                 }
             }
         }
