@@ -100,6 +100,8 @@ namespace Xalia
 
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
+            SDL_SetHint(SDL_HINT_AUTO_UPDATE_JOYSTICKS, "0");
+
             SdlSynchronizationContext.Instance.Init(SDL_InitFlags.SDL_INIT_VIDEO | SDL_InitFlags.SDL_INIT_JOYSTICK | SDL_InitFlags.SDL_INIT_GAMEPAD);
 
 #if WINDOWS
