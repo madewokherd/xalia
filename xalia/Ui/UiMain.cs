@@ -276,6 +276,7 @@ namespace Xalia.Ui
             if (targetable_elements.Count == 1)
             {
                 Utils.RunTask(SelectAnyTarget());
+                Root.PropertyChanged("any_targetable_elements", true);
             }
 
             if (element == TargetedElement)
@@ -290,6 +291,8 @@ namespace Xalia.Ui
             targetable_elements.Remove(element);
             if (element == TargetedElement)
                 TargetedElement = null;
+            if (targetable_elements.Count == 0)
+                Root.PropertyChanged("any_targetable_elements", false);
         }
 
         private Stack<UiDomElement> GetAncestors(UiDomElement element)
@@ -632,16 +635,34 @@ namespace Xalia.Ui
         {
             switch (id)
             {
+                case "any_targetable_elements":
+                    depends_on.Add((Root, new IdentifierExpression("any_targetable_elements")));
+                    return UiDomBoolean.FromBool(targetable_elements.Count != 0);
                 case "target_move_up":
-                    return new TargetMoveButtonRoutine(this, "target_move_up", TargetMoveUp);
+                    depends_on.Add((Root, new IdentifierExpression("any_targetable_elements")));
+                    if (targetable_elements.Count != 0)
+                        return new TargetMoveButtonRoutine(this, "target_move_up", TargetMoveUp);
+                    break;
                 case "target_move_down":
-                    return new TargetMoveButtonRoutine(this, "target_move_down", TargetMoveDown);
+                    depends_on.Add((Root, new IdentifierExpression("any_targetable_elements")));
+                    if (targetable_elements.Count != 0)
+                        return new TargetMoveButtonRoutine(this, "target_move_down", TargetMoveDown);
+                    break;
                 case "target_move_left":
-                    return new TargetMoveButtonRoutine(this, "target_move_left", TargetMoveLeft);
+                    depends_on.Add((Root, new IdentifierExpression("any_targetable_elements")));
+                    if (targetable_elements.Count != 0)
+                        return new TargetMoveButtonRoutine(this, "target_move_left", TargetMoveLeft);
+                    break;
                 case "target_move_right":
-                    return new TargetMoveButtonRoutine(this, "target_move_right", TargetMoveRight);
+                    depends_on.Add((Root, new IdentifierExpression("any_targetable_elements")));
+                    if (targetable_elements.Count != 0)
+                        return new TargetMoveButtonRoutine(this, "target_move_right", TargetMoveRight);
+                    break;
                 case "target_move":
-                    return new TargetMoveRoutine(this);
+                    depends_on.Add((Root, new IdentifierExpression("any_targetable_elements")));
+                    if (targetable_elements.Count != 0)
+                        return new TargetMoveRoutine(this);
+                    break;
                 case "targeted_element":
                     depends_on.Add((Root, new IdentifierExpression("targeted_element")));
                     if (TargetedElement is null)
@@ -675,9 +696,15 @@ namespace Xalia.Ui
                 case "send_scroll":
                     return new SendScroll(element, Windowing);
                 case "target_next":
-                    return new UiDomRoutineSync("target_next", TargetNext);
+                    depends_on.Add((Root, new IdentifierExpression("any_targetable_elements")));
+                    if (targetable_elements.Count != 0)
+                        return new UiDomRoutineSync("target_next", TargetNext);
+                    break;
                 case "target_previous":
-                    return new UiDomRoutineSync("target_previous", TargetPrevious);
+                    depends_on.Add((Root, new IdentifierExpression("any_targetable_elements")));
+                    if (targetable_elements.Count != 0)
+                        return new UiDomRoutineSync("target_previous", TargetPrevious);
+                    break;
                 case "wrap_current_view_action":
                     return new UiDomMethod("wrap_current_view_action", WrapCurrentViewMethod);
             }

@@ -59,6 +59,8 @@ namespace Xalia.Sdl
         Dictionary<string, byte> buttons_by_name;
 
         List<uint>[] controllers_providing_button;
+        bool[] buttons_watched;
+        bool needs_polling;
 
         InputMapping[][] button_mappings;
         InputMapping[] empty_mapping = new InputMapping[] { };
@@ -77,6 +79,7 @@ namespace Xalia.Sdl
                 button_mappings[i] = new InputMapping[] { mapping };
             }
 
+            buttons_watched = new bool[button_names.Length];
             controllers_providing_button = new List<uint>[button_names.Length];
             button_states = new Dictionary<uint, bool[]>();
 
@@ -253,6 +256,8 @@ namespace Xalia.Sdl
             game_controllers[index] = game_controller;
             button_states[index] = new bool[button_names.Length];
             UpdateMappings(index);
+            if (!needs_polling)
+                CheckNeedsPolling();
         }
 
         private void CloseJoystick(uint index)
@@ -265,6 +270,8 @@ namespace Xalia.Sdl
                 SDL_CloseGamepad(controller);
                 game_controllers.Remove(index);
                 button_states.Remove(index);
+                if (needs_polling)
+                    CheckNeedsPolling();
             }
         }
 
@@ -290,12 +297,46 @@ namespace Xalia.Sdl
             }
         }
 
+        private void CheckNeedsPolling()
+        {
+            bool new_needs_polling = false;
+            for (int i = 0; i < buttons_watched.Length; i++)
+            {
+                if (buttons_watched[i] && ((controllers_providing_button[i]?.Count ?? 0) != 0))
+                {
+                    new_needs_polling = true;
+                    break;
+                }
+            }
+
+            if (new_needs_polling != needs_polling)
+            {
+                needs_polling = new_needs_polling;
+
+                if (needs_polling)
+                {
+                    if (DebugInput)
+                        Utils.DebugWriteLine($"Starting game controller polling");
+                    SDL_SetHint(SDL_HINT_AUTO_UPDATE_JOYSTICKS, "1");
+                }
+                else
+                {
+                    if (DebugInput)
+                        Utils.DebugWriteLine($"Stopping game controller polling");
+                    SDL_SetHint(SDL_HINT_AUTO_UPDATE_JOYSTICKS, "0");
+                }
+            }
+        }
+
         protected internal override bool WatchAction(string name)
         {
             if (buttons_by_name.TryGetValue(name, out var button))
             {
+                buttons_watched[button] = true;
                 if ((controllers_providing_button[button]?.Count ?? 0) != 0)
                 {
+                    if (!needs_polling)
+                        CheckNeedsPolling();
                     return true;
                 }
             }
@@ -304,8 +345,17 @@ namespace Xalia.Sdl
 
         protected internal override bool UnwatchAction(string name)
         {
-            // We don't need to do anything to watch the button, so always just return whether there's a binding
-            return WatchAction(name);
+            if (buttons_by_name.TryGetValue(name, out var button))
+            {
+                buttons_watched[button] = false;
+                if ((controllers_providing_button[button]?.Count ?? 0) != 0)
+                {
+                    if (needs_polling)
+                        CheckNeedsPolling();
+                    return true;
+                }
+            }
+            return false;
         }
 
         protected internal override InputState GetActionState(string action)
