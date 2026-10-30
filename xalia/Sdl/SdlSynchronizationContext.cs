@@ -31,6 +31,11 @@ namespace Xalia.Sdl
 
         private uint _queue_updated_event;
 
+        // SDL_WaitEvent needs an SDL-owned window to use event driven poll loop.
+        // Without one, SDL falls back to polling with SDL_DelayNS every millisecond, which is especially expensive on
+        // Wine.
+        private IntPtr _event_window;
+
         private SdlSynchronizationContext()
         {
         }
@@ -50,6 +55,14 @@ namespace Xalia.Sdl
             if (!SDL_Init(flags))
             {
                 throw new ApplicationException(SDL_GetError());
+            }
+
+            _event_window = SDL_CreateWindow("Xalia event window", 1, 1, SDL_WindowFlags.SDL_WINDOW_HIDDEN);
+            if (_event_window == IntPtr.Zero)
+            {
+                string error = SDL_GetError();
+                SDL_Quit();
+                throw new ApplicationException(error);
             }
 
             _queue_updated_event = SDL_RegisterEvents(1);
@@ -74,6 +87,11 @@ namespace Xalia.Sdl
             if (DebugMainLoop)
                 Utils.DebugWriteLine($"MAINLOOP: Queued quit");
             _quitting = true;
+            if (_event_window != IntPtr.Zero)
+            {
+                SDL_DestroyWindow(_event_window);
+                _event_window = IntPtr.Zero;
+            }
             SDL_Quit();
         }
 
