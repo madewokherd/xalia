@@ -353,7 +353,8 @@ namespace Xalia.AtSpi2
                 {
                     if (n.IsCompletion)
                     {
-                        Utils.OnError(n.Exception);
+                        if (!(n.Exception is null))
+                            Utils.OnError(n.Exception);
                         return;
                     }
                     if (debug_this_event)
