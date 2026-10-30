@@ -351,7 +351,7 @@ namespace Xalia.AtSpi2
             return connection.AddMatchAsync(rule, ReadAtSpiSignal,
                 (Notification<AtSpiSignal> n) =>
                 {
-                    if (!(n.Exception is null))
+                    if (n.IsCompletion)
                     {
                         Utils.OnError(n.Exception);
                         return;
