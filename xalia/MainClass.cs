@@ -102,7 +102,7 @@ namespace Xalia
 
             SDL_SetHint(SDL_HINT_AUTO_UPDATE_JOYSTICKS, "0");
 
-            SdlSynchronizationContext.Instance.Init(SDL_InitFlags.SDL_INIT_VIDEO | SDL_InitFlags.SDL_INIT_JOYSTICK | SDL_InitFlags.SDL_INIT_GAMEPAD);
+            SdlSynchronizationContext.Instance.Init(SDL_InitFlags.SDL_INIT_JOYSTICK | SDL_InitFlags.SDL_INIT_GAMEPAD);
 
 #if WINDOWS
             if (Utils.IsWindows() &&
