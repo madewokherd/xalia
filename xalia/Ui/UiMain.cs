@@ -271,9 +271,11 @@ namespace Xalia.Ui
                 return;
             }
 
+            int prev_count = targetable_elements.Count;
+
             targetable_elements[element] = (x, y, width, height);
 
-            if (targetable_elements.Count == 1)
+            if (prev_count == 0)
             {
                 Utils.RunTask(SelectAnyTarget());
                 Root.PropertyChanged("any_targetable_elements", true);
@@ -288,10 +290,11 @@ namespace Xalia.Ui
 
         private void DiscardTargetableElement(UiDomElement element)
         {
+            int prev_count = targetable_elements.Count;
             targetable_elements.Remove(element);
             if (element == TargetedElement)
                 TargetedElement = null;
-            if (targetable_elements.Count == 0)
+            if (prev_count == 1 && targetable_elements.Count == 0)
                 Root.PropertyChanged("any_targetable_elements", false);
         }
 
