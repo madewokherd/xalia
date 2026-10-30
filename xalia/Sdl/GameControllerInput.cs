@@ -63,7 +63,6 @@ namespace Xalia.Sdl
         bool[] buttons_watched;
 
         bool needs_polling;
-        CancellationTokenSource cancel_polling;
         const int joystick_poll_ms = 16;
 
         InputMapping[][] button_mappings;
@@ -301,23 +300,6 @@ namespace Xalia.Sdl
             }
         }
 
-        private async Task DoPollLoop()
-        {
-            using (CancellationTokenSource cancel = new CancellationTokenSource())
-            {
-                cancel_polling = cancel;
-                try
-                {
-                    while (cancel_polling != null)
-                    {
-                        SDL_UpdateJoysticks();
-                        await Task.Delay(joystick_poll_ms, cancel.Token);
-                    }
-                }
-                catch (TaskCanceledException) { }
-            }
-        }
-
         private void CheckNeedsPolling()
         {
             bool new_needs_polling = false;
@@ -334,18 +316,18 @@ namespace Xalia.Sdl
             {
                 needs_polling = new_needs_polling;
 
+                var sdl = (SdlSynchronizationContext)SynchronizationContext.Current;
                 if (needs_polling)
                 {
                     if (DebugInput)
                         Utils.DebugWriteLine($"Starting game controller polling");
-                    Utils.RunTask(DoPollLoop());
+                    sdl.GamepadPollInterval = joystick_poll_ms;
                 }
                 else
                 {
                     if (DebugInput)
                         Utils.DebugWriteLine($"Stopping game controller polling");
-                    cancel_polling.Cancel();
-                    cancel_polling = null;
+                    sdl.GamepadPollInterval = -1;
                 }
             }
         }

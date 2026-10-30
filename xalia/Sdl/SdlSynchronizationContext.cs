@@ -40,6 +40,8 @@ namespace Xalia.Sdl
         {
         }
 
+        internal int GamepadPollInterval { get; set; } = -1;
+
         public void Init(SDL_InitFlags flags)
         {
             if (Interlocked.CompareExchange(ref _main_thread_obj, Thread.CurrentThread, null) != null)
@@ -153,9 +155,10 @@ namespace Xalia.Sdl
                         Utils.DebugWriteLine($"MAINLOOP: Completed handling Post");
                     continue;
                 }
+                SDL_UpdateJoysticks();
                 if (DebugMainLoop)
                     Utils.DebugWriteLine($"MAINLOOP: waiting for events");
-                if (SDL_WaitEvent(out var wait_e))
+                if (SDL_WaitEventTimeout(out var wait_e, GamepadPollInterval))
                 {
                     if (DebugMainLoop)
                         Utils.DebugWriteLine($"MAINLOOP: Handling SDL event: {(SDL_EventType)wait_e.type}");
@@ -169,10 +172,7 @@ namespace Xalia.Sdl
                     }
                     if (DebugMainLoop)
                         Utils.DebugWriteLine($"MAINLOOP: Completed handling event");
-                    continue;
                 }
-                else
-                    throw new ApplicationException(SDL_GetError());
             }
             if (DebugMainLoop)
                 Utils.DebugWriteLine($"MAINLOOP: Quitting");
