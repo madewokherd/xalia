@@ -114,9 +114,16 @@ namespace Xalia.Sdl
 
         static bool DebugMainLoop = (Environment.GetEnvironmentVariable("XALIA_DEBUG_MAINLOOP") ?? "0") != "0";
 
+        unsafe private long GetCurrentTime()
+        {
+            long result = 0;
+            SDL_GetCurrentTime(new IntPtr(&result));
+            return result;
+        }
+
         public void MainLoop()
         {
-            int gamepad_check_ticks = 0;
+            long gamepad_check_ticks = 0;
             bool gamepad_checked = false;
             AssertMainThread();
             while (!_quitting)
@@ -150,11 +157,11 @@ namespace Xalia.Sdl
                 }
                 if (GamepadPollInterval != -1)
                 {
-                    if (!gamepad_checked || (Environment.TickCount - gamepad_check_ticks) >= GamepadPollInterval)
+                    if (!gamepad_checked || (GetCurrentTime() - (gamepad_check_ticks / 2)) >= (GamepadPollInterval * 1000000))
                     {
                         SDL_UpdateJoysticks();
                         gamepad_checked = true;
-                        gamepad_check_ticks = Environment.TickCount;
+                        gamepad_check_ticks = GetCurrentTime();
                     }
                 }
                 else
@@ -170,8 +177,6 @@ namespace Xalia.Sdl
                         Utils.DebugWriteLine($"MAINLOOP: Completed handling Post");
                     continue;
                 }
-                if (DebugMainLoop)
-                    Utils.DebugWriteLine($"MAINLOOP: waiting for events");
                 int delay;
                 if (GamepadPollInterval == -1)
                 {
@@ -179,8 +184,10 @@ namespace Xalia.Sdl
                 }
                 else
                 {
-                    delay = checked((int)Math.Max(GamepadPollInterval - (Environment.TickCount - gamepad_check_ticks), 0));
+                    delay = checked((int)Math.Max(GamepadPollInterval - (GetCurrentTime() - gamepad_check_ticks) / 1000000, 0));
                 }
+                if (DebugMainLoop)
+                    Utils.DebugWriteLine($"MAINLOOP: waiting {delay} ms for events");
                 if (SDL_WaitEventTimeout(out var wait_e, delay))
                 {
                     if (DebugMainLoop)
