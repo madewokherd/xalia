@@ -116,6 +116,8 @@ namespace Xalia.Sdl
 
         public void MainLoop()
         {
+            int gamepad_check_ticks = 0;
+            bool gamepad_checked = false;
             AssertMainThread();
             while (!_quitting)
             {
@@ -146,6 +148,19 @@ namespace Xalia.Sdl
                         Utils.DebugWriteLine($"MAINLOOP: Completed handling event");
                     continue;
                 }
+                if (GamepadPollInterval != -1)
+                {
+                    if (!gamepad_checked || (Environment.TickCount - gamepad_check_ticks) >= GamepadPollInterval)
+                    {
+                        SDL_UpdateJoysticks();
+                        gamepad_checked = true;
+                        gamepad_check_ticks = Environment.TickCount;
+                    }
+                }
+                else
+                {
+                    gamepad_checked = false;
+                }
                 if (_posts.TryDequeue(out var post))
                 {
                     if (DebugMainLoop)
@@ -155,10 +170,18 @@ namespace Xalia.Sdl
                         Utils.DebugWriteLine($"MAINLOOP: Completed handling Post");
                     continue;
                 }
-                SDL_UpdateJoysticks();
                 if (DebugMainLoop)
                     Utils.DebugWriteLine($"MAINLOOP: waiting for events");
-                if (SDL_WaitEventTimeout(out var wait_e, GamepadPollInterval))
+                int delay;
+                if (GamepadPollInterval == -1)
+                {
+                    delay = -1;
+                }
+                else
+                {
+                    delay = checked((int)Math.Max(GamepadPollInterval - (Environment.TickCount - gamepad_check_ticks), 0));
+                }
+                if (SDL_WaitEventTimeout(out var wait_e, delay))
                 {
                     if (DebugMainLoop)
                         Utils.DebugWriteLine($"MAINLOOP: Handling SDL event: {(SDL_EventType)wait_e.type}");
