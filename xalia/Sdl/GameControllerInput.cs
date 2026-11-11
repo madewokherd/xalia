@@ -327,7 +327,7 @@ namespace Xalia.Sdl
                 {
                     if (DebugInput)
                         Utils.DebugWriteLine($"Stopping game controller polling");
-                    sdl.GamepadPollInterval = -1;
+                    sdl.GamepadPollInterval = 500;
                 }
             }
         }

@@ -40,7 +40,7 @@ namespace Xalia.Sdl
         {
         }
 
-        internal int GamepadPollInterval { get; set; } = -1;
+        internal int GamepadPollInterval { get; set; } = 500;
 
         public void Init(SDL_InitFlags flags)
         {
