@@ -1232,6 +1232,11 @@ if (is_hwnd_listbox) {
     supported: not ownerdrawvariable;
 }
 
+if (parent.is_root and win32_class_name == "ComboLBox") {
+    // We won't be highlighting any of the items here so no need to keep track of them
+    recurse: false;
+}
+
 if (is_hwnd_listbox_item) {
     valid_target: true;
 }
