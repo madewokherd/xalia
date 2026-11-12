@@ -1,10 +1,12 @@
-﻿namespace Xalia.Gudl
+﻿using System;
+
+namespace Xalia.Gudl
 {
     public class StringExpression : GudlExpression
     {
         public StringExpression(string value)
         {
-            Value = value;
+            Value = String.Intern(value);
         }
 
         public string Value { get; }
